@@ -8,7 +8,10 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
-import type { RenderJobRequest } from '@sumer-reel-forge/reel-core';
+import type {
+  ClaimRenderJobRequest,
+  RenderJobRequest,
+} from '@sumer-reel-forge/reel-core';
 
 export class CreateRenderJobDto implements RenderJobRequest {
   @ApiProperty({ example: 1, minimum: 1 })
@@ -54,4 +57,19 @@ export class UpdateRenderJobStatusDto {
   @IsString()
   @MaxLength(1000)
   notes?: string;
+}
+
+export class HeartbeatRenderJobDto {
+  @ApiPropertyOptional({ example: 'Renderer worker still processing frames.' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  notes?: string;
+}
+
+export class ClaimRenderJobDto implements ClaimRenderJobRequest {
+  @ApiProperty({ example: 'local-renderer-worker' })
+  @IsString()
+  @MaxLength(120)
+  workerId!: string;
 }

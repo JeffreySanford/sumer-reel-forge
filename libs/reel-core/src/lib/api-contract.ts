@@ -4,275 +4,580 @@
  */
 
 export interface paths {
-    "/api/health": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Return API health for local and CI checks. */
-        get: operations["AppController_getHealth"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+  '/api/health': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/chapters/1/reels": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Return the Chapter 1 reel outline. */
-        get: operations["AppController_getChapterOneSummary"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** Return API health for local and CI checks. */
+    get: operations['AppController_getHealth'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/chapters/1/reels': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/chapters/1/reels/{episodeId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Return the detailed storyboard for one reel. */
-        get: operations["AppController_getEpisode"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** Return the Chapter 1 reel outline. */
+    get: operations['AppController_getChapterOneSummary'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/chapters/1/reels/{episodeId}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/render-jobs": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Return queued render jobs for audit/debugging. */
-        get: operations["AppController_getRenderJobs"];
-        put?: never;
-        /** Queue a render job for an existing storyboard. */
-        post: operations["AppController_createRenderJob"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** Return the detailed storyboard for one reel. */
+    get: operations['AppController_getEpisode'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/chapters/1/reels/{episodeId}/production': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/render-jobs/stale": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Return queued/running render jobs with stale heartbeats. */
-        get: operations["AppController_getStaleRenderJobs"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** Save editable production fields for one reel. */
+    patch: operations['AppController_updateEpisodeProduction'];
+    trace?: never;
+  };
+  '/api/render-jobs': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/render-jobs/{jobId}/status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Update render job status and optional heartbeat. */
-        patch: operations["AppController_updateRenderJobStatus"];
-        trace?: never;
+    /** Return queued render jobs for audit/debugging. */
+    get: operations['AppController_getRenderJobs'];
+    put?: never;
+    /** Queue a render job for an existing storyboard. */
+    post: operations['AppController_createRenderJob'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/render-jobs/stale': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
+    /** Return queued/running render jobs with stale heartbeats. */
+    get: operations['AppController_getStaleRenderJobs'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/render-jobs/watchdog/stale': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Mark stale queued/running render jobs as failed. */
+    post: operations['AppController_markStaleRenderJobsFailed'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/render-jobs/claim': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Claim the next queued render job for a worker. */
+    post: operations['AppController_claimNextRenderJob'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/render-jobs/{jobId}/status': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** Update render job status and optional heartbeat. */
+    patch: operations['AppController_updateRenderJobStatus'];
+    trace?: never;
+  };
+  '/api/render-jobs/{jobId}/heartbeat': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** Record a worker heartbeat for a render job. */
+    patch: operations['AppController_heartbeatRenderJob'];
+    trace?: never;
+  };
+  '/api/generated-assets': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List generated asset manifests. */
+    get: operations['AppController_getGeneratedAssets'];
+    put?: never;
+    /** Persist a generated asset manifest. */
+    post: operations['AppController_createGeneratedAsset'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-    schemas: {
-        CreateRenderJobDto: {
-            /** @example 1 */
-            episodeId: number;
-            /**
-             * @example storyboard
-             * @enum {string}
-             */
-            mode: "storyboard" | "draft-video" | "final-video";
-            /** @example calm mythic narrator */
-            voice?: string;
-            /** @example First local prototype */
-            notes?: string;
-        };
-        UpdateRenderJobStatusDto: {
-            /**
-             * @example running
-             * @enum {string}
-             */
-            status: "queued" | "running" | "complete" | "failed";
-            /** @example true */
-            heartbeat?: boolean;
-            /** @example Renderer worker accepted the job. */
-            notes?: string;
-        };
+  schemas: {
+    TimedTextDto: {
+      /** @example 00:08 */
+      time: string;
+      /** @example A boat crossed the Absu. */
+      text: string;
     };
-    responses: never;
-    parameters: never;
-    requestBodies: never;
-    headers: never;
-    pathItems: never;
+    ReelShotDto: {
+      /** @example 00:00-00:06 */
+      time: string;
+      /** @example 6 */
+      durationSeconds: number;
+      /** @example Black water before dawn. */
+      visual: string;
+      /** @example slow push in */
+      motion: string;
+      /** @example cinematic ancient Mesopotamian myth */
+      prompt: string;
+    };
+    ReelExportMetadataDto: {
+      /** @example Facebook-ready caption. */
+      facebookCaption: string;
+      /** @example Short X post. */
+      xPost: string;
+      /** @example TikTok caption with tags. */
+      tiktokCaption: string;
+      /** @example YouTube Shorts title */
+      youtubeShortsTitle: string;
+      /**
+       * @example [
+       *       "Sumer",
+       *       "Mythology"
+       *     ]
+       */
+      tags: string[];
+    };
+    UpdateReelProductionDto: {
+      /** @example A concise production logline. */
+      logline: string;
+      /** @example Narration script for the reel. */
+      narration: string;
+      onScreenText: components['schemas']['TimedTextDto'][];
+      shots: components['schemas']['ReelShotDto'][];
+      /** @example Low frame drum and water ambience. */
+      musicDirection: string;
+      /** @example Calm mythic narrator. */
+      voiceDirection: string;
+      platformNotes: string[];
+      exportMetadata: components['schemas']['ReelExportMetadataDto'];
+    };
+    ClaimRenderJobDto: {
+      /** @example local-renderer-worker */
+      workerId: string;
+    };
+    CreateRenderJobDto: {
+      /** @example 1 */
+      episodeId: number;
+      /**
+       * @example storyboard
+       * @enum {string}
+       */
+      mode: 'storyboard' | 'draft-video' | 'final-video';
+      /** @example calm mythic narrator */
+      voice?: string;
+      /** @example First local prototype */
+      notes?: string;
+    };
+    UpdateRenderJobStatusDto: {
+      /**
+       * @example running
+       * @enum {string}
+       */
+      status: 'queued' | 'running' | 'complete' | 'failed';
+      /** @example true */
+      heartbeat?: boolean;
+      /** @example Renderer worker accepted the job. */
+      notes?: string;
+    };
+    HeartbeatRenderJobDto: {
+      /** @example Renderer worker still processing frames. */
+      notes?: string;
+    };
+    CreateGeneratedAssetDto: {
+      /** @example 550e8400-e29b-41d4-a716-446655440000 */
+      renderJobId?: string;
+      /**
+       * @example image
+       * @enum {string}
+       */
+      assetType:
+        | 'image'
+        | 'audio'
+        | 'captions'
+        | 'video'
+        | 'manifest'
+        | 'other';
+      /** @example file:///d/repos/sumer-reel-forge/tmp/render.png */
+      uri: string;
+      /** @example sha256:abc123 */
+      checksum?: string;
+      /**
+       * @example {
+       *       "width": 1080,
+       *       "height": 1920
+       *     }
+       */
+      metadata?: Record<string, never>;
+    };
+  };
+  responses: never;
+  parameters: never;
+  requestBodies: never;
+  headers: never;
+  pathItems: never;
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    AppController_getHealth: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
+  AppController_getHealth: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    AppController_getChapterOneSummary: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
+        content?: never;
+      };
     };
-    AppController_getEpisode: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                episodeId: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
+  };
+  AppController_getChapterOneSummary: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    AppController_getRenderJobs: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
+        content?: never;
+      };
     };
-    AppController_createRenderJob: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateRenderJobDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
+  };
+  AppController_getEpisode: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        episodeId: number;
+      };
+      cookie?: never;
     };
-    AppController_getStaleRenderJobs: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
+        content?: never;
+      };
     };
-    AppController_updateRenderJobStatus: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                jobId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateRenderJobStatusDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
+  };
+  AppController_updateEpisodeProduction: {
+    parameters: {
+      query?: never;
+      header: {
+        'x-request-id': string;
+      };
+      path: {
+        episodeId: number;
+      };
+      cookie?: never;
     };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateReelProductionDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  AppController_getRenderJobs: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  AppController_createRenderJob: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateRenderJobDto'];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  AppController_getStaleRenderJobs: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  AppController_markStaleRenderJobsFailed: {
+    parameters: {
+      query?: never;
+      header: {
+        'x-request-id': string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  AppController_claimNextRenderJob: {
+    parameters: {
+      query?: never;
+      header: {
+        'x-request-id': string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ClaimRenderJobDto'];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  AppController_updateRenderJobStatus: {
+    parameters: {
+      query?: never;
+      header: {
+        'x-request-id': string;
+      };
+      path: {
+        jobId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateRenderJobStatusDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  AppController_heartbeatRenderJob: {
+    parameters: {
+      query?: never;
+      header: {
+        'x-request-id': string;
+      };
+      path: {
+        jobId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['HeartbeatRenderJobDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  AppController_getGeneratedAssets: {
+    parameters: {
+      query: {
+        renderJobId: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  AppController_createGeneratedAsset: {
+    parameters: {
+      query?: never;
+      header: {
+        'x-request-id': string;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateGeneratedAssetDto'];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
 }

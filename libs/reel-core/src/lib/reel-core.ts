@@ -27,6 +27,26 @@ export interface ReelEpisode {
   musicDirection: string;
   voiceDirection: string;
   platformNotes: string[];
+  exportMetadata: ReelExportMetadata;
+}
+
+export interface ReelExportMetadata {
+  facebookCaption: string;
+  xPost: string;
+  tiktokCaption: string;
+  youtubeShortsTitle: string;
+  tags: string[];
+}
+
+export interface UpdateReelProductionRequest {
+  logline: string;
+  narration: string;
+  onScreenText: TimedText[];
+  shots: ReelShot[];
+  musicDirection: string;
+  voiceDirection: string;
+  platformNotes: string[];
+  exportMetadata: ReelExportMetadata;
 }
 
 export interface ChapterReelSummary {
@@ -50,7 +70,32 @@ export interface RenderJob {
   mode: RenderJobRequest['mode'];
   status: 'queued' | 'running' | 'complete' | 'failed';
   createdAt: string;
+  heartbeatAt?: string;
+  workerId?: string;
+  attemptCount: number;
   notes?: string;
+}
+
+export interface ClaimRenderJobRequest {
+  workerId: string;
+}
+
+export interface GeneratedAssetManifest {
+  id: string;
+  renderJobId?: string;
+  assetType: 'image' | 'audio' | 'captions' | 'video' | 'manifest' | 'other';
+  uri: string;
+  checksum?: string;
+  metadata: Record<string, unknown>;
+  createdAt: string;
+}
+
+export interface CreateGeneratedAssetRequest {
+  renderJobId?: string;
+  assetType: GeneratedAssetManifest['assetType'];
+  uri: string;
+  checksum?: string;
+  metadata?: Record<string, unknown>;
 }
 
 export const CHAPTER_ONE_SUMMARY: ChapterReelSummary[] = [
@@ -284,6 +329,16 @@ export const REEL_ONE: ReelEpisode = {
     'Avoid dense mythological names in the opening hook; introduce only Enki, Nammu, Enlil, and Dilmun.',
     'Use one consistent visual design for Enki and the Stag so later episodes feel connected.',
   ],
+  exportMetadata: {
+    facebookCaption:
+      'Before Sumer rose, Enki sailed toward Dilmun and heard the first command of civilization: water, bread, truth, justice, freedom.',
+    xPost:
+      'Enki sails the Stag of the Absu toward Dilmun. The voyage becomes civilization.',
+    tiktokCaption:
+      'A Sumerian creation journey begins on the dark water. #Sumer #Mythology #AncientHistory',
+    youtubeShortsTitle: 'Before Sumer: Enki Sails Toward Dilmun',
+    tags: ['Sumer', 'Enki', 'Dilmun', 'Mythology', 'Ancient History'],
+  },
 };
 
 const CHAPTER_ONE_REEL_COPY: Record<
@@ -345,10 +400,8 @@ const CHAPTER_ONE_REEL_COPY: Record<
       'In a reed house filled with heat and dust, Enki and Nintu bent over maps of clay. The land was not a blank space to dominate. It was a body with veins waiting to be opened. Here a canal. Here a basin. Here a crossing where workers could rest. Nintu saw the people who would carry baskets, shape banks, and plant fields. Enki saw the water finding its path. Together they dreamed in measurements, gradients, and labor. The miracle would not be a single spring. It would be a system that made abundance repeatable.',
   },
   11: {
-    logline:
-      `The road shrines turn Enki's command into a public network of food, washing, water, and rest.`,
-    narration:
-      `As the canals spread, Enki remembered Nammu's words about the traveler. Along the roads, shrines rose near water and shade. At one, a basin waited for dust-covered hands. At another, bread came warm from a clay oven. In Ur and Sippar, strangers learned that the land had made promises to people it had never met. The shrines were small, but their meaning was large. Power was not only in palaces. It was in the places where a lonely person could stop, drink, eat, wash, and continue safely.`,
+    logline: `The road shrines turn Enki's command into a public network of food, washing, water, and rest.`,
+    narration: `As the canals spread, Enki remembered Nammu's words about the traveler. Along the roads, shrines rose near water and shade. At one, a basin waited for dust-covered hands. At another, bread came warm from a clay oven. In Ur and Sippar, strangers learned that the land had made promises to people it had never met. The shrines were small, but their meaning was large. Power was not only in palaces. It was in the places where a lonely person could stop, drink, eat, wash, and continue safely.`,
   },
   12: {
     logline:
@@ -369,10 +422,8 @@ const CHAPTER_ONE_REEL_COPY: Record<
       'When water reached Adab, Umma, Larsa, and Lagash, the cities did not remain silent. Each place seemed to wake with its own spirit. The canals brought grain and trade, but they also brought identity. A city was more than walls. It was memory, labor, ritual, accent, and pride. In the story, these powers appeared as goddesses of the earth, each tied to a place that now had a voice. Enki saw that his work was multiplying beyond him. Water did not make one world. It made many worlds connected.',
   },
   15: {
-    logline:
-      `Erech becomes a garden city where Uttu's gifts of wool, fruit, and ordered growth flourish.`,
-    narration:
-      `Around Erech, the cultivated land stretched for miles in every direction. Orchards lifted fruit into the heat. Gardens crowded the canals. Wool moved from flock to spindle to loom under Uttu's care. This was abundance with discipline inside it. Every row of vegetables meant planning. Every woven cloth meant hands repeating skill until the work became beautiful. Enki had brought water, but people had turned water into livelihood. Erech stood as proof that civilization is not only founded once. It is remade each day by work.`,
+    logline: `Erech becomes a garden city where Uttu's gifts of wool, fruit, and ordered growth flourish.`,
+    narration: `Around Erech, the cultivated land stretched for miles in every direction. Orchards lifted fruit into the heat. Gardens crowded the canals. Wool moved from flock to spindle to loom under Uttu's care. This was abundance with discipline inside it. Every row of vegetables meant planning. Every woven cloth meant hands repeating skill until the work became beautiful. Enki had brought water, but people had turned water into livelihood. Erech stood as proof that civilization is not only founded once. It is remade each day by work.`,
   },
   16: {
     logline:
@@ -383,14 +434,12 @@ const CHAPTER_ONE_REEL_COPY: Record<
   17: {
     logline:
       'Enki builds the E-Absu, a temple of water, silver, lapis, reeds, and living abundance.',
-    narration:
-      `When Enki raised the E-Absu, he did not build a dry monument above the world. He built a house that remembered the deep. Silver flashed like running water. Lapis held the blue of hidden springs. Reeds moved around it, and carp stirred below. The temple seemed to float between earth and Absu, between craft and miracle. People could see in its walls the pattern of Enki's work: bring what is hidden into form, make beauty useful, and let the sacred flow through the daily life of the city.`,
+    narration: `When Enki raised the E-Absu, he did not build a dry monument above the world. He built a house that remembered the deep. Silver flashed like running water. Lapis held the blue of hidden springs. Reeds moved around it, and carp stirred below. The temple seemed to float between earth and Absu, between craft and miracle. People could see in its walls the pattern of Enki's work: bring what is hidden into form, make beauty useful, and let the sacred flow through the daily life of the city.`,
   },
   18: {
     logline:
       'An speaks over the first waters and remembers the divine family born from separation, land, and sea.',
-    narration:
-      `At the end of the chapter, the voice of An reaches farther back than Dilmun, canals, or cities. He remembers the first waters before boundaries, before land had lifted from sea, before the children of the gods had taken their places. Creation was separation, but also relationship. Sky, earth, water, and life found their forms by moving apart and remaining connected. Enki's journey now belongs inside that older memory. The voyage to Dilmun was one chapter in a much larger beginning, where family, world, and civilization rose together.`,
+    narration: `At the end of the chapter, the voice of An reaches farther back than Dilmun, canals, or cities. He remembers the first waters before boundaries, before land had lifted from sea, before the children of the gods had taken their places. Creation was separation, but also relationship. Sky, earth, water, and life found their forms by moving apart and remaining connected. Enki's journey now belongs inside that older memory. The voyage to Dilmun was one chapter in a much larger beginning, where family, world, and civilization rose together.`,
   },
 };
 
@@ -453,6 +502,13 @@ function buildReelEpisode(summary: ChapterReelSummary): ReelEpisode {
       'Keep names visually reinforced with consistent wardrobe, symbols, and locations.',
       'Avoid gore, modern objects, and dense exposition; privilege one emotional turn.',
     ],
+    exportMetadata: {
+      facebookCaption: `${summary.title}: ${summary.hook}`,
+      xPost: `${summary.title}. ${summary.hook}`,
+      tiktokCaption: `${summary.hook} #Sumer #Mythology #Storytelling`,
+      youtubeShortsTitle: `${summary.title} | Blessings of Sumer`,
+      tags: ['Sumer', 'Mythology', 'Ancient History', summary.title],
+    },
   };
 }
 

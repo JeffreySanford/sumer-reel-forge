@@ -173,6 +173,11 @@ button {
   font-weight: 800;
 }
 
+.workflow-bar button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
 .workflow-bar .primary-action {
   background: #174848;
   color: #f8e8b0;
@@ -209,18 +214,6 @@ button {
 
 .panel-heading.compact {
   align-items: flex-start;
-}
-
-.logline {
-  color: #174848;
-  font-size: 1.16rem;
-  font-weight: 800;
-}
-
-.narration {
-  color: #3c362d;
-  font-size: 1.02rem;
-  line-height: 1.7;
 }
 
 .phone-preview {
@@ -297,6 +290,57 @@ button {
 
 .prompt-panel p:last-child {
   line-height: 1.6;
+}
+
+label,
+.field-stack,
+.caption-editor {
+  display: grid;
+  gap: 8px;
+}
+
+label + label {
+  margin-top: 14px;
+}
+
+label span {
+  color: #50483b;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+textarea,
+input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #c6b895;
+  border-radius: 8px;
+  background: #fffdf8;
+  color: #1b1a17;
+  font: inherit;
+  line-height: 1.5;
+  padding: 10px 12px;
+}
+
+textarea {
+  min-height: 88px;
+  resize: vertical;
+}
+
+textarea:focus,
+input:focus {
+  border-color: #1f6967;
+  outline: 3px solid rgba(31, 105, 103, 0.16);
+}
+
+.caption-editor label {
+  grid-template-columns: 60px minmax(0, 1fr);
+  align-items: center;
+}
+
+.export-panel textarea {
+  min-height: 74px;
 }
 
 ul {

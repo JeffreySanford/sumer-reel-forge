@@ -74,5 +74,7 @@ Current implementation status:
 - [x] API exposes stale render-job query groundwork.
 - [x] API exposes status transition endpoint groundwork.
 - [x] `start:all` has local process cleanup for dev server listeners.
-- [ ] Scheduled watchdog execution is not implemented yet.
-- [ ] Worker heartbeat loop is not implemented yet.
+- [x] Command-driven watchdog script is available through `pnpm render:watchdog`.
+- [x] Worker heartbeat loop scaffold is available through `pnpm renderer:worker`.
+- [ ] OS-level scheduled watchdog service is not installed yet.
+- [ ] Real renderer process supervision is not implemented yet.

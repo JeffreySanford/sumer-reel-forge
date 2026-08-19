@@ -41,9 +41,18 @@ Long-running render and model jobs should store:
 - `heartbeat_at`
 - `status`
 - `attempt_count`
+- `worker_id`
 - `input_hash`
 - `stdout_log_path`
 - `stderr_log_path`
 - `output_asset_id`
 
 A watchdog should mark jobs stale when `heartbeat_at` exceeds the allowed threshold for that job type.
+
+Current scaffold:
+
+- [x] Render jobs persist `started_at`, `finished_at`, `heartbeat_at`, `attempt_count`, and `worker_id`.
+- [x] `pnpm renderer:worker` claims queued jobs and sends heartbeat/status updates through the API.
+- [x] `pnpm render:watchdog` marks stale queued/running jobs as failed through the API.
+- [x] Generated asset manifests persist URI, type, checksum, metadata, and render-job linkage.
+- [ ] Renderer adapters for ComfyUI, TTS, Whisper, and FFmpeg are not implemented yet.

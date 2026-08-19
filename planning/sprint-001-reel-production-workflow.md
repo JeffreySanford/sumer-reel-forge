@@ -17,24 +17,38 @@ Turn the current review/orchestration slice into a usable production workflow fo
 
 ## Planned Work
 
-- [ ] Add editable episode production fields for narration, shot list, visual prompts, caption text, and export metadata.
-- [ ] Add API endpoints and DTO validation for saving reel production edits.
-- [ ] Add optimistic UI state and error handling for save/edit flows.
-- [ ] Add Storybook stories for the reel workflow states: loading, empty, populated, save error, render queued.
-- [ ] Add Playwright coverage for selecting a reel, editing production fields, copying prompts, and queueing a render job.
-- [ ] Add request ids and structured logs to API requests and mutating actions.
-- [ ] Add a scheduled or command-driven watchdog that transitions stale render jobs and writes audit rows.
-- [ ] Add renderer-worker project scaffold with no-op job claiming, heartbeat updates, and graceful shutdown.
-- [ ] Add asset manifest persistence for generated images, audio, captions, and final video files.
-- [ ] Document local renderer prerequisites for ComfyUI, TTS, Whisper, and FFmpeg.
+- [x] Add editable episode production fields for narration, shot list, visual prompts, caption text, and export metadata.
+- [x] Add API endpoints and DTO validation for saving reel production edits.
+- [x] Add optimistic UI state and error handling for save/edit flows.
+- [x] Add Storybook stories for the reel workflow states: loading, empty, populated, save error, render queued.
+- [x] Add Playwright coverage for selecting a reel, editing production fields, copying prompts, and queueing a render job.
+- [x] Add request ids and structured logs to API requests and mutating actions.
+- [x] Add a scheduled or command-driven watchdog that transitions stale render jobs and writes audit rows.
+- [x] Add renderer-worker script scaffold with no-op job claiming, heartbeat updates, and graceful shutdown.
+- [x] Add asset manifest persistence for generated images, audio, captions, and final video files.
+- [x] Document local renderer prerequisites for ComfyUI, TTS, Whisper, and FFmpeg.
+
+## Implementation Status
+
+- [x] Editable production draft UI is implemented for narration, prompts, captions, audio direction, platform notes, and export metadata.
+- [x] Save/edit API endpoint is implemented with nested DTO validation.
+- [x] Storybook includes populated, empty, save-error, render-queued, and loading-fixture stories.
+- [x] Playwright includes edit, copy, save, and queue coverage with mocked API routes.
+- [x] API request IDs are generated, returned, logged, and passed into audit rows for mutating actions.
+- [x] Command-driven stale-job watchdog endpoint and script are implemented.
+- [x] Renderer worker scaffold claims jobs, sends heartbeats, creates a manifest asset, and completes/fails jobs.
+- [x] Asset manifest persistence is implemented.
+- [x] Local renderer prerequisite documentation is started.
+- [ ] Real media generation adapters are pending.
+- [ ] OS-level watchdog scheduling is pending.
 
 ## Acceptance Criteria
 
-- [ ] `pnpm quality` passes.
-- [ ] `pnpm e2e:api` passes.
-- [ ] `pnpm storybook:build` passes.
-- [ ] `pnpm e2e` passes.
+- [x] `pnpm quality` passes.
+- [x] `pnpm e2e:api` passes.
+- [x] `pnpm storybook:build` passes.
+- [x] `pnpm e2e` passes.
 - [ ] CI passes on `master`.
-- [ ] A user can edit and save the first reel's production fields.
-- [ ] A user can queue a render job from the first reel workflow screen.
-- [ ] Stale render jobs can be detected without manually querying the database.
+- [x] A user can edit and save the first reel's production fields.
+- [x] A user can queue a render job from the first reel workflow screen.
+- [x] Stale render jobs can be detected without manually querying the database.

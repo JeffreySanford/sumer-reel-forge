@@ -36,6 +36,18 @@ pnpm start:all
 
 `start:all` starts Postgres through Docker Compose and starts the Angular/Nest dev servers on ports 4200 and 3000. It fails fast if dependencies are missing or stale; run `pnpm install` yourself before retrying.
 
+Run the scaffold renderer worker after the API is running:
+
+```sh
+pnpm renderer:worker -- --once
+```
+
+Run the stale-job watchdog once:
+
+```sh
+pnpm render:watchdog -- --once
+```
+
 Useful API routes:
 
 ```txt
@@ -45,6 +57,10 @@ GET  http://localhost:3000/api/docs-json
 GET  http://localhost:3000/api/chapters/1/reels
 GET  http://localhost:3000/api/chapters/1/reels/1
 POST http://localhost:3000/api/render-jobs
+POST http://localhost:3000/api/render-jobs/claim
+PATCH http://localhost:3000/api/render-jobs/{jobId}/heartbeat
+POST http://localhost:3000/api/render-jobs/watchdog/stale
+POST http://localhost:3000/api/generated-assets
 ```
 
 Example render-job payload:

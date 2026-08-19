@@ -32,6 +32,10 @@ export default defineConfig({
   /* Run your local dev server before starting the tests */
   webServer: {
     command: 'pnpm nx serve web --port=4200',
+    env: {
+      ...process.env,
+      PORT: '4200',
+    },
     url: 'http://localhost:4200',
     reuseExistingServer: true,
     cwd: workspaceRoot,

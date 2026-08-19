@@ -33,38 +33,39 @@ model SourceDocument {
 }
 
 model Chapter {
-  id             String         @id @default(uuid()) @db.Uuid
-  sourceDocumentId String       @map("source_document_id") @db.Uuid
-  chapterNumber Int            @map("chapter_number")
-  title          String
-  synopsis       String?
-  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt      DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
-  document       SourceDocument @relation(fields: [sourceDocumentId], references: [id], onDelete: Cascade)
-  reels          Reel[]
+  id               String         @id @default(uuid()) @db.Uuid
+  sourceDocumentId String         @map("source_document_id") @db.Uuid
+  chapterNumber    Int            @map("chapter_number")
+  title            String
+  synopsis         String?
+  createdAt        DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+  document         SourceDocument @relation(fields: [sourceDocumentId], references: [id], onDelete: Cascade)
+  reels            Reel[]
 
   @@unique([sourceDocumentId, chapterNumber])
   @@map("chapters")
 }
 
 model Reel {
-  id                    String       @id @default(uuid()) @db.Uuid
-  chapterId             String       @map("chapter_id") @db.Uuid
-  episodeNumber         Int          @map("episode_number")
+  id                    String      @id @default(uuid()) @db.Uuid
+  chapterId             String      @map("chapter_id") @db.Uuid
+  episodeNumber         Int         @map("episode_number")
   title                 String
-  sourceSection         String       @map("source_section")
+  sourceSection         String      @map("source_section")
   hook                  String
-  visualCore            String       @map("visual_core")
+  visualCore            String      @map("visual_core")
   logline               String?
   narration             String?
-  targetDurationSeconds Int          @default(60) @map("target_duration_seconds")
-  musicDirection        String?      @map("music_direction")
-  voiceDirection        String?      @map("voice_direction")
-  platformNotes         String[]     @default([]) @map("platform_notes")
-  onScreenText          Json         @default("[]") @map("on_screen_text")
-  createdAt             DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt             DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
-  chapter               Chapter      @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  targetDurationSeconds Int         @default(60) @map("target_duration_seconds")
+  musicDirection        String?     @map("music_direction")
+  voiceDirection        String?     @map("voice_direction")
+  platformNotes         String[]    @default([]) @map("platform_notes")
+  onScreenText          Json        @default("[]") @map("on_screen_text")
+  exportMetadata        Json        @default("{}") @map("export_metadata")
+  createdAt             DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+  chapter               Chapter     @relation(fields: [chapterId], references: [id], onDelete: Cascade)
   shots                 ReelShot[]
   renderJobs            RenderJob[]
 
@@ -82,6 +83,7 @@ model ReelShot {
   motion          String
   prompt          String
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   reel            Reel     @relation(fields: [reelId], references: [id], onDelete: Cascade)
 
   @@unique([reelId, shotNumber])
@@ -89,29 +91,35 @@ model ReelShot {
 }
 
 model GeneratedAsset {
-  id         String   @id @default(uuid()) @db.Uuid
-  renderJobId String? @map("render_job_id") @db.Uuid
-  assetType  String   @map("asset_type")
-  uri        String
-  checksum   String?
-  metadata   Json     @default("{}")
-  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  id          String     @id @default(uuid()) @db.Uuid
+  renderJobId String?    @map("render_job_id") @db.Uuid
+  assetType   String     @map("asset_type")
+  uri         String
+  checksum    String?
+  metadata    Json       @default("{}")
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  renderJob   RenderJob? @relation(fields: [renderJobId], references: [id], onDelete: SetNull)
 
   @@map("generated_assets")
 }
 
 model RenderJob {
-  id          String          @id @default(uuid()) @db.Uuid
-  reelId      String          @map("reel_id") @db.Uuid
-  episodeId   Int             @map("episode_id")
-  mode        RenderJobMode
-  status      RenderJobStatus @default(QUEUED)
-  voice       String?
-  notes       String?
-  heartbeatAt DateTime?       @map("heartbeat_at") @db.Timestamptz(6)
-  createdAt   DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
-  reel        Reel            @relation(fields: [reelId], references: [id], onDelete: Cascade)
+  id           String           @id @default(uuid()) @db.Uuid
+  reelId       String           @map("reel_id") @db.Uuid
+  episodeId    Int              @map("episode_id")
+  mode         RenderJobMode
+  status       RenderJobStatus  @default(QUEUED)
+  voice        String?
+  notes        String?
+  workerId     String?          @map("worker_id")
+  attemptCount Int              @default(0) @map("attempt_count")
+  startedAt    DateTime?        @map("started_at") @db.Timestamptz(6)
+  finishedAt   DateTime?        @map("finished_at") @db.Timestamptz(6)
+  heartbeatAt  DateTime?        @map("heartbeat_at") @db.Timestamptz(6)
+  createdAt    DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+  reel         Reel             @relation(fields: [reelId], references: [id], onDelete: Cascade)
+  assets       GeneratedAsset[]
 
   @@index([status, heartbeatAt])
   @@map("render_jobs")

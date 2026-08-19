@@ -1,8 +1,9 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaService } from './prisma.service';
 import { PrismaReelRepository, REEL_REPOSITORY } from './reel.repository';
+import { RequestLoggingMiddleware } from './request-logging.middleware';
 
 @Module({
   imports: [],
@@ -16,4 +17,8 @@ import { PrismaReelRepository, REEL_REPOSITORY } from './reel.repository';
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer.apply(RequestLoggingMiddleware).forRoutes(AppController);
+  }
+}

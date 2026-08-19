@@ -42,7 +42,11 @@
 
     <section class="workflow-bar" aria-label="Reel workflow actions">
       <button type="button" (click)="copyPrompt()">Copy prompt</button>
+      <button type="button" (click)="copyAllPrompts()">Copy all prompts</button>
       <button type="button" (click)="exportEpisode()">Export episode</button>
+      <button type="button" (click)="saveProduction()" [disabled]="isSaving()">
+        {{ isSaving() ? 'Saving...' : 'Save edits' }}
+      </button>
       <button type="button" class="primary-action" (click)="queueRenderJob()">
         Queue storyboard
       </button>
@@ -52,8 +56,22 @@
     <section class="review-grid">
       <article class="panel script-panel">
         <p class="eyebrow">Narration</p>
-        <p class="logline">{{ selectedEpisode().logline }}</p>
-        <p class="narration">{{ selectedEpisode().narration }}</p>
+        <label>
+          <span>Logline</span>
+          <textarea
+            rows="3"
+            [value]="productionDraft().logline"
+            (input)="updateDraftText('logline', $event)"
+          ></textarea>
+        </label>
+        <label>
+          <span>Narration</span>
+          <textarea
+            rows="12"
+            [value]="productionDraft().narration"
+            (input)="updateDraftText('narration', $event)"
+          ></textarea>
+        </label>
       </article>
 
       <article class="panel phone-preview" aria-label="Vertical reel preview">
@@ -63,7 +81,7 @@
             <strong>{{ selectedShot().visual }}</strong>
           </div>
           <div class="caption-stack">
-            @for (caption of selectedEpisode().onScreenText; track caption.time)
+            @for (caption of productionDraft().onScreenText; track caption.time)
             {
             <p>{{ caption.text }}</p>
             }
@@ -75,12 +93,12 @@
         <div class="panel-heading">
           <div>
             <p class="eyebrow">Shot List</p>
-            <h3>{{ selectedEpisode().shots.length }} cinematic beats</h3>
+            <h3>{{ productionDraft().shots.length }} cinematic beats</h3>
           </div>
         </div>
 
         <div class="shot-list">
-          @for (shot of selectedEpisode().shots; track shot.time; let index =
+          @for (shot of productionDraft().shots; track shot.time; let index =
           $index) {
           <button
             type="button"
@@ -103,22 +121,115 @@
           <p class="eyebrow">Image Prompt</p>
           <button type="button" (click)="copyPrompt()">Copy</button>
         </div>
-        <p>{{ selectedShot().prompt }}</p>
+        <label>
+          <span>Selected shot prompt</span>
+          <textarea
+            rows="7"
+            [value]="selectedShot().prompt"
+            (input)="updateShot(selectedShotIndex(), 'prompt', $event)"
+          ></textarea>
+        </label>
       </article>
 
       <article class="panel">
         <p class="eyebrow">Audio Direction</p>
-        <p>{{ selectedEpisode().voiceDirection }}</p>
-        <p>{{ selectedEpisode().musicDirection }}</p>
+        <label>
+          <span>Voice</span>
+          <textarea
+            rows="4"
+            [value]="productionDraft().voiceDirection"
+            (input)="updateDraftText('voiceDirection', $event)"
+          ></textarea>
+        </label>
+        <label>
+          <span>Music</span>
+          <textarea
+            rows="4"
+            [value]="productionDraft().musicDirection"
+            (input)="updateDraftText('musicDirection', $event)"
+          ></textarea>
+        </label>
       </article>
 
       <article class="panel">
         <p class="eyebrow">Platform Notes</p>
-        <ul>
-          @for (note of selectedEpisode().platformNotes; track note) {
-          <li>{{ note }}</li>
+        <div class="field-stack">
+          @for (note of productionDraft().platformNotes; track $index; let index
+          = $index) {
+          <label>
+            <span>Note {{ index + 1 }}</span>
+            <textarea
+              rows="3"
+              [value]="note"
+              (input)="updatePlatformNote(index, $event)"
+            ></textarea>
+          </label>
           }
-        </ul>
+        </div>
+      </article>
+    </section>
+
+    <section class="details-grid">
+      <article class="panel">
+        <p class="eyebrow">Captions</p>
+        <div class="caption-editor">
+          @for (caption of productionDraft().onScreenText; track $index; let
+          index = $index) {
+          <label>
+            <span>{{ caption.time }}</span>
+            <input
+              [value]="caption.text"
+              (input)="updateCaption(index, 'text', $event)"
+            />
+          </label>
+          }
+        </div>
+      </article>
+
+      <article class="panel export-panel">
+        <p class="eyebrow">Export Metadata</p>
+        <label>
+          <span>Facebook</span>
+          <textarea
+            rows="3"
+            [value]="productionDraft().exportMetadata.facebookCaption"
+            (input)="updateExportMetadata('facebookCaption', $event)"
+          ></textarea>
+        </label>
+        <label>
+          <span>X</span>
+          <textarea
+            rows="2"
+            [value]="productionDraft().exportMetadata.xPost"
+            (input)="updateExportMetadata('xPost', $event)"
+          ></textarea>
+        </label>
+      </article>
+
+      <article class="panel export-panel">
+        <p class="eyebrow">Shorts Metadata</p>
+        <label>
+          <span>TikTok</span>
+          <textarea
+            rows="3"
+            [value]="productionDraft().exportMetadata.tiktokCaption"
+            (input)="updateExportMetadata('tiktokCaption', $event)"
+          ></textarea>
+        </label>
+        <label>
+          <span>YouTube title</span>
+          <input
+            [value]="productionDraft().exportMetadata.youtubeShortsTitle"
+            (input)="updateExportMetadata('youtubeShortsTitle', $event)"
+          />
+        </label>
+        <label>
+          <span>Tags</span>
+          <input
+            [value]="productionDraft().exportMetadata.tags.join(', ')"
+            (input)="updateExportTags($event)"
+          />
+        </label>
       </article>
     </section>
   </section>

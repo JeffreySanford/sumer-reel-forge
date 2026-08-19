@@ -49,10 +49,91 @@ describe('App', () => {
       musicDirection: 'Low frame drum.',
       voiceDirection: 'Calm mythic narrator.',
       platformNotes: ['Keep captions centered.'],
+      exportMetadata: {
+        facebookCaption: 'Facebook caption.',
+        xPost: 'X post.',
+        tiktokCaption: 'TikTok caption.',
+        youtubeShortsTitle: 'Shorts title',
+        tags: ['Sumer'],
+      },
     });
     fixture.detectChanges();
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.textContent).toContain('The Voyage Begins');
+  });
+
+  it('saves production edits', async () => {
+    const fixture = TestBed.createComponent(App);
+    httpTesting.expectOne('/api/chapters/1/reels').flush([]);
+    httpTesting.expectOne('/api/chapters/1/reels/1').flush({
+      series: 'Blessings of Sumer',
+      chapter: 1,
+      episode: 1,
+      title: 'The Voyage Begins',
+      targetDurationSeconds: 60,
+      sourceSection: 'The Voyage',
+      hook: 'A god crosses the sea without knowing why.',
+      visualCore: 'Stag of the Absu',
+      logline: 'Initial logline.',
+      narration: 'Initial narration.',
+      onScreenText: [{ time: '00:00', text: 'Before Sumer...' }],
+      shots: [
+        {
+          time: '00:00-00:06',
+          durationSeconds: 6,
+          visual: 'Black water before dawn.',
+          motion: 'slow push in',
+          prompt: 'cinematic ancient Mesopotamian myth',
+        },
+      ],
+      musicDirection: 'Low frame drum.',
+      voiceDirection: 'Calm mythic narrator.',
+      platformNotes: ['Keep captions centered.'],
+      exportMetadata: {
+        facebookCaption: 'Facebook caption.',
+        xPost: 'X post.',
+        tiktokCaption: 'TikTok caption.',
+        youtubeShortsTitle: 'Shorts title',
+        tags: ['Sumer'],
+      },
+    });
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const logline = compiled.querySelector('textarea');
+    if (!(logline instanceof HTMLTextAreaElement)) {
+      throw new Error('Expected editable logline textarea.');
+    }
+
+    logline.value = 'Saved logline.';
+    logline.dispatchEvent(new Event('input'));
+    compiled
+      .querySelectorAll('button')
+      .forEach((button) =>
+        button.textContent?.includes('Save edits') ? button.click() : undefined,
+      );
+
+    const saveRequest = httpTesting.expectOne(
+      '/api/chapters/1/reels/1/production',
+    );
+    expect(saveRequest.request.method).toBe('PATCH');
+    expect(saveRequest.request.body.logline).toBe('Saved logline.');
+    saveRequest.flush({
+      ...saveRequest.request.body,
+      series: 'Blessings of Sumer',
+      chapter: 1,
+      episode: 1,
+      title: 'The Voyage Begins',
+      targetDurationSeconds: 60,
+      sourceSection: 'The Voyage',
+      hook: 'A god crosses the sea without knowing why.',
+      visualCore: 'Stag of the Absu',
+    });
+
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(compiled.textContent).toContain('Production saved');
   });
 });

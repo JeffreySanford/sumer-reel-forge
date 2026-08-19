@@ -6,11 +6,13 @@ import {
   type ChapterReelSummary,
   type ReelEpisode,
   type RenderJob,
+  type UpdateReelProductionRequest,
   type components,
 } from '@sumer-reel-forge/reel-core';
 import { catchError, of } from 'rxjs';
 
 type CreateRenderJobDto = components['schemas']['CreateRenderJobDto'];
+type UpdateReelProductionDto = components['schemas']['UpdateReelProductionDto'];
 
 @Injectable({ providedIn: 'root' })
 export class ReelApiService {
@@ -34,5 +36,15 @@ export class ReelApiService {
 
   queueRenderJob(request: CreateRenderJobDto) {
     return this.http.post<RenderJob>('/api/render-jobs', request);
+  }
+
+  saveEpisodeProduction(
+    episodeId: number,
+    request: UpdateReelProductionRequest,
+  ) {
+    return this.http.patch<ReelEpisode>(
+      `/api/chapters/1/reels/${episodeId}/production`,
+      request as UpdateReelProductionDto,
+    );
   }
 }

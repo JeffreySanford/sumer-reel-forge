@@ -81,6 +81,7 @@ async function main(): Promise<void> {
         voiceDirection: reel.voiceDirection,
         platformNotes: reel.platformNotes,
         onScreenText: toPrismaJson(reel.onScreenText),
+        exportMetadata: toPrismaJson(reel.exportMetadata),
       },
       create: {
         chapterId: chapter.id,
@@ -96,6 +97,7 @@ async function main(): Promise<void> {
         voiceDirection: reel.voiceDirection,
         platformNotes: reel.platformNotes,
         onScreenText: toPrismaJson(reel.onScreenText),
+        exportMetadata: toPrismaJson(reel.exportMetadata),
       },
     });
 
