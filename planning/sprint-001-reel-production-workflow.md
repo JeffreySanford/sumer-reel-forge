@@ -48,7 +48,7 @@ Turn the current review/orchestration slice into a usable production workflow fo
 - [x] `pnpm e2e:api` passes.
 - [x] `pnpm storybook:build` passes.
 - [x] `pnpm e2e` passes.
-- [ ] CI passes on `master`.
+- [x] CI passes on `master`.
 - [x] A user can edit and save the first reel's production fields.
 - [x] A user can queue a render job from the first reel workflow screen.
 - [x] Stale render jobs can be detected without manually querying the database.
