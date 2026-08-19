@@ -1,15 +1,35 @@
 services:
+  postgres:
+    image: postgres:17-bookworm
+    environment:
+      POSTGRES_DB: sumer_reel_forge
+      POSTGRES_PASSWORD: sumer_reel_forge
+      POSTGRES_USER: sumer_reel_forge
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U sumer_reel_forge -d sumer_reel_forge']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
   api:
     image: node:22-bookworm
     working_dir: /workspace
     command: sh -c "corepack enable && pnpm install && pnpm nx serve api --host 0.0.0.0"
     environment:
+      DATABASE_URL: postgresql://sumer_reel_forge:sumer_reel_forge@postgres:5432/sumer_reel_forge
       PORT: 3000
       WEB_ORIGIN: http://localhost:4200
     ports:
       - '3000:3000'
     volumes:
       - .:/workspace
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   web:
     image: node:22-bookworm
@@ -21,3 +41,6 @@ services:
       - .:/workspace
     depends_on:
       - api
+
+volumes:
+  postgres-data:

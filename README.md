@@ -32,6 +32,8 @@ Useful API routes:
 
 ```txt
 GET  http://localhost:3000/api/health
+GET  http://localhost:3000/api/docs
+GET  http://localhost:3000/api/docs-json
 GET  http://localhost:3000/api/chapters/1/reels
 GET  http://localhost:3000/api/chapters/1/reels/1
 POST http://localhost:3000/api/render-jobs
@@ -49,18 +51,34 @@ Example render-job payload:
 
 ## Docker
 
-The compose file is a development convenience for the Angular and Nest apps:
+Start Postgres:
 
 ```sh
-docker compose up
+pnpm docker:dev
+```
+
+Open a database shell:
+
+```sh
+pnpm db:psql
 ```
 
 The rendering stack is not wired yet. The intended next services are ComfyUI, local TTS, Whisper, and an FFmpeg renderer.
 
+## Documentation
+
+- Studio docs: `docs/studio`
+- Blessings of Sumer docs: `docs/projects/blessings-of-sumer`
+- Agile planning: `planning`
+- Initial database schema: `db/schema.sql`
+
 ## Quality Gates
 
 ```sh
+pnpm format
 pnpm lint
 pnpm test
 pnpm build
+pnpm e2e
+pnpm storybook:build
 ```

@@ -68,6 +68,28 @@
         "watch": false
       }
     },
+    "storybook": {
+      "continuous": true,
+      "executor": "@storybook/angular:start-storybook",
+      "options": {
+        "browserTarget": "web:build",
+        "compodoc": false,
+        "configDir": "apps/web/.storybook",
+        "host": "localhost",
+        "open": false,
+        "port": 4400
+      }
+    },
+    "build-storybook": {
+      "executor": "@storybook/angular:build-storybook",
+      "outputs": ["{options.outputDir}"],
+      "options": {
+        "browserTarget": "web:build",
+        "compodoc": false,
+        "configDir": "apps/web/.storybook",
+        "outputDir": "dist/storybook/web"
+      }
+    },
     "serve-static": {
       "continuous": true,
       "executor": "@nx/web:file-server",
