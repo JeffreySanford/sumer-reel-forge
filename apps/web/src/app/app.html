@@ -1,0 +1,114 @@
+<main class="app-shell">
+  <aside class="sidebar" aria-label="Chapter one reel outline">
+    <div class="brand">
+      <span class="mark">SRF</span>
+      <div>
+        <p class="eyebrow">Blessings of Sumer</p>
+        <h1>Reel Forge</h1>
+      </div>
+    </div>
+
+    <nav class="episode-list">
+      @for (episode of outline; track episode.episode) {
+      <button
+        type="button"
+        class="episode-button"
+        [class.active]="episode.episode === selectedEpisode().episode"
+        [disabled]="episode.episode !== selectedEpisode().episode"
+      >
+        <span>{{ episode.episode }}</span>
+        <strong>{{ episode.title }}</strong>
+        <small>{{ episode.sourceSection }}</small>
+      </button>
+      }
+    </nav>
+  </aside>
+
+  <section class="workspace">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">
+          Chapter {{ selectedEpisode().chapter }} / Episode {{
+          selectedEpisode().episode }}
+        </p>
+        <h2>{{ selectedEpisode().title }}</h2>
+      </div>
+      <div class="runtime">
+        <span>{{ selectedEpisode().targetDurationSeconds }}s target</span>
+        <span>{{ totalShotSeconds() }}s shots</span>
+      </div>
+    </header>
+
+    <section class="review-grid">
+      <article class="panel script-panel">
+        <p class="eyebrow">Narration</p>
+        <p class="logline">{{ selectedEpisode().logline }}</p>
+        <p class="narration">{{ selectedEpisode().narration }}</p>
+      </article>
+
+      <article class="panel phone-preview" aria-label="Vertical reel preview">
+        <div class="phone-frame">
+          <div class="preview-art">
+            <span>{{ selectedShot().time }}</span>
+            <strong>{{ selectedShot().visual }}</strong>
+          </div>
+          <div class="caption-stack">
+            @for (caption of selectedEpisode().onScreenText; track caption.time)
+            {
+            <p>{{ caption.text }}</p>
+            }
+          </div>
+        </div>
+      </article>
+
+      <article class="panel shot-panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Shot List</p>
+            <h3>{{ selectedEpisode().shots.length }} cinematic beats</h3>
+          </div>
+        </div>
+
+        <div class="shot-list">
+          @for (shot of selectedEpisode().shots; track shot.time; let index =
+          $index) {
+          <button
+            type="button"
+            class="shot-button"
+            [class.active]="index === selectedShotIndex()"
+            (click)="selectShot(index)"
+          >
+            <span>{{ shot.time }}</span>
+            <strong>{{ shot.visual }}</strong>
+            <small>{{ shot.motion }}</small>
+          </button>
+          }
+        </div>
+      </article>
+    </section>
+
+    <section class="details-grid">
+      <article class="panel prompt-panel">
+        <p class="eyebrow">Image Prompt</p>
+        <p>{{ selectedShot().prompt }}</p>
+      </article>
+
+      <article class="panel">
+        <p class="eyebrow">Audio Direction</p>
+        <p>{{ selectedEpisode().voiceDirection }}</p>
+        <p>{{ selectedEpisode().musicDirection }}</p>
+      </article>
+
+      <article class="panel">
+        <p class="eyebrow">Platform Notes</p>
+        <ul>
+          @for (note of selectedEpisode().platformNotes; track note) {
+          <li>{{ note }}</li>
+          }
+        </ul>
+      </article>
+    </section>
+  </section>
+</main>
+
+<router-outlet></router-outlet>
