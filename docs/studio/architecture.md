@@ -24,7 +24,14 @@ NestJS API / orchestration layer
 
 ## Persistence
 
-The first schema draft lives in `db/schema.sql`. It is intentionally SQL-first until the ORM/migration choice is made. The expected next implementation step is to introduce a typed persistence layer and migrations, then replace in-memory render jobs with database-backed records.
+PostgreSQL is the durable store and Prisma owns migrations, generated persistence types, and the API database client. The SQL draft remains in `db/schema.sql` as a human-readable baseline, while `prisma/schema.prisma` is the executable schema for local development.
+
+Primary commands:
+
+- `pnpm db:generate` generates Prisma Client.
+- `pnpm db:migrate` applies local migrations to the configured `DATABASE_URL`.
+- `pnpm db:seed:chapter1` persists the Chapter 1 reel plan and writes an audit row.
+- `pnpm db:psql` opens a psql shell inside the Docker database container.
 
 ## Process Safety
 

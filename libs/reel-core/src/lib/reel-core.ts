@@ -286,4 +286,177 @@ export const REEL_ONE: ReelEpisode = {
   ],
 };
 
-export const CHAPTER_ONE_REELS: ReelEpisode[] = [REEL_ONE];
+const CHAPTER_ONE_REEL_COPY: Record<
+  number,
+  Pick<ReelEpisode, 'logline' | 'narration'>
+> = {
+  2: {
+    logline:
+      'Nammu rises through the dark water and names the work Enki must carry into Dilmun.',
+    narration:
+      'The sea grew quiet around Enki, and the oars seemed to pause in his hands. Beneath the Stag of the Absu, a light moved under the black water. It was Nammu, mother of the first waters, speaking from the deep. She did not offer him conquest. She gave him duties. Establish sweet water where the land is dry. Raise houses of rest along the roads. Feed the stranger. Protect the foolish from the strong and the wise from their pride. Enki listened as if the waves themselves had become law. By dawn, his wandering had become a command.',
+  },
+  3: {
+    logline:
+      'Enki imagines the first covenant of civilization: no traveler should be left thirsty, hungry, or unprotected.',
+    narration:
+      'Before there were walls, thrones, or tablets, Enki pictured a simpler measure of justice. A person walking the long road should find water. A hungry traveler should smell bread from an oven. A tired body should have a clean basin and a safe place to sleep. This was not glory. It was order made merciful. Nammu had told him that truth, justice, and freedom begin in ordinary needs. So Enki carried the idea toward Dilmun: a land where no one would have to say, I am thirsty, and no one would have to say, I am hungry.',
+  },
+  4: {
+    logline:
+      'Dilmun appears through mist as an island of promise, still waiting for the water that will complete it.',
+    narration:
+      'At last, Dilmun rose out of the haze. Reeds bent in the wind. Birds circled the marsh. The shoreline looked gentle, but Enki could feel what was missing. The land had beauty, animals, and open sky, yet its future slept beneath the ground. On the deck, Ninsikila watched the same coast with a different kind of wonder. This was not yet a city. It was a question. Could water be brought here? Could strangers become neighbors? Could a place at the edge of the sea become a home for gods and people alike?',
+  },
+  5: {
+    logline:
+      'Ninsikila meets the Martu and discovers hospitality before there are shared customs.',
+    narration:
+      'The first people waiting on the shore were not kings or priests. They were the Martu, people of tents, cattle, smoke, and open ground. Ninsikila stepped down from the boat with gifts in her hands. The Martu answered with milk, meat, and laughter around the fire. Their speech was strange to her, and her clothing was strange to them, but welcome needed no translation. Enki watched the meeting and understood that a land is not founded by command alone. It begins when people risk greeting one another before they fully understand each other.',
+  },
+  6: {
+    logline:
+      'Enki tries to step ashore with dignity and instead gives Dilmun its first shared joke.',
+    narration:
+      'Enki meant to arrive as a lord of wisdom. He lifted his robe, stepped from the boat, and sank straight into a hidden pocket of deep shoreline water. For one breath, everyone froze. Then the Martu laughed. Ninsikila laughed too, and at last Enki rose dripping from the sea with mud on his feet and salt in his beard. His first gift to Dilmun was not a law or a canal. It was humility. The people saw that even a god could misjudge the ground, and the day became warmer because of it.',
+  },
+  7: {
+    logline:
+      'A Martu story about a mountain snake teaches Enki that wisdom changes shape from people to people.',
+    narration:
+      'That night, a Martu elder told Enki of a snake on the mountain. In the city, people feared the snake as danger. In the high places, the Martu watched its movement and learned when to step aside, when to wait, and when to pass. Enki understood the lesson was not about snakes alone. Every people reads the world through the land that raised them. A canal builder, a herder, a sailor, and a queen may all know true things differently. If Dilmun was to live, it would need more than water. It would need room for many kinds of wisdom.',
+  },
+  8: {
+    logline:
+      'Enki gives Ninsikila Dilmun, only to learn that beauty without water cannot sustain a city.',
+    narration:
+      'Enki placed Dilmun before Ninsikila like a jewel. He promised her a land clean and bright, untouched by sorrow, sickness, or age. But as she walked its fields, the promise cracked. The soil waited dry. No sweet water ran through the gardens. No full wells answered the hands of the people. Ninsikila wept because she could see the city that should exist, and she could see why it did not. Enki had given her a kingdom of possibility. Now he had to give it the one thing every living place needs first.',
+  },
+  9: {
+    logline:
+      'Enki opens the deep aquifer and transforms Dilmun from symbol into living abundance.',
+    narration:
+      'Enki listened beneath the ground, past stone, salt, and silence, until he found the hidden sweet water. Then he struck the place where the deep should rise. A spring broke open. Pools filled. Channels shone in the sun. The dry fields darkened with life, and grain began to answer the wind. Ninsikila stood beside the new water and saw Dilmun change before her eyes. It was no longer only pure. It was useful. It could feed, wash, welcome, and endure. From the deep Absu, Enki had brought the city its heartbeat.',
+  },
+  10: {
+    logline:
+      'Enki and Nintu turn divine imagination into infrastructure by planning canals across the land.',
+    narration:
+      'In a reed house filled with heat and dust, Enki and Nintu bent over maps of clay. The land was not a blank space to dominate. It was a body with veins waiting to be opened. Here a canal. Here a basin. Here a crossing where workers could rest. Nintu saw the people who would carry baskets, shape banks, and plant fields. Enki saw the water finding its path. Together they dreamed in measurements, gradients, and labor. The miracle would not be a single spring. It would be a system that made abundance repeatable.',
+  },
+  11: {
+    logline:
+      `The road shrines turn Enki's command into a public network of food, washing, water, and rest.`,
+    narration:
+      `As the canals spread, Enki remembered Nammu's words about the traveler. Along the roads, shrines rose near water and shade. At one, a basin waited for dust-covered hands. At another, bread came warm from a clay oven. In Ur and Sippar, strangers learned that the land had made promises to people it had never met. The shrines were small, but their meaning was large. Power was not only in palaces. It was in the places where a lonely person could stop, drink, eat, wash, and continue safely.`,
+  },
+  12: {
+    logline:
+      'At Nippur, Enki and Enlil agree that rule must serve the land like shepherds serve a flock.',
+    narration:
+      'In Nippur, at the holy house of E.Kur, Enki met his brother Enlil. Between them lay the work of the land: canals, roads, fields, cities, and the lives now tied to them. Enlil knew command and order. Enki knew water and craft. Neither gift was enough alone. So the brothers spoke not as rivals, but as shepherds taking responsibility for a flock. The land would need boundaries and flow, judgment and mercy, strength and provision. Their agreement did not end every future conflict, but it gave civilization a shared center.',
+  },
+  13: {
+    logline:
+      'Enki enters the storm at Kutu, where the canal road touches the feared realm of death.',
+    narration:
+      'The sky blackened over Kutu. Hail struck the water like thrown stones, and the boat pitched toward the canal that guarded the land of the dead. Enki did not turn away. Some roads must be faced because every city lives beside mystery, loss, and fear. The storm roared like a gate refusing him passage. Enki held the course, not to conquer death, but to understand the boundary around life. Lightning showed the boat for a heartbeat at a time: small, stubborn, and moving forward through the dark.',
+  },
+  14: {
+    logline:
+      'As canals reach the cities, the land itself answers through the birth of local goddesses.',
+    narration:
+      'When water reached Adab, Umma, Larsa, and Lagash, the cities did not remain silent. Each place seemed to wake with its own spirit. The canals brought grain and trade, but they also brought identity. A city was more than walls. It was memory, labor, ritual, accent, and pride. In the story, these powers appeared as goddesses of the earth, each tied to a place that now had a voice. Enki saw that his work was multiplying beyond him. Water did not make one world. It made many worlds connected.',
+  },
+  15: {
+    logline:
+      `Erech becomes a garden city where Uttu's gifts of wool, fruit, and ordered growth flourish.`,
+    narration:
+      `Around Erech, the cultivated land stretched for miles in every direction. Orchards lifted fruit into the heat. Gardens crowded the canals. Wool moved from flock to spindle to loom under Uttu's care. This was abundance with discipline inside it. Every row of vegetables meant planning. Every woven cloth meant hands repeating skill until the work became beautiful. Enki had brought water, but people had turned water into livelihood. Erech stood as proof that civilization is not only founded once. It is remade each day by work.`,
+  },
+  16: {
+    logline:
+      'Enki eats the sacred plants and learns that knowledge taken without reverence can become sickness.',
+    narration:
+      'Eight plants grew where blessing had touched the land. Enki, curious and careless, consumed them one by one. The act looked small, but the cost entered his body. Pain found his jaw, his rib, his limbs, his breath. Ninhursag saw what he had done and withdrew her favor. Without her, the lord of sweet water began to fail. The lesson was sharp: not every living thing exists to be taken simply because it can be named. Healing would come, but only after Enki understood that wisdom without restraint turns against itself.',
+  },
+  17: {
+    logline:
+      'Enki builds the E-Absu, a temple of water, silver, lapis, reeds, and living abundance.',
+    narration:
+      `When Enki raised the E-Absu, he did not build a dry monument above the world. He built a house that remembered the deep. Silver flashed like running water. Lapis held the blue of hidden springs. Reeds moved around it, and carp stirred below. The temple seemed to float between earth and Absu, between craft and miracle. People could see in its walls the pattern of Enki's work: bring what is hidden into form, make beauty useful, and let the sacred flow through the daily life of the city.`,
+  },
+  18: {
+    logline:
+      'An speaks over the first waters and remembers the divine family born from separation, land, and sea.',
+    narration:
+      `At the end of the chapter, the voice of An reaches farther back than Dilmun, canals, or cities. He remembers the first waters before boundaries, before land had lifted from sea, before the children of the gods had taken their places. Creation was separation, but also relationship. Sky, earth, water, and life found their forms by moving apart and remaining connected. Enki's journey now belongs inside that older memory. The voyage to Dilmun was one chapter in a much larger beginning, where family, world, and civilization rose together.`,
+  },
+};
+
+function buildReelEpisode(summary: ChapterReelSummary): ReelEpisode {
+  const copy = CHAPTER_ONE_REEL_COPY[summary.episode];
+
+  return {
+    series: 'Blessings of Sumer',
+    chapter: 1,
+    episode: summary.episode,
+    title: summary.title,
+    targetDurationSeconds: 60,
+    sourceSection: summary.sourceSection,
+    hook: summary.hook,
+    visualCore: summary.visualCore,
+    logline: copy.logline,
+    narration: copy.narration,
+    onScreenText: [
+      { time: '00:00', text: summary.hook },
+      { time: '00:12', text: summary.sourceSection },
+      { time: '00:30', text: summary.visualCore },
+      { time: '00:52', text: summary.title },
+    ],
+    shots: [
+      {
+        time: '00:00-00:10',
+        durationSeconds: 10,
+        visual: `Opening hook image: ${summary.visualCore}.`,
+        motion: 'slow push in',
+        prompt: `cinematic ancient Sumerian myth, ${summary.visualCore}, vertical 9:16, realistic texture, no modern objects`,
+      },
+      {
+        time: '00:10-00:25',
+        durationSeconds: 15,
+        visual: `Character-focused story beat for "${summary.title}".`,
+        motion: 'gentle handheld drift',
+        prompt: `ancient Mesopotamian myth scene for ${summary.title}, expressive characters, bronze age clothing, warm natural light, vertical`,
+      },
+      {
+        time: '00:25-00:43',
+        durationSeconds: 18,
+        visual: `World-building detail from ${summary.sourceSection}.`,
+        motion: 'layered parallax',
+        prompt: `Sumerian world-building detail, ${summary.sourceSection}, reeds clay water stone textile firelight, cinematic realism, vertical`,
+      },
+      {
+        time: '00:43-01:00',
+        durationSeconds: 17,
+        visual: `Resolved final image for ${summary.hook}`,
+        motion: 'slow reveal, fade to title',
+        prompt: `final mythic poster frame, ${summary.title}, ${summary.visualCore}, sacred but grounded, vertical social reel composition`,
+      },
+    ],
+    musicDirection:
+      'Frame drum, lyre, low wind and water texture; let the final ten seconds rise without becoming bombastic.',
+    voiceDirection:
+      'Clear mythic narration with a measured documentary pace and warm authority.',
+    platformNotes: [
+      'Target a self-contained 60 second cut with captions in the center safe area.',
+      'Keep names visually reinforced with consistent wardrobe, symbols, and locations.',
+      'Avoid gore, modern objects, and dense exposition; privilege one emotional turn.',
+    ],
+  };
+}
+
+export const CHAPTER_ONE_REELS: ReelEpisode[] = [
+  REEL_ONE,
+  ...CHAPTER_ONE_SUMMARY.slice(1).map(buildReelEpisode),
+];

@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { InMemoryReelRepository, REEL_REPOSITORY } from './reel.repository';
 
 describe('AppController', () => {
   let app: TestingModule;
@@ -8,21 +9,38 @@ describe('AppController', () => {
   beforeAll(async () => {
     app = await Test.createTestingModule({
       controllers: [AppController],
-      providers: [AppService],
+      providers: [
+        AppService,
+        {
+          provide: REEL_REPOSITORY,
+          useClass: InMemoryReelRepository,
+        },
+      ],
     }).compile();
   });
 
   describe('getChapterOneSummary', () => {
-    it('returns the full chapter one reel outline', () => {
+    it('returns the full chapter one reel outline', async () => {
       const appController = app.get<AppController>(AppController);
-      expect(appController.getChapterOneSummary()).toHaveLength(18);
+      await expect(appController.getChapterOneSummary()).resolves.toHaveLength(
+        18,
+      );
     });
   });
 
   describe('getEpisode', () => {
-    it('returns the first storyboarded episode', () => {
+    it('returns the first storyboarded episode', async () => {
       const appController = app.get<AppController>(AppController);
-      expect(appController.getEpisode(1).title).toBe('The Voyage Begins');
+      await expect(appController.getEpisode(1)).resolves.toMatchObject({
+        title: 'The Voyage Begins',
+      });
+    });
+  });
+
+  describe('getStaleRenderJobs', () => {
+    it('returns stale render jobs', async () => {
+      const appController = app.get<AppController>(AppController);
+      await expect(appController.getStaleRenderJobs(0)).resolves.toEqual([]);
     });
   });
 });

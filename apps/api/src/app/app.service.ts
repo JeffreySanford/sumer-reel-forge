@@ -1,56 +1,46 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import {
-  CHAPTER_ONE_REELS,
-  CHAPTER_ONE_SUMMARY,
   type ChapterReelSummary,
   type ReelEpisode,
   type RenderJob,
 } from '@sumer-reel-forge/reel-core';
-import { CreateRenderJobDto } from './render-job.dto';
+import { REEL_REPOSITORY, type ReelRepository } from './reel.repository';
+import { CreateRenderJobDto, UpdateRenderJobStatusDto } from './render-job.dto';
 
 @Injectable()
 export class AppService {
-  private readonly jobs: RenderJob[] = [];
+  constructor(
+    @Inject(REEL_REPOSITORY) private readonly repository: ReelRepository,
+  ) {}
 
   getHealth(): { status: string; service: string } {
     return { status: 'ok', service: 'sumer-reel-forge-api' };
   }
 
-  getChapterOneSummary(): ChapterReelSummary[] {
-    return CHAPTER_ONE_SUMMARY;
+  getChapterOneSummary(): Promise<ChapterReelSummary[]> {
+    return this.repository.getChapterOneSummary();
   }
 
-  getEpisode(episodeId: number): ReelEpisode {
-    const episode = CHAPTER_ONE_REELS.find(
-      (item) => item.episode === episodeId,
-    );
-
-    if (!episode) {
-      throw new NotFoundException(
-        `Episode ${episodeId} is not storyboarded yet.`,
-      );
-    }
-
-    return episode;
+  getEpisode(episodeId: number): Promise<ReelEpisode> {
+    return this.repository.getEpisode(episodeId);
   }
 
-  createRenderJob(request: CreateRenderJobDto): RenderJob {
-    this.getEpisode(request.episodeId);
-
-    const job: RenderJob = {
-      id: crypto.randomUUID(),
-      episodeId: request.episodeId,
-      mode: request.mode,
-      status: 'queued',
-      createdAt: new Date().toISOString(),
-      notes: request.notes,
-    };
-
-    this.jobs.unshift(job);
-    return job;
+  createRenderJob(request: CreateRenderJobDto): Promise<RenderJob> {
+    return this.repository.createRenderJob(request);
   }
 
-  getRenderJobs(): RenderJob[] {
-    return this.jobs;
+  getRenderJobs(): Promise<RenderJob[]> {
+    return this.repository.getRenderJobs();
+  }
+
+  getStaleRenderJobs(maxAgeSeconds: number): Promise<RenderJob[]> {
+    return this.repository.getStaleRenderJobs(maxAgeSeconds);
+  }
+
+  updateRenderJobStatus(
+    jobId: string,
+    request: UpdateRenderJobStatusDto,
+  ): Promise<RenderJob> {
+    return this.repository.updateRenderJobStatus(jobId, request);
   }
 }

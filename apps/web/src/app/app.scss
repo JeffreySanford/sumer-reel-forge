@@ -99,6 +99,7 @@ button {
   padding: 12px;
   color: #28241e;
   text-align: left;
+  cursor: pointer;
 }
 
 .episode-button span,
@@ -124,16 +125,6 @@ button {
 .shot-button.active {
   border-color: #1f6967;
   box-shadow: inset 4px 0 0 #1f6967;
-}
-
-.episode-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.58;
-}
-
-.episode-button.active:disabled {
-  cursor: default;
-  opacity: 1;
 }
 
 .workspace {
@@ -163,6 +154,35 @@ button {
   font-weight: 700;
 }
 
+.workflow-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.workflow-bar button,
+.prompt-panel button {
+  border: 1px solid #2d5b5b;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 9px 12px;
+  color: #174848;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.workflow-bar .primary-action {
+  background: #174848;
+  color: #f8e8b0;
+}
+
+.workflow-bar span {
+  color: #4c4538;
+  font-weight: 700;
+}
+
 .review-grid {
   display: grid;
   grid-template-columns: minmax(280px, 1fr) minmax(260px, 360px) minmax(
@@ -185,6 +205,10 @@ button {
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.78);
   padding: 20px;
+}
+
+.panel-heading.compact {
+  align-items: flex-start;
 }
 
 .logline {

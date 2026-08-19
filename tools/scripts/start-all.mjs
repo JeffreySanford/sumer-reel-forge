@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, statSync } from 'node:fs';
 import net from 'node:net';
@@ -5,7 +6,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = dirname(dirname(dirname(fileURLToPath(import.meta.url))));
-const pnpmCommand = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
+const pnpmCommand = 'pnpm';
 const dockerCommand = process.platform === 'win32' ? 'docker.exe' : 'docker';
 const infrastructureServices = ['postgres'];
 const children = new Set();
@@ -14,6 +15,7 @@ function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
     cwd: root,
     encoding: 'utf8',
+    shell: options.shell ?? false,
     stdio: options.stdio ?? 'pipe',
   });
 
@@ -22,6 +24,13 @@ function run(command, args, options = {}) {
   }
 
   return result;
+}
+
+function runPnpm(args, options = {}) {
+  return run(pnpmCommand, args, {
+    ...options,
+    shell: process.platform === 'win32',
+  });
 }
 
 function fail(message, details) {
@@ -45,8 +54,12 @@ function assertInstallCurrent() {
   const installTime = statSync(modulesManifest).mtimeMs;
   const packageTime = statSync(packageJson).mtimeMs;
   const lockTime = statSync(lockfile).mtimeMs;
+  const timestampToleranceMs = 2000;
 
-  if (packageTime > installTime || lockTime > installTime) {
+  if (
+    packageTime - installTime > timestampToleranceMs ||
+    lockTime - installTime > timestampToleranceMs
+  ) {
     fail('dependencies are stale. Run `pnpm install` first.');
   }
 
@@ -140,12 +153,36 @@ function restartStaleInfrastructure() {
   }
 }
 
-function waitForPort(port, timeoutMs) {
+async function prepareDatabase() {
+  await waitForPort(5432, 60000).catch((error) =>
+    fail(`Postgres did not become reachable: ${error.message}`),
+  );
+
+  console.log('Applying database migrations...');
+  const migrate = runPnpm(['db:deploy'], {
+    stdio: 'inherit',
+  });
+
+  if (migrate.status !== 0) {
+    fail('database migration failed.');
+  }
+
+  console.log('Seeding Chapter 1 reels...');
+  const seed = runPnpm(['db:seed:chapter1'], {
+    stdio: 'inherit',
+  });
+
+  if (seed.status !== 0) {
+    fail('database seed failed.');
+  }
+}
+
+function waitForPortOnHost(port, host, timeoutMs) {
   const started = Date.now();
 
   return new Promise((resolve, reject) => {
     const attempt = () => {
-      const socket = net.connect(port, '127.0.0.1');
+      const socket = net.connect(port, host);
 
       socket.once('connect', () => {
         socket.end();
@@ -156,7 +193,11 @@ function waitForPort(port, timeoutMs) {
         socket.destroy();
 
         if (Date.now() - started > timeoutMs) {
-          reject(new Error(`port ${port} did not open within ${timeoutMs}ms`));
+          reject(
+            new Error(
+              `port ${port} did not open on ${host} within ${timeoutMs}ms`,
+            ),
+          );
           return;
         }
 
@@ -168,38 +209,73 @@ function waitForPort(port, timeoutMs) {
   });
 }
 
-function assertPortFree(port) {
+function waitForPort(port, timeoutMs) {
+  return Promise.any([
+    waitForPortOnHost(port, '127.0.0.1', timeoutMs),
+    waitForPortOnHost(port, '::1', timeoutMs),
+  ]).catch(() => {
+    throw new Error(`port ${port} did not open within ${timeoutMs}ms`);
+  });
+}
+
+function assertPortFreeOnHost(port, host) {
   return new Promise((resolve, reject) => {
     const server = net.createServer();
 
     server.once('error', () => {
-      reject(new Error(`port ${port} is already in use`));
+      reject(new Error(`port ${port} is already in use on ${host}`));
     });
 
     server.once('listening', () => {
       server.close(resolve);
     });
 
-    server.listen(port, '127.0.0.1');
+    server.listen(port, host);
   });
 }
 
-function startProcess(label, args) {
+async function assertPortFree(port) {
+  await assertPortFreeOnHost(port, '127.0.0.1');
+
+  if (process.platform === 'win32') {
+    await assertPortFreeOnHost(port, '::');
+  }
+}
+
+function handleProcessOutput(label, chunk, stream) {
+  const text = String(chunk);
+  stream.write(`[${label}] ${text}`);
+
+  if (
+    text.includes('EADDRINUSE') ||
+    text.includes('Process exited with code 1, waiting for changes to restart')
+  ) {
+    console.error(`[${label}] fatal dev-server startup error`);
+    stopChildren();
+    process.exit(1);
+  }
+}
+
+function startProcess(label, args, envOverrides = {}) {
   const child = spawn(pnpmCommand, args, {
     cwd: root,
-    env: process.env,
-    shell: false,
+    env: {
+      ...process.env,
+      ...envOverrides,
+    },
+    shell: process.platform === 'win32',
     stdio: 'pipe',
+    windowsHide: true,
   });
 
   children.add(child);
 
   child.stdout.on('data', (chunk) => {
-    process.stdout.write(`[${label}] ${chunk}`);
+    handleProcessOutput(label, chunk, process.stdout);
   });
 
   child.stderr.on('data', (chunk) => {
-    process.stderr.write(`[${label}] ${chunk}`);
+    handleProcessOutput(label, chunk, process.stderr);
   });
 
   child.on('exit', (code, signal) => {
@@ -233,9 +309,10 @@ async function main() {
   await assertPortFree(4200).catch((error) => fail(error.message));
 
   restartStaleInfrastructure();
+  await prepareDatabase();
 
-  startProcess('api', ['nx', 'serve', 'api']);
-  startProcess('web', ['nx', 'serve', 'web', '--port=4200']);
+  startProcess('api', ['nx', 'serve', 'api'], { PORT: '3000' });
+  startProcess('web', ['nx', 'serve', 'web', '--port=4200'], { PORT: '4200' });
 
   await Promise.all([waitForPort(3000, 60000), waitForPort(4200, 60000)]).catch(
     (error) => fail(error.message),

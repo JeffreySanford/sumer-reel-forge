@@ -73,6 +73,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/render-jobs/stale": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Return queued/running render jobs with stale heartbeats. */
+        get: operations["AppController_getStaleRenderJobs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/render-jobs/{jobId}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update render job status and optional heartbeat. */
+        patch: operations["AppController_updateRenderJobStatus"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -88,6 +122,17 @@ export interface components {
             /** @example calm mythic narrator */
             voice?: string;
             /** @example First local prototype */
+            notes?: string;
+        };
+        UpdateRenderJobStatusDto: {
+            /**
+             * @example running
+             * @enum {string}
+             */
+            status: "queued" | "running" | "complete" | "failed";
+            /** @example true */
+            heartbeat?: boolean;
+            /** @example Renderer worker accepted the job. */
             notes?: string;
         };
     };
@@ -183,6 +228,46 @@ export interface operations {
         };
         responses: {
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AppController_getStaleRenderJobs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AppController_updateRenderJobStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jobId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateRenderJobStatusDto"];
+            };
+        };
+        responses: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };

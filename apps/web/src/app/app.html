@@ -9,12 +9,12 @@
     </div>
 
     <nav class="episode-list">
-      @for (episode of outline; track episode.episode) {
+      @for (episode of outline(); track episode.episode) {
       <button
         type="button"
         class="episode-button"
         [class.active]="episode.episode === selectedEpisode().episode"
-        [disabled]="episode.episode !== selectedEpisode().episode"
+        (click)="selectEpisode(episode.episode)"
       >
         <span>{{ episode.episode }}</span>
         <strong>{{ episode.title }}</strong>
@@ -34,10 +34,20 @@
         <h2>{{ selectedEpisode().title }}</h2>
       </div>
       <div class="runtime">
+        <span>{{ dataSource() }}</span>
         <span>{{ selectedEpisode().targetDurationSeconds }}s target</span>
         <span>{{ totalShotSeconds() }}s shots</span>
       </div>
     </header>
+
+    <section class="workflow-bar" aria-label="Reel workflow actions">
+      <button type="button" (click)="copyPrompt()">Copy prompt</button>
+      <button type="button" (click)="exportEpisode()">Export episode</button>
+      <button type="button" class="primary-action" (click)="queueRenderJob()">
+        Queue storyboard
+      </button>
+      <span>{{ renderStatus() }}</span>
+    </section>
 
     <section class="review-grid">
       <article class="panel script-panel">
@@ -89,7 +99,10 @@
 
     <section class="details-grid">
       <article class="panel prompt-panel">
-        <p class="eyebrow">Image Prompt</p>
+        <div class="panel-heading compact">
+          <p class="eyebrow">Image Prompt</p>
+          <button type="button" (click)="copyPrompt()">Copy</button>
+        </div>
         <p>{{ selectedShot().prompt }}</p>
       </article>
 

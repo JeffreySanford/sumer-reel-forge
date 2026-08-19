@@ -1,0 +1,158 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model StudioProject {
+  id              String           @id @default(uuid()) @db.Uuid
+  slug            String           @unique
+  title           String
+  description     String?
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+  sourceDocuments SourceDocument[]
+
+  @@map("studio_projects")
+}
+
+model SourceDocument {
+  id        String        @id @default(uuid()) @db.Uuid
+  projectId String        @map("project_id") @db.Uuid
+  title     String
+  sourceRef String?       @map("source_ref")
+  status    DocumentState @default(DRAFT)
+  createdAt DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+  chapters  Chapter[]
+  project   StudioProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("source_documents")
+}
+
+model Chapter {
+  id             String         @id @default(uuid()) @db.Uuid
+  sourceDocumentId String       @map("source_document_id") @db.Uuid
+  chapterNumber Int            @map("chapter_number")
+  title          String
+  synopsis       String?
+  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+  document       SourceDocument @relation(fields: [sourceDocumentId], references: [id], onDelete: Cascade)
+  reels          Reel[]
+
+  @@unique([sourceDocumentId, chapterNumber])
+  @@map("chapters")
+}
+
+model Reel {
+  id                    String       @id @default(uuid()) @db.Uuid
+  chapterId             String       @map("chapter_id") @db.Uuid
+  episodeNumber         Int          @map("episode_number")
+  title                 String
+  sourceSection         String       @map("source_section")
+  hook                  String
+  visualCore            String       @map("visual_core")
+  logline               String?
+  narration             String?
+  targetDurationSeconds Int          @default(60) @map("target_duration_seconds")
+  musicDirection        String?      @map("music_direction")
+  voiceDirection        String?      @map("voice_direction")
+  platformNotes         String[]     @default([]) @map("platform_notes")
+  onScreenText          Json         @default("[]") @map("on_screen_text")
+  createdAt             DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+  chapter               Chapter      @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  shots                 ReelShot[]
+  renderJobs            RenderJob[]
+
+  @@unique([chapterId, episodeNumber])
+  @@map("reels")
+}
+
+model ReelShot {
+  id              String   @id @default(uuid()) @db.Uuid
+  reelId          String   @map("reel_id") @db.Uuid
+  shotNumber      Int      @map("shot_number")
+  timecode        String
+  durationSeconds Int      @map("duration_seconds")
+  visual          String
+  motion          String
+  prompt          String
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  reel            Reel     @relation(fields: [reelId], references: [id], onDelete: Cascade)
+
+  @@unique([reelId, shotNumber])
+  @@map("reel_shots")
+}
+
+model GeneratedAsset {
+  id         String   @id @default(uuid()) @db.Uuid
+  renderJobId String? @map("render_job_id") @db.Uuid
+  assetType  String   @map("asset_type")
+  uri        String
+  checksum   String?
+  metadata   Json     @default("{}")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("generated_assets")
+}
+
+model RenderJob {
+  id          String          @id @default(uuid()) @db.Uuid
+  reelId      String          @map("reel_id") @db.Uuid
+  episodeId   Int             @map("episode_id")
+  mode        RenderJobMode
+  status      RenderJobStatus @default(QUEUED)
+  voice       String?
+  notes       String?
+  heartbeatAt DateTime?       @map("heartbeat_at") @db.Timestamptz(6)
+  createdAt   DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+  reel        Reel            @relation(fields: [reelId], references: [id], onDelete: Cascade)
+
+  @@index([status, heartbeatAt])
+  @@map("render_jobs")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  actor      String
+  action     String
+  entityType String   @map("entity_type")
+  entityId   String   @map("entity_id")
+  summary    Json     @default("{}")
+  requestId  String?  @map("request_id")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}
+
+enum DocumentState {
+  DRAFT
+  REVIEW
+  APPROVED
+  ARCHIVED
+
+  @@map("document_state")
+}
+
+enum RenderJobMode {
+  STORYBOARD
+  DRAFT_VIDEO
+  FINAL_VIDEO
+
+  @@map("render_job_mode")
+}
+
+enum RenderJobStatus {
+  QUEUED
+  RUNNING
+  COMPLETE
+  FAILED
+
+  @@map("render_job_status")
+}
