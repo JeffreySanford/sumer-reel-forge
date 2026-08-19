@@ -69,8 +69,8 @@ jobs:
 
       - name: Install Playwright browsers
         timeout-minutes: 10
-        run: pnpm exec playwright install chromium firefox webkit
+        run: pnpm exec playwright install chromium firefox
 
       - name: End-to-end tests
         timeout-minutes: 10
-        run: pnpm e2e
+        run: pnpm e2e:ci

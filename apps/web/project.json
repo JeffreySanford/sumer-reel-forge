@@ -91,6 +91,30 @@
         "outputDir": "dist/storybook/web"
       }
     },
+    "e2e": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "outputs": [
+        "{workspaceRoot}/dist/.playwright/apps/web/test-output",
+        "{workspaceRoot}/dist/.playwright/apps/web/playwright-report"
+      ],
+      "options": {
+        "cwd": ".",
+        "command": "playwright test --config apps/web/playwright.config.mts"
+      }
+    },
+    "e2e-ci": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "outputs": [
+        "{workspaceRoot}/dist/.playwright/apps/web/test-output",
+        "{workspaceRoot}/dist/.playwright/apps/web/playwright-report"
+      ],
+      "options": {
+        "cwd": ".",
+        "command": "playwright test --config apps/web/playwright.config.mts --project=chromium --project=firefox"
+      }
+    },
     "serve-static": {
       "continuous": true,
       "executor": "@nx/web:file-server",

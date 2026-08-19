@@ -3,7 +3,8 @@ import { nxE2EPreset } from '@nx/playwright/preset';
 import { workspaceRoot } from '@nx/devkit';
 
 // For CI, you may want to set BASE_URL to the deployed application.
-const baseURL = process.env['BASE_URL'] || 'http://localhost:4200';
+const webServerPort = process.env['WEB_E2E_PORT'] || '4200';
+const baseURL = process.env['BASE_URL'] || `http://localhost:${webServerPort}`;
 
 /**
  * Read environment variables from file.
@@ -31,13 +32,13 @@ export default defineConfig({
   },
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'pnpm nx serve web --port=4200',
+    command: `pnpm nx serve web --port=${webServerPort}`,
     env: {
       ...process.env,
-      PORT: '4200',
+      PORT: webServerPort,
     },
-    url: 'http://localhost:4200',
-    reuseExistingServer: true,
+    url: baseURL,
+    reuseExistingServer: false,
     cwd: workspaceRoot,
   },
   projects: [
