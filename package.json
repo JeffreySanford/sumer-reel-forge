@@ -12,6 +12,7 @@
     "lint": "nx run-many -t lint",
     "openapi:types": "openapi-typescript http://localhost:3000/api/docs-json -o libs/reel-core/src/lib/api-contract.ts",
     "quality": "nx run-many -t lint test build",
+    "start:all": "node tools/scripts/start-all.mjs",
     "storybook": "nx storybook web",
     "storybook:build": "nx build-storybook web",
     "test": "nx run-many -t test",

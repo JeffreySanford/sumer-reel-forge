@@ -28,6 +28,14 @@ Run the API:
 pnpm api
 ```
 
+Start the local studio stack:
+
+```sh
+pnpm start:all
+```
+
+`start:all` starts Postgres through Docker Compose and starts the Angular/Nest dev servers on ports 4200 and 3000. It fails fast if dependencies are missing or stale; run `pnpm install` yourself before retrying.
+
 Useful API routes:
 
 ```txt
