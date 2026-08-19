@@ -10,6 +10,7 @@ on:
 jobs:
   quality:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     services:
       postgres:
         image: postgres:17-bookworm
@@ -59,13 +60,17 @@ jobs:
         run: pnpm quality
 
       - name: API end-to-end tests
+        timeout-minutes: 5
         run: pnpm e2e:api
 
       - name: Build Storybook
+        timeout-minutes: 5
         run: pnpm storybook:build
 
       - name: Install Playwright browsers
+        timeout-minutes: 10
         run: pnpm exec playwright install --with-deps
 
       - name: End-to-end tests
+        timeout-minutes: 10
         run: pnpm e2e
