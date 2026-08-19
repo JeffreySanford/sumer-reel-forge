@@ -13,6 +13,15 @@ CI runs these gates through Nx plus Storybook and Playwright. Local development 
 `pnpm quality` for lint/test/build and then run the focused Storybook, e2e, and audit
 commands when preparing a pull request.
 
+## Current Gate Status
+
+- [x] `pnpm quality` passed locally on August 19, 2026.
+- [x] `pnpm start:all` starts Postgres, API, and web locally.
+- [x] Ctrl+C cleanup was verified locally for ports `3000`, `4200`, and `9229`.
+- [x] GitHub CI run `32291308057` passed on `master`.
+- [x] CI has timeouts for the overall quality job, API e2e, Storybook build, Playwright install, and web e2e.
+- [ ] GitHub Dependabot reports 2 high-severity alerts that still need review.
+
 ## Security Baseline
 
 - Validate every write DTO with `class-validator`.
@@ -58,3 +67,12 @@ Render workers should update heartbeat rows while running. A scheduled watchdog 
 - processes with no heartbeat
 - missing output files after successful process exit
 - stderr growth beyond a configured threshold
+
+Current implementation status:
+
+- [x] Render jobs have heartbeat/status fields.
+- [x] API exposes stale render-job query groundwork.
+- [x] API exposes status transition endpoint groundwork.
+- [x] `start:all` has local process cleanup for dev server listeners.
+- [ ] Scheduled watchdog execution is not implemented yet.
+- [ ] Worker heartbeat loop is not implemented yet.
