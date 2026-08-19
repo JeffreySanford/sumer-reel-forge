@@ -5,11 +5,15 @@ import net from 'node:net';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const root = dirname(dirname(dirname(fileURLToPath(import.meta.url))));
+const scriptPath = fileURLToPath(import.meta.url);
+const root = dirname(dirname(dirname(scriptPath)));
 const pnpmCommand = 'pnpm';
 const dockerCommand = process.platform === 'win32' ? 'docker.exe' : 'docker';
 const infrastructureServices = ['postgres'];
+const managedPorts = [3000, 4200, 9229];
 const children = new Set();
+let stopping = false;
+let stdinRawModeEnabled = false;
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
@@ -38,6 +42,7 @@ function fail(message, details) {
   if (details) {
     console.error(details.trim());
   }
+  stopChildren();
   process.exit(1);
 }
 
@@ -251,8 +256,7 @@ function handleProcessOutput(label, chunk, stream) {
     text.includes('Process exited with code 1, waiting for changes to restart')
   ) {
     console.error(`[${label}] fatal dev-server startup error`);
-    stopChildren();
-    process.exit(1);
+    stopAndExit(1);
   }
 }
 
@@ -297,9 +301,150 @@ function startProcess(label, args, envOverrides = {}) {
 }
 
 function stopChildren() {
-  for (const child of children) {
-    child.kill('SIGINT');
+  if (stopping) {
+    return;
   }
+
+  stopping = true;
+  restoreStdinMode();
+
+  for (const child of children) {
+    stopChildProcessTree(child);
+  }
+
+  cleanupRepoPortListeners();
+}
+
+function stopChildProcessTree(child) {
+  if (!child.pid || child.killed) {
+    return;
+  }
+
+  if (process.platform === 'win32') {
+    const result = run('taskkill.exe', ['/PID', String(child.pid), '/T', '/F']);
+
+    if (result.status !== 0 && !result.stderr.includes('not found')) {
+      console.error(result.stderr.trim() || result.stdout.trim());
+    }
+
+    return;
+  }
+
+  child.kill('SIGINT');
+}
+
+function cleanupRepoPortListeners() {
+  if (process.platform !== 'win32') {
+    return;
+  }
+
+  const escapedRoot = root.replaceAll("'", "''");
+  const ports = managedPorts.join(',');
+  const script = `
+$ErrorActionPreference = 'SilentlyContinue'
+$root = '${escapedRoot}'.ToLowerInvariant()
+$ports = @(${ports})
+$connections = Get-NetTCPConnection -LocalPort $ports |
+  Where-Object { $_.State -eq 'Listen' }
+$listenerProcessIds = $connections |
+  Select-Object -ExpandProperty OwningProcess -Unique
+$devProcessIds = Get-CimInstance Win32_Process |
+  Where-Object {
+    if (-not $_.CommandLine) { return $false }
+    $commandLine = $_.CommandLine.ToLowerInvariant()
+    $isRepoProcess = $commandLine.Contains($root)
+    $isNodeTool = $_.Name -in @('node.exe', 'esbuild.exe')
+    $isStartAllDevProcess =
+      $commandLine -match 'nx\\.js"\\s+"serve"\\s+"(api|web)"' -or
+      $commandLine -match 'run-executor\\.js' -or
+      $commandLine -match 'webpack-cli' -or
+      $_.Name -eq 'esbuild.exe'
+
+    return $isRepoProcess -and $isNodeTool -and $isStartAllDevProcess
+  } |
+  Select-Object -ExpandProperty ProcessId -Unique
+$processIds = @($listenerProcessIds) + @($devProcessIds) |
+  Select-Object -Unique
+
+foreach ($processId in $processIds) {
+  $proc = Get-CimInstance Win32_Process -Filter "ProcessId = $processId"
+  if ($proc -and $proc.CommandLine -and $proc.CommandLine.ToLowerInvariant().Contains($root)) {
+    Write-Host "Stopping repo-local dev process $processId."
+    Stop-Process -Id $processId -Force
+  }
+}
+`;
+
+  const result = run(
+    'powershell.exe',
+    ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', script],
+    {
+      stdio: 'inherit',
+    },
+  );
+
+  if (result.status !== 0) {
+    console.error('Could not complete managed port cleanup.');
+  }
+}
+
+function stopAndExit(exitCode) {
+  stopChildren();
+  process.exit(exitCode);
+}
+
+function startCleanupWatcher() {
+  if (process.platform !== 'win32') {
+    return;
+  }
+
+  const watcher = spawn(
+    process.execPath,
+    [scriptPath, '--cleanup-when-parent-exits', String(process.pid)],
+    {
+      cwd: root,
+      detached: true,
+      stdio: 'ignore',
+      windowsHide: true,
+    },
+  );
+  watcher.unref();
+}
+
+function startCleanupWhenParentExits(parentPid) {
+  setInterval(() => {
+    try {
+      process.kill(parentPid, 0);
+    } catch {
+      cleanupRepoPortListeners();
+      process.exit(0);
+    }
+  }, 750);
+}
+
+function enableInteractiveShutdown() {
+  if (!process.stdin.isTTY || typeof process.stdin.setRawMode !== 'function') {
+    return;
+  }
+
+  process.stdin.setRawMode(true);
+  stdinRawModeEnabled = true;
+  process.stdin.resume();
+  process.stdin.on('data', (chunk) => {
+    if (String(chunk).includes('\u0003')) {
+      console.log('Stopping Sumer Reel Forge dev servers...');
+      stopAndExit(130);
+    }
+  });
+}
+
+function restoreStdinMode() {
+  if (!stdinRawModeEnabled) {
+    return;
+  }
+
+  process.stdin.setRawMode(false);
+  stdinRawModeEnabled = false;
 }
 
 async function main() {
@@ -311,6 +456,7 @@ async function main() {
   restartStaleInfrastructure();
   await prepareDatabase();
 
+  startCleanupWatcher();
   startProcess('api', ['nx', 'serve', 'api'], { PORT: '3000' });
   startProcess('web', ['nx', 'serve', 'web', '--port=4200'], { PORT: '4200' });
 
@@ -326,15 +472,23 @@ async function main() {
 }
 
 process.on('SIGINT', () => {
-  stopChildren();
-  process.exit(130);
+  stopAndExit(130);
 });
 
 process.on('SIGTERM', () => {
-  stopChildren();
-  process.exit(143);
+  stopAndExit(143);
 });
 
-main().catch((error) =>
-  fail(error instanceof Error ? error.message : String(error)),
-);
+process.on('exit', () => {
+  restoreStdinMode();
+});
+
+if (process.argv[2] === '--cleanup-when-parent-exits') {
+  startCleanupWhenParentExits(Number(process.argv[3]));
+} else {
+  enableInteractiveShutdown();
+
+  main().catch((error) =>
+    fail(error instanceof Error ? error.message : String(error)),
+  );
+}
