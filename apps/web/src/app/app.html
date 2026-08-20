@@ -19,6 +19,7 @@
         <span>{{ episode.episode }}</span>
         <strong>{{ episode.title }}</strong>
         <small>{{ episode.sourceSection }}</small>
+        <small class="episode-status">{{ episode.productionStatus }}</small>
       </button>
       }
     </nav>
@@ -34,6 +35,12 @@
         <h2>{{ selectedEpisode().title }}</h2>
       </div>
       <div class="runtime">
+        <span
+          class="status-chip"
+          [attr.data-status]="selectedEpisode().productionStatus"
+        >
+          {{ selectedEpisode().productionStatus }}
+        </span>
         <span>{{ dataSource() }}</span>
         <span>{{ selectedEpisode().targetDurationSeconds }}s target</span>
         <span>{{ totalShotSeconds() }}s shots</span>
@@ -47,10 +54,39 @@
       <button type="button" (click)="saveProduction()" [disabled]="isSaving()">
         {{ isSaving() ? 'Saving...' : 'Save edits' }}
       </button>
-      <button type="button" class="primary-action" (click)="queueRenderJob()">
-        Queue storyboard
+      <button type="button" (click)="queueRenderJob('storyboard')">
+        Storyboard
+      </button>
+      <button type="button" (click)="queueRenderJob('draft-video')">
+        Draft video
+      </button>
+      <button
+        type="button"
+        class="primary-action"
+        (click)="queueRenderJob('final-video')"
+        [disabled]="selectedEpisode().productionStatus !== 'approved'"
+      >
+        Final video
       </button>
       <span>{{ renderStatus() }}</span>
+    </section>
+
+    <section class="production-state" aria-label="Production approval state">
+      <div>
+        <p class="eyebrow">Approval</p>
+        <strong>{{ selectedEpisode().productionStatus }}</strong>
+      </div>
+      <div class="state-actions">
+        @for (status of availableStatusTransitions(); track status) {
+        <button
+          type="button"
+          (click)="transitionProductionStatus(status)"
+          [disabled]="isWorkflowBusy()"
+        >
+          Move to {{ status }}
+        </button>
+        }
+      </div>
     </section>
 
     <section class="review-grid">
@@ -231,6 +267,116 @@
           />
         </label>
       </article>
+    </section>
+
+    <section
+      class="operations-band"
+      aria-label="Render jobs and generated assets"
+    >
+      <div class="operations-heading">
+        <div>
+          <p class="eyebrow">Generated Assets</p>
+          <h3>{{ reviewableAssets().length }} review items</h3>
+        </div>
+        <span>{{ renderJobs().length }} render jobs</span>
+      </div>
+
+      @if (reviewableAssets().length === 0) {
+      <p class="empty-state">No generated assets for this episode yet.</p>
+      } @else {
+      <div class="asset-grid">
+        @for (asset of reviewableAssets(); track asset.id) {
+        <article class="asset-card" [attr.data-review]="asset.reviewStatus">
+          <div class="asset-preview">
+            @if (asset.assetType === 'image' && asset.contentUrl) {
+            <img
+              [src]="asset.contentUrl"
+              [alt]="'Generated shot ' + (asset.shotNumber ?? '')"
+            />
+            } @else if (asset.assetType === 'video' && asset.contentUrl) {
+            <video [src]="asset.contentUrl" controls preload="metadata"></video>
+            } @else if (asset.assetType === 'audio' && asset.contentUrl) {
+            <audio [src]="asset.contentUrl" controls preload="metadata"></audio>
+            } @else {
+            <strong>{{ asset.assetType }}</strong>
+            }
+          </div>
+          <div class="asset-meta">
+            <span
+              >{{ asset.shotNumber ? 'Shot ' + asset.shotNumber :
+              asset.assetType }}</span
+            >
+            <strong>{{ asset.reviewStatus }}</strong>
+          </div>
+          <label>
+            <span>Review notes</span>
+            <textarea
+              rows="3"
+              [value]="assetReviewNotes()[asset.id]"
+              (input)="updateAssetReviewNote(asset.id, $event)"
+            ></textarea>
+          </label>
+          <div class="asset-actions">
+            <button type="button" (click)="reviewAsset(asset, 'approved')">
+              Approve
+            </button>
+            <button type="button" (click)="reviewAsset(asset, 'rejected')">
+              Reject
+            </button>
+            <button type="button" (click)="regenerateAsset(asset)">
+              Regenerate
+            </button>
+          </div>
+        </article>
+        }
+      </div>
+      }
+
+      <div class="observability-grid">
+        <section class="job-list" aria-label="Render job history">
+          <p class="eyebrow">Job History</p>
+          @for (job of renderJobs(); track job.id) {
+          <button
+            type="button"
+            [class.active]="job.id === selectedJobId()"
+            (click)="selectRenderJob(job.id)"
+          >
+            <span>{{ job.mode }}</span>
+            <strong>{{ job.status }}</strong>
+            <small>Attempt {{ job.attemptCount }}</small>
+          </button>
+          }
+        </section>
+
+        <section class="worker-history" aria-label="Worker attempts">
+          <p class="eyebrow">Attempts</p>
+          @if (selectedRenderJob()?.status === 'failed') {
+          <button type="button" (click)="retrySelectedRenderJob()">
+            Retry job
+          </button>
+          } @if (renderJobAttempts().length === 0) {
+          <p class="empty-state">No worker attempts recorded.</p>
+          } @for (attempt of renderJobAttempts(); track attempt.id) {
+          <div class="attempt-row">
+            <strong>#{{ attempt.attemptNumber }} {{ attempt.status }}</strong>
+            <span>{{ attempt.workerId }}</span>
+            @if (attempt.error) { <small>{{ attempt.error }}</small> }
+          </div>
+          }
+        </section>
+
+        <section class="worker-log" aria-label="Worker output log">
+          <p class="eyebrow">Worker Log</p>
+          @if (renderJobLogs().length === 0) {
+          <p class="empty-state">No persisted worker output.</p>
+          } @for (log of renderJobLogs(); track log.id) {
+          <p [attr.data-level]="log.level">
+            <span>{{ log.stream }}</span>
+            {{ log.message }}
+          </p>
+          }
+        </section>
+      </div>
     </section>
   </section>
 </main>

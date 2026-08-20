@@ -25,14 +25,15 @@ Chapter 1 follows Enki through the voyage toward Dilmun, the meeting with local 
 - [x] 17. House of the Absu
 - [x] 18. Words of An
 
-Checklist status means each reel has an outline record in the studio database seed. Detailed shot-by-shot production expansion is still pending except for the first benchmark reel.
+Checklist status means each reel has a persistent, production-ready draft with narration, timed captions, six or more bespoke visual beats, image prompts, audio direction, and platform metadata.
 
 ## Next Chapter 1 Work
 
-- [ ] Expand reels 2-18 into full shot lists, narration, prompt sets, and platform metadata.
+- [x] Expand reels 2-18 into full shot lists, narration, prompt sets, and platform metadata.
 - [ ] Normalize names before final production: Eridu/Erech/Uruk, Ninsikila/Ninhursag/Nintu, E-Absu/E.Absu/E-engura.
 - [ ] Create approved visual references for Enki, Nammu, Dilmun, Martu, and the Stag of the Absu.
-- [ ] Render and review the first 60-second prototype for `The Voyage Begins`.
+- [x] Render the first deterministic 60-second technical prototype for `The Voyage Begins`.
+- [ ] Replace technical storyboard cards and silent audio with approved ComfyUI imagery and narration.
 
 ## Production Notes
 

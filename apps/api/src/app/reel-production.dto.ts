@@ -18,6 +18,7 @@ import type {
   ReelExportMetadata,
   ReelShot,
   TimedText,
+  UpdateGeneratedAssetReviewRequest,
   UpdateReelProductionRequest,
 } from '@sumer-reel-forge/reel-core';
 
@@ -144,6 +145,13 @@ export class CreateGeneratedAssetDto implements CreateGeneratedAssetRequest {
   @IsString()
   renderJobId?: string;
 
+  @ApiPropertyOptional({ example: 1, minimum: 1, maximum: 24 })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(24)
+  shotNumber?: number;
+
   @ApiProperty({
     enum: ['image', 'audio', 'captions', 'video', 'manifest', 'other'],
     example: 'image',
@@ -166,4 +174,32 @@ export class CreateGeneratedAssetDto implements CreateGeneratedAssetRequest {
   @IsOptional()
   @IsObject()
   metadata?: Record<string, unknown>;
+}
+
+export class UpdateGeneratedAssetReviewDto
+  implements UpdateGeneratedAssetReviewRequest
+{
+  @ApiProperty({ enum: ['pending', 'approved', 'rejected'] })
+  @IsIn(['pending', 'approved', 'rejected'])
+  status!: UpdateGeneratedAssetReviewRequest['status'];
+
+  @ApiPropertyOptional({ example: 'Character continuity approved.' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  notes?: string;
+
+  @ApiPropertyOptional({ example: 'local-reviewer' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  reviewer?: string;
+}
+
+export class RegenerateGeneratedAssetDto {
+  @ApiPropertyOptional({ example: 'Preserve Enki wardrobe continuity.' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  notes?: string;
 }

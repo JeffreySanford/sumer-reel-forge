@@ -11,6 +11,11 @@ const pnpmCommand = 'pnpm';
 const dockerCommand = process.platform === 'win32' ? 'docker.exe' : 'docker';
 const infrastructureServices = ['postgres'];
 const managedPorts = [3000, 4200, 9229];
+const databaseUrl = new URL(
+  process.env.DATABASE_URL ??
+    'postgresql://sumer_reel_forge:sumer_reel_forge@localhost:5432/sumer_reel_forge',
+);
+const databasePort = Number(databaseUrl.port || 5432);
 const children = new Set();
 let stopping = false;
 let stdinRawModeEnabled = false;
@@ -159,7 +164,7 @@ function restartStaleInfrastructure() {
 }
 
 async function prepareDatabase() {
-  await waitForPort(5432, 60000).catch((error) =>
+  await waitForPort(databasePort, 60000).catch((error) =>
     fail(`Postgres did not become reachable: ${error.message}`),
   );
 

@@ -63,6 +63,7 @@ model Reel {
   platformNotes         String[]    @default([]) @map("platform_notes")
   onScreenText          Json        @default("[]") @map("on_screen_text")
   exportMetadata        Json        @default("{}") @map("export_metadata")
+  productionStatus      ReelProductionStatus @default(DRAFT) @map("production_status")
   createdAt             DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt             DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
   chapter               Chapter     @relation(fields: [chapterId], references: [id], onDelete: Cascade)
@@ -91,15 +92,22 @@ model ReelShot {
 }
 
 model GeneratedAsset {
-  id          String     @id @default(uuid()) @db.Uuid
-  renderJobId String?    @map("render_job_id") @db.Uuid
-  assetType   String     @map("asset_type")
-  uri         String
-  checksum    String?
-  metadata    Json       @default("{}")
-  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
-  renderJob   RenderJob? @relation(fields: [renderJobId], references: [id], onDelete: SetNull)
+  id           String            @id @default(uuid()) @db.Uuid
+  renderJobId  String?           @map("render_job_id") @db.Uuid
+  shotNumber   Int?              @map("shot_number")
+  assetType    String            @map("asset_type")
+  uri          String
+  checksum     String?
+  metadata     Json              @default("{}")
+  reviewStatus AssetReviewStatus @default(PENDING) @map("review_status")
+  reviewNotes  String?           @map("review_notes")
+  reviewedAt   DateTime?         @map("reviewed_at") @db.Timestamptz(6)
+  reviewedBy   String?           @map("reviewed_by")
+  createdAt    DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  renderJob    RenderJob?        @relation(fields: [renderJobId], references: [id], onDelete: SetNull)
 
+  @@index([renderJobId, shotNumber])
+  @@index([reviewStatus])
   @@map("generated_assets")
 }
 
@@ -120,9 +128,42 @@ model RenderJob {
   updatedAt    DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
   reel         Reel             @relation(fields: [reelId], references: [id], onDelete: Cascade)
   assets       GeneratedAsset[]
+  attempts     RenderJobAttempt[]
+  logs         RenderJobLog[]
 
   @@index([status, heartbeatAt])
   @@map("render_jobs")
+}
+
+model RenderJobAttempt {
+  id            String          @id @default(uuid()) @db.Uuid
+  renderJobId   String          @map("render_job_id") @db.Uuid
+  attemptNumber Int             @map("attempt_number")
+  workerId      String          @map("worker_id")
+  status        RenderJobStatus @default(RUNNING)
+  startedAt     DateTime        @default(now()) @map("started_at") @db.Timestamptz(6)
+  heartbeatAt   DateTime?       @map("heartbeat_at") @db.Timestamptz(6)
+  finishedAt    DateTime?       @map("finished_at") @db.Timestamptz(6)
+  error         String?
+  renderJob     RenderJob       @relation(fields: [renderJobId], references: [id], onDelete: Cascade)
+
+  @@unique([renderJobId, attemptNumber])
+  @@index([status, heartbeatAt])
+  @@map("render_job_attempts")
+}
+
+model RenderJobLog {
+  id          String          @id @default(uuid()) @db.Uuid
+  renderJobId String          @map("render_job_id") @db.Uuid
+  workerId    String?         @map("worker_id")
+  level       RenderLogLevel  @default(INFO)
+  stream      RenderLogStream @default(SYSTEM)
+  message     String
+  createdAt   DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  renderJob   RenderJob       @relation(fields: [renderJobId], references: [id], onDelete: Cascade)
+
+  @@index([renderJobId, createdAt])
+  @@map("render_job_logs")
 }
 
 model AuditLog {
@@ -163,4 +204,38 @@ enum RenderJobStatus {
   FAILED
 
   @@map("render_job_status")
+}
+
+enum ReelProductionStatus {
+  DRAFT
+  REVIEW
+  APPROVED
+  RENDERING
+  PUBLISHED
+
+  @@map("reel_production_status")
+}
+
+enum AssetReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+
+  @@map("asset_review_status")
+}
+
+enum RenderLogLevel {
+  INFO
+  WARN
+  ERROR
+
+  @@map("render_log_level")
+}
+
+enum RenderLogStream {
+  STDOUT
+  STDERR
+  SYSTEM
+
+  @@map("render_log_stream")
 }

@@ -3,6 +3,8 @@ import type { Meta, StoryObj } from '@storybook/angular';
 import {
   CHAPTER_ONE_REELS,
   CHAPTER_ONE_SUMMARY,
+  type GeneratedAssetManifest,
+  type RenderJob,
   type ReelEpisode,
   type UpdateReelProductionRequest,
 } from '@sumer-reel-forge/reel-core';
@@ -22,6 +24,8 @@ function withMockApi(options: {
   episode?: ReelEpisode;
   saveFails?: boolean;
   renderJobId?: string;
+  assets?: GeneratedAssetManifest[];
+  jobs?: RenderJob[];
 }) {
   return applicationConfig({
     providers: [
@@ -56,6 +60,45 @@ function withMockApi(options: {
               status: 'queued',
               createdAt: new Date(0).toISOString(),
               attemptCount: 0,
+            }),
+          getRenderJobs: () => of(options.jobs ?? []),
+          getGeneratedAssets: () => of(options.assets ?? []),
+          getRenderJobAttempts: () => of([]),
+          getRenderJobLogs: () => of([]),
+          updateEpisodeStatus: (
+            _episodeId: number,
+            status: ReelEpisode['productionStatus'],
+          ) =>
+            of({
+              ...(options.episode ?? CHAPTER_ONE_REELS[0]),
+              productionStatus: status,
+            }),
+          reviewGeneratedAsset: (
+            assetId: string,
+            status: GeneratedAssetManifest['reviewStatus'],
+          ) =>
+            of({
+              ...(options.assets ?? []).find((asset) => asset.id === assetId),
+              id: assetId,
+              reviewStatus: status,
+            }),
+          regenerateGeneratedAsset: () =>
+            of({
+              id: 'storybook-regenerated-job',
+              episodeId: 1,
+              mode: 'storyboard',
+              status: 'queued',
+              createdAt: new Date(0).toISOString(),
+              attemptCount: 0,
+            }),
+          retryRenderJob: () =>
+            of({
+              id: 'storybook-retry-job',
+              episodeId: 1,
+              mode: 'storyboard',
+              status: 'queued',
+              createdAt: new Date(0).toISOString(),
+              attemptCount: 1,
             }),
         },
       },
@@ -97,4 +140,35 @@ export const RenderQueued: Story = {
 
 export const LoadingFixture: Story = {
   decorators: [withMockApi({ episode: delayedEpisode })],
+};
+
+export const AssetReview: Story = {
+  decorators: [
+    withMockApi({
+      jobs: [
+        {
+          id: 'storybook-complete-job',
+          episodeId: 1,
+          mode: 'storyboard',
+          status: 'complete',
+          createdAt: new Date(0).toISOString(),
+          attemptCount: 1,
+        },
+      ],
+      assets: [
+        {
+          id: 'storybook-shot-1',
+          renderJobId: 'storybook-complete-job',
+          shotNumber: 1,
+          assetType: 'image',
+          uri: 'file:///storybook-shot-1.png',
+          contentUrl:
+            'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="540" height="960"%3E%3Crect width="100%25" height="100%25" fill="%23174448"/%3E%3Ccircle cx="270" cy="380" r="140" fill="%23d3ae57"/%3E%3C/svg%3E',
+          metadata: { width: 540, height: 960 },
+          reviewStatus: 'pending',
+          createdAt: new Date(0).toISOString(),
+        },
+      ],
+    }),
+  ],
 };

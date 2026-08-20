@@ -1,6 +1,6 @@
 # Chapter 1 Production Plan
 
-The chapter is about 16,700 words and is best handled as a short-form series rather than one long video. The current seed data covers the full 18-reel outline and a detailed 60-second storyboard for episode 1.
+The chapter is about 16,700 words and is best handled as a short-form series rather than one long video. The seed now covers all 18 reels as detailed 60-second production drafts.
 
 ## Episode Strategy
 
@@ -31,8 +31,10 @@ This repository currently implements the review and orchestration slice:
 - [x] API e2e coverage for Chapter 1 reel loading.
 - [x] Render-job queue/status/stale groundwork.
 - [x] GitHub CI coverage for quality, Storybook, and Playwright.
-- [ ] Editable production fields for narration, shot prompts, and export metadata.
-- [ ] Real renderer worker.
-- [ ] Generated media asset persistence.
+- [x] Editable production fields for narration, shot prompts, and export metadata.
+- [x] Renderer worker with mock and local media adapters.
+- [x] Generated media asset, checksum, manifest, attempt, and log persistence.
+- [x] Persistent approval and per-asset review workflow.
+- [x] Deterministic Reel 1 technical MP4 verification.
 
-Rendering services are intentionally stubbed. They should be added after the first storyboard and visual style are approved.
+The local integration points are implemented. The next editorial gate is to approve visual references and a narration voice, then run Reel 1 with the `local` adapter.

@@ -12,18 +12,18 @@ This folder captures agile planning for the studio and project-specific producti
 ## Active Plan
 
 - [x] Sprint 000: foundation, persistence, API contract, first workflow screen, local startup, CI.
-- [ ] Sprint 001: editable reel production workflow and renderer-worker groundwork.
-- [ ] Sprint 002: first local 60-second render pipeline.
-- [ ] Sprint 003: review/approval workflow and platform export metadata.
+- [x] Sprint 001: editable reel production workflow and renderer-worker groundwork.
+- [x] Sprint 002: first local 60-second render pipeline and production review workflow.
+- [ ] Sprint 003: visual bible, approved local model stack, and editorial Reel 1 release candidate.
 
 ## Definition Of Done
 
-- [ ] Code is linted.
-- [ ] Unit tests pass.
-- [ ] Builds pass.
-- [ ] E2E tests pass for user-facing workflows.
-- [ ] Storybook stories exist for new UI surfaces.
-- [ ] API DTOs are validated.
-- [ ] Mutating behavior is auditable or explicitly documented as temporary.
-- [ ] Long-running processes have timeout and heartbeat behavior.
-- [ ] CI has bounded runtimes for steps that can hang.
+- [x] Code is linted.
+- [x] Unit tests pass.
+- [x] Builds pass.
+- [x] E2E tests pass for user-facing workflows.
+- [x] Storybook stories exist for new UI surfaces.
+- [x] API DTOs are validated.
+- [x] Mutating behavior is auditable or explicitly documented as temporary.
+- [x] Long-running processes have timeout and heartbeat behavior.
+- [x] CI has bounded runtimes for steps that can hang.

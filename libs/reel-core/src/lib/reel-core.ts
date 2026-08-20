@@ -1,3 +1,5 @@
+import { CHAPTER_ONE_PRODUCTION_DETAILS } from './chapter-one-production';
+
 export interface ReelShot {
   time: string;
   durationSeconds: number;
@@ -28,6 +30,19 @@ export interface ReelEpisode {
   voiceDirection: string;
   platformNotes: string[];
   exportMetadata: ReelExportMetadata;
+  productionStatus: ReelProductionStatus;
+}
+
+export type ReelProductionStatus =
+  | 'draft'
+  | 'review'
+  | 'approved'
+  | 'rendering'
+  | 'published';
+
+export interface UpdateReelStatusRequest {
+  status: ReelProductionStatus;
+  notes?: string;
 }
 
 export interface ReelExportMetadata {
@@ -55,6 +70,7 @@ export interface ChapterReelSummary {
   sourceSection: string;
   hook: string;
   visualCore: string;
+  productionStatus: ReelProductionStatus;
 }
 
 export interface RenderJobRequest {
@@ -70,6 +86,8 @@ export interface RenderJob {
   mode: RenderJobRequest['mode'];
   status: 'queued' | 'running' | 'complete' | 'failed';
   createdAt: string;
+  startedAt?: string;
+  finishedAt?: string;
   heartbeatAt?: string;
   workerId?: string;
   attemptCount: number;
@@ -84,21 +102,71 @@ export interface GeneratedAssetManifest {
   id: string;
   renderJobId?: string;
   assetType: 'image' | 'audio' | 'captions' | 'video' | 'manifest' | 'other';
+  shotNumber?: number;
   uri: string;
+  contentUrl?: string;
   checksum?: string;
   metadata: Record<string, unknown>;
+  reviewStatus: AssetReviewStatus;
+  reviewNotes?: string;
+  reviewedAt?: string;
+  reviewedBy?: string;
   createdAt: string;
 }
+
+export type AssetReviewStatus = 'pending' | 'approved' | 'rejected';
 
 export interface CreateGeneratedAssetRequest {
   renderJobId?: string;
   assetType: GeneratedAssetManifest['assetType'];
+  shotNumber?: number;
   uri: string;
   checksum?: string;
   metadata?: Record<string, unknown>;
 }
 
-export const CHAPTER_ONE_SUMMARY: ChapterReelSummary[] = [
+export interface UpdateGeneratedAssetReviewRequest {
+  status: AssetReviewStatus;
+  notes?: string;
+  reviewer?: string;
+}
+
+export interface RenderJobAttempt {
+  id: string;
+  renderJobId: string;
+  attemptNumber: number;
+  workerId: string;
+  status: RenderJob['status'];
+  startedAt: string;
+  heartbeatAt?: string;
+  finishedAt?: string;
+  error?: string;
+}
+
+export type RenderLogLevel = 'info' | 'warn' | 'error';
+export type RenderLogStream = 'stdout' | 'stderr' | 'system';
+
+export interface RenderJobLog {
+  id: string;
+  renderJobId: string;
+  workerId?: string;
+  level: RenderLogLevel;
+  stream: RenderLogStream;
+  message: string;
+  createdAt: string;
+}
+
+export interface CreateRenderJobLogRequest {
+  workerId?: string;
+  level: RenderLogLevel;
+  stream: RenderLogStream;
+  message: string;
+}
+
+const CHAPTER_ONE_SUMMARY_CONTENT: Omit<
+  ChapterReelSummary,
+  'productionStatus'
+>[] = [
   {
     episode: 1,
     title: 'The Voyage Begins',
@@ -227,6 +295,12 @@ export const CHAPTER_ONE_SUMMARY: ChapterReelSummary[] = [
   },
 ];
 
+export const CHAPTER_ONE_SUMMARY: ChapterReelSummary[] =
+  CHAPTER_ONE_SUMMARY_CONTENT.map((summary) => ({
+    ...summary,
+    productionStatus: 'draft',
+  }));
+
 export const REEL_ONE: ReelEpisode = {
   series: 'Blessings of Sumer',
   chapter: 1,
@@ -339,6 +413,7 @@ export const REEL_ONE: ReelEpisode = {
     youtubeShortsTitle: 'Before Sumer: Enki Sails Toward Dilmun',
     tags: ['Sumer', 'Enki', 'Dilmun', 'Mythology', 'Ancient History'],
   },
+  productionStatus: 'draft',
 };
 
 const CHAPTER_ONE_REEL_COPY: Record<
@@ -445,6 +520,15 @@ const CHAPTER_ONE_REEL_COPY: Record<
 
 function buildReelEpisode(summary: ChapterReelSummary): ReelEpisode {
   const copy = CHAPTER_ONE_REEL_COPY[summary.episode];
+  const production = CHAPTER_ONE_PRODUCTION_DETAILS[summary.episode];
+  const times = [
+    ['00:00-00:08', 8],
+    ['00:08-00:18', 10],
+    ['00:18-00:28', 10],
+    ['00:28-00:39', 11],
+    ['00:39-00:50', 11],
+    ['00:50-01:00', 10],
+  ] as const;
 
   return {
     series: 'Blessings of Sumer',
@@ -457,58 +541,42 @@ function buildReelEpisode(summary: ChapterReelSummary): ReelEpisode {
     visualCore: summary.visualCore,
     logline: copy.logline,
     narration: copy.narration,
-    onScreenText: [
-      { time: '00:00', text: summary.hook },
-      { time: '00:12', text: summary.sourceSection },
-      { time: '00:30', text: summary.visualCore },
-      { time: '00:52', text: summary.title },
-    ],
-    shots: [
-      {
-        time: '00:00-00:10',
-        durationSeconds: 10,
-        visual: `Opening hook image: ${summary.visualCore}.`,
-        motion: 'slow push in',
-        prompt: `cinematic ancient Sumerian myth, ${summary.visualCore}, vertical 9:16, realistic texture, no modern objects`,
-      },
-      {
-        time: '00:10-00:25',
-        durationSeconds: 15,
-        visual: `Character-focused story beat for "${summary.title}".`,
-        motion: 'gentle handheld drift',
-        prompt: `ancient Mesopotamian myth scene for ${summary.title}, expressive characters, bronze age clothing, warm natural light, vertical`,
-      },
-      {
-        time: '00:25-00:43',
-        durationSeconds: 18,
-        visual: `World-building detail from ${summary.sourceSection}.`,
-        motion: 'layered parallax',
-        prompt: `Sumerian world-building detail, ${summary.sourceSection}, reeds clay water stone textile firelight, cinematic realism, vertical`,
-      },
-      {
-        time: '00:43-01:00',
-        durationSeconds: 17,
-        visual: `Resolved final image for ${summary.hook}`,
-        motion: 'slow reveal, fade to title',
-        prompt: `final mythic poster frame, ${summary.title}, ${summary.visualCore}, sacred but grounded, vertical social reel composition`,
-      },
-    ],
-    musicDirection:
-      'Frame drum, lyre, low wind and water texture; let the final ten seconds rise without becoming bombastic.',
-    voiceDirection:
-      'Clear mythic narration with a measured documentary pace and warm authority.',
+    onScreenText: production.captions.map((text, index) => ({
+      time: ['00:00', '00:12', '00:27', '00:42', '00:54'][index],
+      text,
+    })),
+    shots: production.beats.map((beat, index) => ({
+      time: times[index][0],
+      durationSeconds: times[index][1],
+      visual: beat.visual,
+      motion: beat.motion,
+      prompt: [
+        'cinematic ancient Mesopotamian myth',
+        beat.visual,
+        production.styleAnchor,
+        'Bronze Age material accuracy',
+        'natural dramatic light',
+        'realistic texture',
+        'vertical 9:16 composition',
+        'no written text',
+        'no modern objects',
+      ].join(', '),
+    })),
+    musicDirection: production.music,
+    voiceDirection: production.voice,
     platformNotes: [
       'Target a self-contained 60 second cut with captions in the center safe area.',
-      'Keep names visually reinforced with consistent wardrobe, symbols, and locations.',
+      `Continuity anchor: ${production.styleAnchor}.`,
       'Avoid gore, modern objects, and dense exposition; privilege one emotional turn.',
     ],
     exportMetadata: {
-      facebookCaption: `${summary.title}: ${summary.hook}`,
-      xPost: `${summary.title}. ${summary.hook}`,
-      tiktokCaption: `${summary.hook} #Sumer #Mythology #Storytelling`,
+      facebookCaption: `${summary.title}: ${production.socialTeaser}`,
+      xPost: `${summary.title}: ${production.socialTeaser}`,
+      tiktokCaption: `${production.socialTeaser} #Sumer #Mythology #Storytelling`,
       youtubeShortsTitle: `${summary.title} | Blessings of Sumer`,
       tags: ['Sumer', 'Mythology', 'Ancient History', summary.title],
     },
+    productionStatus: summary.productionStatus,
   };
 }
 

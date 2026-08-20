@@ -1,155 +1,207 @@
 import 'dotenv/config';
+import { join } from 'node:path';
+import {
+  prepareOutputDirectory,
+  sha256,
+  toFileUri,
+  writeJson,
+} from '../renderer/artifact-utils.mjs';
+import { renderLocalPipeline } from '../renderer/local-adapter.mjs';
+import { renderMockPipeline } from '../renderer/mock-adapter.mjs';
+import { RendererApi } from '../renderer/renderer-api.mjs';
+import { loadRendererConfig } from '../renderer/renderer-config.mjs';
 
-const apiBaseUrl = process.env.API_BASE_URL ?? 'http://localhost:3000/api';
-const workerId =
-  process.env.RENDER_WORKER_ID ?? `local-renderer-${process.pid}`;
-const heartbeatIntervalMs = Number(
-  process.env.RENDER_HEARTBEAT_INTERVAL_MS ?? 10000,
-);
-const mockRenderMs = Number(process.env.RENDER_MOCK_DURATION_MS ?? 15000);
+const config = loadRendererConfig();
+const api = new RendererApi(config.apiBaseUrl, config.workerId);
 const runOnce = process.argv.includes('--once');
-
 let stopping = false;
 
-process.on('SIGINT', () => {
-  stopping = true;
-});
-
-process.on('SIGTERM', () => {
-  stopping = true;
-});
+process.on('SIGINT', requestStop);
+process.on('SIGTERM', requestStop);
 
 async function main() {
-  console.log(`Renderer worker ${workerId} polling ${apiBaseUrl}`);
+  console.log(
+    `Renderer worker ${config.workerId} polling ${config.apiBaseUrl} with ${config.adapter} adapter.`,
+  );
 
   do {
-    const job = await claimJob();
-
+    const job = await api.claimJob();
     if (!job) {
       if (runOnce) {
         console.log('No queued render jobs.');
         return;
       }
-
-      await delay(5000);
+      await delay(config.pollIntervalMs);
       continue;
     }
 
-    await processJob(job);
+    const succeeded = await processJob(job);
+    if (!succeeded && runOnce) {
+      process.exitCode = 1;
+    }
   } while (!stopping && !runOnce);
 }
 
-async function claimJob() {
-  const response = await fetch(`${apiBaseUrl}/render-jobs/claim`, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'x-request-id': `${workerId}-claim-${Date.now()}`,
-    },
-    body: JSON.stringify({ workerId }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Claim failed with HTTP ${response.status}`);
-  }
-
-  return response.json();
-}
-
 async function processJob(job) {
-  console.log(`Claimed render job ${job.id} for episode ${job.episodeId}`);
-
+  const logger = createJobLogger(job.id);
   const heartbeat = setInterval(() => {
-    void sendHeartbeat(job.id, 'Renderer scaffold heartbeat.').catch((error) =>
-      console.error(error),
-    );
-  }, heartbeatIntervalMs);
+    void api
+      .heartbeat(job.id, `Worker ${config.workerId} is active.`)
+      .catch((error) => logger.log('stderr', 'error', error.message));
+  }, config.heartbeatIntervalMs);
 
   try {
-    await sendHeartbeat(job.id, 'Renderer scaffold accepted job.');
-    await delay(mockRenderMs);
+    await logger.log(
+      'system',
+      'info',
+      `Claimed ${job.mode} job ${job.id} for episode ${job.episodeId}.`,
+    );
+    const episode = await api.getEpisode(job.episodeId);
+    const outputDirectory = await prepareOutputDirectory(
+      config.outputRoot,
+      job.id,
+    );
+    const context = {
+      episode,
+      job,
+      outputDirectory,
+      config,
+      log: logger.log,
+    };
+    const artifacts = await withTimeout(
+      config.adapter === 'local'
+        ? renderLocalPipeline(context)
+        : renderMockPipeline(context),
+      config.jobTimeoutMs,
+      `Render job ${job.id}`,
+    );
 
-    if (stopping) {
-      await updateStatus(job.id, 'failed', 'Renderer worker stopped.');
-      return;
+    const persistedAssets = [];
+    for (const artifact of artifacts) {
+      persistedAssets.push(await persistArtifact(job, artifact));
     }
 
-    const manifest = await createManifest(job);
-    await updateStatus(
+    const manifestPath = join(outputDirectory, 'manifest.json');
+    await writeJson(manifestPath, {
+      schemaVersion: 1,
+      generatedAt: new Date().toISOString(),
+      adapter: config.adapter,
+      workerId: config.workerId,
+      job,
+      episode: {
+        chapter: episode.chapter,
+        episode: episode.episode,
+        title: episode.title,
+      },
+      assets: persistedAssets,
+    });
+    const manifest = await persistArtifact(job, {
+      assetType: 'manifest',
+      path: manifestPath,
+      metadata: {
+        schemaVersion: 1,
+        adapter: config.adapter,
+        assetCount: persistedAssets.length,
+      },
+    });
+    await api.updateStatus(
       job.id,
       'complete',
-      `Renderer scaffold completed with manifest ${manifest.id}.`,
+      `Completed with manifest ${manifest.id}.`,
     );
+    await logger.log(
+      'system',
+      'info',
+      `Render completed with ${persistedAssets.length} artifacts.`,
+    );
+    logger.close();
+    return true;
   } catch (error) {
-    await updateStatus(
-      job.id,
-      'failed',
-      error instanceof Error ? error.message : String(error),
-    );
-    throw error;
+    const message = error instanceof Error ? error.message : String(error);
+    await logger.log('stderr', 'error', message);
+    await api.updateStatus(job.id, 'failed', message).catch((statusError) => {
+      console.error(
+        `Could not mark job ${job.id} failed: ${statusError.message}`,
+      );
+    });
+    logger.close();
+    return false;
   } finally {
     clearInterval(heartbeat);
   }
 }
 
-async function sendHeartbeat(jobId, notes) {
-  const response = await fetch(`${apiBaseUrl}/render-jobs/${jobId}/heartbeat`, {
-    method: 'PATCH',
-    headers: {
-      'content-type': 'application/json',
-      'x-request-id': `${workerId}-heartbeat-${Date.now()}`,
-    },
-    body: JSON.stringify({ notes }),
+async function persistArtifact(job, artifact) {
+  return api.createAsset({
+    renderJobId: job.id,
+    assetType: artifact.assetType,
+    shotNumber: artifact.shotNumber,
+    uri: toFileUri(artifact.path),
+    checksum: await sha256(artifact.path),
+    metadata: artifact.metadata ?? {},
   });
-
-  if (!response.ok) {
-    throw new Error(`Heartbeat failed with HTTP ${response.status}`);
-  }
 }
 
-async function updateStatus(jobId, status, notes) {
-  const response = await fetch(`${apiBaseUrl}/render-jobs/${jobId}/status`, {
-    method: 'PATCH',
-    headers: {
-      'content-type': 'application/json',
-      'x-request-id': `${workerId}-status-${Date.now()}`,
-    },
-    body: JSON.stringify({
-      status,
-      heartbeat: status === 'running',
-      notes,
-    }),
-  });
+function createJobLogger(jobId) {
+  let closed = false;
+  let pending = Promise.resolve();
 
-  if (!response.ok) {
-    throw new Error(`Status update failed with HTTP ${response.status}`);
-  }
+  const log = async (stream, level, message) => {
+    const normalized = String(message).trim();
+    if (!normalized) {
+      return;
+    }
+    const consoleMethod =
+      level === 'error' ? 'error' : level === 'warn' ? 'warn' : 'log';
+    console[consoleMethod](`[${jobId}] ${normalized}`);
+    if (closed) {
+      return;
+    }
+    for (const chunk of chunkMessage(normalized)) {
+      pending = pending
+        .then(() => api.createLog(jobId, { stream, level, message: chunk }))
+        .catch((error) => {
+          console.error(`Could not persist worker log: ${error.message}`);
+        });
+    }
+    await pending;
+  };
+
+  return {
+    log,
+    close() {
+      closed = true;
+    },
+  };
 }
 
-async function createManifest(job) {
-  const response = await fetch(`${apiBaseUrl}/generated-assets`, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'x-request-id': `${workerId}-asset-${Date.now()}`,
-    },
-    body: JSON.stringify({
-      renderJobId: job.id,
-      assetType: 'manifest',
-      uri: `file://tmp/renders/${job.id}/manifest.json`,
-      metadata: {
-        scaffold: true,
-        workerId,
-        episodeId: job.episodeId,
-      },
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Manifest creation failed with HTTP ${response.status}`);
+function chunkMessage(message) {
+  const chunks = [];
+  for (let index = 0; index < message.length; index += 3900) {
+    chunks.push(message.slice(index, index + 3900));
   }
+  return chunks;
+}
 
-  return response.json();
+function withTimeout(promise, timeoutMs, label) {
+  let timer;
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      timer = setTimeout(
+        () =>
+          reject(
+            new Error(`${label} exceeded ${Math.round(timeoutMs / 1000)}s.`),
+          ),
+        timeoutMs,
+      );
+    }),
+  ]).finally(() => clearTimeout(timer));
+}
+
+function requestStop() {
+  stopping = true;
+  console.log('Renderer worker will stop after the active operation.');
 }
 
 function delay(ms) {

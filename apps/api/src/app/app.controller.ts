@@ -1,5 +1,6 @@
 import {
   Body,
+  BadRequestException,
   Controller,
   DefaultValuePipe,
   Get,
@@ -9,25 +10,34 @@ import {
   Patch,
   Post,
   Query,
+  StreamableFile,
 } from '@nestjs/common';
+import { createReadStream } from 'node:fs';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import type {
   ChapterReelSummary,
   GeneratedAssetManifest,
   ReelEpisode,
   RenderJob,
+  RenderJobAttempt,
+  RenderJobLog,
 } from '@sumer-reel-forge/reel-core';
 import { AppService } from './app.service';
 import {
   ClaimRenderJobDto,
   CreateRenderJobDto,
+  CreateRenderJobLogDto,
   HeartbeatRenderJobDto,
+  RetryRenderJobDto,
   UpdateRenderJobStatusDto,
 } from './render-job.dto';
 import {
   CreateGeneratedAssetDto,
+  RegenerateGeneratedAssetDto,
+  UpdateGeneratedAssetReviewDto,
   UpdateReelProductionDto,
 } from './reel-production.dto';
+import { UpdateReelStatusDto } from './reel-workflow.dto';
 
 @Controller()
 @ApiTags('studio')
@@ -68,10 +78,20 @@ export class AppController {
     );
   }
 
+  @Patch('chapters/1/reels/:episodeId/status')
+  @ApiOperation({ summary: 'Transition a reel through production approval.' })
+  updateEpisodeStatus(
+    @Param('episodeId', ParseIntPipe) episodeId: number,
+    @Body() request: UpdateReelStatusDto,
+    @Headers('x-request-id') requestId?: string,
+  ): Promise<ReelEpisode> {
+    return this.appService.updateEpisodeStatus(episodeId, request, requestId);
+  }
+
   @Get('render-jobs')
   @ApiOperation({ summary: 'Return queued render jobs for audit/debugging.' })
-  getRenderJobs(): Promise<RenderJob[]> {
-    return this.appService.getRenderJobs();
+  getRenderJobs(@Query('episodeId') episodeId?: string): Promise<RenderJob[]> {
+    return this.appService.getRenderJobs(toOptionalPositiveInt(episodeId));
   }
 
   @Get('render-jobs/stale')
@@ -82,7 +102,9 @@ export class AppController {
     @Query('maxAgeSeconds', new DefaultValuePipe(900), ParseIntPipe)
     maxAgeSeconds = 900,
   ): Promise<RenderJob[]> {
-    return this.appService.getStaleRenderJobs(maxAgeSeconds);
+    return this.appService.getStaleRenderJobs(
+      toNonNegativeInt(maxAgeSeconds, 'maxAgeSeconds'),
+    );
   }
 
   @Post('render-jobs/watchdog/stale')
@@ -94,7 +116,10 @@ export class AppController {
     maxAgeSeconds = 900,
     @Headers('x-request-id') requestId?: string,
   ): Promise<RenderJob[]> {
-    return this.appService.markStaleRenderJobsFailed(maxAgeSeconds, requestId);
+    return this.appService.markStaleRenderJobsFailed(
+      toNonNegativeInt(maxAgeSeconds, 'maxAgeSeconds'),
+      requestId,
+    );
   }
 
   @Post('render-jobs/claim')
@@ -108,8 +133,11 @@ export class AppController {
 
   @Post('render-jobs')
   @ApiOperation({ summary: 'Queue a render job for an existing storyboard.' })
-  createRenderJob(@Body() request: CreateRenderJobDto): Promise<RenderJob> {
-    return this.appService.createRenderJob(request);
+  createRenderJob(
+    @Body() request: CreateRenderJobDto,
+    @Headers('x-request-id') requestId?: string,
+  ): Promise<RenderJob> {
+    return this.appService.createRenderJob(request, requestId);
   }
 
   @Patch('render-jobs/:jobId/status')
@@ -140,12 +168,49 @@ export class AppController {
     );
   }
 
+  @Get('render-jobs/:jobId/attempts')
+  @ApiOperation({ summary: 'List retry and failure history for a render job.' })
+  getRenderJobAttempts(
+    @Param('jobId') jobId: string,
+  ): Promise<RenderJobAttempt[]> {
+    return this.appService.getRenderJobAttempts(jobId);
+  }
+
+  @Get('render-jobs/:jobId/logs')
+  @ApiOperation({ summary: 'List persisted worker output for a render job.' })
+  getRenderJobLogs(@Param('jobId') jobId: string): Promise<RenderJobLog[]> {
+    return this.appService.getRenderJobLogs(jobId);
+  }
+
+  @Post('render-jobs/:jobId/logs')
+  @ApiOperation({ summary: 'Persist one structured renderer log event.' })
+  createRenderJobLog(
+    @Param('jobId') jobId: string,
+    @Body() request: CreateRenderJobLogDto,
+  ): Promise<RenderJobLog> {
+    return this.appService.createRenderJobLog(jobId, request);
+  }
+
+  @Post('render-jobs/:jobId/retry')
+  @ApiOperation({ summary: 'Requeue a failed render job as a new attempt.' })
+  retryRenderJob(
+    @Param('jobId') jobId: string,
+    @Body() request: RetryRenderJobDto,
+    @Headers('x-request-id') requestId?: string,
+  ): Promise<RenderJob> {
+    return this.appService.retryRenderJob(jobId, request.notes, requestId);
+  }
+
   @Get('generated-assets')
   @ApiOperation({ summary: 'List generated asset manifests.' })
   getGeneratedAssets(
     @Query('renderJobId') renderJobId?: string,
+    @Query('episodeId') episodeId?: string,
   ): Promise<GeneratedAssetManifest[]> {
-    return this.appService.getGeneratedAssets(renderJobId);
+    return this.appService.getGeneratedAssets({
+      renderJobId,
+      episodeId: toOptionalPositiveInt(episodeId),
+    });
   }
 
   @Post('generated-assets')
@@ -156,4 +221,62 @@ export class AppController {
   ): Promise<GeneratedAssetManifest> {
     return this.appService.createGeneratedAsset(request, requestId);
   }
+
+  @Get('generated-assets/:assetId/content')
+  @ApiOperation({ summary: 'Stream a local generated asset for review.' })
+  async getGeneratedAssetContent(
+    @Param('assetId') assetId: string,
+  ): Promise<StreamableFile> {
+    const content = await this.appService.getGeneratedAssetContent(assetId);
+    return new StreamableFile(createReadStream(content.filePath), {
+      type: content.contentType,
+      disposition: `inline; filename="${content.filename.replace(/"/g, '')}"`,
+    });
+  }
+
+  @Patch('generated-assets/:assetId/review')
+  @ApiOperation({ summary: 'Approve, reject, or reset an asset review.' })
+  updateGeneratedAssetReview(
+    @Param('assetId') assetId: string,
+    @Body() request: UpdateGeneratedAssetReviewDto,
+    @Headers('x-request-id') requestId?: string,
+  ): Promise<GeneratedAssetManifest> {
+    return this.appService.updateGeneratedAssetReview(
+      assetId,
+      request,
+      requestId,
+    );
+  }
+
+  @Post('generated-assets/:assetId/regenerate')
+  @ApiOperation({ summary: 'Queue a replacement render for one asset.' })
+  regenerateGeneratedAsset(
+    @Param('assetId') assetId: string,
+    @Body() request: RegenerateGeneratedAssetDto,
+    @Headers('x-request-id') requestId?: string,
+  ): Promise<RenderJob> {
+    return this.appService.regenerateGeneratedAsset(
+      assetId,
+      request.notes,
+      requestId,
+    );
+  }
+}
+
+function toOptionalPositiveInt(value?: string): number | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    throw new BadRequestException('Query value must be a positive integer.');
+  }
+  return parsed;
+}
+
+function toNonNegativeInt(value: number, fieldName: string): number {
+  if (!Number.isInteger(value) || value < 0) {
+    throw new BadRequestException(`${fieldName} must be zero or greater.`);
+  }
+  return value;
 }

@@ -56,7 +56,10 @@ describe('App', () => {
         youtubeShortsTitle: 'Shorts title',
         tags: ['Sumer'],
       },
+      productionStatus: 'draft',
     });
+    httpTesting.expectOne('/api/render-jobs?episodeId=1').flush([]);
+    httpTesting.expectOne('/api/generated-assets?episodeId=1').flush([]);
     fixture.detectChanges();
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
@@ -97,7 +100,10 @@ describe('App', () => {
         youtubeShortsTitle: 'Shorts title',
         tags: ['Sumer'],
       },
+      productionStatus: 'draft',
     });
+    httpTesting.expectOne('/api/render-jobs?episodeId=1').flush([]);
+    httpTesting.expectOne('/api/generated-assets?episodeId=1').flush([]);
     fixture.detectChanges();
     await fixture.whenStable();
 
@@ -130,6 +136,7 @@ describe('App', () => {
       sourceSection: 'The Voyage',
       hook: 'A god crosses the sea without knowing why.',
       visualCore: 'Stag of the Absu',
+      productionStatus: 'draft',
     });
 
     await fixture.whenStable();

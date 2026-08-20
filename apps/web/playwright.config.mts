@@ -38,7 +38,7 @@ export default defineConfig({
       PORT: webServerPort,
     },
     url: baseURL,
-    reuseExistingServer: false,
+    reuseExistingServer: process.env['CI'] !== 'true',
     cwd: workspaceRoot,
   },
   projects: [

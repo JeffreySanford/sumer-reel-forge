@@ -1,36 +1,49 @@
 # Local Renderer Prerequisites
 
-The renderer pipeline is scaffolded but does not generate real media yet. Current worker scripts prove queue claiming, heartbeat updates, watchdog failure handling, and asset manifest persistence before heavier model integrations are added.
+The worker has two explicit modes. `mock` creates deterministic storyboard cards, silent audio, authored captions, and a real 9:16 MP4 for pipeline verification. `local` uses ComfyUI images, a configurable TTS command, Whisper timing, and FFmpeg assembly.
 
-## Current Commands
+## Commands
 
-- [x] `pnpm renderer:worker -- --once` claims one queued job, sends heartbeats, writes a scaffold manifest asset, and marks the job complete.
-- [x] `pnpm render:watchdog -- --once` marks stale queued/running jobs as failed through the API.
-- [x] Both scripts use `API_BASE_URL`, defaulting to `http://localhost:3000/api`.
+- [x] `pnpm renderer:preflight` checks the active adapter prerequisites.
+- [x] `pnpm renderer:worker -- --once` claims and processes one queued job.
+- [x] `pnpm render:prototype:reel1` queues and verifies a complete Reel 1 mock render.
+- [x] `pnpm render:watchdog -- --once` fails stale queued/running jobs through the API.
 
-## Required External Tools
+## Mock Adapter
 
-- [ ] FFmpeg installed and available on `PATH`.
-- [ ] ComfyUI running locally for image generation.
-- [ ] A local TTS service selected and documented.
-- [ ] Whisper or compatible caption timing service installed.
-- [ ] A durable local render output directory selected.
+Set `RENDER_ADAPTER=mock`. It requires Playwright Chromium and FFmpeg. Run:
 
-## Planned Environment Variables
+```sh
+pnpm renderer:preflight
+pnpm render:prototype:reel1
+```
+
+The verified Reel 1 run produced eight PNG shot cards, WAV audio, SRT captions, a 60-second H.264/AAC/MovText MP4, and a JSON manifest under `tmp/renders/<job-id>`.
+
+## Local Adapter
+
+Set `RENDER_ADAPTER=local`, then provide:
+
+- `COMFYUI_BASE_URL` and an API-format workflow at `COMFYUI_WORKFLOW_PATH`.
+- `TTS_COMMAND`, `TTS_VOICE`, and `TTS_ARGS_JSON` for a command that writes WAV output.
+- `WHISPER_COMMAND`, `WHISPER_MODEL`, and `WHISPER_ARGS_JSON`.
+- `FFMPEG_COMMAND`.
+
+Command argument variables are JSON arrays, not shell command strings. Supported placeholders are documented in `.env.sample`; the ComfyUI workflow tokens are documented in `tools/renderer/workflows/README.md`.
+
+## Runtime Controls
 
 - `API_BASE_URL`: Nest API base URL.
-- `RENDER_WORKER_ID`: stable worker name for audit logs.
+- `RENDER_OUTPUT_ROOT`: only this directory can be streamed by the asset-content API.
+- `RENDER_WORKER_ID`: stable worker identity for attempts, logs, and audit rows.
 - `RENDER_HEARTBEAT_INTERVAL_MS`: worker heartbeat cadence.
-- `RENDER_MOCK_DURATION_MS`: scaffold render duration before real renderer integration.
+- `RENDER_JOB_TIMEOUT_MS`: overall pipeline deadline.
+- `RENDER_PROCESS_TIMEOUT_MS`: individual external-process deadline.
 - `RENDER_STALE_MAX_AGE_SECONDS`: watchdog stale threshold.
-- `RENDER_WATCHDOG_INTERVAL_MS`: watchdog polling interval.
 
-## Integration Order
+## External Validation Still Required
 
-- [ ] FFmpeg probe/validation script.
-- [ ] Asset output directory validation.
-- [ ] Image generation request adapter.
-- [ ] TTS request adapter.
-- [ ] Whisper caption timing adapter.
-- [ ] FFmpeg assembly adapter.
-- [ ] End-to-end render manifest verification.
+- [ ] Select and validate the production ComfyUI checkpoint/workflow.
+- [ ] Select and validate the production narration voice.
+- [ ] Review Whisper timing against the authored caption copy.
+- [ ] Approve the character and environment visual bible before final rendering.

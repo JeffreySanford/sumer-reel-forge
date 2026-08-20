@@ -23,6 +23,26 @@ describe('GET /api/chapters/1/reels', () => {
       title: 'The Voyage Begins',
     });
   });
+
+  it('returns expanded production storyboards for every reel', async () => {
+    const episodes = await Promise.all(
+      Array.from({ length: 18 }, (_, index) =>
+        axios.get(`/api/chapters/1/reels/${index + 1}`),
+      ),
+    );
+
+    expect(episodes.every(({ data }) => data.shots.length >= 6)).toBe(true);
+    expect(
+      episodes.every(
+        ({ data }) =>
+          data.shots.reduce(
+            (total: number, shot: { durationSeconds: number }) =>
+              total + shot.durationSeconds,
+            0,
+          ) === data.targetDurationSeconds,
+      ),
+    ).toBe(true);
+  });
 });
 
 describe('PATCH /api/chapters/1/reels/:episodeId/production', () => {
@@ -62,13 +82,28 @@ describe('PATCH /api/chapters/1/reels/:episodeId/production', () => {
         xPost: 'Updated X post.',
       },
     });
+
+    await axios.patch(
+      `/api/chapters/1/reels/1/production`,
+      {
+        logline: episode.data.logline,
+        narration: episode.data.narration,
+        onScreenText: episode.data.onScreenText,
+        shots: episode.data.shots,
+        musicDirection: episode.data.musicDirection,
+        voiceDirection: episode.data.voiceDirection,
+        platformNotes: episode.data.platformNotes,
+        exportMetadata: episode.data.exportMetadata,
+      },
+      { headers: { 'x-request-id': 'api-e2e-production-restore' } },
+    );
   });
 });
 
 describe('render job workflow', () => {
   it('claims, heartbeats, records assets, and marks stale jobs', async () => {
     await axios.post(`/api/render-jobs/watchdog/stale`, null, {
-      params: { maxAgeSeconds: -1 },
+      params: { maxAgeSeconds: 0 },
     });
 
     const queued = await axios.post(`/api/render-jobs`, {
@@ -97,11 +132,36 @@ describe('render job workflow', () => {
     expect(heartbeat.data.status).toBe('running');
     expect(heartbeat.data.heartbeatAt).toBeTruthy();
 
+    const attempts = await axios.get(
+      `/api/render-jobs/${queued.data.id}/attempts`,
+    );
+    expect(attempts.data).toEqual([
+      expect.objectContaining({
+        attemptNumber: 1,
+        workerId: 'api-e2e-worker',
+        status: 'running',
+      }),
+    ]);
+
+    await axios.post(`/api/render-jobs/${queued.data.id}/logs`, {
+      workerId: 'api-e2e-worker',
+      level: 'info',
+      stream: 'stdout',
+      message: 'API e2e renderer output',
+    });
+    const logs = await axios.get(`/api/render-jobs/${queued.data.id}/logs`);
+    expect(logs.data).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ message: 'API e2e renderer output' }),
+      ]),
+    );
+
     const asset = await axios.post(`/api/generated-assets`, {
       renderJobId: queued.data.id,
       assetType: 'manifest',
       uri: 'file:///tmp/api-e2e-manifest.json',
       metadata: { test: true },
+      shotNumber: 1,
     });
 
     expect(asset.status).toBe(201);
@@ -109,6 +169,8 @@ describe('render job workflow', () => {
       renderJobId: queued.data.id,
       assetType: 'manifest',
       uri: 'file:///tmp/api-e2e-manifest.json',
+      shotNumber: 1,
+      reviewStatus: 'pending',
     });
 
     const assets = await axios.get(
@@ -124,8 +186,22 @@ describe('render job workflow', () => {
       ]),
     );
 
+    const reviewed = await axios.patch(
+      `/api/generated-assets/${asset.data.id}/review`,
+      {
+        status: 'rejected',
+        notes: 'Continuity mismatch in API e2e.',
+        reviewer: 'api-e2e-reviewer',
+      },
+    );
+    expect(reviewed.data).toMatchObject({
+      reviewStatus: 'rejected',
+      reviewNotes: 'Continuity mismatch in API e2e.',
+      reviewedBy: 'api-e2e-reviewer',
+    });
+
     const stale = await axios.post(`/api/render-jobs/watchdog/stale`, null, {
-      params: { maxAgeSeconds: -1 },
+      params: { maxAgeSeconds: 0 },
     });
 
     expect(stale.data).toEqual(
@@ -136,5 +212,61 @@ describe('render job workflow', () => {
         }),
       ]),
     );
+
+    const retry = await axios.post(`/api/render-jobs/${queued.data.id}/retry`, {
+      notes: 'Retry from API e2e.',
+    });
+    expect(retry.data).toMatchObject({
+      id: queued.data.id,
+      status: 'queued',
+      attemptCount: 1,
+    });
+
+    await axios.post(`/api/render-jobs/watchdog/stale`, null, {
+      params: { maxAgeSeconds: 0 },
+    });
+  });
+});
+
+describe('reel approval workflow', () => {
+  it('requires approval before queueing a final video', async () => {
+    await expect(
+      axios.post(`/api/render-jobs`, {
+        episodeId: 1,
+        mode: 'final-video',
+      }),
+    ).rejects.toMatchObject({ response: { status: 409 } });
+
+    const review = await axios.patch(`/api/chapters/1/reels/1/status`, {
+      status: 'review',
+    });
+    expect(review.data.productionStatus).toBe('review');
+
+    const approved = await axios.patch(`/api/chapters/1/reels/1/status`, {
+      status: 'approved',
+    });
+    expect(approved.data.productionStatus).toBe('approved');
+
+    const finalJob = await axios.post(`/api/render-jobs`, {
+      episodeId: 1,
+      mode: 'final-video',
+      notes: 'Approval-gated API e2e final.',
+    });
+    expect(finalJob.data.status).toBe('queued');
+
+    const rendering = await axios.get(`/api/chapters/1/reels/1`);
+    expect(rendering.data.productionStatus).toBe('rendering');
+
+    await axios.post(`/api/render-jobs/watchdog/stale`, null, {
+      params: { maxAgeSeconds: 0 },
+    });
+    const reset = await axios.get(`/api/chapters/1/reels/1`);
+    expect(reset.data.productionStatus).toBe('approved');
+
+    const draft = await axios.patch(`/api/chapters/1/reels/1/status`, {
+      status: 'draft',
+      notes: 'Restore local development state after API e2e.',
+    });
+    expect(draft.data.productionStatus).toBe('draft');
   });
 });

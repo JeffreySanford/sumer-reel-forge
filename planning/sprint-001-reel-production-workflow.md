@@ -39,7 +39,7 @@ Turn the current review/orchestration slice into a usable production workflow fo
 - [x] Renderer worker scaffold claims jobs, sends heartbeats, creates a manifest asset, and completes/fails jobs.
 - [x] Asset manifest persistence is implemented.
 - [x] Local renderer prerequisite documentation is started.
-- [ ] Real media generation adapters are pending.
+- [x] Real media generation adapters are implemented behind explicit environment configuration.
 - [ ] OS-level watchdog scheduling is pending.
 
 ## Acceptance Criteria

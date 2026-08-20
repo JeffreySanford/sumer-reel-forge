@@ -72,6 +72,23 @@ export interface paths {
     patch: operations['AppController_updateEpisodeProduction'];
     trace?: never;
   };
+  '/api/chapters/1/reels/{episodeId}/status': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** Transition a reel through production approval. */
+    patch: operations['AppController_updateEpisodeStatus'];
+    trace?: never;
+  };
   '/api/render-jobs': {
     parameters: {
       query?: never;
@@ -175,6 +192,58 @@ export interface paths {
     patch: operations['AppController_heartbeatRenderJob'];
     trace?: never;
   };
+  '/api/render-jobs/{jobId}/attempts': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List retry and failure history for a render job. */
+    get: operations['AppController_getRenderJobAttempts'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/render-jobs/{jobId}/logs': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List persisted worker output for a render job. */
+    get: operations['AppController_getRenderJobLogs'];
+    put?: never;
+    /** Persist one structured renderer log event. */
+    post: operations['AppController_createRenderJobLog'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/render-jobs/{jobId}/retry': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Requeue a failed render job as a new attempt. */
+    post: operations['AppController_retryRenderJob'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/generated-assets': {
     parameters: {
       query?: never;
@@ -187,6 +256,57 @@ export interface paths {
     put?: never;
     /** Persist a generated asset manifest. */
     post: operations['AppController_createGeneratedAsset'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/generated-assets/{assetId}/content': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Stream a local generated asset for review. */
+    get: operations['AppController_getGeneratedAssetContent'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/generated-assets/{assetId}/review': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** Approve, reject, or reset an asset review. */
+    patch: operations['AppController_updateGeneratedAssetReview'];
+    trace?: never;
+  };
+  '/api/generated-assets/{assetId}/regenerate': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Queue a replacement render for one asset. */
+    post: operations['AppController_regenerateGeneratedAsset'];
     delete?: never;
     options?: never;
     head?: never;
@@ -246,6 +366,15 @@ export interface components {
       platformNotes: string[];
       exportMetadata: components['schemas']['ReelExportMetadataDto'];
     };
+    UpdateReelStatusDto: {
+      /**
+       * @example review
+       * @enum {string}
+       */
+      status: 'draft' | 'review' | 'approved' | 'rendering' | 'published';
+      /** @example Narration and visual continuity reviewed. */
+      notes?: string;
+    };
     ClaimRenderJobDto: {
       /** @example local-renderer-worker */
       workerId: string;
@@ -278,9 +407,31 @@ export interface components {
       /** @example Renderer worker still processing frames. */
       notes?: string;
     };
+    CreateRenderJobLogDto: {
+      /** @example local-renderer-worker */
+      workerId?: string;
+      /**
+       * @example info
+       * @enum {string}
+       */
+      level: 'info' | 'warn' | 'error';
+      /**
+       * @example stdout
+       * @enum {string}
+       */
+      stream: 'stdout' | 'stderr' | 'system';
+      /** @example FFmpeg assembled the final video. */
+      message: string;
+    };
+    RetryRenderJobDto: {
+      /** @example Retry after correcting the renderer configuration. */
+      notes?: string;
+    };
     CreateGeneratedAssetDto: {
       /** @example 550e8400-e29b-41d4-a716-446655440000 */
       renderJobId?: string;
+      /** @example 1 */
+      shotNumber?: number;
       /**
        * @example image
        * @enum {string}
@@ -303,6 +454,18 @@ export interface components {
        *     }
        */
       metadata?: Record<string, never>;
+    };
+    UpdateGeneratedAssetReviewDto: {
+      /** @enum {string} */
+      status: 'pending' | 'approved' | 'rejected';
+      /** @example Character continuity approved. */
+      notes?: string;
+      /** @example local-reviewer */
+      reviewer?: string;
+    };
+    RegenerateGeneratedAssetDto: {
+      /** @example Preserve Enki wardrobe continuity. */
+      notes?: string;
     };
   };
   responses: never;
@@ -391,9 +554,36 @@ export interface operations {
       };
     };
   };
-  AppController_getRenderJobs: {
+  AppController_updateEpisodeStatus: {
     parameters: {
       query?: never;
+      header: {
+        'x-request-id': string;
+      };
+      path: {
+        episodeId: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateReelStatusDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  AppController_getRenderJobs: {
+    parameters: {
+      query: {
+        episodeId: string;
+      };
       header?: never;
       path?: never;
       cookie?: never;
@@ -411,7 +601,9 @@ export interface operations {
   AppController_createRenderJob: {
     parameters: {
       query?: never;
-      header?: never;
+      header: {
+        'x-request-id': string;
+      };
       path?: never;
       cookie?: never;
     };
@@ -538,10 +730,97 @@ export interface operations {
       };
     };
   };
+  AppController_getRenderJobAttempts: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        jobId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  AppController_getRenderJobLogs: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        jobId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  AppController_createRenderJobLog: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        jobId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateRenderJobLogDto'];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  AppController_retryRenderJob: {
+    parameters: {
+      query?: never;
+      header: {
+        'x-request-id': string;
+      };
+      path: {
+        jobId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RetryRenderJobDto'];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
   AppController_getGeneratedAssets: {
     parameters: {
       query: {
         renderJobId: string;
+        episodeId: string;
       };
       header?: never;
       path?: never;
@@ -569,6 +848,75 @@ export interface operations {
     requestBody: {
       content: {
         'application/json': components['schemas']['CreateGeneratedAssetDto'];
+      };
+    };
+    responses: {
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  AppController_getGeneratedAssetContent: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        assetId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  AppController_updateGeneratedAssetReview: {
+    parameters: {
+      query?: never;
+      header: {
+        'x-request-id': string;
+      };
+      path: {
+        assetId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateGeneratedAssetReviewDto'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  AppController_regenerateGeneratedAsset: {
+    parameters: {
+      query?: never;
+      header: {
+        'x-request-id': string;
+      };
+      path: {
+        assetId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['RegenerateGeneratedAssetDto'];
       };
     };
     responses: {

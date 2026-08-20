@@ -10,6 +10,7 @@ import {
 } from 'class-validator';
 import type {
   ClaimRenderJobRequest,
+  CreateRenderJobLogRequest,
   RenderJobRequest,
 } from '@sumer-reel-forge/reel-core';
 
@@ -72,4 +73,35 @@ export class ClaimRenderJobDto implements ClaimRenderJobRequest {
   @IsString()
   @MaxLength(120)
   workerId!: string;
+}
+
+export class CreateRenderJobLogDto implements CreateRenderJobLogRequest {
+  @ApiPropertyOptional({ example: 'local-renderer-worker' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  workerId?: string;
+
+  @ApiProperty({ enum: ['info', 'warn', 'error'], example: 'info' })
+  @IsIn(['info', 'warn', 'error'])
+  level!: CreateRenderJobLogRequest['level'];
+
+  @ApiProperty({ enum: ['stdout', 'stderr', 'system'], example: 'stdout' })
+  @IsIn(['stdout', 'stderr', 'system'])
+  stream!: CreateRenderJobLogRequest['stream'];
+
+  @ApiProperty({ example: 'FFmpeg assembled the final video.' })
+  @IsString()
+  @MaxLength(4000)
+  message!: string;
+}
+
+export class RetryRenderJobDto {
+  @ApiPropertyOptional({
+    example: 'Retry after correcting the renderer configuration.',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  notes?: string;
 }

@@ -2,10 +2,16 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import {
   REEL_ONE,
+  type AssetReviewStatus,
   type ChapterReelSummary,
+  type GeneratedAssetManifest,
   type ReelEpisode,
   type ReelExportMetadata,
   type ReelShot,
+  type ReelProductionStatus,
+  type RenderJob,
+  type RenderJobAttempt,
+  type RenderJobLog,
   type TimedText,
   type UpdateReelProductionRequest,
 } from '@sumer-reel-forge/reel-core';
@@ -38,6 +44,13 @@ export class App {
   protected readonly dataSource = signal<'api' | 'fallback'>('fallback');
   protected readonly isSaving = signal(false);
   protected readonly isLoading = signal(true);
+  protected readonly isWorkflowBusy = signal(false);
+  protected readonly renderJobs = signal<RenderJob[]>([]);
+  protected readonly generatedAssets = signal<GeneratedAssetManifest[]>([]);
+  protected readonly selectedJobId = signal<string | null>(null);
+  protected readonly renderJobAttempts = signal<RenderJobAttempt[]>([]);
+  protected readonly renderJobLogs = signal<RenderJobLog[]>([]);
+  protected readonly assetReviewNotes = signal<Record<string, string>>({});
 
   protected readonly selectedShot = computed(
     () => this.productionDraft().shots[this.selectedShotIndex()] ?? EMPTY_SHOT,
@@ -47,6 +60,26 @@ export class App {
     this.productionDraft().shots.reduce(
       (total, shot) => total + shot.durationSeconds,
       0,
+    ),
+  );
+
+  protected readonly availableStatusTransitions = computed(
+    () => STATUS_TRANSITIONS[this.selectedEpisode().productionStatus],
+  );
+
+  protected readonly selectedRenderJob = computed(() =>
+    this.renderJobs().find((job) => job.id === this.selectedJobId()),
+  );
+
+  protected readonly selectedJobAssets = computed(() =>
+    this.generatedAssets().filter(
+      (asset) => asset.renderJobId === this.selectedJobId(),
+    ),
+  );
+
+  protected readonly reviewableAssets = computed(() =>
+    this.selectedJobAssets().filter((asset) =>
+      ['image', 'audio', 'video'].includes(asset.assetType),
     ),
   );
 
@@ -62,6 +95,7 @@ export class App {
       this.applyEpisode(episode);
       this.dataSource.set(episode.episode === episodeId ? 'api' : 'fallback');
       this.isLoading.set(false);
+      this.loadOperationalState(episodeId);
     });
   }
 
@@ -110,17 +144,127 @@ export class App {
     this.renderStatus.set('Episode exported');
   }
 
-  protected queueRenderJob(): void {
-    this.renderStatus.set('Queueing storyboard render...');
+  protected queueRenderJob(
+    mode: 'storyboard' | 'draft-video' | 'final-video' = 'storyboard',
+  ): void {
+    this.renderStatus.set(`Queueing ${mode} render...`);
     this.reelApi
       .queueRenderJob({
         episodeId: this.selectedEpisode().episode,
-        mode: 'storyboard',
+        mode,
         notes: `Queued from Reel Forge for ${this.selectedEpisode().title}`,
       })
       .subscribe({
-        next: (job) => this.renderStatus.set(`Queued job ${job.id}`),
+        next: (job) => {
+          this.renderStatus.set(`Queued job ${job.id}`);
+          this.renderJobs.update((jobs) => [job, ...jobs]);
+          this.selectRenderJob(job.id);
+          if (mode === 'final-video') {
+            this.selectedEpisode.update((episode) => ({
+              ...episode,
+              productionStatus: 'rendering',
+            }));
+          }
+        },
         error: () => this.renderStatus.set('Queue failed'),
+      });
+  }
+
+  protected transitionProductionStatus(status: ReelProductionStatus): void {
+    this.isWorkflowBusy.set(true);
+    this.renderStatus.set(`Moving reel to ${status}...`);
+    this.reelApi
+      .updateEpisodeStatus(this.selectedEpisode().episode, status)
+      .subscribe({
+        next: (episode) => {
+          this.applyEpisode(episode);
+          this.updateOutlineStatus(episode.episode, episode.productionStatus);
+          this.renderStatus.set(`Reel is ${episode.productionStatus}`);
+          this.isWorkflowBusy.set(false);
+        },
+        error: () => {
+          this.renderStatus.set('Status update failed');
+          this.isWorkflowBusy.set(false);
+        },
+      });
+  }
+
+  protected selectRenderJob(jobId: string): void {
+    this.selectedJobId.set(jobId);
+    this.renderJobAttempts.set([]);
+    this.renderJobLogs.set([]);
+    this.reelApi.getRenderJobAttempts(jobId).subscribe({
+      next: (attempts) => this.renderJobAttempts.set(attempts),
+      error: () => this.renderJobAttempts.set([]),
+    });
+    this.reelApi.getRenderJobLogs(jobId).subscribe({
+      next: (logs) => this.renderJobLogs.set(logs),
+      error: () => this.renderJobLogs.set([]),
+    });
+  }
+
+  protected updateAssetReviewNote(assetId: string, event: Event): void {
+    const value = eventValue(event);
+    this.assetReviewNotes.update((notes) => ({ ...notes, [assetId]: value }));
+  }
+
+  protected reviewAsset(
+    asset: GeneratedAssetManifest,
+    status: AssetReviewStatus,
+  ): void {
+    this.renderStatus.set(
+      `${status === 'approved' ? 'Approving' : 'Rejecting'} asset...`,
+    );
+    this.reelApi
+      .reviewGeneratedAsset(
+        asset.id,
+        status,
+        this.assetReviewNotes()[asset.id] ?? asset.reviewNotes,
+      )
+      .subscribe({
+        next: (updated) => {
+          this.generatedAssets.update((assets) =>
+            assets.map((item) => (item.id === updated.id ? updated : item)),
+          );
+          this.renderStatus.set(`Asset ${updated.reviewStatus}`);
+        },
+        error: () => this.renderStatus.set('Asset review failed'),
+      });
+  }
+
+  protected regenerateAsset(asset: GeneratedAssetManifest): void {
+    this.renderStatus.set('Queueing replacement asset...');
+    this.reelApi
+      .regenerateGeneratedAsset(
+        asset.id,
+        this.assetReviewNotes()[asset.id] ?? asset.reviewNotes,
+      )
+      .subscribe({
+        next: (job) => {
+          this.renderJobs.update((jobs) => [job, ...jobs]);
+          this.selectRenderJob(job.id);
+          this.renderStatus.set(`Replacement queued as ${job.id}`);
+        },
+        error: () => this.renderStatus.set('Regeneration queue failed'),
+      });
+  }
+
+  protected retrySelectedRenderJob(): void {
+    const job = this.selectedRenderJob();
+    if (!job || job.status !== 'failed') {
+      return;
+    }
+    this.renderStatus.set('Requeueing failed render...');
+    this.reelApi
+      .retryRenderJob(job.id, 'Retry requested from Reel Forge.')
+      .subscribe({
+        next: (updated) => {
+          this.renderJobs.update((jobs) =>
+            jobs.map((item) => (item.id === updated.id ? updated : item)),
+          );
+          this.renderStatus.set(`Job ${updated.id} requeued`);
+        },
+        error: () => this.renderStatus.set('Retry failed'),
       });
   }
 
@@ -135,6 +279,7 @@ export class App {
       .subscribe({
         next: (episode) => {
           this.applyEpisode(episode);
+          this.updateOutlineStatus(episode.episode, episode.productionStatus);
           this.renderStatus.set('Production saved');
           this.isSaving.set(false);
         },
@@ -236,6 +381,50 @@ export class App {
     });
   }
 
+  private loadOperationalState(episodeId: number): void {
+    this.reelApi.getRenderJobs(episodeId).subscribe({
+      next: (jobs) => {
+        this.renderJobs.set(jobs);
+        const selectedId =
+          jobs.find((job) => job.status === 'complete')?.id ??
+          jobs[0]?.id ??
+          null;
+        this.selectedJobId.set(selectedId);
+        if (selectedId) {
+          this.selectRenderJob(selectedId);
+        } else {
+          this.renderJobAttempts.set([]);
+          this.renderJobLogs.set([]);
+        }
+      },
+      error: () => this.renderJobs.set([]),
+    });
+    this.reelApi.getGeneratedAssets(episodeId).subscribe({
+      next: (assets) => {
+        this.generatedAssets.set(assets);
+        this.assetReviewNotes.set(
+          Object.fromEntries(
+            assets.map((asset) => [asset.id, asset.reviewNotes ?? '']),
+          ),
+        );
+      },
+      error: () => this.generatedAssets.set([]),
+    });
+  }
+
+  private updateOutlineStatus(
+    episodeId: number,
+    productionStatus: ReelProductionStatus,
+  ): void {
+    this.outline.update((outline) =>
+      outline.map((episode) =>
+        episode.episode === episodeId
+          ? { ...episode, productionStatus }
+          : episode,
+      ),
+    );
+  }
+
   private applyEpisode(episode: ReelEpisode): void {
     this.selectedEpisode.set(episode);
     this.productionDraft.set(toProductionDraft(episode));
@@ -248,6 +437,15 @@ export class App {
     };
   }
 }
+
+const STATUS_TRANSITIONS: Record<ReelProductionStatus, ReelProductionStatus[]> =
+  {
+    draft: ['review'],
+    review: ['draft', 'approved'],
+    approved: ['draft'],
+    rendering: ['approved', 'published'],
+    published: ['draft'],
+  };
 
 function toProductionDraft(episode: ReelEpisode): UpdateReelProductionRequest {
   return {

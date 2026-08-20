@@ -36,10 +36,12 @@ pnpm start:all
 
 `start:all` starts Postgres through Docker Compose and starts the Angular/Nest dev servers on ports 4200 and 3000. It fails fast if dependencies are missing or stale; run `pnpm install` yourself before retrying.
 
-Run the scaffold renderer worker after the API is running:
+Validate and run the renderer after the API is running:
 
 ```sh
+pnpm renderer:preflight
 pnpm renderer:worker -- --once
+pnpm render:prototype:reel1
 ```
 
 Run the stale-job watchdog once:
@@ -58,9 +60,14 @@ GET  http://localhost:3000/api/chapters/1/reels
 GET  http://localhost:3000/api/chapters/1/reels/1
 POST http://localhost:3000/api/render-jobs
 POST http://localhost:3000/api/render-jobs/claim
+GET  http://localhost:3000/api/render-jobs/{jobId}/attempts
+GET  http://localhost:3000/api/render-jobs/{jobId}/logs
+POST http://localhost:3000/api/render-jobs/{jobId}/retry
 PATCH http://localhost:3000/api/render-jobs/{jobId}/heartbeat
 POST http://localhost:3000/api/render-jobs/watchdog/stale
 POST http://localhost:3000/api/generated-assets
+PATCH http://localhost:3000/api/generated-assets/{assetId}/review
+POST http://localhost:3000/api/generated-assets/{assetId}/regenerate
 ```
 
 Example render-job payload:
@@ -87,7 +94,7 @@ Open a database shell:
 pnpm db:psql
 ```
 
-The rendering stack is not wired yet. The intended next services are ComfyUI, local TTS, Whisper, and an FFmpeg renderer.
+The deterministic `mock` adapter is the default. Set `RENDER_ADAPTER=local` to use the configured ComfyUI, TTS, Whisper, and FFmpeg integrations; see `docs/studio/local-renderer-prerequisites.md`.
 
 ## Documentation
 

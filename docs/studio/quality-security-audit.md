@@ -15,12 +15,12 @@ commands when preparing a pull request.
 
 ## Current Gate Status
 
-- [x] `pnpm quality` passed locally on August 19, 2026.
+- [x] Focused API, web, shared-contract, API e2e, and Playwright checks passed locally on August 19, 2026.
 - [x] `pnpm start:all` starts Postgres, API, and web locally.
 - [x] Ctrl+C cleanup was verified locally for ports `3000`, `4200`, and `9229`.
 - [x] GitHub CI run `32291308057` passed on `master`.
 - [x] CI has timeouts for the overall quality job, API e2e, Storybook build, Playwright install, and web e2e.
-- [ ] GitHub Dependabot reports 2 high-severity alerts that still need review.
+- [x] GitHub Dependabot alerts 3 and 4 were triaged on August 19, 2026; both are unpatched `image-size` parser denial-of-service advisories in development-only Less tooling.
 
 ## Security Baseline
 
@@ -43,6 +43,8 @@ Mitigations until upstream packages publish a fixed path:
 - Prefer SCSS/CSS and Angular component styles for authored UI work.
 - Keep `pnpm audit --json` output in sprint review when dependency updates are planned.
 - Keep pnpm overrides for advisories with patched transitive versions.
+
+The two alerts intentionally remain open so Dependabot continues to surface an upstream fix. The application has no `.less` files, generated media is not passed into Less, `image-size` is absent from the production install audit, and `pnpm security:audit` passes. Revisit this decision whenever Angular build tooling or Less changes.
 
 ## Audit Baseline
 
@@ -76,5 +78,9 @@ Current implementation status:
 - [x] `start:all` has local process cleanup for dev server listeners.
 - [x] Command-driven watchdog script is available through `pnpm render:watchdog`.
 - [x] Worker heartbeat loop scaffold is available through `pnpm renderer:worker`.
+- [x] Every worker attempt persists worker id, heartbeat, completion/failure state, and error text.
+- [x] Renderer stdout, stderr, and system events persist as bounded structured log rows.
+- [x] External process execution uses argument arrays, no shell interpolation, and configurable timeouts.
+- [x] Failed jobs can be requeued while preserving prior attempt history.
 - [ ] OS-level scheduled watchdog service is not installed yet.
-- [ ] Real renderer process supervision is not implemented yet.
+- [x] Renderer process supervision is implemented for FFmpeg, TTS, and Whisper command adapters.

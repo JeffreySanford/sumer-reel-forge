@@ -20,7 +20,7 @@ NestJS API / orchestration layer
 - API owns persistence and job state.
 - Frontend consumes DTOs generated from OpenAPI.
 - Workers update job status through API endpoints rather than editing database records directly.
-- Generated assets should be referenced by manifest rows, not hidden in ad hoc folders.
+- Generated assets are referenced by checksum-bearing manifest rows and can only be streamed from the configured render root.
 
 ## Persistence
 
@@ -43,8 +43,7 @@ Long-running render and model jobs should store:
 - `attempt_count`
 - `worker_id`
 - `input_hash`
-- `stdout_log_path`
-- `stderr_log_path`
+- structured stdout/stderr log rows
 - `output_asset_id`
 
 A watchdog should mark jobs stale when `heartbeat_at` exceeds the allowed threshold for that job type.
@@ -55,4 +54,7 @@ Current scaffold:
 - [x] `pnpm renderer:worker` claims queued jobs and sends heartbeat/status updates through the API.
 - [x] `pnpm render:watchdog` marks stale queued/running jobs as failed through the API.
 - [x] Generated asset manifests persist URI, type, checksum, metadata, and render-job linkage.
-- [ ] Renderer adapters for ComfyUI, TTS, Whisper, and FFmpeg are not implemented yet.
+- [x] Render attempts and structured worker logs persist independently of the current job state.
+- [x] ComfyUI, configurable TTS, Whisper, FFmpeg, and deterministic mock adapters are implemented.
+- [x] Reel approval and generated-asset review transitions are audited.
+- [ ] Authentication and role-based approval authorization are required before remote deployment.

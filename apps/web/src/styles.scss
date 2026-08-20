@@ -1,1 +1,294 @@
-/* You can add global styles to this file, and also import other style files */
+.episode-status,
+.status-chip,
+.asset-meta strong {
+  text-transform: capitalize;
+}
+
+.episode-status {
+  grid-column: 2;
+  color: #2d5b5b;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.status-chip {
+  border: 1px solid #b8b1a4;
+  padding: 4px 8px;
+  font-weight: 800;
+}
+
+.status-chip[data-status='approved'],
+.asset-card[data-review='approved'] .asset-meta strong {
+  color: #17643b;
+}
+
+.status-chip[data-status='rendering'] {
+  color: #9a5a00;
+}
+
+.status-chip[data-status='published'] {
+  color: #174848;
+}
+
+.production-state {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  border-block: 1px solid #d8ccb4;
+  background: #ffffff;
+  padding: 14px 22px;
+}
+
+.production-state strong {
+  text-transform: capitalize;
+}
+
+.production-state > p {
+  margin: 0 0 0 auto;
+  max-width: 520px;
+  color: #6f6655;
+  font-size: 0.82rem;
+}
+
+.state-actions,
+.asset-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.state-actions button,
+.asset-actions button {
+  border: 1px solid #b8b1a4;
+  border-radius: 6px;
+  background: #ffffff;
+  padding: 7px 10px;
+  cursor: pointer;
+  text-transform: capitalize;
+}
+
+.operations-band {
+  min-width: 0;
+  margin-top: 28px;
+  border-top: 2px solid #174848;
+  background: #f3f5f2;
+  padding: 24px;
+}
+
+.operations-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.operations-heading > span {
+  color: #6f6655;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.asset-grid {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 14px;
+}
+
+.asset-card {
+  display: grid;
+  gap: 12px;
+  border: 1px solid #c9c6bd;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 12px;
+}
+
+.asset-card[data-review='rejected'] {
+  border-color: #ad4b43;
+}
+
+.asset-preview {
+  display: grid;
+  width: 100%;
+  min-height: 160px;
+  aspect-ratio: 9 / 12;
+  place-items: center;
+  overflow: hidden;
+  background: #1c2524;
+  color: #ffffff;
+}
+
+.asset-preview img,
+.asset-preview video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.asset-preview audio {
+  width: calc(100% - 20px);
+}
+
+.asset-meta,
+.attempt-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.82rem;
+}
+
+.asset-card label {
+  display: grid;
+  gap: 5px;
+  color: #544f46;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.asset-card textarea {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+}
+
+.observability-grid {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.7fr) minmax(220px, 0.9fr) minmax(
+      300px,
+      1.4fr
+    );
+  gap: 24px;
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid #c9c6bd;
+}
+
+.job-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.job-list button {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 8px;
+  border: 1px solid #c9c6bd;
+  border-radius: 6px;
+  background: #ffffff;
+  padding: 9px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.job-list button.active {
+  border-color: #174848;
+  box-shadow: inset 3px 0 #174848;
+}
+
+.job-list small {
+  grid-column: 1 / -1;
+  color: #6f6655;
+}
+
+.worker-history,
+.worker-log {
+  min-width: 0;
+}
+
+.attempt-row {
+  flex-direction: column;
+  border-bottom: 1px solid #d8d5cd;
+  padding: 9px 0;
+}
+
+.attempt-row span,
+.attempt-row small {
+  overflow-wrap: anywhere;
+  color: #6f6655;
+}
+
+.worker-log > p:not(.eyebrow):not(.empty-state) {
+  margin: 0;
+  border-bottom: 1px solid #d8d5cd;
+  padding: 8px 0;
+  overflow-wrap: anywhere;
+  font-family: Consolas, monospace;
+  font-size: 0.75rem;
+}
+
+.worker-log p[data-level='error'] {
+  color: #8a2823;
+}
+
+.worker-log p[data-level='warn'] {
+  color: #855100;
+}
+
+.worker-log span {
+  display: inline-block;
+  min-width: 52px;
+  color: #6f6655;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.empty-state {
+  margin: 0;
+  color: #6f6655;
+  font-size: 0.82rem;
+}
+
+@media (max-width: 1050px) {
+  .production-state {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .production-state > p {
+    margin-left: 0;
+  }
+
+  .observability-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .app-shell .sidebar .episode-list {
+    display: grid;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    grid-auto-columns: minmax(230px, 82vw);
+    grid-auto-flow: column;
+    grid-template-columns: none;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    padding-bottom: 8px;
+    scroll-snap-type: inline mandatory;
+  }
+
+  .episode-button {
+    scroll-snap-align: start;
+  }
+
+  .asset-grid {
+    display: grid;
+    width: 100%;
+    max-width: 100%;
+    grid-auto-columns: minmax(250px, 84vw);
+    grid-auto-flow: column;
+    grid-template-columns: none;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    padding-bottom: 10px;
+    scroll-snap-type: inline mandatory;
+  }
+
+  .asset-card {
+    scroll-snap-align: start;
+  }
+}
