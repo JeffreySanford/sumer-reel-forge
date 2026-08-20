@@ -16,14 +16,7 @@ if (config.adapter === 'local') {
   );
 } else if (config.adapter === 'editorial') {
   checks.push(
-    await checkFile('Windows speech script', config.windowsSpeechScript),
-    await checkCommand('Windows speech', config.windowsSpeechCommand, [
-      '-NoProfile',
-      '-NonInteractive',
-      '-File',
-      config.windowsSpeechScript,
-      '-ListVoices',
-    ]),
+    ...(await checkEditorialNarration(config)),
     ...(await checkEditorialFrames(config.editorialAssetDirectory, 8)),
   );
 } else if (config.adapter === 'mock') {
@@ -99,4 +92,29 @@ async function checkEditorialFrames(directory, count) {
     );
   }
   return checks;
+}
+
+async function checkEditorialNarration(config) {
+  if (config.editorialNarrationAdapter === 'kokoro') {
+    return [
+      await checkCommand('uv', config.kokoroCommand, ['--version']),
+      await checkFile(
+        'Kokoro project',
+        `${config.kokoroProjectDirectory}/uv.lock`,
+      ),
+      await checkFile('Kokoro script', config.kokoroScript),
+      await checkFile('Kokoro model', config.kokoroModelPath),
+      await checkFile('Kokoro voices', config.kokoroVoicesPath),
+    ];
+  }
+  return [
+    await checkFile('Windows speech script', config.windowsSpeechScript),
+    await checkCommand('Windows speech', config.windowsSpeechCommand, [
+      '-NoProfile',
+      '-NonInteractive',
+      '-File',
+      config.windowsSpeechScript,
+      '-ListVoices',
+    ]),
+  ];
 }

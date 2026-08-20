@@ -25,7 +25,9 @@
 - [x] Render the first deterministic 60-second technical prototype locally.
 - [x] Render the first editorial prototype with approved generated imagery and provisional narration.
 - [x] Review the editorial baseline against platform safety and style consistency.
-- [ ] Replace provisional narration and add the approved ambience score before publication.
+- [x] Replace Windows narration in the review candidate with project-local Kokoro.
+- [x] Add and technically validate the deterministic ambience score candidate.
+- [ ] Complete human voice/score listening approval and render the final-video candidate.
 
 ## Epic 3 - Local Rendering Pipeline
 
@@ -40,6 +42,8 @@
 - [x] Persist retry attempts and failure history.
 - [x] Add deterministic mock renderer and prerequisite preflight.
 - [x] Add curated editorial renderer with motion, timed captions, title treatment, media validation, and persisted manifests.
+- [x] Add locked Kokoro setup, voice auditions, checksum-verified model cache, and Python quality gates.
+- [x] Bound verbose renderer failures to the API status-note contract while retaining full chunked logs.
 
 ## Epic 4 - Review Workflow
 

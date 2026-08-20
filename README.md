@@ -44,7 +44,15 @@ Validate and run the renderer after the API is running:
 pnpm renderer:preflight
 pnpm renderer:worker -- --once
 pnpm render:prototype:reel1
+pnpm tts:kokoro:setup
+pnpm tts:kokoro:audition
 pnpm render:editorial:reel1
+```
+
+The final command is deliberately separate and requires the reel to be approved:
+
+```sh
+pnpm render:final:reel1
 ```
 
 Run the stale-job watchdog once:
@@ -103,7 +111,7 @@ Prepare the isolated API e2e database without touching development data:
 pnpm db:prepare:e2e
 ```
 
-The deterministic `mock` adapter is the default. Set `RENDER_ADAPTER=local` to use the configured ComfyUI, TTS, Whisper, and FFmpeg integrations. The Windows `editorial` adapter consumes the versioned Reel 1 frames, generates provisional local narration and word timings, burns safe-area captions, adds a subtitle track, and persists a 60-second draft through the worker. See `docs/studio/local-renderer-prerequisites.md`.
+The deterministic `mock` adapter is the default. Set `RENDER_ADAPTER=local` to use the configured ComfyUI, TTS, Whisper, and FFmpeg integrations. The `editorial` adapter consumes the versioned Reel 1 frames, uses locked project-local Kokoro or an explicit Windows SAPI fallback, generates an ambience bed and word timings, burns safe-area captions, adds a subtitle track, and persists a 60-second draft through the worker. See `docs/studio/local-renderer-prerequisites.md`.
 
 ## Documentation
 

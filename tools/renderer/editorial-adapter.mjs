@@ -3,12 +3,13 @@ import { basename, join } from 'node:path';
 import { writeText } from './artifact-utils.mjs';
 import {
   assembleEditorialVideo,
+  createEditorialAmbience,
   probeDurationSeconds,
 } from './ffmpeg-adapter.mjs';
 import { runProcess } from './process-runner.mjs';
 
 export async function renderEditorialPipeline(context) {
-  const { episode, outputDirectory, config, log } = context;
+  const { episode, job, outputDirectory, config, log } = context;
   if (episode.episode !== 1) {
     throw new Error(
       `The curated editorial-v1 asset set supports episode 1, not episode ${episode.episode}.`,
@@ -19,35 +20,20 @@ export async function renderEditorialPipeline(context) {
   const narrationTextPath = join(outputDirectory, 'narration.txt');
   const narrationAudioPath = join(outputDirectory, 'narration.wav');
   const timingsPath = join(outputDirectory, 'narration-timings.json');
+  const ambiencePath = join(outputDirectory, 'ambience-bed.wav');
   const captionsPath = join(outputDirectory, 'captions.srt');
   const videoPath = join(outputDirectory, 'reel-editorial-v1.mp4');
+  const provisional = job.mode !== 'final-video';
 
   await writeText(narrationTextPath, `${episode.narration}\n`);
-  await runProcess(
-    config.windowsSpeechCommand,
-    [
-      '-NoProfile',
-      '-NonInteractive',
-      '-File',
-      config.windowsSpeechScript,
-      '-InputPath',
-      narrationTextPath,
-      '-OutputPath',
-      narrationAudioPath,
-      '-TimingsPath',
-      timingsPath,
-      '-Voice',
-      config.editorialVoice,
-      '-Rate',
-      String(config.editorialVoiceRate),
-    ],
-    {
-      cwd: outputDirectory,
-      timeoutMs: config.processTimeoutMs,
-      onStdout: (message) => log('stdout', 'info', message),
-      onStderr: (message) => log('stderr', 'warn', message),
-    },
-  );
+  const narrationMetadata = await synthesizeNarration({
+    config,
+    outputDirectory,
+    narrationTextPath,
+    narrationAudioPath,
+    timingsPath,
+    log,
+  });
   await access(narrationAudioPath);
 
   const audioDurationSeconds = await probeDurationSeconds({
@@ -71,10 +57,20 @@ export async function renderEditorialPipeline(context) {
   });
   await writeText(captionsPath, toSrtWithMilliseconds(captions));
 
+  await createEditorialAmbience({
+    command: config.ffmpegCommand,
+    durationSeconds: episode.targetDurationSeconds,
+    outputPath: ambiencePath,
+    outputDirectory,
+    timeoutMs: config.processTimeoutMs,
+    log,
+  });
+
   await assembleEditorialVideo({
     command: config.ffmpegCommand,
     frames,
     audioPath: narrationAudioPath,
+    ambiencePath,
     captionsPath,
     title: episode.title,
     series: episode.series,
@@ -103,11 +99,20 @@ export async function renderEditorialPipeline(context) {
       assetType: 'audio',
       path: narrationAudioPath,
       metadata: {
-        adapter: 'windows-sapi',
-        voice: config.editorialVoice,
-        rate: config.editorialVoiceRate,
-        provisional: true,
+        ...narrationMetadata,
+        provisional,
         durationSeconds: audioDurationSeconds,
+      },
+    },
+    {
+      assetType: 'audio',
+      path: ambiencePath,
+      metadata: {
+        adapter: 'procedural-ffmpeg',
+        role: 'ambience-score-bed',
+        direction: 'water, low frame drum, soft lyre, restrained final rise',
+        provisional,
+        durationSeconds: episode.targetDurationSeconds,
       },
     },
     {
@@ -128,7 +133,10 @@ export async function renderEditorialPipeline(context) {
     {
       assetType: 'other',
       path: timingsPath,
-      metadata: { role: 'narration-word-timings', adapter: 'windows-sapi' },
+      metadata: {
+        role: 'narration-word-timings',
+        adapter: narrationMetadata.timingAdapter,
+      },
     },
     {
       assetType: 'video',
@@ -142,9 +150,90 @@ export async function renderEditorialPipeline(context) {
         durationSeconds: episode.targetDurationSeconds,
         captionsBurnedIn: true,
         subtitleTrack: true,
+        narrationAdapter: narrationMetadata.adapter,
+        ambienceScore: 'procedural-ffmpeg-v1',
+        provisional,
       },
     },
   ];
+}
+
+async function synthesizeNarration({
+  config,
+  outputDirectory,
+  narrationTextPath,
+  narrationAudioPath,
+  timingsPath,
+  log,
+}) {
+  const processOptions = {
+    cwd: outputDirectory,
+    timeoutMs: config.processTimeoutMs,
+    onStdout: (message) => log('stdout', 'info', message),
+    onStderr: (message) => log('stderr', 'warn', message),
+  };
+  if (config.editorialNarrationAdapter === 'kokoro') {
+    await runProcess(
+      config.kokoroCommand,
+      [
+        'run',
+        '--project',
+        config.kokoroProjectDirectory,
+        '--locked',
+        'python',
+        config.kokoroScript,
+        '--text-file',
+        narrationTextPath,
+        '--output-file',
+        narrationAudioPath,
+        '--timings-file',
+        timingsPath,
+        '--model',
+        config.kokoroModelPath,
+        '--voices',
+        config.kokoroVoicesPath,
+        '--voice',
+        config.kokoroVoice,
+        '--speed',
+        String(config.kokoroSpeed),
+      ],
+      processOptions,
+    );
+    return {
+      adapter: 'kokoro-onnx',
+      timingAdapter: 'estimated-word-timing',
+      voice: config.kokoroVoice,
+      speed: config.kokoroSpeed,
+      model: basename(config.kokoroModelPath),
+    };
+  }
+
+  await runProcess(
+    config.windowsSpeechCommand,
+    [
+      '-NoProfile',
+      '-NonInteractive',
+      '-File',
+      config.windowsSpeechScript,
+      '-InputPath',
+      narrationTextPath,
+      '-OutputPath',
+      narrationAudioPath,
+      '-TimingsPath',
+      timingsPath,
+      '-Voice',
+      config.editorialVoice,
+      '-Rate',
+      String(config.editorialVoiceRate),
+    ],
+    processOptions,
+  );
+  return {
+    adapter: 'windows-sapi',
+    timingAdapter: 'windows-sapi',
+    voice: config.editorialVoice,
+    rate: config.editorialVoiceRate,
+  };
 }
 
 async function copyApprovedFrames({ episode, outputDirectory, config, log }) {

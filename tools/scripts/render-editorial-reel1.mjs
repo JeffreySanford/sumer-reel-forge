@@ -6,14 +6,21 @@ import { runProcess } from '../renderer/process-runner.mjs';
 
 const apiBaseUrl = process.env.API_BASE_URL ?? 'http://localhost:3000/api';
 const episodeId = 1;
+const finalRender = process.argv.includes('--final');
+const narrationAdapter = process.env.EDITORIAL_NARRATION_ADAPTER ?? 'sapi';
+const voice =
+  narrationAdapter === 'kokoro'
+    ? (process.env.KOKORO_VOICE ?? 'af_heart')
+    : (process.env.EDITORIAL_VOICE ?? 'Microsoft Mark');
 const job = await request('/render-jobs', {
   method: 'POST',
   body: {
     episodeId,
-    mode: 'draft-video',
-    voice: process.env.EDITORIAL_VOICE ?? 'Microsoft Mark',
-    notes:
-      'Editorial v1 with approved visual-bible assets and provisional local narration.',
+    mode: finalRender ? 'final-video' : 'draft-video',
+    voice,
+    notes: finalRender
+      ? 'Publication-candidate Reel 1 with reviewed narration and ambience bed.'
+      : 'Editorial Reel 1 candidate with visual-bible assets, Kokoro audition narration, and ambience bed.',
   },
 });
 console.log(`Queued editorial Reel 1 job ${job.id}.`);
@@ -40,7 +47,7 @@ const probe = await runProcess(
     '-v',
     'error',
     '-show_entries',
-    'format=duration:stream=index,codec_type,codec_name,width,height,r_frame_rate',
+    'format=duration:stream=index,codec_type,codec_name,width,height,r_frame_rate,sample_rate,channels,duration',
     '-of',
     'json',
     videoPath,
@@ -64,6 +71,8 @@ if (
   videoStream?.width !== 1080 ||
   videoStream?.height !== 1920 ||
   audioStream?.codec_name !== 'aac' ||
+  audioStream?.sample_rate !== '48000' ||
+  audioStream?.channels !== 2 ||
   subtitleStream?.codec_name !== 'mov_text'
 ) {
   throw new Error(`Editorial media validation failed: ${probe.stdout}`);

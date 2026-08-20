@@ -7,6 +7,11 @@ out-tsc
 
 # dependencies
 node_modules
+/.cache
+**/.venv
+**/__pycache__
+*.py[cod]
+**/.ruff_cache
 
 # IDEs and editors
 /.idea

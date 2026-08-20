@@ -29,4 +29,5 @@ The initial source is Chapter 1, Enki, from the local writing workspace. The fir
 - [x] All 18 Chapter 1 reels have detailed production records.
 - [x] A character and environment visual-bible baseline is versioned in the repository.
 - [x] A 60-second technical prototype verifies the persisted rendering pipeline.
-- [ ] The first non-placeholder Reel 1 editorial cut is in production.
+- [x] The first non-placeholder Reel 1 editorial cut is persisted and in review.
+- [ ] Reel 1 voice/score listening approval and final-video rendering are complete.

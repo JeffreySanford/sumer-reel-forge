@@ -11,6 +11,7 @@ import { renderLocalPipeline } from '../renderer/local-adapter.mjs';
 import { renderMockPipeline } from '../renderer/mock-adapter.mjs';
 import { RendererApi } from '../renderer/renderer-api.mjs';
 import { loadRendererConfig } from '../renderer/renderer-config.mjs';
+import { boundedStatusNote } from '../renderer/status-utils.mjs';
 
 const config = loadRendererConfig();
 const api = new RendererApi(config.apiBaseUrl, config.workerId);
@@ -118,11 +119,13 @@ async function processJob(job) {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     await logger.log('stderr', 'error', message);
-    await api.updateStatus(job.id, 'failed', message).catch((statusError) => {
-      console.error(
-        `Could not mark job ${job.id} failed: ${statusError.message}`,
-      );
-    });
+    await api
+      .updateStatus(job.id, 'failed', boundedStatusNote(message))
+      .catch((statusError) => {
+        console.error(
+          `Could not mark job ${job.id} failed: ${statusError.message}`,
+        );
+      });
     logger.close();
     return false;
   } finally {

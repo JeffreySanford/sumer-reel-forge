@@ -34,7 +34,8 @@ Checklist status means each reel has a persistent, production-ready draft with n
 - [x] Create versioned visual references for Enki, Nammu, Dilmun, Martu, and the Stag of the Absu.
 - [x] Render the first deterministic 60-second technical prototype for `The Voyage Begins`.
 - [x] Produce a persisted editorial cut with approved imagery, provisional narration, captions, and title treatment.
-- [ ] Replace the provisional Windows narration with the approved Kokoro voice and add the scored ambience bed.
+- [x] Replace Windows narration in the review candidate with Kokoro `af_heart` and add a scored ambience bed.
+- [ ] Complete human listening approval and render the publication candidate.
 
 ## Production Notes
 
