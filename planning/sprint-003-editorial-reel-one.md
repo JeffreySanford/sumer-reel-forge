@@ -31,4 +31,4 @@ Produce, persist, and review the first non-placeholder 60-second Reel 1 cut whil
 ## Delivery
 
 - [x] Run format, lint, unit, build, API e2e, Storybook, Playwright, and security checks.
-- [ ] Push the milestone and confirm GitHub Actions passes.
+- [x] Push the milestone and confirm GitHub Actions passes (`32320162368`).

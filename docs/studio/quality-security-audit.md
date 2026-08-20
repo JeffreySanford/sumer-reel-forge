@@ -22,6 +22,7 @@ commands when preparing a pull request.
 - [x] API e2e uses a dedicated `_e2e` database and temporary API port 3100.
 - [x] API e2e verifies that routine seeding preserves edits and explicit refresh restores seed content.
 - [x] Sprint 003 local gates passed on August 19, 2026: Nx quality, isolated API e2e, Storybook build, Chromium/Firefox Playwright, and production dependency audit.
+- [x] GitHub CI run `32320162368` passed on `master` for Sprint 003 with `pnpm/action-setup@v6` and no deprecated action-runtime annotation.
 - [x] CI has timeouts for the overall quality job, API e2e, Storybook build, Playwright install, and web e2e.
 - [x] GitHub Dependabot alerts 3 and 4 were triaged on August 19, 2026; both are unpatched `image-size` parser denial-of-service advisories in development-only Less tooling.
 

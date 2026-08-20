@@ -14,7 +14,7 @@ This folder captures agile planning for the studio and project-specific producti
 - [x] Sprint 000: foundation, persistence, API contract, first workflow screen, local startup, CI.
 - [x] Sprint 001: editable reel production workflow and renderer-worker groundwork.
 - [x] Sprint 002: first local 60-second render pipeline and production review workflow.
-- [ ] Sprint 003: visual bible, approved local model stack, and editorial Reel 1 release candidate.
+- [x] Sprint 003: visual bible, local production targets, and editorial Reel 1 baseline.
 
 ## Definition Of Done
 
