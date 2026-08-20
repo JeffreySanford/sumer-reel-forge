@@ -24,3 +24,16 @@ Production edits always reset the reel to `draft`. A final-video job is rejected
 ## File Boundary
 
 Local content streaming resolves every `file:` URI against `RENDER_OUTPUT_ROOT`. Paths outside that root and non-file URIs are rejected. This endpoint must still be protected by authentication before the API is exposed beyond localhost.
+
+## Editorial Reel 1
+
+Run the curated cut only after the API and Postgres are available:
+
+```sh
+pnpm renderer:preflight
+pnpm render:editorial:reel1
+```
+
+Set `RENDER_ADAPTER=editorial` when running preflight directly. The render command sets it for its one-shot worker, queues a `draft-video` job, validates the final codecs and dimensions with FFprobe, and leaves every revision in job history. It never overwrites an earlier job or removes a Docker volume.
+
+The editorial adapter is intentionally limited to Reel 1 and requires all eight files under `EDITORIAL_ASSET_DIRECTORY`. Windows SAPI narration is marked provisional in asset metadata. Use the `local` adapter after ComfyUI, Kokoro, and Whisper are installed and approved.

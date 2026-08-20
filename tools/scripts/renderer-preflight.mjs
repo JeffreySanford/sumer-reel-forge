@@ -14,8 +14,26 @@ if (config.adapter === 'local') {
     await checkCommand('TTS', config.ttsCommand, ['--help']),
     await checkCommand('Whisper', config.whisperCommand, ['--help']),
   );
-} else {
+} else if (config.adapter === 'editorial') {
+  checks.push(
+    await checkFile('Windows speech script', config.windowsSpeechScript),
+    await checkCommand('Windows speech', config.windowsSpeechCommand, [
+      '-NoProfile',
+      '-NonInteractive',
+      '-File',
+      config.windowsSpeechScript,
+      '-ListVoices',
+    ]),
+    ...(await checkEditorialFrames(config.editorialAssetDirectory, 8)),
+  );
+} else if (config.adapter === 'mock') {
   checks.push(await checkPlaywright());
+} else {
+  checks.push({
+    ok: false,
+    name: 'Renderer adapter',
+    detail: `Unknown RENDER_ADAPTER '${config.adapter}'.`,
+  });
 }
 
 for (const check of checks) {
@@ -70,4 +88,15 @@ async function checkPlaywright() {
   } catch (error) {
     return { ok: false, name: 'Playwright Chromium', detail: error.message };
   }
+}
+
+async function checkEditorialFrames(directory, count) {
+  const checks = [];
+  for (let shot = 1; shot <= count; shot += 1) {
+    const filename = `shot-${String(shot).padStart(2, '0')}.png`;
+    checks.push(
+      await checkFile(`Editorial frame ${shot}`, `${directory}/${filename}`),
+    );
+  }
+  return checks;
 }

@@ -662,7 +662,7 @@ export const CHAPTER_ONE_PRODUCTION_DETAILS: Record<
   },
   15: {
     captions: [
-      'Gardens stretched around Erech.',
+      'Gardens stretched around Uruk.',
       'Water became fruit.',
       'Fleece became thread.',
       'Skill became beauty.',
@@ -671,7 +671,7 @@ export const CHAPTER_ONE_PRODUCTION_DETAILS: Record<
     beats: [
       {
         visual:
-          'Erech rises beyond miles of ordered gardens, orchards, and shining canals under hot sun.',
+          'Uruk (Erech) rises beyond miles of ordered gardens, orchards, and shining canals under hot sun.',
         motion: 'high sweeping reveal toward the city walls',
       },
       {
@@ -701,13 +701,13 @@ export const CHAPTER_ONE_PRODUCTION_DETAILS: Record<
       },
     ],
     styleAnchor:
-      'Erech as a productive garden city, Uttu associated with weaving craft, saturated produce and textiles balanced by dusty labor',
+      'Uruk (Erech) as a productive garden city, Uttu associated with weaving craft, saturated produce and textiles balanced by dusty labor',
     music:
       'Bright plucked strings and loom-like hand percussion over canal ambience, settling into an evening work song rhythm.',
     voice:
       'Lively but grounded, honoring repeated skilled work more than luxury.',
     socialTeaser:
-      'Enki brought water to Erech. Thousands of practiced hands turned it into a garden city.',
+      'Enki brought water to Uruk. Thousands of practiced hands turned it into a garden city.',
   },
   16: {
     captions: [

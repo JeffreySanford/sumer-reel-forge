@@ -1,12 +1,13 @@
 # Local Renderer Prerequisites
 
-The worker has two explicit modes. `mock` creates deterministic storyboard cards, silent audio, authored captions, and a real 9:16 MP4 for pipeline verification. `local` uses ComfyUI images, a configurable TTS command, Whisper timing, and FFmpeg assembly.
+The worker has two established modes. `mock` creates deterministic storyboard cards, silent audio, authored captions, and a real 9:16 MP4 for pipeline verification. `local` uses ComfyUI images, a configurable TTS command, Whisper timing, and FFmpeg assembly. Sprint 003 adds a curated `editorial` path for approved still assets, production narration, authored captions, and final assembly.
 
 ## Commands
 
 - [x] `pnpm renderer:preflight` checks the active adapter prerequisites.
 - [x] `pnpm renderer:worker -- --once` claims and processes one queued job.
 - [x] `pnpm render:prototype:reel1` queues and verifies a complete Reel 1 mock render.
+- [x] `pnpm render:editorial:reel1` queues, renders, persists, and validates the curated Reel 1 draft.
 - [x] `pnpm render:watchdog -- --once` fails stale queued/running jobs through the API.
 
 ## Mock Adapter
@@ -31,6 +32,22 @@ Set `RENDER_ADAPTER=local`, then provide:
 
 Command argument variables are JSON arrays, not shell command strings. Supported placeholders are documented in `.env.sample`; the ComfyUI workflow tokens are documented in `tools/renderer/workflows/README.md`.
 
+## Production Target
+
+- Image generation: ComfyUI on Windows with an SDXL 1.0 workflow sized for the local NVIDIA GPU. Use IP-Adapter or ControlNet references when continuity requires stronger identity control.
+- Narration: Kokoro 82M with `af_heart` as the initial audition voice. Treat the voice as provisional until an editorial listening review is recorded.
+- Captions: authored shot-aligned SRT for the editorial master. Whisper remains a QA alignment tool rather than the source of approved wording.
+- Assembly: FFmpeg with H.264 video, AAC audio, burned safe-area captions, a MovText subtitle track, and fast-start metadata.
+- Reproducibility: record prompts, checksums, command configuration, and output metadata in the render manifest.
+
+The workstation currently has the NVIDIA driver, FFmpeg, Python, and `uv`. ComfyUI, Kokoro/eSpeak NG, and Whisper still require local installation before the fully local adapter can pass preflight. The curated editorial path can use already approved assets while those tools are being installed.
+
+## Editorial Adapter
+
+Set `RENDER_ADAPTER=editorial` for preflight. The adapter requires Windows, `pwsh.exe`, an installed System.Speech voice, FFmpeg/FFprobe, and all eight versioned PNGs in `EDITORIAL_ASSET_DIRECTORY`. `pnpm render:editorial:reel1` sets the adapter for its one-shot worker automatically.
+
+The current Microsoft Mark narration is a provisional production aid, not a publication voice approval. Its word events drive authored SRT grouping; FFmpeg burns the captions into the lower-middle safe area and also stores them as a MovText track. The latest reviewed cut is documented in `docs/projects/blessings-of-sumer/chapters/chapter-01-reel-01-editorial-review.md`.
+
 ## Runtime Controls
 
 - `API_BASE_URL`: Nest API base URL.
@@ -43,7 +60,9 @@ Command argument variables are JSON arrays, not shell command strings. Supported
 
 ## External Validation Still Required
 
-- [ ] Select and validate the production ComfyUI checkpoint/workflow.
-- [ ] Select and validate the production narration voice.
+- [x] Select ComfyUI plus SDXL 1.0 as the initial local image target.
+- [ ] Install and validate the production ComfyUI workflow.
+- [x] Select Kokoro `af_heart` as the initial narration audition target.
+- [ ] Install Kokoro/eSpeak NG and complete the narration listening review.
 - [ ] Review Whisper timing against the authored caption copy.
-- [ ] Approve the character and environment visual bible before final rendering.
+- [x] Establish a versioned character and environment visual-bible baseline.

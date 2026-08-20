@@ -269,7 +269,7 @@ const CHAPTER_ONE_SUMMARY_CONTENT: Omit<
     episode: 15,
     title: 'Fifteen Miles of Gardens',
     sourceSection: 'Fifteen Miles in all Directions',
-    hook: 'Erech becomes a garden city of wool, fruit, and canals.',
+    hook: 'Uruk (Erech) becomes a garden city of wool, fruit, and canals.',
     visualCore: 'Uttu, orchards, looms, vegetables, hot sun',
   },
   {
@@ -497,8 +497,8 @@ const CHAPTER_ONE_REEL_COPY: Record<
       'When water reached Adab, Umma, Larsa, and Lagash, the cities did not remain silent. Each place seemed to wake with its own spirit. The canals brought grain and trade, but they also brought identity. A city was more than walls. It was memory, labor, ritual, accent, and pride. In the story, these powers appeared as goddesses of the earth, each tied to a place that now had a voice. Enki saw that his work was multiplying beyond him. Water did not make one world. It made many worlds connected.',
   },
   15: {
-    logline: `Erech becomes a garden city where Uttu's gifts of wool, fruit, and ordered growth flourish.`,
-    narration: `Around Erech, the cultivated land stretched for miles in every direction. Orchards lifted fruit into the heat. Gardens crowded the canals. Wool moved from flock to spindle to loom under Uttu's care. This was abundance with discipline inside it. Every row of vegetables meant planning. Every woven cloth meant hands repeating skill until the work became beautiful. Enki had brought water, but people had turned water into livelihood. Erech stood as proof that civilization is not only founded once. It is remade each day by work.`,
+    logline: `Uruk (Erech) becomes a garden city where Uttu's gifts of wool, fruit, and ordered growth flourish.`,
+    narration: `Around Uruk, also called Erech, the cultivated land stretched for miles in every direction. Orchards lifted fruit into the heat. Gardens crowded the canals. Wool moved from flock to spindle to loom under Uttu's care. This was abundance with discipline inside it. Every row of vegetables meant planning. Every woven cloth meant hands repeating skill until the work became beautiful. Enki had brought water, but people had turned water into livelihood. Uruk stood as proof that civilization is not only founded once. It is remade each day by work.`,
   },
   16: {
     logline:

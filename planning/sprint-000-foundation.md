@@ -21,6 +21,8 @@ Create a maintainable studio foundation that can support _Blessings of Sumer_ an
 - [x] Render-job API groundwork with stale-job query and status transitions.
 - [x] `start:all` stack bootstrap with dependency freshness checks, Docker startup, migration, seed, API, and web.
 - [x] Windows Ctrl+C cleanup for repo-local dev processes and managed ports.
+- [x] Persistent PostgreSQL data and edited reel content survive normal startup and Ctrl+C cleanup.
+- [x] Default seeding creates missing records only; destructive seed refresh requires an explicit command.
 - [x] CI workflow for security audit, lint, test, build, API e2e, Storybook build, Playwright install, and web e2e.
 - [x] CI timeouts for long-running quality, Storybook, Playwright, and e2e steps.
 

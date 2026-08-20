@@ -27,13 +27,16 @@ Sumer Reel Forge is intended to become a reusable local studio for transforming 
 - [x] Angular dashboard loads Chapter 1 reel data from the API with Storybook fallback data.
 - [x] Render-job endpoints support queueing, listing, stale queries, and status transitions.
 - [x] Mutating render-job actions create audit rows.
-- [x] `pnpm start:all` starts Docker/Postgres, applies migrations, seeds data, and launches web/API.
-- [x] `pnpm start:all` cleans repo-local Windows dev processes and ports on Ctrl+C.
+- [x] `pnpm start:all` starts Docker/Postgres, applies migrations, creates missing seed records, and launches web/API.
+- [x] Normal startup and Ctrl+C preserve the named PostgreSQL volume and all existing studio content.
+- [x] `pnpm start:all` cleans only repo-local Windows dev processes and ports on Ctrl+C.
+- [x] API e2e runs against an isolated `_e2e` database and temporary API port.
 - [x] GitHub CI validates audit, lint, tests, builds, Storybook, API e2e, and Playwright e2e.
 - [x] Renderer worker persists attempts, heartbeats, structured logs, checksummed assets, and manifests.
-- [x] ComfyUI, configurable TTS, Whisper, FFmpeg, and deterministic mock adapters are wired.
+- [x] ComfyUI, configurable TTS, Whisper, FFmpeg, deterministic mock, and curated editorial adapters are wired.
 - [x] Approval and per-asset review workflows are persistent and audited.
 - [x] A deterministic 60-second Reel 1 prototype has been rendered locally.
+- [x] A visual-bible-driven 60-second Reel 1 editorial baseline has been rendered, reviewed, and persisted locally.
 - [ ] Authentication/authorization is not implemented yet.
 
 ## Operating Principles

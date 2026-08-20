@@ -18,7 +18,10 @@ commands when preparing a pull request.
 - [x] Focused API, web, shared-contract, API e2e, and Playwright checks passed locally on August 19, 2026.
 - [x] `pnpm start:all` starts Postgres, API, and web locally.
 - [x] Ctrl+C cleanup was verified locally for ports `3000`, `4200`, and `9229`.
-- [x] GitHub CI run `32291308057` passed on `master`.
+- [x] GitHub CI run `32317667267` passed on `master` for the Sprint 002 checkpoint.
+- [x] API e2e uses a dedicated `_e2e` database and temporary API port 3100.
+- [x] API e2e verifies that routine seeding preserves edits and explicit refresh restores seed content.
+- [x] Sprint 003 local gates passed on August 19, 2026: Nx quality, isolated API e2e, Storybook build, Chromium/Firefox Playwright, and production dependency audit.
 - [x] CI has timeouts for the overall quality job, API e2e, Storybook build, Playwright install, and web e2e.
 - [x] GitHub Dependabot alerts 3 and 4 were triaged on August 19, 2026; both are unpatched `image-size` parser denial-of-service advisories in development-only Less tooling.
 
@@ -57,8 +60,7 @@ Every mutating API action should eventually emit an audit record:
 - request id
 - timestamp
 
-The Chapter 1 seed script writes an initial `audit_logs` row, and render jobs persist
-status plus heartbeat fields for future watchdog checks.
+The Chapter 1 seed script writes audit rows only when it creates or explicitly refreshes content. Routine startup seeding is create-only for existing reels and shots. Render jobs persist status, heartbeat, attempts, bounded logs, artifact checksums, and manifests.
 
 ## Stuck Process Detection
 

@@ -6,6 +6,7 @@ import {
   toFileUri,
   writeJson,
 } from '../renderer/artifact-utils.mjs';
+import { renderEditorialPipeline } from '../renderer/editorial-adapter.mjs';
 import { renderLocalPipeline } from '../renderer/local-adapter.mjs';
 import { renderMockPipeline } from '../renderer/mock-adapter.mjs';
 import { RendererApi } from '../renderer/renderer-api.mjs';
@@ -69,9 +70,7 @@ async function processJob(job) {
       log: logger.log,
     };
     const artifacts = await withTimeout(
-      config.adapter === 'local'
-        ? renderLocalPipeline(context)
-        : renderMockPipeline(context),
+      selectPipeline(config.adapter)(context),
       config.jobTimeoutMs,
       `Render job ${job.id}`,
     );
@@ -128,6 +127,21 @@ async function processJob(job) {
     return false;
   } finally {
     clearInterval(heartbeat);
+  }
+}
+
+function selectPipeline(adapter) {
+  switch (adapter) {
+    case 'mock':
+      return renderMockPipeline;
+    case 'local':
+      return renderLocalPipeline;
+    case 'editorial':
+      return renderEditorialPipeline;
+    default:
+      throw new Error(
+        `Unknown RENDER_ADAPTER '${adapter}'. Use mock, local, or editorial.`,
+      );
   }
 }
 

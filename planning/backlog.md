@@ -13,16 +13,19 @@
 - [x] Add bounded CI timeouts for long-running steps.
 - [x] Add `start:all` local stack script.
 - [x] Add Windows Ctrl+C process and port cleanup for `start:all`.
+- [x] Make normal startup seeding non-destructive and preserve the PostgreSQL volume on shutdown.
+- [x] Isolate API e2e data in a dedicated `_e2e` database and temporary API process.
 
 ## Epic 2 - Blessings Of Sumer Pilot
 
 - [x] Move Chapter 1 source metadata into persistent records.
 - [x] Seed all 18 Chapter 1 reel records.
 - [x] Expand all 18 Chapter 1 reels into detailed storyboard records.
-- [ ] Establish visual bible for Enki, Nammu, Dilmun, Martu, and the Stag of the Absu.
+- [x] Establish visual bible for Enki, Nammu, Dilmun, Martu, and the Stag of the Absu.
 - [x] Render the first deterministic 60-second technical prototype locally.
-- [ ] Render the first editorial prototype with approved generated imagery and narration.
-- [ ] Review against platform safety and style consistency.
+- [x] Render the first editorial prototype with approved generated imagery and provisional narration.
+- [x] Review the editorial baseline against platform safety and style consistency.
+- [ ] Replace provisional narration and add the approved ambience score before publication.
 
 ## Epic 3 - Local Rendering Pipeline
 
@@ -36,6 +39,7 @@
 - [x] Persist renderer stdout/stderr logs.
 - [x] Persist retry attempts and failure history.
 - [x] Add deterministic mock renderer and prerequisite preflight.
+- [x] Add curated editorial renderer with motion, timed captions, title treatment, media validation, and persisted manifests.
 
 ## Epic 4 - Review Workflow
 

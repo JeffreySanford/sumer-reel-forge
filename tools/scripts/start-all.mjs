@@ -177,7 +177,7 @@ async function prepareDatabase() {
     fail('database migration failed.');
   }
 
-  console.log('Seeding Chapter 1 reels...');
+  console.log('Creating any missing Chapter 1 seed records...');
   const seed = runPnpm(['db:seed:chapter1'], {
     stdio: 'inherit',
   });

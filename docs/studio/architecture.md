@@ -30,8 +30,12 @@ Primary commands:
 
 - `pnpm db:generate` generates Prisma Client.
 - `pnpm db:migrate` applies local migrations to the configured `DATABASE_URL`.
-- `pnpm db:seed:chapter1` persists the Chapter 1 reel plan and writes an audit row.
+- `pnpm db:seed:chapter1` creates missing Chapter 1 records without updating existing reels or replacing shots.
+- `pnpm db:seed:chapter1:refresh` explicitly replaces Chapter 1 reel and shot content with the repository seed.
+- `pnpm db:prepare:e2e` recreates only a validated `_e2e` database for isolated API testing.
 - `pnpm db:psql` opens a psql shell inside the Docker database container.
+
+Docker Compose stores PostgreSQL files in the named `postgres-data` volume. The `start:all` shutdown path terminates only repository-owned development processes; it does not stop Postgres with volume removal and never calls `docker compose down -v`.
 
 ## Process Safety
 

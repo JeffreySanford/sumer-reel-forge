@@ -25,12 +25,12 @@ Complete the first repeatable 60-second render path and make its outputs reviewa
 - [x] Eight shot images, captions, narration source, audio, video, and manifest rows persist.
 - [x] API e2e covers all 18 detailed storyboards, attempts, logs, reviews, retries, and approval gating.
 - [x] Web e2e covers editing, copying, queueing, approval, and asset review.
-- [ ] GitHub CI passes after this milestone is pushed.
+- [x] GitHub CI passes after this milestone is pushed (`32317667267`).
 
 ## Next Sprint Inputs
 
-- [ ] Approve character and environment visual references.
-- [ ] Select the ComfyUI workflow/checkpoint and production TTS voice.
-- [ ] Produce and review the first non-placeholder Reel 1 cut.
+- [x] Approve character and environment visual references as the `v1` baseline.
+- [x] Select ComfyUI/SDXL and Kokoro as production targets; installation and voice audition remain follow-up work.
+- [x] Produce and review the first non-placeholder Reel 1 editorial baseline.
 - [ ] Add authentication and role-based approval before any remote deployment.
 - [ ] Install OS-level watchdog scheduling on the render host.

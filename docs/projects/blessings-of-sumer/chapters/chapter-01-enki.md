@@ -30,13 +30,16 @@ Checklist status means each reel has a persistent, production-ready draft with n
 ## Next Chapter 1 Work
 
 - [x] Expand reels 2-18 into full shot lists, narration, prompt sets, and platform metadata.
-- [ ] Normalize names before final production: Eridu/Erech/Uruk, Ninsikila/Ninhursag/Nintu, E-Absu/E.Absu/E-engura.
-- [ ] Create approved visual references for Enki, Nammu, Dilmun, Martu, and the Stag of the Absu.
+- [x] Normalize the production naming policy for Eridu, Uruk/Erech, named goddesses, and E-Absu.
+- [x] Create versioned visual references for Enki, Nammu, Dilmun, Martu, and the Stag of the Absu.
 - [x] Render the first deterministic 60-second technical prototype for `The Voyage Begins`.
-- [ ] Replace technical storyboard cards and silent audio with approved ComfyUI imagery and narration.
+- [x] Produce a persisted editorial cut with approved imagery, provisional narration, captions, and title treatment.
+- [ ] Replace the provisional Windows narration with the approved Kokoro voice and add the scored ambience bed.
 
 ## Production Notes
 
-- Normalize naming before final production: Eridu/Erech/Uruk, Ninsikila/Ninhursag/Nintu, E-Absu/E.Absu/E-engura.
+- Use `Uruk (Erech)` on first audience-facing mention and `Uruk` thereafter; keep Eridu distinct.
+- Keep Ninsikila, Nintu, and Ninhursag distinct unless the source notes an intentional identity equivalence.
+- Use `E-Absu` as the canonical spelling and reserve `E-engura` for an explicitly sourced epithet.
 - Remove inline draft notes and placeholders before generating final narration.
 - Adapt source myth excerpts into modern narration rather than reading line-numbered pasted source text.

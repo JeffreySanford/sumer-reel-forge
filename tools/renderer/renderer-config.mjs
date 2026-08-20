@@ -37,6 +37,18 @@ export function loadRendererConfig() {
     ]),
     whisperModel: process.env.WHISPER_MODEL ?? 'small',
     ffmpegCommand: process.env.FFMPEG_COMMAND ?? 'ffmpeg',
+    ffprobeCommand: process.env.FFPROBE_COMMAND ?? 'ffprobe',
+    editorialAssetDirectory: resolve(
+      process.env.EDITORIAL_ASSET_DIRECTORY ??
+        'assets/blessings-of-sumer/chapter-01/reel-01/editorial-v1',
+    ),
+    windowsSpeechCommand: process.env.WINDOWS_SPEECH_COMMAND ?? 'pwsh.exe',
+    windowsSpeechScript: resolve(
+      process.env.WINDOWS_SPEECH_SCRIPT ??
+        'tools/scripts/synthesize-windows-speech.ps1',
+    ),
+    editorialVoice: process.env.EDITORIAL_VOICE ?? 'Microsoft Mark',
+    editorialVoiceRate: integerInRange('EDITORIAL_VOICE_RATE', -3, -10, 10),
   };
 }
 
@@ -66,4 +78,14 @@ function jsonStringArray(name, fallback) {
     throw new Error(`${name} must be a JSON array of strings.`);
   }
   return parsed;
+}
+
+function integerInRange(name, fallback, minimum, maximum) {
+  const value = Number(process.env[name] ?? fallback);
+  if (!Number.isInteger(value) || value < minimum || value > maximum) {
+    throw new Error(
+      `${name} must be an integer from ${minimum} through ${maximum}.`,
+    );
+  }
+  return value;
 }

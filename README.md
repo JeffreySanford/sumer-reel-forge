@@ -36,12 +36,15 @@ pnpm start:all
 
 `start:all` starts Postgres through Docker Compose and starts the Angular/Nest dev servers on ports 4200 and 3000. It fails fast if dependencies are missing or stale; run `pnpm install` yourself before retrying.
 
+PostgreSQL data remains in the named `postgres-data` Docker volume when `start:all` is stopped. Startup migrations are additive, and the normal Chapter 1 seed only creates missing records. Existing reel edits, shots, jobs, assets, reviews, and audit rows are preserved. Use `pnpm db:seed:chapter1:refresh` only when you intentionally want to replace Chapter 1 reel and shot content with the repository seed.
+
 Validate and run the renderer after the API is running:
 
 ```sh
 pnpm renderer:preflight
 pnpm renderer:worker -- --once
 pnpm render:prototype:reel1
+pnpm render:editorial:reel1
 ```
 
 Run the stale-job watchdog once:
@@ -94,7 +97,13 @@ Open a database shell:
 pnpm db:psql
 ```
 
-The deterministic `mock` adapter is the default. Set `RENDER_ADAPTER=local` to use the configured ComfyUI, TTS, Whisper, and FFmpeg integrations; see `docs/studio/local-renderer-prerequisites.md`.
+Prepare the isolated API e2e database without touching development data:
+
+```sh
+pnpm db:prepare:e2e
+```
+
+The deterministic `mock` adapter is the default. Set `RENDER_ADAPTER=local` to use the configured ComfyUI, TTS, Whisper, and FFmpeg integrations. The Windows `editorial` adapter consumes the versioned Reel 1 frames, generates provisional local narration and word timings, burns safe-area captions, adds a subtitle track, and persists a 60-second draft through the worker. See `docs/studio/local-renderer-prerequisites.md`.
 
 ## Documentation
 
