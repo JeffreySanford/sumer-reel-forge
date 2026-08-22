@@ -10,15 +10,25 @@ describe('AppService', () => {
   beforeAll(async () => {
     const prismaMock = {
       renderJob: {
-        update: async ({ where, data }: any) => {
+        update: async ({
+          where,
+          data,
+        }: {
+          where: { id: string };
+          data: { pipeline: string };
+        }) => {
           pipelineByJob.set(where.id, data.pipeline);
           return { id: where.id, pipeline: data.pipeline };
         },
-        findUnique: async ({ where }: any) => ({
+        findUnique: async ({ where }: { where: { id: string } }) => ({
           pipeline: pipelineByJob.get(where.id) ?? null,
         }),
-        findMany: async ({ where }: any) =>
-          (where?.id?.in ?? []).map((id: string) => ({
+        findMany: async ({
+          where,
+        }: {
+          where: { id: { in: string[] } };
+        }) =>
+          (where.id.in ?? []).map((id: string) => ({
             id,
             pipeline: pipelineByJob.get(id) ?? null,
           })),
