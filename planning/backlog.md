@@ -121,10 +121,13 @@ The goal is to turn the Reel 1 planning/review conversation into a repeatable St
 
 - [x] Document the automated planning/review architecture.
 - [x] Plan Sprint 007 Studio Planning Automation.
+- [x] Implement the first `PlanningProvider` abstraction in the Nest API.
+- [x] Implement the deterministic/template provider baseline.
+- [x] Expose planning runtime capabilities and structured shot-plan proposal endpoints.
+- [x] Add a local runtime check command for Ollama model discovery.
 - [ ] Persist `PlanningRun` and versioned planning artifacts.
 - [ ] Add planning status, attempt, log, timeout, input-hash, and approval history.
-- [ ] Implement a `PlanningProvider` abstraction.
-- [ ] Implement a deterministic/template provider as the default.
+- [ ] Load reel source, visual bible, style bible, and inherited decisions server-side for planning runs.
 - [ ] Scaffold shot intent cards, keyframe markers, Scene V2, and asset-manifest proposals from reel data and approved style rules.
 - [ ] Add a persistent style-decision library with project/chapter/reel/character/material/shot-type scopes.
 - [ ] Inherit approved style decisions into later reels automatically.
@@ -135,13 +138,21 @@ The goal is to turn the Reel 1 planning/review conversation into a repeatable St
 - [ ] Convert human feedback into explicit path/from/to/reason revision records.
 - [ ] Preview scene diffs before applying revisions and rerendering.
 
-### Optional local AI provider
+### Optional local AI provider - implementation started
 
-- [ ] Add Ollama behind the same `PlanningProvider` interface; do not make it a required runtime dependency.
-- [ ] Require schema-constrained structured output for actionable model responses.
-- [ ] Allow separate text-planning and vision-review models.
-- [ ] Bound local model calls with timeout, retry, logs, and provider/model metadata.
-- [ ] Allow model-generated shot plans, critiques, revision proposals, and style-rule proposals only as human-reviewable suggestions.
+- [x] Add Ollama behind the same `PlanningProvider` interface without making it a required runtime dependency.
+- [x] Configure base URL, text model, vision model, and bounded timeout through environment settings.
+- [x] Use Ollama `/api/tags` for local model discovery.
+- [x] Use schema-constrained `/api/chat` output for shot-plan proposals.
+- [x] Validate actionable model responses before returning a proposal.
+- [x] Preserve inherited Studio style rules even if model output attempts to change them.
+- [x] Enforce the current default 5% camera-scale planning guardrail before accepting a model proposal.
+- [x] Support text planning independently from the future vision-review path.
+- [ ] Persist provider/model/input hash/output hash for reproducibility.
+- [ ] Add retry/attempt/log persistence around local model calls.
+- [ ] Add vision review against contact sheets and configured review-marker frames.
+- [ ] Translate human review notes into structured revision proposals.
+- [ ] Propose reusable style-rule candidates from approved A/B decisions.
 - [ ] Never allow an AI provider to approve visual assets, alter source text silently, or publish a reel.
 
 ### Automation proof
