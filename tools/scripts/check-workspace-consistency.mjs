@@ -17,18 +17,29 @@ const configuredPlugins = (nxJson.plugins ?? [])
   .map((entry) => (typeof entry === 'string' ? entry : entry?.plugin))
   .filter((entry) => typeof entry === 'string' && entry.length > 0);
 
-const missingPlugins = configuredPlugins.filter((plugin) => !declared.has(plugin));
+const configuredPackages = configuredPlugins.map(packageRootFromSpecifier);
+const missingPackages = [...new Set(configuredPackages)].filter(
+  (pluginPackage) => !declared.has(pluginPackage),
+);
 
-if (missingPlugins.length > 0) {
+if (missingPackages.length > 0) {
   console.error('Workspace dependency consistency check failed.');
-  console.error('Nx plugins configured in nx.json but missing from package.json:');
-  for (const plugin of missingPlugins) {
-    console.error(`  - ${plugin}`);
+  console.error('Nx plugin packages configured in nx.json but missing from package.json:');
+  for (const pluginPackage of missingPackages) {
+    console.error(`  - ${pluginPackage}`);
   }
-  console.error('Declare each configured Nx plugin explicitly before running Nx.');
+  console.error('Declare each configured Nx plugin package explicitly before running Nx.');
   process.exit(1);
 }
 
 console.log(
-  `Workspace dependency consistency OK: ${configuredPlugins.length} Nx plugins are explicitly declared.`,
+  `Workspace dependency consistency OK: ${configuredPlugins.length} Nx plugins resolve to explicitly declared packages.`,
 );
+
+function packageRootFromSpecifier(specifier) {
+  const parts = specifier.split('/');
+  if (specifier.startsWith('@')) {
+    return parts.slice(0, 2).join('/');
+  }
+  return parts[0];
+}
