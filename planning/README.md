@@ -29,12 +29,17 @@ Use:
 
 - `reel-01-animation-style-bible.md` for governing camera, motion, lighting, transitions, layered assets, and shot-by-shot direction;
 - `reel-01-cinematic-direction-plan.md` for the reel-wide emotional arc, color script, lens/camera grammar, material motion rules, transition plan, character micro-performance, atmosphere palette, sound-to-motion cues, and shot intent cards;
+- `reel-01-timing-attention-map.md` for narration-to-image pacing, shot-level attention hierarchy, motion-intensity planning, sound handoffs, and the reel's alternating movement/stillness rhythm;
+- `reel-01-animation-asset-production-workflow.md` for immutable-source policy, overscan, semantic layer separation, hidden-background reconstruction, alpha cleanup, material tags, manifests, and pre-animation QC;
 - `reel-01-animation-review-scorecard.md` for repeatable visual-quality scoring, hard-fail conditions, A/B comparisons, phone review, and publication thresholds;
 - `reel-01-shot-03-enki-benchmark-plan.md` for the concrete first benchmark: composition, layer list, overscan, camera amplitude, character timing, water/light behavior, transition design, A/B tests, and pass criteria;
+- `reel-01-shot-04-nammu-benchmark-plan.md` for the contrasting supernatural benchmark and the series principle that a believable physical world makes the mythology feel extraordinary;
 - `sprint-006-reel-one-animation-polish.md` for the active implementation sequence;
 - `remotion-cinematic-animation-roadmap.md` for the broader renderer roadmap.
 
-Shot 3, Enki at the helm, is the primary benchmark. A second contrasting scene, preferably Nammu beneath the water or the Dilmun reveal, must also pass before the style is propagated to all eight Reel 1 shots.
+Shot 3, Enki at the helm, is the primary benchmark. Shot 4, Nammu beneath the water, is now the planned secondary benchmark because it tests the opposite visual problem: restrained numinous intervention rather than physical character presence. Both must pass before the style is propagated to all eight Reel 1 shots.
+
+The working series principle is: **make the ordinary world believable enough that the mythology feels extraordinary.** Physical materials obey weight and inertia; supernatural imagery earns its impact by departing from those rules carefully rather than through spectacle.
 
 Rhubarb lip sync, Reel 2 animation, skeletal rigging, and larger animation-engine expansion are deferred until the Reel 1 benchmark style is approved.
 
