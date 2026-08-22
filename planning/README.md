@@ -11,6 +11,7 @@ This folder captures agile planning for the studio and project-specific producti
 - Separate technical renderer acceptance from art-direction acceptance.
 - Do not scale a visual workflow to later reels until the benchmark reel meets the agreed quality bar.
 - Automate repeatable production workflow without automating away the human editorial gate.
+- Convert approved creative decisions into machine-checkable invariants where possible, while keeping taste and publication approval human-owned.
 
 ## Active Plan
 
@@ -36,6 +37,8 @@ Use:
 - `animation-asset-manifest-contract.md` for the reusable semantic/provenance contract between approved editorial art and animation scenes;
 - `animation-scene-schema-v2.md` for the data-driven scene contract that should eventually drive a generic Remotion composition;
 - `reel-01-animation-review-scorecard.md` for repeatable visual-quality scoring, hard-fail conditions, A/B comparisons, phone review, and publication thresholds;
+- `reel-01-creative-test-strategy.md` for the creative/design testing pyramid, machine-checkable invariants, golden-frame review strategy, and human/AI review boundaries;
+- `reel-01-phase-exit-plan.md` for the explicit Reel 1 phase gates from toolchain stability through benchmark approval, full-reel integration, device review, visual baselines, and automation readiness;
 - `reel-01-shot-03-enki-benchmark-plan.md` for the concrete first benchmark: composition, layer list, overscan, camera amplitude, character timing, water/light behavior, transition design, A/B tests, and pass criteria;
 - `reel-01-shot-03-keyframe-sheet.md` for 0/25/50/75/100% directorial checkpoints and still-frame review targets;
 - `reel-01-shot-04-nammu-benchmark-plan.md` for the contrasting supernatural benchmark and the series principle that a believable physical world makes the mythology feel extraordinary;
@@ -43,11 +46,18 @@ Use:
 - `sprint-007-studio-planning-automation.md` for the reusable Studio workflow and the provider/runtime work already underway;
 - `remotion-cinematic-animation-roadmap.md` for the broader renderer roadmap;
 - `../documentation/studio/automated-reel-planning.md` for the deterministic + optional-AI planning/review architecture;
-- `../documentation/studio/ollama-planning-runtime.md` for the implemented local Ollama planning endpoint, environment variables, runtime check, and Reel 1 pilot request.
+- `../documentation/studio/ollama-planning-runtime.md` for the implemented local Ollama planning endpoint, environment variables, runtime check, and Reel 1 pilot request;
+- `../documentation/studio/local-model-selection-2026-08.md` for the dated local text/vision model strategy and shell-specific environment setup.
 
 Shot 3, Enki at the helm, is the primary benchmark. Shot 4, Nammu beneath the water, is the planned secondary benchmark because it tests the opposite visual problem: restrained numinous intervention rather than physical character presence. Both must pass before the style is propagated to all eight Reel 1 shots.
 
 The working series principle is: **make the ordinary world believable enough that the mythology feels extraordinary.** Physical materials obey weight and inertia; supernatural imagery earns its impact by departing from those rules carefully rather than through spectacle.
+
+## Creative Quality Automation
+
+The repository now has a machine-readable Reel 1 creative policy plus fast Node tests. `pnpm creative:test` validates structural Reel 1 timing/captions and representative Enki/Nammu direction constraints. `pnpm workspace:check` catches Nx plugins referenced by `nx.json` but missing from `package.json` before Nx itself fails with a less useful module-resolution error.
+
+These tests protect approved constraints such as camera limits, stillness anchors, narrator-only lip-sync policy, motion budgets, standard review markers, and Nammu's environmental-coherence treatment. They do not certify beauty or publication quality; those remain review decisions.
 
 ## Studio Automation Direction
 
@@ -70,6 +80,8 @@ Rhubarb lip sync, Reel 2 animation, skeletal rigging, and larger animation-engin
 - [x] Mutating behavior is auditable or explicitly documented as temporary.
 - [x] Long-running processes have timeout and heartbeat behavior.
 - [x] CI has bounded runtimes for steps that can hang.
+- [x] Workspace/Nx plugin configuration has an explicit consistency check.
+- [x] Initial Reel 1 machine-checkable creative guardrails run as tests.
 - [ ] Animation publication quality passes the Reel 1 style-bible and review-scorecard gates before animation production expands to later reels.
 - [x] Provider-level planning works without an LLM and can optionally use schema-constrained local Ollama planning.
 - [ ] Persisted planning/review automation works end-to-end and preserves human approval.
