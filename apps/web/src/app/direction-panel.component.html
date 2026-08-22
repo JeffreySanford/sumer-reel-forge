@@ -5,7 +5,7 @@
       <h3 id="direction-title">Direction</h3>
       <p class="direction-subtitle">
         Selected shot planning with local AI proposals, deterministic guardrails,
-        and human approval.
+        persisted human edits, and approval history.
       </p>
     </div>
     <div class="runtime-summary" aria-live="polite">
@@ -56,11 +56,16 @@
 
   @if (!proposal()) {
   <div class="direction-empty">
-    <strong>No proposal yet.</strong>
+    @if (isLoadingRun()) {
+    <strong>Loading planning history…</strong>
+    <p>Checking for the latest persisted direction run for this shot.</p>
+    } @else {
+    <strong>No persisted proposal yet.</strong>
     <p>
-      Generate direction to ask the configured planner for one constrained shot
-      package. Nothing is approved or persisted automatically.
+      Generate direction to create a constrained shot package and preserve the
+      original model output for human review.
     </p>
+    }
   </div>
   } @else {
     @if (proposal(); as current) {
@@ -130,7 +135,7 @@
       <div class="editor-heading">
         <div>
           <p class="eyebrow">Human Edit</p>
-          <strong>Adjust the proposal before local approval</strong>
+          <strong>Adjust the working proposal before approval</strong>
         </div>
         <span>Guardrails recalculate as values change</span>
       </div>
@@ -243,6 +248,35 @@
       </article>
     </div>
 
+    @if (planningRun(); as run) {
+    <div class="run-lineage" aria-label="Planning run provenance">
+      <div>
+        <span>Run</span>
+        <strong>{{ shortHash(run.id) }}</strong>
+      </div>
+      <div>
+        <span>Status</span>
+        <strong>{{ run.status }}</strong>
+      </div>
+      <div>
+        <span>Prompt</span>
+        <strong>{{ run.promptVersion }}</strong>
+      </div>
+      <div>
+        <span>Input</span>
+        <code>{{ shortHash(run.inputHash) }}</code>
+      </div>
+      <div>
+        <span>Model output</span>
+        <code>{{ shortHash(run.outputHash) }}</code>
+      </div>
+      <div>
+        <span>Working</span>
+        <code>{{ shortHash(run.workingHash) }}</code>
+      </div>
+    </div>
+    }
+
     <div class="proposal-footer">
       <div>
         <span>{{ current.provider }}</span>
@@ -251,34 +285,55 @@
         <small>{{ formatDuration(lastDurationMs()) }}</small>
         }
         @if (hasLocalEdits()) {
-        <small class="edited-chip">local edits</small>
+        <small class="edited-chip">unsaved edits</small>
         }
-        <small>Human review required</small>
-      </div>
-      <div class="proposal-actions">
         @if (reviewState() !== 'unreviewed') {
         <span class="review-state" [attr.data-review]="reviewState()">
-          {{ reviewState() }} locally
+          {{ reviewState() }}
         </span>
-        <button type="button" (click)="clearReview()">Clear review</button>
+        } @else {
+        <small>Human review required</small>
         }
-        <button type="button" (click)="toggleEditing()">
+      </div>
+      <div class="proposal-actions">
+        <button
+          type="button"
+          (click)="toggleEditing()"
+          [disabled]="!runIsEditable() || isSavingProposal() || isReviewing()"
+        >
           {{ isEditing() ? 'Done editing' : 'Edit proposal' }}
         </button>
-        <button type="button" (click)="reviewProposal('rejected')">Reject</button>
+        @if (hasLocalEdits()) {
+        <button
+          type="button"
+          class="save-direction"
+          (click)="saveProposalEdits()"
+          [disabled]="isSavingProposal()"
+        >
+          {{ isSavingProposal() ? 'Saving…' : 'Save edits' }}
+        </button>
+        }
+        <button
+          type="button"
+          (click)="reviewProposal('rejected')"
+          [disabled]="!runIsEditable() || isReviewing() || hasLocalEdits()"
+        >
+          {{ isReviewing() ? 'Reviewing…' : 'Reject' }}
+        </button>
         <button
           type="button"
           class="approve-direction"
           (click)="reviewProposal('approved')"
-          [disabled]="proposalHasFailure()"
+          [disabled]="proposalHasFailure() || !runIsEditable() || isReviewing() || hasLocalEdits()"
         >
-          Approve locally
+          Approve
         </button>
       </div>
     </div>
     <p class="persistence-note">
-      Local edits and approval are intentionally non-persistent until PlanningRun
-      approval history is added to the Studio database.
+      Planning input, original model output, human edits, hashes, and review state
+      are persisted. REVIEW items remain editorial judgments; FAIL items are also
+      enforced by the API and block approval.
     </p>
     }
   }
