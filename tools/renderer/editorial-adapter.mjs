@@ -32,6 +32,7 @@ export async function renderEditorialPipeline(context) {
     narrationTextPath,
     narrationAudioPath,
     timingsPath,
+    narrationIdentity: job.narrationConfig ?? episode.narrationIdentity,
     log,
   });
   await access(narrationAudioPath);
@@ -164,6 +165,7 @@ async function synthesizeNarration({
   narrationTextPath,
   narrationAudioPath,
   timingsPath,
+  narrationIdentity,
   log,
 }) {
   const processOptions = {
@@ -172,7 +174,69 @@ async function synthesizeNarration({
     onStdout: (message) => log('stdout', 'info', message),
     onStderr: (message) => log('stderr', 'warn', message),
   };
-  if (config.editorialNarrationAdapter === 'kokoro') {
+  const narrationAdapter =
+    config.editorialNarrationAdapter === 'auto'
+      ? (narrationIdentity?.voiceProfile.engine ?? 'kokoro')
+      : config.editorialNarrationAdapter;
+
+  if (narrationAdapter === 'chatterbox') {
+    const controls = chatterboxControls(narrationIdentity?.stylePreset);
+    const referenceArguments = config.chatterboxReferenceAudio
+      ? ['--reference-audio', config.chatterboxReferenceAudio]
+      : [];
+    await runProcess(
+      config.chatterboxCommand,
+      [
+        'run',
+        '--project',
+        config.chatterboxProjectDirectory,
+        '--locked',
+        'python',
+        config.chatterboxScript,
+        '--text-file',
+        narrationTextPath,
+        '--output-file',
+        narrationAudioPath,
+        '--timings-file',
+        timingsPath,
+        '--model-directory',
+        config.chatterboxModelDirectory,
+        '--device',
+        config.chatterboxDevice,
+        '--exaggeration',
+        String(controls.exaggeration),
+        '--cfg-weight',
+        String(controls.cfgWeight),
+        '--temperature',
+        String(controls.temperature),
+        ...referenceArguments,
+      ],
+      processOptions,
+    );
+    return {
+      adapter: 'chatterbox',
+      timingAdapter: 'estimated-word-timing',
+      voice: narrationIdentity?.voiceProfile.slug ?? 'chatterbox-narrator',
+      model:
+        narrationIdentity?.voiceProfile.model ?? 'ResembleAI/chatterbox',
+      stylePreset: narrationIdentity?.stylePreset ?? 'mythic',
+      styleNotes: narrationIdentity?.styleNotes ?? '',
+      referenceAudio: Boolean(config.chatterboxReferenceAudio),
+      referenceAudioChecksum:
+        narrationIdentity?.voiceProfile.referenceAudioChecksum,
+      ...controls,
+    };
+  }
+
+  if (narrationAdapter === 'kokoro') {
+    const voice =
+      narrationIdentity?.voiceProfile.engine === 'kokoro'
+        ? (narrationIdentity.voiceProfile.providerVoice ?? config.kokoroVoice)
+        : config.kokoroVoice;
+    const speed = kokoroSpeedForStyle(
+      narrationIdentity?.stylePreset,
+      config.kokoroSpeed,
+    );
     await runProcess(
       config.kokoroCommand,
       [
@@ -193,18 +257,20 @@ async function synthesizeNarration({
         '--voices',
         config.kokoroVoicesPath,
         '--voice',
-        config.kokoroVoice,
+        voice,
         '--speed',
-        String(config.kokoroSpeed),
+        String(speed),
       ],
       processOptions,
     );
     return {
       adapter: 'kokoro-onnx',
       timingAdapter: 'estimated-word-timing',
-      voice: config.kokoroVoice,
-      speed: config.kokoroSpeed,
+      voice,
+      speed,
       model: basename(config.kokoroModelPath),
+      stylePreset: narrationIdentity?.stylePreset,
+      styleNotes: narrationIdentity?.styleNotes,
     };
   }
 
@@ -234,6 +300,34 @@ async function synthesizeNarration({
     voice: config.editorialVoice,
     rate: config.editorialVoiceRate,
   };
+}
+
+function chatterboxControls(stylePreset = 'mythic') {
+  return (
+    {
+      documentary: { exaggeration: 0.25, cfgWeight: 0.5, temperature: 0.72 },
+      intimate: { exaggeration: 0.4, cfgWeight: 0.35, temperature: 0.74 },
+      mythic: { exaggeration: 0.5, cfgWeight: 0.4, temperature: 0.8 },
+      dramatic: { exaggeration: 0.7, cfgWeight: 0.3, temperature: 0.85 },
+      archival: { exaggeration: 0.2, cfgWeight: 0.55, temperature: 0.7 },
+    }[stylePreset] ?? {
+      exaggeration: 0.5,
+      cfgWeight: 0.4,
+      temperature: 0.8,
+    }
+  );
+}
+
+function kokoroSpeedForStyle(stylePreset, fallback) {
+  return (
+    {
+      documentary: 0.95,
+      intimate: 0.88,
+      mythic: 0.9,
+      dramatic: 1,
+      archival: 0.85,
+    }[stylePreset] ?? fallback
+  );
 }
 
 async function copyApprovedFrames({ episode, outputDirectory, config, log }) {

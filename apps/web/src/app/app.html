@@ -47,6 +47,201 @@
       </div>
     </header>
 
+    <section class="narration-stage" aria-labelledby="narration-stage-title">
+      <div class="narration-stage-heading">
+        <div class="step-heading">
+          <span>1</span>
+          <div>
+            <p class="eyebrow">Story Voice</p>
+            <h3 id="narration-stage-title">Narration identity</h3>
+          </div>
+        </div>
+        <div class="effective-voice" aria-live="polite">
+          <span>{{ effectiveNarrationVoice().engine }}</span>
+          <strong>{{ effectiveNarrationVoice().displayName }}</strong>
+          <small>{{ effectiveNarrationStyle() }}</small>
+        </div>
+      </div>
+
+      <div class="narration-config-grid">
+        <section class="narration-scope" aria-label="Story narration default">
+          <p class="eyebrow">Story Default</p>
+          <label>
+            <span>Narrator voice</span>
+            <select
+              [value]="narrationDraft().storyVoiceProfileId"
+              (change)="updateNarrationVoice('story', $event)"
+            >
+              @for (voice of narrationSettings().availableVoices; track voice.id)
+              {
+              <option [value]="voice.id">
+                {{ voice.displayName }} / {{ voice.engine }}
+              </option>
+              }
+            </select>
+          </label>
+          <label>
+            <span>Delivery style</span>
+            <select
+              [value]="narrationDraft().storyStylePreset"
+              (change)="updateNarrationStyle('story', $event)"
+            >
+              @for (style of narrationStylePresets; track style) {
+              <option [value]="style">{{ style }}</option>
+              }
+            </select>
+          </label>
+          <label>
+            <span>Story voice direction</span>
+            <textarea
+              rows="3"
+              [value]="narrationDraft().storyStyleNotes"
+              (input)="updateNarrationNotes('story', $event)"
+            ></textarea>
+          </label>
+        </section>
+
+        <section class="narration-scope" aria-label="Chapter narration override">
+          <div class="scope-toggle">
+            <div>
+              <p class="eyebrow">Chapter {{ narrationSettings().chapterNumber }}</p>
+              <strong>{{ narrationSettings().chapterTitle }}</strong>
+            </div>
+            <label class="checkbox-control">
+              <input
+                type="checkbox"
+                [checked]="narrationDraft().useStoryDefault"
+                (change)="setUseStoryDefault($event)"
+              />
+              <span>Use story default</span>
+            </label>
+          </div>
+          <label>
+            <span>Chapter narrator</span>
+            <select
+              [value]="narrationDraft().chapterVoiceProfileId"
+              [disabled]="narrationDraft().useStoryDefault"
+              (change)="updateNarrationVoice('chapter', $event)"
+            >
+              @for (voice of narrationSettings().availableVoices; track voice.id)
+              {
+              <option [value]="voice.id">
+                {{ voice.displayName }} / {{ voice.engine }}
+              </option>
+              }
+            </select>
+          </label>
+          <label>
+            <span>Chapter delivery style</span>
+            <select
+              [value]="narrationDraft().chapterStylePreset"
+              [disabled]="narrationDraft().useStoryDefault"
+              (change)="updateNarrationStyle('chapter', $event)"
+            >
+              @for (style of narrationStylePresets; track style) {
+              <option [value]="style">{{ style }}</option>
+              }
+            </select>
+          </label>
+          <label>
+            <span>Chapter voice direction</span>
+            <textarea
+              rows="3"
+              [value]="narrationDraft().chapterStyleNotes"
+              [disabled]="narrationDraft().useStoryDefault"
+              (input)="updateNarrationNotes('chapter', $event)"
+            ></textarea>
+          </label>
+        </section>
+      </div>
+
+      <div class="cast-heading">
+        <div>
+          <p class="eyebrow">Chapter Cast</p>
+          <strong>{{ narrationDraft().roles.length }} assigned roles</strong>
+        </div>
+        <button type="button" (click)="addNarrationRole()">Add role</button>
+      </div>
+
+      @if (narrationDraft().roles.length > 0) {
+      <div class="cast-list">
+        @for (role of narrationDraft().roles; track role.roleKey; let index =
+        $index) {
+        <div class="cast-row">
+          <label>
+            <span>Role</span>
+            <input
+              [value]="role.displayName"
+              (input)="updateNarrationRole(index, 'displayName', $event)"
+            />
+          </label>
+          <label>
+            <span>Type</span>
+            <select
+              [value]="role.roleType"
+              (change)="updateNarrationRole(index, 'roleType', $event)"
+            >
+              @for (roleType of narrationRoleTypes; track roleType) {
+              <option [value]="roleType">{{ roleType }}</option>
+              }
+            </select>
+          </label>
+          <label>
+            <span>Voice</span>
+            <select
+              [value]="role.voiceProfileId"
+              (change)="updateNarrationRole(index, 'voiceProfileId', $event)"
+            >
+              @for (voice of narrationSettings().availableVoices; track voice.id)
+              {
+              <option [value]="voice.id">{{ voice.displayName }}</option>
+              }
+            </select>
+          </label>
+          <label>
+            <span>Style</span>
+            <select
+              [value]="role.stylePreset"
+              (change)="updateNarrationRole(index, 'stylePreset', $event)"
+            >
+              @for (style of narrationStylePresets; track style) {
+              <option [value]="style">{{ style }}</option>
+              }
+            </select>
+          </label>
+          <label class="cast-notes">
+            <span>Direction</span>
+            <input
+              [value]="role.styleNotes"
+              (input)="updateNarrationRole(index, 'styleNotes', $event)"
+            />
+          </label>
+          <button
+            type="button"
+            class="remove-role"
+            (click)="removeNarrationRole(index)"
+            [attr.aria-label]="'Remove ' + role.displayName"
+          >
+            Remove
+          </button>
+        </div>
+        }
+      </div>
+      }
+
+      <div class="narration-actions">
+        <span>{{ effectiveNarrationVoice().description }}</span>
+        <button
+          type="button"
+          class="primary-action"
+          (click)="saveNarrationSettings()"
+          [disabled]="isSavingNarration()"
+        >
+          {{ isSavingNarration() ? 'Saving...' : 'Save narration' }}
+        </button>
+      </div>
+    </section>
+
     <section class="workflow-bar" aria-label="Reel workflow actions">
       <button type="button" (click)="copyPrompt()">Copy prompt</button>
       <button type="button" (click)="copyAllPrompts()">Copy all prompts</button>

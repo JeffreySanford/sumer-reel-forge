@@ -44,9 +44,28 @@ export function loadRendererConfig() {
     ),
     editorialNarrationAdapter: stringChoice(
       'EDITORIAL_NARRATION_ADAPTER',
-      'sapi',
-      ['sapi', 'kokoro'],
+      'auto',
+      ['auto', 'sapi', 'kokoro', 'chatterbox'],
     ),
+    chatterboxCommand: process.env.CHATTERBOX_COMMAND ?? 'uv',
+    chatterboxProjectDirectory: resolve(
+      process.env.CHATTERBOX_PROJECT_DIRECTORY ?? 'tools/chatterbox',
+    ),
+    chatterboxScript: resolve(
+      process.env.CHATTERBOX_SCRIPT ??
+        'tools/chatterbox/synthesize_chatterbox.py',
+    ),
+    chatterboxModelDirectory: resolve(
+      process.env.CHATTERBOX_MODEL_DIRECTORY ?? '.cache/chatterbox/model',
+    ),
+    chatterboxDevice: stringChoice('CHATTERBOX_DEVICE', 'auto', [
+      'auto',
+      'cuda',
+      'cpu',
+    ]),
+    chatterboxReferenceAudio: process.env.CHATTERBOX_REFERENCE_AUDIO
+      ? resolve(process.env.CHATTERBOX_REFERENCE_AUDIO)
+      : undefined,
     kokoroCommand: process.env.KOKORO_COMMAND ?? 'uv',
     kokoroProjectDirectory: resolve(
       process.env.KOKORO_PROJECT_DIRECTORY ?? 'tools/tts',

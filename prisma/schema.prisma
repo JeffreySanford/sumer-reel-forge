@@ -7,13 +7,17 @@ datasource db {
 }
 
 model StudioProject {
-  id              String           @id @default(uuid()) @db.Uuid
-  slug            String           @unique
-  title           String
-  description     String?
-  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt       DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
-  sourceDocuments SourceDocument[]
+  id                      String                 @id @default(uuid()) @db.Uuid
+  slug                    String                 @unique
+  title                   String
+  description             String?
+  defaultNarrationVoiceId String?                @map("default_narration_voice_id") @db.Uuid
+  narrationStylePreset    NarrationStylePreset   @default(MYTHIC) @map("narration_style_preset")
+  narrationStyleNotes     String?                @map("narration_style_notes")
+  createdAt               DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt               DateTime               @updatedAt @map("updated_at") @db.Timestamptz(6)
+  sourceDocuments         SourceDocument[]
+  defaultNarrationVoice   NarrationVoiceProfile? @relation("ProjectDefaultNarrationVoice", fields: [defaultNarrationVoiceId], references: [id], onDelete: SetNull)
 
   @@map("studio_projects")
 }
@@ -33,40 +37,92 @@ model SourceDocument {
 }
 
 model Chapter {
-  id               String         @id @default(uuid()) @db.Uuid
-  sourceDocumentId String         @map("source_document_id") @db.Uuid
-  chapterNumber    Int            @map("chapter_number")
-  title            String
-  synopsis         String?
-  createdAt        DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt        DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
-  document         SourceDocument @relation(fields: [sourceDocumentId], references: [id], onDelete: Cascade)
-  reels            Reel[]
+  id                       String                 @id @default(uuid()) @db.Uuid
+  sourceDocumentId         String                 @map("source_document_id") @db.Uuid
+  chapterNumber            Int                    @map("chapter_number")
+  title                    String
+  synopsis                 String?
+  narrationOverrideEnabled Boolean                @default(false) @map("narration_override_enabled")
+  narrationVoiceId         String?                @map("narration_voice_id") @db.Uuid
+  narrationStylePreset     NarrationStylePreset?  @map("narration_style_preset")
+  narrationStyleNotes      String?                @map("narration_style_notes")
+  createdAt                DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                DateTime               @updatedAt @map("updated_at") @db.Timestamptz(6)
+  document                 SourceDocument         @relation(fields: [sourceDocumentId], references: [id], onDelete: Cascade)
+  narrationVoice           NarrationVoiceProfile? @relation("ChapterNarrationVoice", fields: [narrationVoiceId], references: [id], onDelete: SetNull)
+  narrationRoles           ChapterNarrationRole[]
+  reels                    Reel[]
 
   @@unique([sourceDocumentId, chapterNumber])
   @@map("chapters")
 }
 
+model NarrationVoiceProfile {
+  id                     String                 @id @default(uuid()) @db.Uuid
+  slug                   String                 @unique
+  displayName            String                 @map("display_name")
+  description            String?
+  engine                 NarrationEngine
+  model                  String
+  language               String                 @default("en")
+  providerVoice          String?                @map("provider_voice")
+  referenceAudioUri      String?                @map("reference_audio_uri")
+  referenceAudioChecksum String?                @map("reference_audio_checksum")
+  rightsBasis            String?                @map("rights_basis")
+  rightsConfirmedAt      DateTime?              @map("rights_confirmed_at") @db.Timestamptz(6)
+  defaultExaggeration    Float                  @default(0.5) @map("default_exaggeration")
+  defaultCfgWeight       Float                  @default(0.5) @map("default_cfg_weight")
+  defaultTemperature     Float                  @default(0.8) @map("default_temperature")
+  active                 Boolean                @default(true)
+  createdAt              DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime               @updatedAt @map("updated_at") @db.Timestamptz(6)
+  projectDefaults        StudioProject[]        @relation("ProjectDefaultNarrationVoice")
+  chapterOverrides       Chapter[]              @relation("ChapterNarrationVoice")
+  chapterRoles           ChapterNarrationRole[]
+
+  @@index([active, engine])
+  @@map("narration_voice_profiles")
+}
+
+model ChapterNarrationRole {
+  id             String                 @id @default(uuid()) @db.Uuid
+  chapterId      String                 @map("chapter_id") @db.Uuid
+  roleKey        String                 @map("role_key")
+  displayName    String                 @map("display_name")
+  roleType       NarrationRoleType      @map("role_type")
+  voiceProfileId String?                @map("voice_profile_id") @db.Uuid
+  stylePreset    NarrationStylePreset?  @map("style_preset")
+  styleNotes     String?                @map("style_notes")
+  createdAt      DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime               @updatedAt @map("updated_at") @db.Timestamptz(6)
+  chapter        Chapter                @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  voiceProfile   NarrationVoiceProfile? @relation(fields: [voiceProfileId], references: [id], onDelete: SetNull)
+
+  @@unique([chapterId, roleKey])
+  @@index([voiceProfileId])
+  @@map("chapter_narration_roles")
+}
+
 model Reel {
-  id                    String      @id @default(uuid()) @db.Uuid
-  chapterId             String      @map("chapter_id") @db.Uuid
-  episodeNumber         Int         @map("episode_number")
+  id                    String               @id @default(uuid()) @db.Uuid
+  chapterId             String               @map("chapter_id") @db.Uuid
+  episodeNumber         Int                  @map("episode_number")
   title                 String
-  sourceSection         String      @map("source_section")
+  sourceSection         String               @map("source_section")
   hook                  String
-  visualCore            String      @map("visual_core")
+  visualCore            String               @map("visual_core")
   logline               String?
   narration             String?
-  targetDurationSeconds Int         @default(60) @map("target_duration_seconds")
-  musicDirection        String?     @map("music_direction")
-  voiceDirection        String?     @map("voice_direction")
-  platformNotes         String[]    @default([]) @map("platform_notes")
-  onScreenText          Json        @default("[]") @map("on_screen_text")
-  exportMetadata        Json        @default("{}") @map("export_metadata")
+  targetDurationSeconds Int                  @default(60) @map("target_duration_seconds")
+  musicDirection        String?              @map("music_direction")
+  voiceDirection        String?              @map("voice_direction")
+  platformNotes         String[]             @default([]) @map("platform_notes")
+  onScreenText          Json                 @default("[]") @map("on_screen_text")
+  exportMetadata        Json                 @default("{}") @map("export_metadata")
   productionStatus      ReelProductionStatus @default(DRAFT) @map("production_status")
-  createdAt             DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt             DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
-  chapter               Chapter     @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  createdAt             DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+  chapter               Chapter              @relation(fields: [chapterId], references: [id], onDelete: Cascade)
   shots                 ReelShot[]
   renderJobs            RenderJob[]
 
@@ -112,24 +168,25 @@ model GeneratedAsset {
 }
 
 model RenderJob {
-  id           String           @id @default(uuid()) @db.Uuid
-  reelId       String           @map("reel_id") @db.Uuid
-  episodeId    Int              @map("episode_id")
-  mode         RenderJobMode
-  status       RenderJobStatus  @default(QUEUED)
-  voice        String?
-  notes        String?
-  workerId     String?          @map("worker_id")
-  attemptCount Int              @default(0) @map("attempt_count")
-  startedAt    DateTime?        @map("started_at") @db.Timestamptz(6)
-  finishedAt   DateTime?        @map("finished_at") @db.Timestamptz(6)
-  heartbeatAt  DateTime?        @map("heartbeat_at") @db.Timestamptz(6)
-  createdAt    DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt    DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
-  reel         Reel             @relation(fields: [reelId], references: [id], onDelete: Cascade)
-  assets       GeneratedAsset[]
-  attempts     RenderJobAttempt[]
-  logs         RenderJobLog[]
+  id              String             @id @default(uuid()) @db.Uuid
+  reelId          String             @map("reel_id") @db.Uuid
+  episodeId       Int                @map("episode_id")
+  mode            RenderJobMode
+  status          RenderJobStatus    @default(QUEUED)
+  voice           String?
+  narrationConfig Json               @default("{}") @map("narration_config")
+  notes           String?
+  workerId        String?            @map("worker_id")
+  attemptCount    Int                @default(0) @map("attempt_count")
+  startedAt       DateTime?          @map("started_at") @db.Timestamptz(6)
+  finishedAt      DateTime?          @map("finished_at") @db.Timestamptz(6)
+  heartbeatAt     DateTime?          @map("heartbeat_at") @db.Timestamptz(6)
+  createdAt       DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+  reel            Reel               @relation(fields: [reelId], references: [id], onDelete: Cascade)
+  assets          GeneratedAsset[]
+  attempts        RenderJobAttempt[]
+  logs            RenderJobLog[]
 
   @@index([status, heartbeatAt])
   @@map("render_jobs")
@@ -238,4 +295,30 @@ enum RenderLogStream {
   SYSTEM
 
   @@map("render_log_stream")
+}
+
+enum NarrationEngine {
+  CHATTERBOX
+  KOKORO
+
+  @@map("narration_engine")
+}
+
+enum NarrationStylePreset {
+  DOCUMENTARY
+  INTIMATE
+  MYTHIC
+  DRAMATIC
+  ARCHIVAL
+
+  @@map("narration_style_preset")
+}
+
+enum NarrationRoleType {
+  NARRATOR
+  CHARACTER
+  ARCHIVAL
+  CHORUS
+
+  @@map("narration_role_type")
 }
