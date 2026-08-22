@@ -75,8 +75,9 @@ export class OllamaPlanningProvider implements PlanningProvider {
   private readonly visionModel = process.env.OLLAMA_VISION_MODEL;
   private readonly timeoutMs = positiveInteger(
     process.env.PLANNING_TIMEOUT_MS,
-    45_000,
+    120_000,
   );
+  private readonly keepAlive = process.env.OLLAMA_KEEP_ALIVE ?? '10m';
 
   async getCapability(): Promise<PlanningProviderCapability> {
     try {
@@ -151,6 +152,8 @@ export class OllamaPlanningProvider implements PlanningProvider {
         {
           model: this.textModel,
           stream: false,
+          think: false,
+          keep_alive: this.keepAlive,
           format: SHOT_PLAN_SCHEMA,
           messages: [
             { role: 'system', content: system },
