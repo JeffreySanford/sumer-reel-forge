@@ -20,6 +20,7 @@ import {
   type UpdateChapterNarrationSettingsRequest,
   DEFAULT_NARRATION_SETTINGS,
 } from '@sumer-reel-forge/reel-core';
+import { DirectionPanelComponent } from './direction-panel.component';
 import { ReelApiService } from './reel-api.service';
 
 const EMPTY_SHOT: ReelShot = {
@@ -31,7 +32,7 @@ const EMPTY_SHOT: ReelShot = {
 };
 
 @Component({
-  imports: [RouterModule],
+  imports: [RouterModule, DirectionPanelComponent],
   selector: 'app-root',
   templateUrl: './app.html',
   styleUrl: './app.scss',
