@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "reel": "chapter-01-reel-01",
+  "format": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30,
+    "durationFrames": 1800,
+    "shotCount": 8,
+    "maxCaptionWords": 8
+  },
+  "review": {
+    "humanApprovalRequired": true,
+    "markers": [0, 0.25, 0.5, 0.75, 1],
+    "minimumCategoryScore": 4,
+    "publishabilityMinimum": 5
+  },
+  "motion": {
+    "maxDefaultCameraScaleDelta": 0.05,
+    "maxEnvironmentChannels": 2,
+    "onePrimaryMotion": true,
+    "narratorOnlyLipSync": false
+  },
+  "shots": {
+    "enki-at-the-helm": {
+      "maxCameraScaleDelta": 0.03,
+      "maxBlinkCount": 1,
+      "stillnessAnchor": "enki-facial-identity",
+      "requiredStyleRules": [
+        "narratorOnly.lipSync = false",
+        "foregroundOcclusion.mustAvoid = face,captions"
+      ]
+    },
+    "nammu-under-water": {
+      "maxCameraScaleDelta": 0.01,
+      "stillnessAnchor": "camera-composition",
+      "revealMode": "environmental-coherence",
+      "forbiddenTreatments": [
+        "literal-character-fade",
+        "mermaid",
+        "glowing-eyes",
+        "horror-stinger",
+        "particle-explosion"
+      ]
+    }
+  }
+}
