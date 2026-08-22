@@ -114,6 +114,7 @@ describe('App', () => {
   });
 
   afterEach(() => {
+    flushLatestPlanningRuns(httpTesting);
     httpTesting.verify();
   });
 
@@ -178,6 +179,9 @@ describe('App', () => {
       productionStatus: 'draft',
     });
 
+    await fixture.whenStable();
+    fixture.detectChanges();
+    flushLatestPlanningRuns(httpTesting);
     await fixture.whenStable();
     fixture.detectChanges();
     expect(compiled.textContent).toContain('Production saved');
@@ -253,9 +257,15 @@ function flushDirectionStartup(httpTesting: HttpTestingController): void {
   httpTesting
     .expectOne('/api/planning/capabilities')
     .flush(PLANNING_CAPABILITIES);
-  const latest = httpTesting.expectOne((request) =>
+  flushLatestPlanningRuns(httpTesting);
+}
+
+function flushLatestPlanningRuns(httpTesting: HttpTestingController): void {
+  const latestRequests = httpTesting.match((request) =>
     request.url.startsWith('/api/planning/runs/latest'),
   );
-  expect(latest.request.method).toBe('GET');
-  latest.flush(null);
+  for (const latest of latestRequests) {
+    expect(latest.request.method).toBe('GET');
+    latest.flush(null);
+  }
 }
