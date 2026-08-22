@@ -21,7 +21,7 @@ This folder captures agile planning for the studio and project-specific producti
 - [ ] Sprint 004: reproducible Kokoro narration, scored review candidate, listening approval, and final-video gate.
 - [x] Sprint 005: Remotion cinematic animation proof of concept and full Reel 1 technical draft.
 - [ ] Sprint 006: polish Reel 1 into the approved cinematic animation benchmark before beginning Reel 2 animation.
-- [ ] Sprint 007: automate the approved Reel 1 planning/review/revision process in the Studio after the benchmark language is stable.
+- [ ] Sprint 007: automate the approved Reel 1 planning/review/revision process in the Studio. The provider/runtime foundation has started in parallel with Sprint 006 because the deterministic and Ollama boundaries do not require freezing art direction.
 
 ## Current Animation Direction
 
@@ -40,9 +40,10 @@ Use:
 - `reel-01-shot-03-keyframe-sheet.md` for 0/25/50/75/100% directorial checkpoints and still-frame review targets;
 - `reel-01-shot-04-nammu-benchmark-plan.md` for the contrasting supernatural benchmark and the series principle that a believable physical world makes the mythology feel extraordinary;
 - `sprint-006-reel-one-animation-polish.md` for the active implementation sequence;
-- `sprint-007-studio-planning-automation.md` for the planned reusable Studio workflow after Reel 1 style approval;
+- `sprint-007-studio-planning-automation.md` for the reusable Studio workflow and the provider/runtime work already underway;
 - `remotion-cinematic-animation-roadmap.md` for the broader renderer roadmap;
-- `../documentation/studio/automated-reel-planning.md` for the proposed deterministic + optional-AI planning/review architecture.
+- `../documentation/studio/automated-reel-planning.md` for the deterministic + optional-AI planning/review architecture;
+- `../documentation/studio/ollama-planning-runtime.md` for the implemented local Ollama planning endpoint, environment variables, runtime check, and Reel 1 pilot request.
 
 Shot 3, Enki at the helm, is the primary benchmark. Shot 4, Nammu beneath the water, is the planned secondary benchmark because it tests the opposite visual problem: restrained numinous intervention rather than physical character presence. Both must pass before the style is propagated to all eight Reel 1 shots.
 
@@ -52,7 +53,9 @@ The working series principle is: **make the ordinary world believable enough tha
 
 The long-term Studio workflow should automate planning, validation, benchmark rendering, review artifact generation, revision tracking, and inheritance of approved style decisions across later reels.
 
-An LLM is optional. The required baseline is a deterministic planning provider driven by templates, schemas, approved style rules, and reel data. A local Ollama provider may later propose structured shot plans, critique review frames, translate human feedback into revision proposals, and suggest reusable style decisions. Model output remains a proposal: the Studio validates it and a human approves it.
+The required baseline remains deterministic. The Nest API now also has an initial local Ollama provider that can discover installed models and return schema-constrained shot-plan proposals through `/api/planning`. Ollama is useful immediately as an assistant-director provider, but model output remains untrusted proposal data until deterministic validation and human review pass.
+
+The first implementation boundary deliberately does not persist planning runs or apply proposals directly to Scene V2. The next automation slice is persistence + server-side context assembly + human review/edit before a proposal can affect rendering.
 
 Rhubarb lip sync, Reel 2 animation, skeletal rigging, and larger animation-engine expansion remain deferred until the Reel 1 benchmark style is approved.
 
@@ -68,4 +71,5 @@ Rhubarb lip sync, Reel 2 animation, skeletal rigging, and larger animation-engin
 - [x] Long-running processes have timeout and heartbeat behavior.
 - [x] CI has bounded runtimes for steps that can hang.
 - [ ] Animation publication quality passes the Reel 1 style-bible and review-scorecard gates before animation production expands to later reels.
-- [ ] The automated planning/review workflow eventually works without an LLM and can optionally use a schema-constrained local planning provider.
+- [x] Provider-level planning works without an LLM and can optionally use schema-constrained local Ollama planning.
+- [ ] Persisted planning/review automation works end-to-end and preserves human approval.
