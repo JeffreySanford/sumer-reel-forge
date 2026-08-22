@@ -207,7 +207,7 @@ describe('App', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     expect(compiled.textContent).toContain('Keep the opening restrained');
-    expect(compiled.textContent).toContain('PASS');
+    expect(compiled.textContent).toContain('Camera policy');
   });
 });
 
