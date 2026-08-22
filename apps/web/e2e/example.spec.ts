@@ -14,7 +14,7 @@ test('shows the routed first reel workspace', async ({ page }) => {
   await expect(page).toHaveURL(/\/reels\/1\/overview$/);
   await expect(page.getByRole('heading', { name: 'Reel Forge' })).toBeVisible();
   await expect(
-    page.getByRole('heading', { name: 'The Voyage Begins' }),
+    page.getByRole('heading', { name: 'The Voyage Begins', level: 2 }),
   ).toBeVisible();
 
   await page.getByRole('link', { name: 'Shots' }).click();
@@ -33,7 +33,7 @@ test('deep links load the requested reel and tab', async ({ page }) => {
 
   await expect(page).toHaveURL(/\/reels\/2\/shots$/);
   await expect(
-    page.getByRole('heading', { name: 'The Voice Beneath the Deep' }),
+    page.getByRole('heading', { name: 'The Voice Beneath the Deep', level: 2 }),
   ).toBeVisible();
   await expect(page.getByRole('link', { name: 'Shots' })).toHaveClass(/active/);
 });
