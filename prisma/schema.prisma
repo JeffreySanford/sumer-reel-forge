@@ -201,6 +201,7 @@ model RenderJob {
   reelId          String             @map("reel_id") @db.Uuid
   episodeId       Int                @map("episode_id")
   mode            RenderJobMode
+  pipeline        RenderPipeline?
   status          RenderJobStatus    @default(QUEUED)
   voice           String?
   narrationConfig Json               @default("{}") @map("narration_config")
@@ -218,6 +219,7 @@ model RenderJob {
   logs            RenderJobLog[]
 
   @@index([status, heartbeatAt])
+  @@index([status, pipeline, createdAt])
   @@map("render_jobs")
 }
 
@@ -281,6 +283,15 @@ enum RenderJobMode {
   FINAL_VIDEO
 
   @@map("render_job_mode")
+}
+
+enum RenderPipeline {
+  MOCK
+  LOCAL
+  EDITORIAL
+  ANIMATION
+
+  @@map("render_pipeline")
 }
 
 enum RenderJobStatus {
