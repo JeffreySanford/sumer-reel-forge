@@ -75,6 +75,8 @@
 ### Reel 1 quality benchmark - active
 
 - [x] Define Reel 1 animation style bible and motion grammar.
+- [x] Define reel-wide cinematic direction, timing/attention map, asset-preparation workflow, and repeatable review scorecard.
+- [x] Define Shot 3 keyframe checkpoints and Shot 4 Nammu as the contrasting benchmark.
 - [ ] Use Shot 3, Enki at the helm, as the primary 8-12 second publication-quality benchmark.
 - [ ] Create versioned layered `animation-v1` assets derived from or consistent with approved `editorial-v1` artwork.
 - [ ] Replace procedural SVG character/environment art as the principal visual source for the benchmark.
@@ -84,7 +86,7 @@
 - [ ] Tune independent camera, boat, character, foreground, water, light, and atmosphere timing.
 - [ ] Score benchmark against art continuity, depth, motion restraint, camera, atmosphere/light, character life, and publishability.
 - [ ] Require no rubric score below 4 and publishability 5 before scaling the style.
-- [ ] Prove the same style on a second contrasting scene, preferably Shot 4 or Shot 7.
+- [ ] Prove the contrasting visual grammar with Shot 4, Nammu beneath the water.
 - [ ] Propagate the approved style across all eight Reel 1 shots.
 - [ ] Render and review a complete 60-second Reel 1 animation-v1 candidate.
 - [ ] Keep final publication as an explicit human approval gate.
@@ -101,9 +103,50 @@
 
 This epic begins with Reel 1 but exists to prevent later reels from requiring one-off animation code.
 
-- [ ] Define a concrete scene schema for camera transforms, layer depth, motion presets, masks, easing, timing, and asset references.
+- [x] Define the planned Scene V2 contract for camera transforms, layer depth, motion presets, masks, easing, timing, transitions, review markers, and asset references.
+- [x] Define a reusable animation asset manifest contract with source lineage, semantic roles, material tags, checksums, overscan, and review state.
+- [ ] Implement Scene V2 validation.
+- [ ] Implement animation asset-manifest validation.
 - [ ] Pass scene JSON into a generic Remotion composition rather than mirroring the same scene in hard-coded React.
 - [ ] Keep story/narration data sourced from the reel production record while animation scene data owns visual composition.
 - [ ] Validate asset existence, dimensions, transparency expectations, and camera overscan before rendering.
 - [ ] Record source editorial asset, derived layer checksum, semantic role, depth, and motion preset in animation manifests.
 - [ ] Ensure a future Reel 2 can be produced primarily from new data and assets rather than a new `FullReel2Animation.tsx`.
+
+## Epic 7 - Automated Reel Planning And Direction
+
+The goal is to turn the Reel 1 planning/review conversation into a repeatable Studio workflow for many reels.
+
+### Deterministic workflow - required
+
+- [x] Document the automated planning/review architecture.
+- [x] Plan Sprint 007 Studio Planning Automation.
+- [ ] Persist `PlanningRun` and versioned planning artifacts.
+- [ ] Add planning status, attempt, log, timeout, input-hash, and approval history.
+- [ ] Implement a `PlanningProvider` abstraction.
+- [ ] Implement a deterministic/template provider as the default.
+- [ ] Scaffold shot intent cards, keyframe markers, Scene V2, and asset-manifest proposals from reel data and approved style rules.
+- [ ] Add a persistent style-decision library with project/chapter/reel/character/material/shot-type scopes.
+- [ ] Inherit approved style decisions into later reels automatically.
+- [ ] Add Studio Reel Direction, Shot Planner, Asset Readiness, Candidate Review, Revision Builder, and Style Decisions surfaces.
+- [ ] Queue benchmark renders from the planning workspace.
+- [ ] Extract configured review-marker frames and contact sheets automatically.
+- [ ] Persist scorecard instances and A/B candidate lineage.
+- [ ] Convert human feedback into explicit path/from/to/reason revision records.
+- [ ] Preview scene diffs before applying revisions and rerendering.
+
+### Optional local AI provider
+
+- [ ] Add Ollama behind the same `PlanningProvider` interface; do not make it a required runtime dependency.
+- [ ] Require schema-constrained structured output for actionable model responses.
+- [ ] Allow separate text-planning and vision-review models.
+- [ ] Bound local model calls with timeout, retry, logs, and provider/model metadata.
+- [ ] Allow model-generated shot plans, critiques, revision proposals, and style-rule proposals only as human-reviewable suggestions.
+- [ ] Never allow an AI provider to approve visual assets, alter source text silently, or publish a reel.
+
+### Automation proof
+
+- [ ] Run Shot 3 through planning -> assets -> benchmark -> review -> revision -> approval in the Studio.
+- [ ] Run Shot 4 through the same workflow.
+- [ ] Run one additional Reel 1 shot primarily from inherited rules.
+- [ ] Use Reel 2 as the first proof that the process can be repeated without recreating the Reel 1 planning work manually.
