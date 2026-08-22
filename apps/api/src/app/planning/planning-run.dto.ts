@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import {
   IsIn,
   IsInt,
@@ -40,16 +41,19 @@ export class LatestPlanningRunQueryDto {
   projectSlug!: string;
 
   @ApiProperty({ example: 1 })
+  @Type(() => Number)
   @IsInt()
   @Min(1)
   chapterNumber!: number;
 
   @ApiProperty({ example: 1 })
+  @Type(() => Number)
   @IsInt()
   @Min(1)
   episodeNumber!: number;
 
   @ApiProperty({ example: 3 })
+  @Type(() => Number)
   @IsInt()
   @Min(1)
   shotNumber!: number;
