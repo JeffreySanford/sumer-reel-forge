@@ -16,6 +16,8 @@ interface OllamaChatResponse {
   model?: string;
 }
 
+const MAX_DEFAULT_CAMERA_SCALE_DELTA = 0.05;
+
 const SHOT_PLAN_SCHEMA = {
   type: 'object',
   additionalProperties: false,
@@ -126,7 +128,7 @@ export class OllamaPlanningProvider implements PlanningProvider {
       'Prefer restrained cinematic illustrated motion over spectacle.',
       'Use the fewest motion channels and assets needed to make the shot feel authored.',
       'Physical materials obey weight and inertia; supernatural motion may carefully depart from those rules.',
-      'Treat inherited style rules as constraints unless the input explicitly identifies a conflict.',
+      'Treat inherited style rules as immutable constraints unless the input explicitly identifies a conflict for human review.',
     ].join(' ');
 
     const user = JSON.stringify(
@@ -166,9 +168,11 @@ export class OllamaPlanningProvider implements PlanningProvider {
 
       const parsed = JSON.parse(content) as unknown;
       assertShotPlanShape(parsed);
+      assertCameraScaleDelta(parsed.camera.scaleFrom, parsed.camera.scaleTo);
 
       return {
         ...parsed,
+        inheritedStyleRules: [...input.styleRules],
         provider: this.id,
         model: response.data.model ?? this.textModel,
         shotId: input.shotId,
@@ -199,8 +203,8 @@ function assertShotPlanShape(
     !isNonEmptyString(value.stillnessAnchor) ||
     !isRecord(value.camera) ||
     !isNonEmptyString(value.camera.preset) ||
-    typeof value.camera.scaleFrom !== 'number' ||
-    typeof value.camera.scaleTo !== 'number' ||
+    !isFiniteNumber(value.camera.scaleFrom) ||
+    !isFiniteNumber(value.camera.scaleTo) ||
     !isNonEmptyString(value.camera.easing) ||
     !isRecord(value.motionBudget) ||
     !isNonEmptyString(value.motionBudget.primary) ||
@@ -216,12 +220,28 @@ function assertShotPlanShape(
   }
 }
 
+function assertCameraScaleDelta(scaleFrom: number, scaleTo: number): void {
+  if (scaleFrom <= 0 || scaleTo <= 0) {
+    throw new Error('Camera scale values must be positive.');
+  }
+
+  if (Math.abs(scaleTo - scaleFrom) > MAX_DEFAULT_CAMERA_SCALE_DELTA) {
+    throw new Error(
+      `Camera scale delta exceeds the default ${MAX_DEFAULT_CAMERA_SCALE_DELTA * 100}% planning guardrail.`,
+    );
+  }
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.trim().length > 0;
+}
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value);
 }
 
 function isStringArray(value: unknown): value is string[] {
