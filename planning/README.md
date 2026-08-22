@@ -30,6 +30,7 @@ Use:
 - `reel-01-animation-style-bible.md` for governing camera, motion, lighting, transitions, layered assets, and shot-by-shot direction;
 - `reel-01-cinematic-direction-plan.md` for the reel-wide emotional arc, color script, lens/camera grammar, material motion rules, transition plan, character micro-performance, atmosphere palette, sound-to-motion cues, and shot intent cards;
 - `reel-01-animation-review-scorecard.md` for repeatable visual-quality scoring, hard-fail conditions, A/B comparisons, phone review, and publication thresholds;
+- `reel-01-shot-03-enki-benchmark-plan.md` for the concrete first benchmark: composition, layer list, overscan, camera amplitude, character timing, water/light behavior, transition design, A/B tests, and pass criteria;
 - `sprint-006-reel-one-animation-polish.md` for the active implementation sequence;
 - `remotion-cinematic-animation-roadmap.md` for the broader renderer roadmap.
 
