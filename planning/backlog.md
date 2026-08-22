@@ -15,6 +15,7 @@
 - [x] Add Windows Ctrl+C process and port cleanup for `start:all`.
 - [x] Make normal startup seeding non-destructive and preserve the PostgreSQL volume on shutdown.
 - [x] Isolate API e2e data in a dedicated `_e2e` database and temporary API process.
+- [x] Add a workspace consistency gate that verifies Nx plugin packages configured in `nx.json` are explicitly declared.
 
 ## Epic 2 - Blessings Of Sumer Pilot
 
@@ -77,6 +78,8 @@
 - [x] Define Reel 1 animation style bible and motion grammar.
 - [x] Define reel-wide cinematic direction, timing/attention map, asset-preparation workflow, and repeatable review scorecard.
 - [x] Define Shot 3 keyframe checkpoints and Shot 4 Nammu as the contrasting benchmark.
+- [x] Define Reel 1 creative-test strategy and explicit phase-exit gates.
+- [x] Add initial machine-readable Reel 1 creative-quality policy and tests.
 - [ ] Use Shot 3, Enki at the helm, as the primary 8-12 second publication-quality benchmark.
 - [ ] Create versioned layered `animation-v1` assets derived from or consistent with approved `editorial-v1` artwork.
 - [ ] Replace procedural SVG character/environment art as the principal visual source for the benchmark.
@@ -124,7 +127,7 @@ The goal is to turn the Reel 1 planning/review conversation into a repeatable St
 - [x] Implement the first `PlanningProvider` abstraction in the Nest API.
 - [x] Implement the deterministic/template provider baseline.
 - [x] Expose planning runtime capabilities and structured shot-plan proposal endpoints.
-- [x] Add a local runtime check command for Ollama model discovery.
+- [x] Add a local runtime check command for Ollama model discovery and runtime version reporting.
 - [ ] Persist `PlanningRun` and versioned planning artifacts.
 - [ ] Add planning status, attempt, log, timeout, input-hash, and approval history.
 - [ ] Load reel source, visual bible, style bible, and inherited decisions server-side for planning runs.
@@ -148,6 +151,7 @@ The goal is to turn the Reel 1 planning/review conversation into a repeatable St
 - [x] Preserve inherited Studio style rules even if model output attempts to change them.
 - [x] Enforce the current default 5% camera-scale planning guardrail before accepting a model proposal.
 - [x] Support text planning independently from the future vision-review path.
+- [x] Document a dated local model-selection strategy for text and vision workloads.
 - [ ] Persist provider/model/input hash/output hash for reproducibility.
 - [ ] Add retry/attempt/log persistence around local model calls.
 - [ ] Add vision review against contact sheets and configured review-marker frames.
@@ -161,3 +165,35 @@ The goal is to turn the Reel 1 planning/review conversation into a repeatable St
 - [ ] Run Shot 4 through the same workflow.
 - [ ] Run one additional Reel 1 shot primarily from inherited rules.
 - [ ] Use Reel 2 as the first proof that the process can be repeated without recreating the Reel 1 planning work manually.
+
+## Epic 8 - Creative Quality Automation
+
+The goal is to make approved creative rules executable without pretending automated checks can replace artistic judgment.
+
+### Implemented foundation
+
+- [x] Add `pnpm creative:test` to the normal test path.
+- [x] Validate Reel 1 format, exact duration, eight-shot frame coverage, caption coverage/density, source immutability, and safe-area caption channel.
+- [x] Encode initial Enki benchmark constraints: <=3% camera change, <=1 blink, facial-identity stillness anchor, no narrator-only lip sync, bounded environment motion, inherited foreground/caption rules.
+- [x] Encode initial Nammu benchmark constraints: <=1% camera change, camera/composition stillness anchor, environmental-coherence reveal, human approval, forbidden generic-fantasy treatments.
+- [x] Add negative tests that prove invalid creative candidates are rejected.
+
+### Next deterministic gates
+
+- [ ] Validate Scene V2 against creative policy before rendering.
+- [ ] Validate asset manifests: existence, dimensions, alpha expectation, checksums, lineage, mask compatibility, overscan.
+- [ ] Validate material-to-motion preset compatibility.
+- [ ] Validate transition references and material-handoff assets.
+- [ ] Validate caption-safe-zone geometry once subject/face bounds are available.
+- [ ] Validate benchmark audio presence, loudness, peak, and final tail.
+- [ ] Add renderer smoke tests for loose script/adapter entrypoints referenced by package scripts.
+
+### Visual regression and advisory review
+
+- [ ] Capture approved Shot 3 golden frames at 0/25/50/75/100%.
+- [ ] Capture approved Shot 4 golden frames at 0/25/50/75/100%.
+- [ ] Add perceptual-image comparison that requests `REVIEW` for material changes rather than enforcing pixel equality.
+- [ ] Add composition/subject-region/caption-overlap drift checks where geometry is available.
+- [ ] Add AI vision critique against known-good and known-bad benchmark frames.
+- [ ] Require AI critique to identify evidence frame/category/confidence and proposed structured revision when possible.
+- [ ] Keep final visual/publication approval human-owned.
