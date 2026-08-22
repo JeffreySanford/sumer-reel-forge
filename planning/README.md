@@ -8,6 +8,8 @@ This folder captures agile planning for the studio and project-specific producti
 - Plan work in small increments that end with a running, tested slice.
 - Treat every renderer integration as infrastructure work with observability and failure handling.
 - Keep acceptance criteria concrete enough to test through Nx targets.
+- Separate technical renderer acceptance from art-direction acceptance.
+- Do not scale a visual workflow to later reels until the benchmark reel meets the agreed quality bar.
 
 ## Active Plan
 
@@ -16,7 +18,22 @@ This folder captures agile planning for the studio and project-specific producti
 - [x] Sprint 002: first local 60-second render pipeline and production review workflow.
 - [x] Sprint 003: visual bible, local production targets, and editorial Reel 1 baseline.
 - [ ] Sprint 004: reproducible Kokoro narration, scored review candidate, listening approval, and final-video gate.
-- [x] Sprint 005: Remotion cinematic animation proof of concept and full Reel 1 draft.
+- [x] Sprint 005: Remotion cinematic animation proof of concept and full Reel 1 technical draft.
+- [ ] Sprint 006: polish Reel 1 into the approved cinematic animation benchmark before beginning Reel 2 animation.
+
+## Current Animation Direction
+
+Sprint 005 proved that Remotion, narration synchronization, worker orchestration, persistence, and full-reel rendering work. Sprint 006 changes the acceptance question from `can it animate?` to `is the animation style good enough to publish and repeat?`.
+
+Use:
+
+- `reel-01-animation-style-bible.md` for camera, motion, lighting, transitions, layered assets, review rubric, and shot-by-shot direction;
+- `sprint-006-reel-one-animation-polish.md` for the active implementation sequence;
+- `remotion-cinematic-animation-roadmap.md` for the broader renderer roadmap.
+
+Shot 3, Enki at the helm, is the primary benchmark. A second contrasting scene, preferably Nammu beneath the water or the Dilmun reveal, must also pass before the style is propagated to all eight Reel 1 shots.
+
+Rhubarb lip sync, Reel 2 animation, skeletal rigging, and larger animation-engine expansion are deferred until the Reel 1 benchmark style is approved.
 
 ## Definition Of Done
 
@@ -29,3 +46,4 @@ This folder captures agile planning for the studio and project-specific producti
 - [x] Mutating behavior is auditable or explicitly documented as temporary.
 - [x] Long-running processes have timeout and heartbeat behavior.
 - [x] CI has bounded runtimes for steps that can hang.
+- [ ] Animation publication quality passes the Reel 1 style-bible review rubric before animation production expands to later reels.
