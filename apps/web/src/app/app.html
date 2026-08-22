@@ -1,4 +1,7 @@
-<main class="app-shell">
+<main
+  class="app-shell"
+  (window:srf-route)="selectEpisode($any($event).detail.episodeId)"
+>
   <aside class="sidebar" aria-label="Chapter one reel outline">
     <div class="brand">
       <span class="mark">SRF</span>
@@ -14,7 +17,7 @@
         type="button"
         class="episode-button"
         [class.active]="episode.episode === selectedEpisode().episode"
-        (click)="selectEpisode(episode.episode)"
+        [routerLink]="['/reels', episode.episode, 'overview']"
       >
         <span>{{ episode.episode }}</span>
         <strong>{{ episode.title }}</strong>
@@ -47,537 +50,786 @@
       </div>
     </header>
 
-    <section class="narration-stage" aria-labelledby="narration-stage-title">
-      <div class="narration-stage-heading">
-        <div class="step-heading">
-          <span>1</span>
-          <div>
-            <p class="eyebrow">Story Voice</p>
-            <h3 id="narration-stage-title">Narration identity</h3>
-          </div>
-        </div>
-        <div class="effective-voice" aria-live="polite">
-          <span>{{ effectiveNarrationVoice().engine }}</span>
-          <strong>{{ effectiveNarrationVoice().displayName }}</strong>
-          <small>{{ effectiveNarrationStyle() }}</small>
-        </div>
-      </div>
-
-      <div class="narration-config-grid">
-        <section class="narration-scope" aria-label="Story narration default">
-          <p class="eyebrow">Story Default</p>
-          <label>
-            <span>Narrator voice</span>
-            <select
-              [value]="narrationDraft().storyVoiceProfileId"
-              (change)="updateNarrationVoice('story', $event)"
-            >
-              @for (voice of narrationSettings().availableVoices; track voice.id)
-              {
-              <option [value]="voice.id">
-                {{ voice.displayName }} / {{ voice.engine }}
-              </option>
-              }
-            </select>
-          </label>
-          <label>
-            <span>Delivery style</span>
-            <select
-              [value]="narrationDraft().storyStylePreset"
-              (change)="updateNarrationStyle('story', $event)"
-            >
-              @for (style of narrationStylePresets; track style) {
-              <option [value]="style">{{ style }}</option>
-              }
-            </select>
-          </label>
-          <label>
-            <span>Story voice direction</span>
-            <textarea
-              rows="3"
-              [value]="narrationDraft().storyStyleNotes"
-              (input)="updateNarrationNotes('story', $event)"
-            ></textarea>
-          </label>
-        </section>
-
-        <section class="narration-scope" aria-label="Chapter narration override">
-          <div class="scope-toggle">
-            <div>
-              <p class="eyebrow">Chapter {{ narrationSettings().chapterNumber }}</p>
-              <strong>{{ narrationSettings().chapterTitle }}</strong>
-            </div>
-            <label class="checkbox-control">
-              <input
-                type="checkbox"
-                [checked]="narrationDraft().useStoryDefault"
-                (change)="setUseStoryDefault($event)"
-              />
-              <span>Use story default</span>
-            </label>
-          </div>
-          <label>
-            <span>Chapter narrator</span>
-            <select
-              [value]="narrationDraft().chapterVoiceProfileId"
-              [disabled]="narrationDraft().useStoryDefault"
-              (change)="updateNarrationVoice('chapter', $event)"
-            >
-              @for (voice of narrationSettings().availableVoices; track voice.id)
-              {
-              <option [value]="voice.id">
-                {{ voice.displayName }} / {{ voice.engine }}
-              </option>
-              }
-            </select>
-          </label>
-          <label>
-            <span>Chapter delivery style</span>
-            <select
-              [value]="narrationDraft().chapterStylePreset"
-              [disabled]="narrationDraft().useStoryDefault"
-              (change)="updateNarrationStyle('chapter', $event)"
-            >
-              @for (style of narrationStylePresets; track style) {
-              <option [value]="style">{{ style }}</option>
-              }
-            </select>
-          </label>
-          <label>
-            <span>Chapter voice direction</span>
-            <textarea
-              rows="3"
-              [value]="narrationDraft().chapterStyleNotes"
-              [disabled]="narrationDraft().useStoryDefault"
-              (input)="updateNarrationNotes('chapter', $event)"
-            ></textarea>
-          </label>
-        </section>
-      </div>
-
-      <div class="cast-heading">
-        <div>
-          <p class="eyebrow">Chapter Cast</p>
-          <strong>{{ narrationDraft().roles.length }} assigned roles</strong>
-        </div>
-        <button type="button" (click)="addNarrationRole()">Add role</button>
-      </div>
-
-      @if (narrationDraft().roles.length > 0) {
-      <div class="cast-list">
-        @for (role of narrationDraft().roles; track role.roleKey; let index =
-        $index) {
-        <div class="cast-row">
-          <label>
-            <span>Role</span>
-            <input
-              [value]="role.displayName"
-              (input)="updateNarrationRole(index, 'displayName', $event)"
-            />
-          </label>
-          <label>
-            <span>Type</span>
-            <select
-              [value]="role.roleType"
-              (change)="updateNarrationRole(index, 'roleType', $event)"
-            >
-              @for (roleType of narrationRoleTypes; track roleType) {
-              <option [value]="roleType">{{ roleType }}</option>
-              }
-            </select>
-          </label>
-          <label>
-            <span>Voice</span>
-            <select
-              [value]="role.voiceProfileId"
-              (change)="updateNarrationRole(index, 'voiceProfileId', $event)"
-            >
-              @for (voice of narrationSettings().availableVoices; track voice.id)
-              {
-              <option [value]="voice.id">{{ voice.displayName }}</option>
-              }
-            </select>
-          </label>
-          <label>
-            <span>Style</span>
-            <select
-              [value]="role.stylePreset"
-              (change)="updateNarrationRole(index, 'stylePreset', $event)"
-            >
-              @for (style of narrationStylePresets; track style) {
-              <option [value]="style">{{ style }}</option>
-              }
-            </select>
-          </label>
-          <label class="cast-notes">
-            <span>Direction</span>
-            <input
-              [value]="role.styleNotes"
-              (input)="updateNarrationRole(index, 'styleNotes', $event)"
-            />
-          </label>
-          <button
-            type="button"
-            class="remove-role"
-            (click)="removeNarrationRole(index)"
-            [attr.aria-label]="'Remove ' + role.displayName"
-          >
-            Remove
-          </button>
-        </div>
-        }
-      </div>
-      }
-
-      <div class="narration-actions">
-        <span>{{ effectiveNarrationVoice().description }}</span>
+    <div class="studio-navigation">
+      <nav class="studio-tabs" aria-label="Reel workspace sections">
+        <a
+          [routerLink]="['/reels', selectedEpisode().episode, 'overview']"
+          routerLinkActive="active"
+          >Overview</a
+        >
+        <a
+          [routerLink]="['/reels', selectedEpisode().episode, 'script']"
+          routerLinkActive="active"
+          >Script</a
+        >
+        <a
+          [routerLink]="['/reels', selectedEpisode().episode, 'shots']"
+          routerLinkActive="active"
+          >Shots</a
+        >
+        <a
+          [routerLink]="['/reels', selectedEpisode().episode, 'direction']"
+          routerLinkActive="active"
+          >Direction</a
+        >
+        <a
+          [routerLink]="['/reels', selectedEpisode().episode, 'audio']"
+          routerLinkActive="active"
+          >Audio</a
+        >
+        <a
+          [routerLink]="['/reels', selectedEpisode().episode, 'publishing']"
+          routerLinkActive="active"
+          >Publishing</a
+        >
+        <a
+          [routerLink]="['/reels', selectedEpisode().episode, 'assets']"
+          routerLinkActive="active"
+          >Assets</a
+        >
+        <a
+          [routerLink]="['/reels', selectedEpisode().episode, 'jobs']"
+          routerLinkActive="active"
+          >Jobs</a
+        >
+      </nav>
+      <div class="global-edit-actions">
+        <span aria-live="polite">{{ renderStatus() }}</span>
         <button
           type="button"
           class="primary-action"
-          (click)="saveNarrationSettings()"
-          [disabled]="isSavingNarration()"
+          (click)="saveProduction()"
+          [disabled]="isSaving()"
         >
-          {{ isSavingNarration() ? 'Saving...' : 'Save narration' }}
+          {{ isSaving() ? 'Saving…' : 'Save edits' }}
         </button>
       </div>
-    </section>
+    </div>
 
-    <section class="workflow-bar" aria-label="Reel workflow actions">
-      <button type="button" (click)="copyPrompt()">Copy prompt</button>
-      <button type="button" (click)="copyAllPrompts()">Copy all prompts</button>
-      <button type="button" (click)="exportEpisode()">Export episode</button>
-      <button type="button" (click)="saveProduction()" [disabled]="isSaving()">
-        {{ isSaving() ? 'Saving...' : 'Save edits' }}
-      </button>
-      <button type="button" (click)="queueRenderJob('storyboard')">
-        Storyboard
-      </button>
-      <button type="button" (click)="queueRenderJob('draft-video')">
-        Draft video
-      </button>
-      <button
-        type="button"
-        class="primary-action"
-        (click)="queueRenderJob('final-video')"
-        [disabled]="selectedEpisode().productionStatus !== 'approved'"
-      >
-        Final video
-      </button>
-      <span>{{ renderStatus() }}</span>
-    </section>
+    <section
+      class="route-panel"
+      routerLinkActive="active-route"
+      [routerLinkActiveOptions]="{ exact: true }"
+    >
+      <a
+        class="route-sentinel"
+        aria-hidden="true"
+        tabindex="-1"
+        [routerLink]="['/reels', selectedEpisode().episode, 'overview']"
+      ></a>
 
-    <section class="production-state" aria-label="Production approval state">
-      <div>
-        <p class="eyebrow">Approval</p>
-        <strong>{{ selectedEpisode().productionStatus }}</strong>
-      </div>
-      <div class="state-actions">
-        @for (status of availableStatusTransitions(); track status) {
-        <button
-          type="button"
-          (click)="transitionProductionStatus(status)"
-          [disabled]="isWorkflowBusy()"
-        >
-          Move to {{ status }}
-        </button>
-        }
-      </div>
-    </section>
+      <section class="overview-grid">
+        <article class="panel overview-card overview-summary">
+          <p class="eyebrow">Reel Overview</p>
+          <h3>{{ selectedEpisode().title }}</h3>
+          <p>{{ productionDraft().logline }}</p>
+          <dl class="overview-metrics">
+            <div>
+              <dt>Shots</dt>
+              <dd>{{ productionDraft().shots.length }}</dd>
+            </div>
+            <div>
+              <dt>Duration</dt>
+              <dd>{{ totalShotSeconds() }}s</dd>
+            </div>
+            <div>
+              <dt>Voice</dt>
+              <dd>{{ effectiveNarrationVoice().displayName }}</dd>
+            </div>
+            <div>
+              <dt>Assets</dt>
+              <dd>{{ reviewableAssets().length }}</dd>
+            </div>
+          </dl>
+        </article>
 
-    <section class="review-grid">
-      <article class="panel script-panel">
-        <p class="eyebrow">Narration</p>
-        <label>
-          <span>Logline</span>
-          <textarea
-            rows="3"
-            [value]="productionDraft().logline"
-            (input)="updateDraftText('logline', $event)"
-          ></textarea>
-        </label>
-        <label>
-          <span>Narration</span>
-          <textarea
-            rows="12"
-            [value]="productionDraft().narration"
-            (input)="updateDraftText('narration', $event)"
-          ></textarea>
-        </label>
-      </article>
-
-      <article class="panel phone-preview" aria-label="Vertical reel preview">
-        <div class="phone-frame">
-          <div class="preview-art">
-            <span>{{ selectedShot().time }}</span>
-            <strong>{{ selectedShot().visual }}</strong>
+        <article class="panel phone-preview" aria-label="Vertical reel preview">
+          <div class="phone-frame">
+            <div class="preview-art">
+              <span>{{ selectedShot().time }}</span>
+              <strong>{{ selectedShot().visual }}</strong>
+            </div>
+            <div class="caption-stack">
+              @for (caption of productionDraft().onScreenText; track caption.time)
+              {
+              <p>{{ caption.text }}</p>
+              }
+            </div>
           </div>
-          <div class="caption-stack">
-            @for (caption of productionDraft().onScreenText; track caption.time)
-            {
-            <p>{{ caption.text }}</p>
-            }
+        </article>
+
+        <article class="panel overview-card">
+          <p class="eyebrow">Render Controls</p>
+          <h3>Production output</h3>
+          <div class="overview-actions">
+            <button type="button" (click)="queueRenderJob('storyboard')">
+              Storyboard
+            </button>
+            <button type="button" (click)="queueRenderJob('draft-video')">
+              Draft video
+            </button>
+            <button
+              type="button"
+              class="primary-action"
+              (click)="queueRenderJob('final-video')"
+              [disabled]="selectedEpisode().productionStatus !== 'approved'"
+            >
+              Final video
+            </button>
           </div>
+          <p class="overview-help">
+            Final video remains approval-gated. Draft and storyboard jobs can be
+            used while the reel is still being refined.
+          </p>
+        </article>
+      </section>
+
+      <section class="production-state" aria-label="Production approval state">
+        <div>
+          <p class="eyebrow">Approval</p>
+          <strong>{{ selectedEpisode().productionStatus }}</strong>
         </div>
-      </article>
-
-      <article class="panel shot-panel">
-        <div class="panel-heading">
-          <div>
-            <p class="eyebrow">Shot List</p>
-            <h3>{{ productionDraft().shots.length }} cinematic beats</h3>
-          </div>
-        </div>
-
-        <div class="shot-list">
-          @for (shot of productionDraft().shots; track shot.time; let index =
-          $index) {
+        <div class="state-actions">
+          @for (status of availableStatusTransitions(); track status) {
           <button
             type="button"
-            class="shot-button"
-            [class.active]="index === selectedShotIndex()"
-            (click)="selectShot(index)"
+            (click)="transitionProductionStatus(status)"
+            [disabled]="isWorkflowBusy()"
           >
-            <span>{{ shot.time }}</span>
-            <strong>{{ shot.visual }}</strong>
-            <small>{{ shot.motion }}</small>
+            Move to {{ status }}
           </button>
           }
         </div>
-      </article>
-    </section>
-
-    <app-direction-panel
-      [episode]="selectedEpisode()"
-      [shot]="selectedShot()"
-      [shotIndex]="selectedShotIndex()"
-    ></app-direction-panel>
-
-    <section class="details-grid">
-      <article class="panel prompt-panel">
-        <div class="panel-heading compact">
-          <p class="eyebrow">Image Prompt</p>
-          <button type="button" (click)="copyPrompt()">Copy</button>
-        </div>
-        <label>
-          <span>Selected shot prompt</span>
-          <textarea
-            rows="7"
-            [value]="selectedShot().prompt"
-            (input)="updateShot(selectedShotIndex(), 'prompt', $event)"
-          ></textarea>
-        </label>
-      </article>
-
-      <article class="panel">
-        <p class="eyebrow">Audio Direction</p>
-        <label>
-          <span>Voice</span>
-          <textarea
-            rows="4"
-            [value]="productionDraft().voiceDirection"
-            (input)="updateDraftText('voiceDirection', $event)"
-          ></textarea>
-        </label>
-        <label>
-          <span>Music</span>
-          <textarea
-            rows="4"
-            [value]="productionDraft().musicDirection"
-            (input)="updateDraftText('musicDirection', $event)"
-          ></textarea>
-        </label>
-      </article>
-
-      <article class="panel">
-        <p class="eyebrow">Platform Notes</p>
-        <div class="field-stack">
-          @for (note of productionDraft().platformNotes; track $index; let index
-          = $index) {
-          <label>
-            <span>Note {{ index + 1 }}</span>
-            <textarea
-              rows="3"
-              [value]="note"
-              (input)="updatePlatformNote(index, $event)"
-            ></textarea>
-          </label>
-          }
-        </div>
-      </article>
-    </section>
-
-    <section class="details-grid">
-      <article class="panel">
-        <p class="eyebrow">Captions</p>
-        <div class="caption-editor">
-          @for (caption of productionDraft().onScreenText; track $index; let
-          index = $index) {
-          <label>
-            <span>{{ caption.time }}</span>
-            <input
-              [value]="caption.text"
-              (input)="updateCaption(index, 'text', $event)"
-            />
-          </label>
-          }
-        </div>
-      </article>
-
-      <article class="panel export-panel">
-        <p class="eyebrow">Export Metadata</p>
-        <label>
-          <span>Facebook</span>
-          <textarea
-            rows="3"
-            [value]="productionDraft().exportMetadata.facebookCaption"
-            (input)="updateExportMetadata('facebookCaption', $event)"
-          ></textarea>
-        </label>
-        <label>
-          <span>X</span>
-          <textarea
-            rows="2"
-            [value]="productionDraft().exportMetadata.xPost"
-            (input)="updateExportMetadata('xPost', $event)"
-          ></textarea>
-        </label>
-      </article>
-
-      <article class="panel export-panel">
-        <p class="eyebrow">Shorts Metadata</p>
-        <label>
-          <span>TikTok</span>
-          <textarea
-            rows="3"
-            [value]="productionDraft().exportMetadata.tiktokCaption"
-            (input)="updateExportMetadata('tiktokCaption', $event)"
-          ></textarea>
-        </label>
-        <label>
-          <span>YouTube title</span>
-          <input
-            [value]="productionDraft().exportMetadata.youtubeShortsTitle"
-            (input)="updateExportMetadata('youtubeShortsTitle', $event)"
-          />
-        </label>
-        <label>
-          <span>Tags</span>
-          <input
-            [value]="productionDraft().exportMetadata.tags.join(', ')"
-            (input)="updateExportTags($event)"
-          />
-        </label>
-      </article>
+      </section>
     </section>
 
     <section
-      class="operations-band"
-      aria-label="Render jobs and generated assets"
+      class="route-panel"
+      routerLinkActive="active-route"
+      [routerLinkActiveOptions]="{ exact: true }"
     >
-      <div class="operations-heading">
-        <div>
-          <p class="eyebrow">Generated Assets</p>
-          <h3>{{ reviewableAssets().length }} review items</h3>
-        </div>
-        <span>{{ renderJobs().length }} render jobs</span>
-      </div>
+      <a
+        class="route-sentinel"
+        aria-hidden="true"
+        tabindex="-1"
+        [routerLink]="['/reels', selectedEpisode().episode, 'script']"
+      ></a>
 
-      @if (reviewableAssets().length === 0) {
-      <p class="empty-state">No generated assets for this episode yet.</p>
-      } @else {
-      <div class="asset-grid">
-        @for (asset of reviewableAssets(); track asset.id) {
-        <article class="asset-card" [attr.data-review]="asset.reviewStatus">
-          <div class="asset-preview">
-            @if (asset.assetType === 'image' && asset.contentUrl) {
-            <img
-              [src]="asset.contentUrl"
-              [alt]="'Generated shot ' + (asset.shotNumber ?? '')"
-            />
-            } @else if (asset.assetType === 'video' && asset.contentUrl) {
-            <video [src]="asset.contentUrl" controls preload="metadata"></video>
-            } @else if (asset.assetType === 'audio' && asset.contentUrl) {
-            <audio [src]="asset.contentUrl" controls preload="metadata"></audio>
-            } @else {
-            <strong>{{ asset.assetType }}</strong>
-            }
-          </div>
-          <div class="asset-meta">
-            <span
-              >{{ asset.shotNumber ? 'Shot ' + asset.shotNumber :
-              asset.assetType }}</span
-            >
-            <strong>{{ asset.reviewStatus }}</strong>
-          </div>
+      <section class="script-workspace">
+        <article class="panel script-panel">
+          <p class="eyebrow">Narration</p>
           <label>
-            <span>Review notes</span>
+            <span>Logline</span>
             <textarea
               rows="3"
-              [value]="assetReviewNotes()[asset.id]"
-              (input)="updateAssetReviewNote(asset.id, $event)"
+              [value]="productionDraft().logline"
+              (input)="updateDraftText('logline', $event)"
             ></textarea>
           </label>
-          <div class="asset-actions">
-            <button type="button" (click)="reviewAsset(asset, 'approved')">
-              Approve
-            </button>
-            <button type="button" (click)="reviewAsset(asset, 'rejected')">
-              Reject
-            </button>
-            <button type="button" (click)="regenerateAsset(asset)">
-              Regenerate
-            </button>
+          <label>
+            <span>Narration</span>
+            <textarea
+              rows="18"
+              [value]="productionDraft().narration"
+              (input)="updateDraftText('narration', $event)"
+            ></textarea>
+          </label>
+        </article>
+
+        <article class="panel">
+          <p class="eyebrow">Captions</p>
+          <div class="caption-editor">
+            @for (caption of productionDraft().onScreenText; track $index; let
+            index = $index) {
+            <label>
+              <span>{{ caption.time }}</span>
+              <input
+                [value]="caption.text"
+                (input)="updateCaption(index, 'text', $event)"
+              />
+            </label>
+            }
           </div>
         </article>
-        }
-      </div>
-      }
+      </section>
+    </section>
 
-      <div class="observability-grid">
-        <section class="job-list" aria-label="Render job history">
-          <p class="eyebrow">Job History</p>
-          @for (job of renderJobs(); track job.id) {
+    <section
+      class="route-panel"
+      routerLinkActive="active-route"
+      [routerLinkActiveOptions]="{ exact: true }"
+    >
+      <a
+        class="route-sentinel"
+        aria-hidden="true"
+        tabindex="-1"
+        [routerLink]="['/reels', selectedEpisode().episode, 'shots']"
+      ></a>
+
+      <section class="shots-toolbar" aria-label="Shot prompt actions">
+        <div>
+          <p class="eyebrow">Shot Planning</p>
+          <strong>Shot {{ selectedShotIndex() + 1 }} of {{ productionDraft().shots.length }}</strong>
+        </div>
+        <div>
+          <button type="button" (click)="copyPrompt()">Copy prompt</button>
+          <button type="button" (click)="copyAllPrompts()">Copy all prompts</button>
+        </div>
+      </section>
+
+      <section class="review-grid shots-review-grid">
+        <article class="panel shot-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Shot List</p>
+              <h3>{{ productionDraft().shots.length }} cinematic beats</h3>
+            </div>
+          </div>
+
+          <div class="shot-list">
+            @for (shot of productionDraft().shots; track shot.time; let index =
+            $index) {
+            <button
+              type="button"
+              class="shot-button"
+              [class.active]="index === selectedShotIndex()"
+              (click)="selectShot(index)"
+            >
+              <span>{{ shot.time }}</span>
+              <strong>{{ shot.visual }}</strong>
+              <small>{{ shot.motion }}</small>
+            </button>
+            }
+          </div>
+        </article>
+
+        <article class="panel phone-preview" aria-label="Vertical reel preview">
+          <div class="phone-frame">
+            <div class="preview-art">
+              <span>{{ selectedShot().time }}</span>
+              <strong>{{ selectedShot().visual }}</strong>
+            </div>
+            <div class="caption-stack">
+              @for (caption of productionDraft().onScreenText; track caption.time)
+              {
+              <p>{{ caption.text }}</p>
+              }
+            </div>
+          </div>
+        </article>
+
+        <article class="panel prompt-panel">
+          <div class="panel-heading compact">
+            <div>
+              <p class="eyebrow">Image Prompt</p>
+              <strong>Selected shot prompt</strong>
+            </div>
+            <button type="button" (click)="copyPrompt()">Copy</button>
+          </div>
+          <label>
+            <span>Prompt</span>
+            <textarea
+              rows="12"
+              [value]="selectedShot().prompt"
+              (input)="updateShot(selectedShotIndex(), 'prompt', $event)"
+            ></textarea>
+          </label>
+        </article>
+      </section>
+    </section>
+
+    <section
+      class="route-panel"
+      routerLinkActive="active-route"
+      [routerLinkActiveOptions]="{ exact: true }"
+    >
+      <a
+        class="route-sentinel"
+        aria-hidden="true"
+        tabindex="-1"
+        [routerLink]="['/reels', selectedEpisode().episode, 'direction']"
+      ></a>
+
+      <section class="direction-shot-picker" aria-label="Direction shot selection">
+        <div>
+          <p class="eyebrow">Direction Shot</p>
+          <strong>Choose the beat to direct</strong>
+        </div>
+        <div class="direction-shot-tabs">
+          @for (shot of productionDraft().shots; track shot.time; let index = $index) {
           <button
             type="button"
-            [class.active]="job.id === selectedJobId()"
-            (click)="selectRenderJob(job.id)"
+            [class.active]="index === selectedShotIndex()"
+            (click)="selectShot(index)"
+            [attr.aria-label]="'Select shot ' + (index + 1) + ' for direction'"
           >
-            <span>{{ job.mode }}</span>
-            <strong>{{ job.status }}</strong>
-            <small>Attempt {{ job.attemptCount }}</small>
+            {{ index + 1 }}
           </button>
           }
-        </section>
+        </div>
+      </section>
 
-        <section class="worker-history" aria-label="Worker attempts">
-          <p class="eyebrow">Attempts</p>
-          @if (selectedRenderJob()?.status === 'failed') {
-          <button type="button" (click)="retrySelectedRenderJob()">
-            Retry job
-          </button>
-          } @if (renderJobAttempts().length === 0) {
-          <p class="empty-state">No worker attempts recorded.</p>
-          } @for (attempt of renderJobAttempts(); track attempt.id) {
-          <div class="attempt-row">
-            <strong>#{{ attempt.attemptNumber }} {{ attempt.status }}</strong>
-            <span>{{ attempt.workerId }}</span>
-            @if (attempt.error) { <small>{{ attempt.error }}</small> }
+      <app-direction-panel
+        [episode]="selectedEpisode()"
+        [shot]="selectedShot()"
+        [shotIndex]="selectedShotIndex()"
+      ></app-direction-panel>
+    </section>
+
+    <section
+      class="route-panel"
+      routerLinkActive="active-route"
+      [routerLinkActiveOptions]="{ exact: true }"
+    >
+      <a
+        class="route-sentinel"
+        aria-hidden="true"
+        tabindex="-1"
+        [routerLink]="['/reels', selectedEpisode().episode, 'audio']"
+      ></a>
+
+      <section class="narration-stage" aria-labelledby="narration-stage-title">
+        <div class="narration-stage-heading">
+          <div class="step-heading">
+            <span>A</span>
+            <div>
+              <p class="eyebrow">Story Voice</p>
+              <h3 id="narration-stage-title">Narration identity</h3>
+            </div>
+          </div>
+          <div class="effective-voice" aria-live="polite">
+            <span>{{ effectiveNarrationVoice().engine }}</span>
+            <strong>{{ effectiveNarrationVoice().displayName }}</strong>
+            <small>{{ effectiveNarrationStyle() }}</small>
+          </div>
+        </div>
+
+        <div class="narration-config-grid">
+          <section class="narration-scope" aria-label="Story narration default">
+            <p class="eyebrow">Story Default</p>
+            <label>
+              <span>Narrator voice</span>
+              <select
+                [value]="narrationDraft().storyVoiceProfileId"
+                (change)="updateNarrationVoice('story', $event)"
+              >
+                @for (voice of narrationSettings().availableVoices; track voice.id)
+                {
+                <option [value]="voice.id">
+                  {{ voice.displayName }} / {{ voice.engine }}
+                </option>
+                }
+              </select>
+            </label>
+            <label>
+              <span>Delivery style</span>
+              <select
+                [value]="narrationDraft().storyStylePreset"
+                (change)="updateNarrationStyle('story', $event)"
+              >
+                @for (style of narrationStylePresets; track style) {
+                <option [value]="style">{{ style }}</option>
+                }
+              </select>
+            </label>
+            <label>
+              <span>Story voice direction</span>
+              <textarea
+                rows="3"
+                [value]="narrationDraft().storyStyleNotes"
+                (input)="updateNarrationNotes('story', $event)"
+              ></textarea>
+            </label>
+          </section>
+
+          <section class="narration-scope" aria-label="Chapter narration override">
+            <div class="scope-toggle">
+              <div>
+                <p class="eyebrow">Chapter {{ narrationSettings().chapterNumber }}</p>
+                <strong>{{ narrationSettings().chapterTitle }}</strong>
+              </div>
+              <label class="checkbox-control">
+                <input
+                  type="checkbox"
+                  [checked]="narrationDraft().useStoryDefault"
+                  (change)="setUseStoryDefault($event)"
+                />
+                <span>Use story default</span>
+              </label>
+            </div>
+            <label>
+              <span>Chapter narrator</span>
+              <select
+                [value]="narrationDraft().chapterVoiceProfileId"
+                [disabled]="narrationDraft().useStoryDefault"
+                (change)="updateNarrationVoice('chapter', $event)"
+              >
+                @for (voice of narrationSettings().availableVoices; track voice.id)
+                {
+                <option [value]="voice.id">
+                  {{ voice.displayName }} / {{ voice.engine }}
+                </option>
+                }
+              </select>
+            </label>
+            <label>
+              <span>Chapter delivery style</span>
+              <select
+                [value]="narrationDraft().chapterStylePreset"
+                [disabled]="narrationDraft().useStoryDefault"
+                (change)="updateNarrationStyle('chapter', $event)"
+              >
+                @for (style of narrationStylePresets; track style) {
+                <option [value]="style">{{ style }}</option>
+                }
+              </select>
+            </label>
+            <label>
+              <span>Chapter voice direction</span>
+              <textarea
+                rows="3"
+                [value]="narrationDraft().chapterStyleNotes"
+                [disabled]="narrationDraft().useStoryDefault"
+                (input)="updateNarrationNotes('chapter', $event)"
+              ></textarea>
+            </label>
+          </section>
+        </div>
+
+        <div class="cast-heading">
+          <div>
+            <p class="eyebrow">Chapter Cast</p>
+            <strong>{{ narrationDraft().roles.length }} assigned roles</strong>
+          </div>
+          <button type="button" (click)="addNarrationRole()">Add role</button>
+        </div>
+
+        @if (narrationDraft().roles.length > 0) {
+        <div class="cast-list">
+          @for (role of narrationDraft().roles; track role.roleKey; let index = $index) {
+          <div class="cast-row">
+            <label>
+              <span>Role</span>
+              <input
+                [value]="role.displayName"
+                (input)="updateNarrationRole(index, 'displayName', $event)"
+              />
+            </label>
+            <label>
+              <span>Type</span>
+              <select
+                [value]="role.roleType"
+                (change)="updateNarrationRole(index, 'roleType', $event)"
+              >
+                @for (roleType of narrationRoleTypes; track roleType) {
+                <option [value]="roleType">{{ roleType }}</option>
+                }
+              </select>
+            </label>
+            <label>
+              <span>Voice</span>
+              <select
+                [value]="role.voiceProfileId"
+                (change)="updateNarrationRole(index, 'voiceProfileId', $event)"
+              >
+                @for (voice of narrationSettings().availableVoices; track voice.id) {
+                <option [value]="voice.id">{{ voice.displayName }}</option>
+                }
+              </select>
+            </label>
+            <label>
+              <span>Style</span>
+              <select
+                [value]="role.stylePreset"
+                (change)="updateNarrationRole(index, 'stylePreset', $event)"
+              >
+                @for (style of narrationStylePresets; track style) {
+                <option [value]="style">{{ style }}</option>
+                }
+              </select>
+            </label>
+            <label class="cast-notes">
+              <span>Direction</span>
+              <input
+                [value]="role.styleNotes"
+                (input)="updateNarrationRole(index, 'styleNotes', $event)"
+              />
+            </label>
+            <button
+              type="button"
+              class="remove-role"
+              (click)="removeNarrationRole(index)"
+              [attr.aria-label]="'Remove ' + role.displayName"
+            >
+              Remove
+            </button>
           </div>
           }
-        </section>
+        </div>
+        }
 
-        <section class="worker-log" aria-label="Worker output log">
-          <p class="eyebrow">Worker Log</p>
-          @if (renderJobLogs().length === 0) {
-          <p class="empty-state">No persisted worker output.</p>
-          } @for (log of renderJobLogs(); track log.id) {
-          <p [attr.data-level]="log.level">
-            <span>{{ log.stream }}</span>
-            {{ log.message }}
-          </p>
-          }
-        </section>
+        <div class="narration-actions">
+          <span>{{ effectiveNarrationVoice().description }}</span>
+          <button
+            type="button"
+            class="primary-action"
+            (click)="saveNarrationSettings()"
+            [disabled]="isSavingNarration()"
+          >
+            {{ isSavingNarration() ? 'Saving...' : 'Save narration' }}
+          </button>
+        </div>
+      </section>
+
+      <section class="audio-direction-grid">
+        <article class="panel">
+          <p class="eyebrow">Voice Direction</p>
+          <textarea
+            rows="6"
+            [value]="productionDraft().voiceDirection"
+            (input)="updateDraftText('voiceDirection', $event)"
+          ></textarea>
+        </article>
+        <article class="panel">
+          <p class="eyebrow">Music Direction</p>
+          <textarea
+            rows="6"
+            [value]="productionDraft().musicDirection"
+            (input)="updateDraftText('musicDirection', $event)"
+          ></textarea>
+        </article>
+      </section>
+    </section>
+
+    <section
+      class="route-panel"
+      routerLinkActive="active-route"
+      [routerLinkActiveOptions]="{ exact: true }"
+    >
+      <a
+        class="route-sentinel"
+        aria-hidden="true"
+        tabindex="-1"
+        [routerLink]="['/reels', selectedEpisode().episode, 'publishing']"
+      ></a>
+
+      <div class="publishing-heading">
+        <div>
+          <p class="eyebrow">Publishing</p>
+          <h3>Platform copy and export metadata</h3>
+        </div>
+        <button type="button" (click)="exportEpisode()">Export episode JSON</button>
       </div>
+
+      <section class="details-grid publishing-grid">
+        <article class="panel">
+          <p class="eyebrow">Platform Notes</p>
+          <div class="field-stack">
+            @for (note of productionDraft().platformNotes; track $index; let index = $index) {
+            <label>
+              <span>Note {{ index + 1 }}</span>
+              <textarea
+                rows="3"
+                [value]="note"
+                (input)="updatePlatformNote(index, $event)"
+              ></textarea>
+            </label>
+            }
+          </div>
+        </article>
+
+        <article class="panel export-panel">
+          <p class="eyebrow">Long-form Metadata</p>
+          <label>
+            <span>Facebook</span>
+            <textarea
+              rows="4"
+              [value]="productionDraft().exportMetadata.facebookCaption"
+              (input)="updateExportMetadata('facebookCaption', $event)"
+            ></textarea>
+          </label>
+          <label>
+            <span>X</span>
+            <textarea
+              rows="3"
+              [value]="productionDraft().exportMetadata.xPost"
+              (input)="updateExportMetadata('xPost', $event)"
+            ></textarea>
+          </label>
+        </article>
+
+        <article class="panel export-panel">
+          <p class="eyebrow">Short-form Metadata</p>
+          <label>
+            <span>TikTok</span>
+            <textarea
+              rows="4"
+              [value]="productionDraft().exportMetadata.tiktokCaption"
+              (input)="updateExportMetadata('tiktokCaption', $event)"
+            ></textarea>
+          </label>
+          <label>
+            <span>YouTube title</span>
+            <input
+              [value]="productionDraft().exportMetadata.youtubeShortsTitle"
+              (input)="updateExportMetadata('youtubeShortsTitle', $event)"
+            />
+          </label>
+          <label>
+            <span>Tags</span>
+            <input
+              [value]="productionDraft().exportMetadata.tags.join(', ')"
+              (input)="updateExportTags($event)"
+            />
+          </label>
+        </article>
+      </section>
+    </section>
+
+    <section
+      class="route-panel"
+      routerLinkActive="active-route"
+      [routerLinkActiveOptions]="{ exact: true }"
+    >
+      <a
+        class="route-sentinel"
+        aria-hidden="true"
+        tabindex="-1"
+        [routerLink]="['/reels', selectedEpisode().episode, 'assets']"
+      ></a>
+
+      <section class="operations-band assets-only" aria-label="Generated assets">
+        <div class="operations-heading">
+          <div>
+            <p class="eyebrow">Generated Assets</p>
+            <h3>{{ reviewableAssets().length }} review items</h3>
+          </div>
+          <span>{{ generatedAssets().length }} total assets</span>
+        </div>
+
+        @if (reviewableAssets().length === 0) {
+        <p class="empty-state">No generated assets for this episode yet.</p>
+        } @else {
+        <div class="asset-grid">
+          @for (asset of reviewableAssets(); track asset.id) {
+          <article class="asset-card" [attr.data-review]="asset.reviewStatus">
+            <div class="asset-preview">
+              @if (asset.assetType === 'image' && asset.contentUrl) {
+              <img
+                [src]="asset.contentUrl"
+                [alt]="'Generated shot ' + (asset.shotNumber ?? '')"
+              />
+              } @else if (asset.assetType === 'video' && asset.contentUrl) {
+              <video [src]="asset.contentUrl" controls preload="metadata"></video>
+              } @else if (asset.assetType === 'audio' && asset.contentUrl) {
+              <audio [src]="asset.contentUrl" controls preload="metadata"></audio>
+              } @else {
+              <strong>{{ asset.assetType }}</strong>
+              }
+            </div>
+            <div class="asset-meta">
+              <span>{{ asset.shotNumber ? 'Shot ' + asset.shotNumber : asset.assetType }}</span>
+              <strong>{{ asset.reviewStatus }}</strong>
+            </div>
+            <label>
+              <span>Review notes</span>
+              <textarea
+                rows="3"
+                [value]="assetReviewNotes()[asset.id]"
+                (input)="updateAssetReviewNote(asset.id, $event)"
+              ></textarea>
+            </label>
+            <div class="asset-actions">
+              <button type="button" (click)="reviewAsset(asset, 'approved')">
+                Approve
+              </button>
+              <button type="button" (click)="reviewAsset(asset, 'rejected')">
+                Reject
+              </button>
+              <button type="button" (click)="regenerateAsset(asset)">
+                Regenerate
+              </button>
+            </div>
+          </article>
+          }
+        </div>
+        }
+      </section>
+    </section>
+
+    <section
+      class="route-panel"
+      routerLinkActive="active-route"
+      [routerLinkActiveOptions]="{ exact: true }"
+    >
+      <a
+        class="route-sentinel"
+        aria-hidden="true"
+        tabindex="-1"
+        [routerLink]="['/reels', selectedEpisode().episode, 'jobs']"
+      ></a>
+
+      <section class="operations-band jobs-only" aria-label="Render job observability">
+        <div class="operations-heading">
+          <div>
+            <p class="eyebrow">Render Operations</p>
+            <h3>Job history and worker output</h3>
+          </div>
+          <span>{{ renderJobs().length }} render jobs</span>
+        </div>
+
+        <div class="observability-grid">
+          <section class="job-list" aria-label="Render job history">
+            <p class="eyebrow">Job History</p>
+            @if (renderJobs().length === 0) {
+            <p class="empty-state">No render jobs recorded.</p>
+            }
+            @for (job of renderJobs(); track job.id) {
+            <button
+              type="button"
+              [class.active]="job.id === selectedJobId()"
+              (click)="selectRenderJob(job.id)"
+            >
+              <span>{{ job.mode }}</span>
+              <strong>{{ job.status }}</strong>
+              <small>Attempt {{ job.attemptCount }}</small>
+            </button>
+            }
+          </section>
+
+          <section class="worker-history" aria-label="Worker attempts">
+            <p class="eyebrow">Attempts</p>
+            @if (selectedRenderJob()?.status === 'failed') {
+            <button type="button" (click)="retrySelectedRenderJob()">
+              Retry job
+            </button>
+            }
+            @if (renderJobAttempts().length === 0) {
+            <p class="empty-state">No worker attempts recorded.</p>
+            }
+            @for (attempt of renderJobAttempts(); track attempt.id) {
+            <div class="attempt-row">
+              <strong>#{{ attempt.attemptNumber }} {{ attempt.status }}</strong>
+              <span>{{ attempt.workerId }}</span>
+              @if (attempt.error) { <small>{{ attempt.error }}</small> }
+            </div>
+            }
+          </section>
+
+          <section class="worker-log" aria-label="Worker output log">
+            <p class="eyebrow">Worker Log</p>
+            @if (renderJobLogs().length === 0) {
+            <p class="empty-state">No persisted worker output.</p>
+            }
+            @for (log of renderJobLogs(); track log.id) {
+            <p [attr.data-level]="log.level">
+              <span>{{ log.stream }}</span>
+              {{ log.message }}
+            </p>
+            }
+          </section>
+        </div>
+      </section>
     </section>
   </section>
 </main>
