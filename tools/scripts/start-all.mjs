@@ -84,6 +84,26 @@ function assertInstallCurrent() {
   }
 }
 
+function preparePlanningRuntime() {
+  const provider = process.env.PLANNING_PROVIDER ?? 'deterministic';
+  if (provider !== 'ollama') {
+    console.log(`Planning runtime: ${provider} (Ollama warm-up skipped).`);
+    return;
+  }
+
+  console.log('Checking local Ollama planning runtime...');
+  const check = runPnpm(['planning:ollama:check'], { stdio: 'inherit' });
+  if (check.status !== 0) {
+    fail('Ollama planning check failed.');
+  }
+
+  console.log('Warming configured Ollama planning model...');
+  const warm = runPnpm(['planning:ollama:warm'], { stdio: 'inherit' });
+  if (warm.status !== 0) {
+    fail('Ollama planning model warm-up failed.');
+  }
+}
+
 function assertDockerAvailable() {
   const result = run(dockerCommand, ['compose', 'version']);
 
@@ -454,6 +474,7 @@ function restoreStdinMode() {
 
 async function main() {
   assertInstallCurrent();
+  preparePlanningRuntime();
   assertDockerAvailable();
   await assertPortFree(3000).catch((error) => fail(error.message));
   await assertPortFree(4200).catch((error) => fail(error.message));
@@ -473,6 +494,7 @@ async function main() {
   console.log('- Web: http://localhost:4200');
   console.log('- API: http://localhost:3000/api');
   console.log('- API docs: http://localhost:3000/api/docs');
+  console.log(`- Planning: ${process.env.PLANNING_PROVIDER ?? 'deterministic'}`);
   console.log('Press Ctrl+C to stop web/API dev servers.');
 }
 
