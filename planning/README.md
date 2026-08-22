@@ -10,6 +10,7 @@ This folder captures agile planning for the studio and project-specific producti
 - Keep acceptance criteria concrete enough to test through Nx targets.
 - Separate technical renderer acceptance from art-direction acceptance.
 - Do not scale a visual workflow to later reels until the benchmark reel meets the agreed quality bar.
+- Automate repeatable production workflow without automating away the human editorial gate.
 
 ## Active Plan
 
@@ -20,6 +21,7 @@ This folder captures agile planning for the studio and project-specific producti
 - [ ] Sprint 004: reproducible Kokoro narration, scored review candidate, listening approval, and final-video gate.
 - [x] Sprint 005: Remotion cinematic animation proof of concept and full Reel 1 technical draft.
 - [ ] Sprint 006: polish Reel 1 into the approved cinematic animation benchmark before beginning Reel 2 animation.
+- [ ] Sprint 007: automate the approved Reel 1 planning/review/revision process in the Studio after the benchmark language is stable.
 
 ## Current Animation Direction
 
@@ -31,17 +33,28 @@ Use:
 - `reel-01-cinematic-direction-plan.md` for the reel-wide emotional arc, color script, lens/camera grammar, material motion rules, transition plan, character micro-performance, atmosphere palette, sound-to-motion cues, and shot intent cards;
 - `reel-01-timing-attention-map.md` for narration-to-image pacing, shot-level attention hierarchy, motion-intensity planning, sound handoffs, and the reel's alternating movement/stillness rhythm;
 - `reel-01-animation-asset-production-workflow.md` for immutable-source policy, overscan, semantic layer separation, hidden-background reconstruction, alpha cleanup, material tags, manifests, and pre-animation QC;
+- `animation-asset-manifest-contract.md` for the reusable semantic/provenance contract between approved editorial art and animation scenes;
+- `animation-scene-schema-v2.md` for the data-driven scene contract that should eventually drive a generic Remotion composition;
 - `reel-01-animation-review-scorecard.md` for repeatable visual-quality scoring, hard-fail conditions, A/B comparisons, phone review, and publication thresholds;
 - `reel-01-shot-03-enki-benchmark-plan.md` for the concrete first benchmark: composition, layer list, overscan, camera amplitude, character timing, water/light behavior, transition design, A/B tests, and pass criteria;
+- `reel-01-shot-03-keyframe-sheet.md` for 0/25/50/75/100% directorial checkpoints and still-frame review targets;
 - `reel-01-shot-04-nammu-benchmark-plan.md` for the contrasting supernatural benchmark and the series principle that a believable physical world makes the mythology feel extraordinary;
 - `sprint-006-reel-one-animation-polish.md` for the active implementation sequence;
-- `remotion-cinematic-animation-roadmap.md` for the broader renderer roadmap.
+- `sprint-007-studio-planning-automation.md` for the planned reusable Studio workflow after Reel 1 style approval;
+- `remotion-cinematic-animation-roadmap.md` for the broader renderer roadmap;
+- `../documentation/studio/automated-reel-planning.md` for the proposed deterministic + optional-AI planning/review architecture.
 
-Shot 3, Enki at the helm, is the primary benchmark. Shot 4, Nammu beneath the water, is now the planned secondary benchmark because it tests the opposite visual problem: restrained numinous intervention rather than physical character presence. Both must pass before the style is propagated to all eight Reel 1 shots.
+Shot 3, Enki at the helm, is the primary benchmark. Shot 4, Nammu beneath the water, is the planned secondary benchmark because it tests the opposite visual problem: restrained numinous intervention rather than physical character presence. Both must pass before the style is propagated to all eight Reel 1 shots.
 
 The working series principle is: **make the ordinary world believable enough that the mythology feels extraordinary.** Physical materials obey weight and inertia; supernatural imagery earns its impact by departing from those rules carefully rather than through spectacle.
 
-Rhubarb lip sync, Reel 2 animation, skeletal rigging, and larger animation-engine expansion are deferred until the Reel 1 benchmark style is approved.
+## Studio Automation Direction
+
+The long-term Studio workflow should automate planning, validation, benchmark rendering, review artifact generation, revision tracking, and inheritance of approved style decisions across later reels.
+
+An LLM is optional. The required baseline is a deterministic planning provider driven by templates, schemas, approved style rules, and reel data. A local Ollama provider may later propose structured shot plans, critique review frames, translate human feedback into revision proposals, and suggest reusable style decisions. Model output remains a proposal: the Studio validates it and a human approves it.
+
+Rhubarb lip sync, Reel 2 animation, skeletal rigging, and larger animation-engine expansion remain deferred until the Reel 1 benchmark style is approved.
 
 ## Definition Of Done
 
@@ -55,3 +68,4 @@ Rhubarb lip sync, Reel 2 animation, skeletal rigging, and larger animation-engin
 - [x] Long-running processes have timeout and heartbeat behavior.
 - [x] CI has bounded runtimes for steps that can hang.
 - [ ] Animation publication quality passes the Reel 1 style-bible and review-scorecard gates before animation production expands to later reels.
+- [ ] The automated planning/review workflow eventually works without an LLM and can optionally use a schema-constrained local planning provider.
