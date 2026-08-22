@@ -1,0 +1,178 @@
+<section class="direction-panel" aria-labelledby="direction-title">
+  <div class="direction-heading">
+    <div>
+      <p class="eyebrow">Assistant Direction</p>
+      <h3 id="direction-title">Direction</h3>
+      <p class="direction-subtitle">
+        Selected shot planning with local AI proposals, deterministic guardrails,
+        and human approval.
+      </p>
+    </div>
+    <div class="runtime-summary" aria-live="polite">
+      <span class="runtime-dot" [class.online]="activeCapability()?.available"></span>
+      <strong>{{ runtimeStatus() }}</strong>
+      <button type="button" (click)="refreshCapabilities()">Refresh</button>
+    </div>
+  </div>
+
+  <div class="direction-runtime">
+    <div>
+      <span>Provider</span>
+      <strong>{{ capabilities()?.defaultProvider ?? 'checking' }}</strong>
+    </div>
+    <div>
+      <span>Planner</span>
+      <strong>{{ activeCapability()?.configuredModel ?? 'not configured' }}</strong>
+    </div>
+    <div>
+      <span>Vision</span>
+      <strong>
+        {{ activeCapability()?.configuredVisionModel ??
+          (activeCapability()?.vision ? 'configured' : 'not configured') }}
+      </strong>
+    </div>
+    <div>
+      <span>Structured output</span>
+      <strong>{{ activeCapability()?.structuredOutput ? 'ready' : 'unavailable' }}</strong>
+    </div>
+  </div>
+
+  <div class="selected-direction-shot">
+    <div>
+      <p class="eyebrow">Selected Shot</p>
+      <strong>Shot {{ shotIndex + 1 }} · {{ planningInput()?.shotId }}</strong>
+      <p>{{ shot.visual }}</p>
+      <small>{{ shot.motion }}</small>
+    </div>
+    <button
+      type="button"
+      class="generate-direction"
+      (click)="generateDirection()"
+      [disabled]="isGenerating() || !activeCapability()?.available"
+    >
+      {{ isGenerating() ? 'Generating direction…' : 'Generate Direction' }}
+    </button>
+  </div>
+
+  @if (!proposal()) {
+  <div class="direction-empty">
+    <strong>No proposal yet.</strong>
+    <p>
+      Generate direction to ask the configured planner for one constrained shot
+      package. Nothing is approved or persisted automatically.
+    </p>
+  </div>
+  } @else if (proposal(); as current) {
+  <div class="proposal-grid">
+    <article class="proposal-card">
+      <p class="eyebrow">Camera</p>
+      <strong>{{ current.camera.preset }}</strong>
+      <dl>
+        <div>
+          <dt>Scale change</dt>
+          <dd>{{ formatPercent(cameraDeltaPercent(current)) }}</dd>
+        </div>
+        <div>
+          <dt>Easing</dt>
+          <dd>{{ current.camera.easing }}</dd>
+        </div>
+        <div>
+          <dt>Eye target</dt>
+          <dd>{{ current.eyeTarget }}</dd>
+        </div>
+        <div>
+          <dt>Stillness anchor</dt>
+          <dd>{{ current.stillnessAnchor }}</dd>
+        </div>
+      </dl>
+    </article>
+
+    <article class="proposal-card">
+      <p class="eyebrow">Performance</p>
+      <strong>{{ current.motionBudget.primary }}</strong>
+      <dl>
+        <div>
+          <dt>Subject</dt>
+          <dd>{{ current.motionBudget.subject }}</dd>
+        </div>
+        <div>
+          <dt>Lighting</dt>
+          <dd>{{ current.motionBudget.lighting }}</dd>
+        </div>
+      </dl>
+      <p class="mini-heading">Environment</p>
+      <ul>
+        @for (motion of current.motionBudget.environment; track motion) {
+        <li>{{ motion }}</li>
+        }
+      </ul>
+    </article>
+
+    <article class="proposal-card checks-card">
+      <p class="eyebrow">Guardrails</p>
+      <div class="direction-checks">
+        @for (check of directionChecks(); track check.label) {
+        <div class="direction-check" [attr.data-status]="check.status">
+          <span class="check-status">{{ check.status }}</span>
+          <div>
+            <strong>{{ check.label }}</strong>
+            <small>{{ check.detail }}</small>
+          </div>
+        </div>
+        }
+      </div>
+    </article>
+  </div>
+
+  <div class="proposal-notes">
+    <article>
+      <p class="eyebrow">Rationale</p>
+      <p>{{ current.rationale }}</p>
+    </article>
+    <article>
+      <p class="eyebrow">Open Questions</p>
+      @if (current.unresolvedQuestions.length === 0) {
+      <p>No unresolved questions returned.</p>
+      } @else {
+      <ul>
+        @for (question of current.unresolvedQuestions; track question) {
+        <li>{{ question }}</li>
+        }
+      </ul>
+      }
+    </article>
+  </div>
+
+  <div class="proposal-footer">
+    <div>
+      <span>{{ current.provider }}</span>
+      <strong>{{ current.model ?? current.provider }}</strong>
+      @if (lastDurationMs() !== null) {
+      <small>{{ formatDuration(lastDurationMs()) }}</small>
+      }
+      <small>Human review required</small>
+    </div>
+    <div class="proposal-actions">
+      @if (reviewState() !== 'unreviewed') {
+      <span class="review-state" [attr.data-review]="reviewState()">
+        {{ reviewState() }} locally
+      </span>
+      <button type="button" (click)="clearReview()">Clear review</button>
+      }
+      <button type="button" (click)="reviewProposal('rejected')">Reject</button>
+      <button
+        type="button"
+        class="approve-direction"
+        (click)="reviewProposal('approved')"
+        [disabled]="proposalHasFailure()"
+      >
+        Approve locally
+      </button>
+    </div>
+  </div>
+  <p class="persistence-note">
+    Local approval is intentionally non-persistent until PlanningRun approval
+    history is added to the Studio database.
+  </p>
+  }
+</section>
