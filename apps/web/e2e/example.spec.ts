@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test';
-import { REEL_ONE, CHAPTER_ONE_SUMMARY } from '@sumer-reel-forge/reel-core';
+import {
+  REEL_ONE,
+  CHAPTER_ONE_REELS,
+  CHAPTER_ONE_SUMMARY,
+} from '@sumer-reel-forge/reel-core';
 
 test('shows the routed first reel workspace', async ({ page }) => {
   await mockOperationalRoutes(page);
@@ -23,7 +27,7 @@ test('shows the routed first reel workspace', async ({ page }) => {
 
 test('deep links load the requested reel and tab', async ({ page }) => {
   await mockOperationalRoutes(page);
-  await mockReelRoutes(page, 2);
+  await mockReelRoutes(page);
 
   await page.goto('/reels/2/shots');
 
@@ -119,25 +123,15 @@ test('approves a reel and reviews a generated shot from focused tabs', async ({
   await expect(page.getByText('Asset approved')).toBeVisible();
 });
 
-async function mockReelRoutes(
-  page: import('@playwright/test').Page,
-  requestedEpisode = 1,
-) {
+async function mockReelRoutes(page: import('@playwright/test').Page) {
   await page.route('**/api/chapters/1/reels', async (route) => {
     await route.fulfill({ json: CHAPTER_ONE_SUMMARY });
   });
-  await page.route(`**/api/chapters/1/reels/${requestedEpisode}`, async (route) => {
+  await page.route('**/api/chapters/1/reels/*', async (route) => {
+    const url = new URL(route.request().url());
+    const episodeId = Number(url.pathname.split('/').at(-1));
     const episode =
-      requestedEpisode === 1
-        ? REEL_ONE
-        : {
-            ...REEL_ONE,
-            episode: requestedEpisode,
-            title:
-              CHAPTER_ONE_SUMMARY.find(
-                (item) => item.episode === requestedEpisode,
-              )?.title ?? `Episode ${requestedEpisode}`,
-          };
+      CHAPTER_ONE_REELS.find((item) => item.episode === episodeId) ?? REEL_ONE;
     await route.fulfill({ json: episode });
   });
 }
