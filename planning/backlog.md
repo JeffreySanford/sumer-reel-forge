@@ -53,3 +53,20 @@
 - [x] Add approve, reject, regenerate, review-note, preview, and failed-job retry controls.
 - [x] Add export metadata for Facebook, X, TikTok, and YouTube Shorts.
 - [x] Add copy/export controls for prompts and platform metadata.
+
+## Epic 5 - Cinematic Animation Pipeline
+
+- [x] Add Remotion proof renderer for vertical MP4 output.
+- [x] Define layered cinematic scene schema.
+- [x] Add animation adapter to the renderer worker.
+- [x] Add short cinematic style-test render loop.
+- [x] Add contact-sheet style-review artifact generation.
+- [x] Add Markdown style-review report generation.
+- [x] Persist cinematic style-review artifacts through generated-asset API.
+- [x] Add second motion-proof review for shot-to-shot animation language.
+- [x] Add complete 60-second Reel 1 Remotion animation draft.
+- [x] Route full Reel 1 animation draft through the renderer worker.
+- [ ] Add Rhubarb Lip Sync integration for mouth-shape timing.
+- [ ] Add character asset conventions for pose, eye, mouth, and expression layers.
+- [x] Persist animation manifests with scene version and asset checksums.
+- [x] Review animated generated assets in the existing studio dashboard.

@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { access } from 'node:fs/promises';
+import { resolve } from 'node:path';
 import { loadRendererConfig } from '../renderer/renderer-config.mjs';
 import { runProcess } from '../renderer/process-runner.mjs';
 
@@ -7,6 +8,7 @@ const config = loadRendererConfig();
 const checks = [];
 
 checks.push(await checkCommand('FFmpeg', config.ffmpegCommand, ['-version']));
+checks.push(await checkCommand('FFprobe', config.ffprobeCommand, ['-version']));
 if (config.adapter === 'local') {
   checks.push(
     await checkHttp('ComfyUI', `${config.comfyBaseUrl}/system_stats`),
@@ -21,6 +23,14 @@ if (config.adapter === 'local') {
   );
 } else if (config.adapter === 'mock') {
   checks.push(await checkPlaywright());
+} else if (config.adapter === 'animation') {
+  checks.push(
+    await checkCommand('Remotion', process.execPath, [
+      resolve('node_modules/@remotion/cli/remotion-cli.js'),
+      'versions',
+    ]),
+    ...(await checkAnimationNarration(config)),
+  );
 } else {
   checks.push({
     ok: false,
@@ -95,9 +105,7 @@ async function checkEditorialFrames(directory, count) {
 }
 
 async function checkEditorialNarration(config) {
-  if (
-    ['auto', 'chatterbox'].includes(config.editorialNarrationAdapter)
-  ) {
+  if (['auto', 'chatterbox'].includes(config.editorialNarrationAdapter)) {
     return [
       await checkCommand('Chatterbox Python', config.chatterboxCommand, [
         '--version',
@@ -130,6 +138,19 @@ async function checkEditorialNarration(config) {
       await checkFile('Kokoro voices', config.kokoroVoicesPath),
     ];
   }
+  return [
+    await checkFile('Windows speech script', config.windowsSpeechScript),
+    await checkCommand('Windows speech', config.windowsSpeechCommand, [
+      '-NoProfile',
+      '-NonInteractive',
+      '-File',
+      config.windowsSpeechScript,
+      '-ListVoices',
+    ]),
+  ];
+}
+
+async function checkAnimationNarration(config) {
   return [
     await checkFile('Windows speech script', config.windowsSpeechScript),
     await checkCommand('Windows speech', config.windowsSpeechCommand, [

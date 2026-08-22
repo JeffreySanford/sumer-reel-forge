@@ -25,6 +25,14 @@
     "render:watchdog": "node tools/scripts/render-watchdog.mjs",
     "render:prototype:reel1": "node tools/scripts/render-prototype.mjs",
     "render:editorial:reel1": "node tools/scripts/render-editorial-reel1.mjs",
+    "render:animation:proof": "node tools/scripts/render-animation-proof.mjs",
+    "render:animation:style-test": "node tools/scripts/render-animation-proof.mjs --scene tools/animation/scenes/cinematic-style-test.scene.json --composition CinematicStyleTest --prefix cinematic-style-test --manifest cinematic-style-test-manifest.json",
+    "render:animation:style-review": "node tools/scripts/render-animation-style-review.mjs",
+    "render:animation:style-review:studio": "node tools/scripts/persist-animation-style-review.mjs",
+    "render:animation:motion-proof": "node tools/scripts/render-animation-proof.mjs --scene tools/animation/scenes/cinematic-motion-proof.scene.json --composition CinematicMotionProof --prefix cinematic-motion-proof --manifest cinematic-motion-proof-manifest.json",
+    "render:animation:motion-review": "node tools/scripts/render-animation-style-review.mjs --scene tools/animation/scenes/cinematic-motion-proof.scene.json --composition CinematicMotionProof --prefix cinematic-motion-proof --reviewType cinematic-animation-motion-proof --title \"Cinematic Animation Motion Proof Review\" --frames 3,9,15 --outputDirectory tmp/renders/animation-motion-review",
+    "render:animation:full-reel1": "node tools/scripts/render-animation-proof.mjs --scene tools/animation/scenes/reel-01-full-animation.scene.json --composition FullReelAnimation --prefix reel-animation-v1 --manifest animation-reel1-manifest.json --adapter animation --narration-adapter chatterbox",
+    "render:animation:reel1": "node tools/scripts/render-animation-reel1.mjs",
     "render:final:reel1": "node tools/scripts/render-editorial-reel1.mjs --final",
     "renderer:worker": "node tools/scripts/renderer-worker.mjs",
     "renderer:preflight": "node tools/scripts/renderer-preflight.mjs",
@@ -68,6 +76,8 @@
     "@nx/webpack": "23.1.1",
     "@nx/workspace": "23.1.1",
     "@playwright/test": "^1.62.1",
+    "@remotion/cli": "4.0.515",
+    "@remotion/renderer": "4.0.515",
     "@schematics/angular": "^22.1.4",
     "@storybook/angular": "^10.5.9",
     "@storybook/test-runner": "^0.24.4",
@@ -91,6 +101,9 @@
     "openapi-typescript": "^7.13.0",
     "prettier": "~3.6.2",
     "prisma": "^7.9.1",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "remotion": "4.0.515",
     "storybook": "^10.5.0",
     "ts-jest": "^29.4.7",
     "ts-node": "10.9.1",
@@ -131,6 +144,14 @@
       "deepmerge-ts": "8.0.1",
       "less>image-size": "-",
       "uuid": "11.1.1"
-    }
+    },
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "@scarf/scarf",
+      "esbuild",
+      "nx",
+      "prisma"
+    ]
   }
 }

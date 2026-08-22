@@ -111,12 +111,12 @@ Prepare the isolated API e2e database without touching development data:
 pnpm db:prepare:e2e
 ```
 
-The deterministic `mock` adapter is the default. Set `RENDER_ADAPTER=local` to use the configured ComfyUI, TTS, Whisper, and FFmpeg integrations. The `editorial` adapter consumes the versioned Reel 1 frames, uses locked project-local Kokoro or an explicit Windows SAPI fallback, generates an ambience bed and word timings, burns safe-area captions, adds a subtitle track, and persists a 60-second draft through the worker. See `docs/studio/local-renderer-prerequisites.md`.
+The deterministic `mock` adapter is the default. Set `RENDER_ADAPTER=local` to use the configured ComfyUI, TTS, Whisper, and FFmpeg integrations. The `editorial` adapter consumes the versioned Reel 1 frames, uses locked project-local Kokoro or an explicit Windows SAPI fallback, generates an ambience bed and word timings, burns safe-area captions, adds a subtitle track, and persists a 60-second draft through the worker. See `documentation/studio/local-renderer-prerequisites.md`.
 
 ## Documentation
 
-- Studio docs: `docs/studio`
-- Blessings of Sumer docs: `docs/projects/blessings-of-sumer`
+- Studio documentation: `documentation/studio`
+- Blessings of Sumer documentation: `documentation/projects/blessings-of-sumer`
 - Agile planning: `planning`
 - Initial database schema: `db/schema.sql`
 

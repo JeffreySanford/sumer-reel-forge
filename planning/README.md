@@ -16,6 +16,7 @@ This folder captures agile planning for the studio and project-specific producti
 - [x] Sprint 002: first local 60-second render pipeline and production review workflow.
 - [x] Sprint 003: visual bible, local production targets, and editorial Reel 1 baseline.
 - [ ] Sprint 004: reproducible Kokoro narration, scored review candidate, listening approval, and final-video gate.
+- [x] Sprint 005: Remotion cinematic animation proof of concept and full Reel 1 draft.
 
 ## Definition Of Done
 

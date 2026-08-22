@@ -186,7 +186,7 @@ async function synthesizeNarration({
       : [];
     await runProcess(
       config.chatterboxCommand,
-      [
+      chatterboxArgs(config, [
         config.chatterboxScript,
         '--text-file',
         narrationTextPath,
@@ -205,15 +205,14 @@ async function synthesizeNarration({
         '--temperature',
         String(controls.temperature),
         ...referenceArguments,
-      ],
-      processOptions,
+      ]),
+      { ...processOptions, env: chatterboxEnvironment() },
     );
     return {
       adapter: 'chatterbox',
       timingAdapter: 'estimated-word-timing',
       voice: narrationIdentity?.voiceProfile.slug ?? 'chatterbox-narrator',
-      model:
-        narrationIdentity?.voiceProfile.model ?? 'ResembleAI/chatterbox',
+      model: narrationIdentity?.voiceProfile.model ?? 'ResembleAI/chatterbox',
       stylePreset: narrationIdentity?.stylePreset ?? 'mythic',
       styleNotes: narrationIdentity?.styleNotes ?? '',
       referenceAudio: Boolean(config.chatterboxReferenceAudio),
@@ -311,6 +310,20 @@ function chatterboxControls(stylePreset = 'mythic') {
       temperature: 0.8,
     }
   );
+}
+
+function chatterboxArgs(config, args) {
+  if (basename(config.chatterboxCommand).toLowerCase().startsWith('uv')) {
+    return ['run', '--project', config.chatterboxProjectDirectory, ...args];
+  }
+  return args;
+}
+
+function chatterboxEnvironment() {
+  return {
+    PYTHONWARNINGS: 'ignore::UserWarning,ignore::FutureWarning',
+    TRANSFORMERS_VERBOSITY: 'error',
+  };
 }
 
 function kokoroSpeedForStyle(stylePreset, fallback) {

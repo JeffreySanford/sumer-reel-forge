@@ -95,7 +95,7 @@ async function main(): Promise<void> {
 
   const documentData = {
     title: 'Sumer Blessing',
-    sourceRef: 'docs/projects/blessings-of-sumer',
+    sourceRef: 'documentation/projects/blessings-of-sumer',
   };
   const existingDocument = await prisma.sourceDocument.findFirst({
     where: {

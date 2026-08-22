@@ -6,6 +6,7 @@ import {
   toFileUri,
   writeJson,
 } from '../renderer/artifact-utils.mjs';
+import { renderAnimationPipeline } from '../renderer/animation-adapter.mjs';
 import { renderEditorialPipeline } from '../renderer/editorial-adapter.mjs';
 import { renderLocalPipeline } from '../renderer/local-adapter.mjs';
 import { renderMockPipeline } from '../renderer/mock-adapter.mjs';
@@ -141,9 +142,11 @@ function selectPipeline(adapter) {
       return renderLocalPipeline;
     case 'editorial':
       return renderEditorialPipeline;
+    case 'animation':
+      return renderAnimationPipeline;
     default:
       throw new Error(
-        `Unknown RENDER_ADAPTER '${adapter}'. Use mock, local, or editorial.`,
+        `Unknown RENDER_ADAPTER '${adapter}'. Use mock, local, editorial, or animation.`,
       );
   }
 }
