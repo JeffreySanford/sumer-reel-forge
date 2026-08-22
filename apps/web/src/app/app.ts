@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, OnDestroy, computed, inject, signal } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import {
   REEL_ONE,
@@ -37,8 +37,9 @@ const EMPTY_SHOT: ReelShot = {
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
-export class App {
+export class App implements OnDestroy {
   private readonly reelApi = inject(ReelApiService);
+  private operationalRefreshTimer?: ReturnType<typeof setTimeout>;
 
   protected readonly outline = signal<ChapterReelSummary[]>([]);
   protected readonly selectedEpisode = signal(REEL_ONE);
@@ -135,7 +136,12 @@ export class App {
     this.selectEpisode(REEL_ONE.episode);
   }
 
+  ngOnDestroy(): void {
+    this.clearOperationalRefresh();
+  }
+
   protected selectEpisode(episodeId: number): void {
+    this.clearOperationalRefresh();
     this.selectedShotIndex.set(0);
     this.isLoading.set(true);
     this.reelApi.getChapterOneEpisode(episodeId).subscribe((episode) => {
@@ -207,6 +213,7 @@ export class App {
           this.renderStatus.set(`Queued job ${job.id}`);
           this.renderJobs.update((jobs) => [job, ...jobs]);
           this.selectRenderJob(job.id);
+          this.scheduleOperationalRefresh();
           if (mode === 'final-video') {
             this.selectedEpisode.update((episode) => ({
               ...episode,
@@ -292,6 +299,7 @@ export class App {
           this.renderJobs.update((jobs) => [job, ...jobs]);
           this.selectRenderJob(job.id);
           this.renderStatus.set(`Replacement queued as ${job.id}`);
+          this.scheduleOperationalRefresh();
         },
         error: () => this.renderStatus.set('Regeneration queue failed'),
       });
@@ -311,6 +319,7 @@ export class App {
             jobs.map((item) => (item.id === updated.id ? updated : item)),
           );
           this.renderStatus.set(`Job ${updated.id} requeued`);
+          this.scheduleOperationalRefresh();
         },
         error: () => this.renderStatus.set('Retry failed'),
       });
@@ -576,19 +585,38 @@ export class App {
     this.reelApi.getRenderJobs(episodeId).subscribe({
       next: (jobs) => {
         this.renderJobs.set(jobs);
+        const currentSelection = this.selectedJobId();
         const selectedId =
+          (currentSelection && jobs.some((job) => job.id === currentSelection)
+            ? currentSelection
+            : null) ??
+          jobs.find((job) => ['queued', 'running'].includes(job.status))?.id ??
           jobs.find((job) => job.status === 'complete')?.id ??
           jobs[0]?.id ??
           null;
+        const selectionChanged = selectedId !== this.selectedJobId();
         this.selectedJobId.set(selectedId);
-        if (selectedId) {
+        if (selectedId && selectionChanged) {
           this.selectRenderJob(selectedId);
+        } else if (selectedId) {
+          this.reelApi.getRenderJobAttempts(selectedId).subscribe({
+            next: (attempts) => this.renderJobAttempts.set(attempts),
+            error: () => this.renderJobAttempts.set([]),
+          });
+          this.reelApi.getRenderJobLogs(selectedId).subscribe({
+            next: (logs) => this.renderJobLogs.set(logs),
+            error: () => this.renderJobLogs.set([]),
+          });
         } else {
           this.renderJobAttempts.set([]);
           this.renderJobLogs.set([]);
         }
+        this.scheduleOperationalRefresh(jobs);
       },
-      error: () => this.renderJobs.set([]),
+      error: () => {
+        this.renderJobs.set([]);
+        this.clearOperationalRefresh();
+      },
     });
     this.reelApi.getGeneratedAssets(episodeId).subscribe({
       next: (assets) => {
@@ -601,6 +629,27 @@ export class App {
       },
       error: () => this.generatedAssets.set([]),
     });
+  }
+
+  private scheduleOperationalRefresh(jobs = this.renderJobs()): void {
+    this.clearOperationalRefresh();
+    if (!jobs.some((job) => ['queued', 'running'].includes(job.status))) {
+      return;
+    }
+
+    const episodeId = this.selectedEpisode().episode;
+    this.operationalRefreshTimer = setTimeout(() => {
+      if (this.selectedEpisode().episode === episodeId) {
+        this.loadOperationalState(episodeId);
+      }
+    }, 2000);
+  }
+
+  private clearOperationalRefresh(): void {
+    if (this.operationalRefreshTimer) {
+      clearTimeout(this.operationalRefreshTimer);
+      this.operationalRefreshTimer = undefined;
+    }
   }
 
   private updateOutlineStatus(
