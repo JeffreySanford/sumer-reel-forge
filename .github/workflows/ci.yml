@@ -7,10 +7,18 @@ on:
       - master
       - main
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
   quality:
+    name: Quality / API / Browser
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     services:
       postgres:
         image: postgres:17-bookworm
@@ -26,6 +34,9 @@ jobs:
         ports:
           - 5432:5432
     env:
+      CI: true
+      NX_DAEMON: false
+      PLANNING_PROVIDER: deterministic
       DATABASE_URL: postgresql://sumer_reel_forge:sumer_reel_forge@localhost:5432/sumer_reel_forge
       HOST: localhost
       WEB_ORIGIN: http://localhost:4200
@@ -51,8 +62,11 @@ jobs:
           enable-cache: true
           cache-dependency-glob: tools/tts/uv.lock
 
-      - name: Install
+      - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Verify workspace dependency graph
+        run: pnpm workspace:check
 
       - name: Generate Prisma client
         run: pnpm db:generate
@@ -63,8 +77,14 @@ jobs:
       - name: Prepare database
         run: pnpm db:prepare
 
-      - name: Lint, test, and build
-        run: pnpm quality
+      - name: Lint
+        run: pnpm lint
+
+      - name: Unit and creative tests
+        run: pnpm test
+
+      - name: Production build
+        run: pnpm build
 
       - name: API end-to-end tests
         timeout-minutes: 5
@@ -74,10 +94,21 @@ jobs:
         timeout-minutes: 5
         run: pnpm storybook:build
 
-      - name: Install Playwright browsers
+      - name: Install Playwright browsers and Linux dependencies
         timeout-minutes: 10
-        run: pnpm exec playwright install chromium firefox
+        run: pnpm exec playwright install --with-deps chromium firefox
 
-      - name: End-to-end tests
+      - name: Browser end-to-end tests
         timeout-minutes: 10
         run: pnpm e2e:ci
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ github.run_id }}
+          path: |
+            dist/.playwright/apps/web/playwright-report
+            dist/.playwright/apps/web/test-output
+          if-no-files-found: ignore
+          retention-days: 7
