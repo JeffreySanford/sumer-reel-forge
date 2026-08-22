@@ -41,6 +41,7 @@ export interface PlanningProviderCapability {
   id: PlanningProviderId;
   available: boolean;
   configuredModel?: string;
+  configuredVisionModel?: string;
   models?: string[];
   text: boolean;
   vision: boolean;
