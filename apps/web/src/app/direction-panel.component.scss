@@ -17,7 +17,8 @@
 .selected-direction-shot,
 .proposal-footer,
 .runtime-summary,
-.proposal-actions {
+.proposal-actions,
+.editor-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -109,7 +110,8 @@ button:disabled {
 
 .direction-runtime span,
 .mini-heading,
-dt {
+dt,
+.proposal-editor label span {
   color: #6b6255;
   font-size: 0.72rem;
   font-weight: 800;
@@ -268,6 +270,66 @@ li + li {
   line-height: 1.35;
 }
 
+.proposal-editor {
+  margin-top: 14px;
+  border: 1px solid #b9a879;
+  border-radius: 8px;
+  background: #f8f3e7;
+  padding: 16px;
+}
+
+.editor-heading {
+  align-items: flex-start;
+}
+
+.editor-heading > span {
+  color: #6c6458;
+  font-size: 0.78rem;
+}
+
+.editor-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.proposal-editor label {
+  display: grid;
+  gap: 6px;
+}
+
+.proposal-editor input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #c6b895;
+  border-radius: 8px;
+  background: #fffdf8;
+  color: #1b1a17;
+  font: inherit;
+  line-height: 1.4;
+  padding: 9px 10px;
+}
+
+.proposal-editor input:focus {
+  border-color: #1f6967;
+  outline: 3px solid rgba(31, 105, 103, 0.16);
+}
+
+.environment-editor {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+  border-top: 1px solid #d8ccb4;
+  padding-top: 12px;
+}
+
+.environment-editor .mini-heading {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
 .proposal-notes {
   display: grid;
   grid-template-columns: 1.3fr 0.7fr;
@@ -306,6 +368,12 @@ li + li {
   text-transform: uppercase;
 }
 
+.proposal-footer > div:first-child .edited-chip {
+  border-color: #8aa49e;
+  background: #e4edeb;
+  color: #275a55;
+}
+
 .review-state[data-review='approved'] {
   border-color: #7ca68f;
   background: #e4efe9;
@@ -327,7 +395,8 @@ li + li {
 @media (max-width: 1000px) {
   .direction-runtime,
   .proposal-grid,
-  .proposal-notes {
+  .proposal-notes,
+  .editor-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -340,19 +409,23 @@ li + li {
 @media (max-width: 680px) {
   .direction-heading,
   .selected-direction-shot,
-  .proposal-footer {
+  .proposal-footer,
+  .editor-heading {
     align-items: flex-start;
     flex-direction: column;
   }
 
   .direction-runtime,
   .proposal-grid,
-  .proposal-notes {
+  .proposal-notes,
+  .editor-grid,
+  .environment-editor {
     grid-template-columns: minmax(0, 1fr);
   }
 
   .checks-card,
-  .proposal-notes article:first-child {
+  .proposal-notes article:first-child,
+  .environment-editor .mini-heading {
     grid-column: auto;
   }
 
