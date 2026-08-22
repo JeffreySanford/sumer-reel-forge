@@ -103,7 +103,7 @@
         </dl>
         <p class="mini-heading">Environment</p>
         <ul>
-          @for (motion of current.motionBudget.environment; track motion) {
+          @for (motion of current.motionBudget.environment; track $index) {
           <li>{{ motion }}</li>
           }
         </ul>
@@ -124,6 +124,105 @@
         </div>
       </article>
     </div>
+
+    @if (isEditing()) {
+    <section class="proposal-editor" aria-label="Edit direction proposal">
+      <div class="editor-heading">
+        <div>
+          <p class="eyebrow">Human Edit</p>
+          <strong>Adjust the proposal before local approval</strong>
+        </div>
+        <span>Guardrails recalculate as values change</span>
+      </div>
+
+      <div class="editor-grid">
+        <label>
+          <span>Camera preset</span>
+          <input
+            [value]="current.camera.preset"
+            (input)="updateCameraText('preset', $event)"
+          />
+        </label>
+        <label>
+          <span>Easing</span>
+          <input
+            [value]="current.camera.easing"
+            (input)="updateCameraText('easing', $event)"
+          />
+        </label>
+        <label>
+          <span>Scale from</span>
+          <input
+            type="number"
+            min="0.1"
+            step="0.001"
+            [value]="current.camera.scaleFrom"
+            (input)="updateCameraScale('scaleFrom', $event)"
+          />
+        </label>
+        <label>
+          <span>Scale to</span>
+          <input
+            type="number"
+            min="0.1"
+            step="0.001"
+            [value]="current.camera.scaleTo"
+            (input)="updateCameraScale('scaleTo', $event)"
+          />
+        </label>
+        <label>
+          <span>Eye target</span>
+          <input
+            [value]="current.eyeTarget"
+            (input)="updateProposalText('eyeTarget', $event)"
+          />
+        </label>
+        <label>
+          <span>Stillness anchor</span>
+          <input
+            [value]="current.stillnessAnchor"
+            (input)="updateProposalText('stillnessAnchor', $event)"
+          />
+        </label>
+        <label>
+          <span>Primary motion</span>
+          <input
+            [value]="current.motionBudget.primary"
+            (input)="updateMotionText('primary', $event)"
+          />
+        </label>
+        <label>
+          <span>Subject motion</span>
+          <input
+            [value]="current.motionBudget.subject"
+            (input)="updateMotionText('subject', $event)"
+          />
+        </label>
+        <label>
+          <span>Lighting</span>
+          <input
+            [value]="current.motionBudget.lighting"
+            (input)="updateMotionText('lighting', $event)"
+          />
+        </label>
+      </div>
+
+      @if (current.motionBudget.environment.length > 0) {
+      <div class="environment-editor">
+        <p class="mini-heading">Environment motion</p>
+        @for (motion of current.motionBudget.environment; track $index; let index = $index) {
+        <label>
+          <span>Channel {{ index + 1 }}</span>
+          <input
+            [value]="motion"
+            (input)="updateEnvironmentMotion(index, $event)"
+          />
+        </label>
+        }
+      </div>
+      }
+    </section>
+    }
 
     <div class="proposal-notes">
       <article>
@@ -151,6 +250,9 @@
         @if (lastDurationMs() !== null) {
         <small>{{ formatDuration(lastDurationMs()) }}</small>
         }
+        @if (hasLocalEdits()) {
+        <small class="edited-chip">local edits</small>
+        }
         <small>Human review required</small>
       </div>
       <div class="proposal-actions">
@@ -160,6 +262,9 @@
         </span>
         <button type="button" (click)="clearReview()">Clear review</button>
         }
+        <button type="button" (click)="toggleEditing()">
+          {{ isEditing() ? 'Done editing' : 'Edit proposal' }}
+        </button>
         <button type="button" (click)="reviewProposal('rejected')">Reject</button>
         <button
           type="button"
@@ -172,8 +277,8 @@
       </div>
     </div>
     <p class="persistence-note">
-      Local approval is intentionally non-persistent until PlanningRun approval
-      history is added to the Studio database.
+      Local edits and approval are intentionally non-persistent until PlanningRun
+      approval history is added to the Studio database.
     </p>
     }
   }
