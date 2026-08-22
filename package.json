@@ -23,6 +23,7 @@
     "lint": "pnpm tts:lint && pnpm renderer:lint && nx run-many -t eslint:lint",
     "openapi:types": "openapi-typescript http://localhost:3000/api/docs-json -o libs/reel-core/src/lib/api-contract.ts",
     "planning:ollama:check": "node tools/scripts/check-ollama-planning.mjs",
+    "planning:ollama:warm": "node tools/scripts/warm-ollama-planning.mjs",
     "planning:shot3": "node tools/scripts/plan-reel1-shot3.mjs",
     "quality": "pnpm workspace:check && pnpm lint && pnpm test && pnpm build",
     "render:watchdog": "node tools/scripts/render-watchdog.mjs",
