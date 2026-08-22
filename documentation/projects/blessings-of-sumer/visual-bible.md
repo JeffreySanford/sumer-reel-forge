@@ -5,7 +5,7 @@
 - Version: `v1`
 - Baseline asset: `assets/visual-bible/blessings-of-sumer-master-v1.png`
 - Approval state: production baseline for the Reel 1 editorial cut
-- Review scope: character identity, vessel design, environment, material palette, and respectful cultural presentation
+- Review scope: character identity, vessel design, environment, material palette, respectful cultural presentation, and motion continuity
 
 ## Visual Direction
 
@@ -63,6 +63,49 @@ Use cinematic mythic realism grounded in southern Mesopotamian materials and lan
 
 The opening should progress from cool black-blue water toward warm Dilmun light. Compose for motion crops and captions: keep the lower 20 percent and outer 8 percent free of critical faces or story details.
 
+## Motion Extension
+
+The visual baseline remains authoritative when artwork is adapted for animation.
+
+Use `planning/reel-01-animation-style-bible.md` for the detailed motion grammar. The following principles are continuity rules for all Blessings of Sumer animation:
+
+- Camera movement should usually create more energy than character movement.
+- Character motion should remain restrained: breathing, blink, gaze, slight head turn, cloth response, and occasional deliberate gesture.
+- Foreground motion and atmospheric layers should create depth without distracting from faces or symbolic objects.
+- Environmental motion should not share one obvious repeated cycle across water, cloth, reeds, rigging, and characters.
+- Supernatural movement should emerge through water, refraction, light, scale, and atmosphere rather than conventional fantasy effects.
+- Nammu should feel primordial and environmental rather than monster-like or mermaid-like.
+- Lighting should move from cool open water toward warmer Dilmun scenes while staying materially plausible.
+- Lip sync is optional and should only be used for visible on-camera speech, not automatically under third-person narration.
+- Layered animation assets must remain consistent with approved character, vessel, environment, and palette references.
+
+Animation quality is reviewed separately from technical render success. A technically valid MP4 is not automatically an approved visual asset.
+
+## Layered Animation Asset Policy
+
+The eight approved `editorial-v1` frames remain source references and must not be overwritten.
+
+Animation-specific derived assets should use versioned directories such as:
+
+```text
+assets/blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-03/
+```
+
+Where practical, separate:
+
+- distant background;
+- midground environment;
+- water/terrain;
+- vessel or major prop;
+- character body/head;
+- eye/blink states;
+- optional cloth/hair overlays;
+- foreground occluders;
+- atmosphere;
+- reflection/light masks.
+
+Derived layers should preserve provenance back to the approved editorial frame or regenerated visual-bible-consistent source.
+
 ## Naming And Source Consistency
 
 - Use `Uruk (Erech)` on first audience-facing mention, then `Uruk`.
@@ -82,6 +125,8 @@ The opening should progress from cool black-blue water toward warm Dilmun light.
 7. Dilmun appearing through haze with reeds and birds.
 8. The Stag approaching land with open composition for the final title treatment.
 
+Shot 3 is the primary Sprint 006 animation-quality benchmark. Shot 4 or Shot 7 should be used as the second contrasting benchmark before the animation language is propagated across the remaining shots.
+
 ## Approval Checklist
 
 - [x] Enki identity and clothing baseline established.
@@ -89,5 +134,8 @@ The opening should progress from cool black-blue water toward warm Dilmun light.
 - [x] Nammu visual language established.
 - [x] Dilmun environment baseline established.
 - [x] Respectful community representation baseline established.
+- [x] Reel 1 animation motion and layered-asset policy documented.
 - [ ] Review the eight generated Reel 1 frames as a continuous sequence.
+- [ ] Approve the Shot 3 layered animation benchmark against the animation style bible.
+- [ ] Approve a second contrasting benchmark before scaling the animation language.
 - [ ] Record requested continuity changes as `v2` rather than silently replacing the approved baseline.
