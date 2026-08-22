@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "sceneId": "chapter-01-reel-01-cinematic-motion-proof",
+  "engine": "remotion",
+  "width": 1080,
+  "height": 1920,
+  "fps": 30,
+  "durationFrames": 540,
+  "visualBible": "blessings-of-sumer-v1",
+  "styleTarget": "cinematic illustrated animation with stronger motion language",
+  "layers": [
+    { "id": "painted-sky", "role": "background" },
+    { "id": "temple-reveal", "role": "background" },
+    { "id": "river-planes", "role": "midground" },
+    { "id": "boat-drift", "role": "character-platform" },
+    { "id": "profile-guide", "role": "character" },
+    { "id": "reed-veil", "role": "foreground" },
+    { "id": "light-sweep", "role": "effects" },
+    { "id": "dust-motes", "role": "effects" },
+    { "id": "caption-band", "role": "text" }
+  ],
+  "shots": [
+    {
+      "id": "river-approach",
+      "startFrame": 0,
+      "endFrame": 179,
+      "intent": "Establish depth with river, boat drift, reeds, and parallax."
+    },
+    {
+      "id": "profile-close-up",
+      "startFrame": 180,
+      "endFrame": 359,
+      "intent": "Test character animation channels without changing source text."
+    },
+    {
+      "id": "city-reveal",
+      "startFrame": 360,
+      "endFrame": 539,
+      "intent": "Test restrained reveal camera move, light sweep, and atmosphere."
+    }
+  ],
+  "animationChannels": [
+    "shot-timed-camera",
+    "multi-plane-parallax",
+    "river-glints",
+    "boat-bob-and-drift",
+    "profile-breathing",
+    "profile-blink",
+    "cloth-sway",
+    "gesture-arc",
+    "foreground-reed-sway",
+    "temple-reveal",
+    "painted-light-sweep",
+    "dust-motes",
+    "vignette-grade",
+    "cut-fade"
+  ],
+  "captions": [
+    {
+      "startFrame": 30,
+      "endFrame": 160,
+      "text": "Motion proof: river approach, heavier parallax, and boat drift."
+    },
+    {
+      "startFrame": 205,
+      "endFrame": 335,
+      "text": "Motion proof: profile close-up with breathing, blink, cloth, and gesture channels."
+    },
+    {
+      "startFrame": 385,
+      "endFrame": 515,
+      "text": "Motion proof: city reveal with light sweep, atmosphere, and restrained camera move."
+    }
+  ],
+  "sourcePolicy": "No source or story text is changed by this motion proof."
+}

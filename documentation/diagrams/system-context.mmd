@@ -1,0 +1,12 @@
+flowchart LR
+  User[Studio user] --> Web[Angular studio dashboard]
+  Web --> Api[NestJS API]
+  Api --> Db[(PostgreSQL)]
+  Api --> Worker[Renderer worker]
+  Worker --> Api
+  Worker --> Ffmpeg[FFmpeg]
+  Worker --> Tts[Kokoro / local TTS]
+  Worker --> Comfy[ComfyUI / image tools]
+  Worker --> Remotion[Remotion animation renderer]
+  Worker --> Store[Render output root]
+  Store --> Web

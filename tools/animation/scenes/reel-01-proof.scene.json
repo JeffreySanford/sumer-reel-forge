@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "sceneId": "chapter-01-reel-01-animation-proof",
+  "engine": "remotion",
+  "width": 1080,
+  "height": 1920,
+  "fps": 30,
+  "durationFrames": 900,
+  "visualBible": "blessings-of-sumer-v1",
+  "styleTarget": "cinematic illustrated animation",
+  "layers": [
+    { "id": "sky", "role": "background" },
+    { "id": "distant-water", "role": "background" },
+    { "id": "light-rays", "role": "atmosphere" },
+    { "id": "reed-bank", "role": "midground" },
+    { "id": "boat", "role": "character-platform" },
+    { "id": "guide", "role": "character" },
+    { "id": "atmosphere", "role": "effects" },
+    { "id": "foreground-reeds", "role": "foreground" },
+    { "id": "caption-band", "role": "text" }
+  ],
+  "animationChannels": [
+    "camera-drift",
+    "parallax",
+    "water-shimmer",
+    "water-glint",
+    "boat-bob",
+    "pose-swap",
+    "breathing",
+    "cloth-sway",
+    "light-rays",
+    "atmospheric-particles",
+    "foreground-sway",
+    "eye-blink",
+    "mouth-shape"
+  ],
+  "captions": [
+    {
+      "startFrame": 45,
+      "endFrame": 210,
+      "text": "A reed boat enters the bright water."
+    },
+    {
+      "startFrame": 240,
+      "endFrame": 435,
+      "text": "The guide turns as the marsh begins to move."
+    },
+    {
+      "startFrame": 480,
+      "endFrame": 690,
+      "text": "The camera finds the way toward the distant city."
+    },
+    {
+      "startFrame": 720,
+      "endFrame": 870,
+      "text": "This is a motion proof, not a final story edit."
+    }
+  ],
+  "sourcePolicy": "No source or story text is changed by this animation proof."
+}

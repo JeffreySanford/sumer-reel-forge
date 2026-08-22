@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "sceneId": "chapter-01-reel-01-full-animation",
+  "engine": "remotion",
+  "width": 1080,
+  "height": 1920,
+  "fps": 30,
+  "durationFrames": 1800,
+  "visualBible": "blessings-of-sumer-v1",
+  "styleTarget": "complete 60-second cinematic illustrated Reel 1 animation draft",
+  "sourceReel": "REEL_ONE",
+  "composition": "FullReelAnimation",
+  "narration": "Before Sumer rose from the marsh, Enki sailed along the coast in a little boat called the Stag of the Absu. The sea stretched around him like the body of Nammu, his mother, endless and alive. He thought he was only wandering toward Dilmun, following a map his brother Enlil had given him. But from beneath the waves, a voice came to him. Establish water in this land. Build shrines for travelers. Let no one say, I am thirsty. Let no one say, I am hungry. Protect the fool and the wise alike. Carry truth, justice, and freedom into the world. As the shoreline drew near, Enki understood the voyage was not an escape. It was the beginning of civilization.",
+  "captions": [
+    {
+      "startFrame": 0,
+      "endFrame": 239,
+      "text": "Before Sumer..."
+    },
+    {
+      "startFrame": 240,
+      "endFrame": 599,
+      "text": "A boat crossed the Absu."
+    },
+    {
+      "startFrame": 600,
+      "endFrame": 1079,
+      "text": "Nammu spoke from the deep."
+    },
+    {
+      "startFrame": 1080,
+      "endFrame": 1619,
+      "text": "Water. Bread. Truth. Justice. Freedom."
+    },
+    {
+      "startFrame": 1620,
+      "endFrame": 1799,
+      "text": "The voyage became civilization."
+    }
+  ],
+  "shots": [
+    {
+      "id": "black-water-before-dawn",
+      "startFrame": 0,
+      "endFrame": 179,
+      "durationSeconds": 6,
+      "motion": "slow push in"
+    },
+    {
+      "id": "stag-of-the-absu-coastline",
+      "startFrame": 180,
+      "endFrame": 389,
+      "durationSeconds": 7,
+      "motion": "left to right pan"
+    },
+    {
+      "id": "enki-at-the-helm",
+      "startFrame": 390,
+      "endFrame": 599,
+      "durationSeconds": 7,
+      "motion": "slow dolly forward"
+    },
+    {
+      "id": "nammu-under-water",
+      "startFrame": 600,
+      "endFrame": 839,
+      "durationSeconds": 8,
+      "motion": "subtle ripple and zoom"
+    },
+    {
+      "id": "traveler-shrine-future",
+      "startFrame": 840,
+      "endFrame": 1079,
+      "durationSeconds": 8,
+      "motion": "soft dissolve, slow push"
+    },
+    {
+      "id": "water-bread-truth-justice-freedom",
+      "startFrame": 1080,
+      "endFrame": 1319,
+      "durationSeconds": 8,
+      "motion": "gentle parallax"
+    },
+    {
+      "id": "dilmun-reveal",
+      "startFrame": 1320,
+      "endFrame": 1589,
+      "durationSeconds": 9,
+      "motion": "slow reveal upward"
+    },
+    {
+      "id": "boat-approaches-land-title",
+      "startFrame": 1590,
+      "endFrame": 1799,
+      "durationSeconds": 7,
+      "motion": "slow push, fade to title"
+    }
+  ],
+  "animationChannels": [
+    "eight-shot-timeline",
+    "shot-timed-camera",
+    "multi-plane-parallax",
+    "river-glints",
+    "boat-bob-and-drift",
+    "enki-breathing",
+    "enki-head-turn",
+    "cloth-sway",
+    "symbolic-nammu-water-presence",
+    "traveler-shrine-dissolve",
+    "symbol-montage-parallax",
+    "dilmun-reveal",
+    "foreground-reed-sway",
+    "dust-motes",
+    "title-fade",
+    "safe-area-captions"
+  ],
+  "sourcePolicy": "No source or story text is changed by this full animation render. The composition reads existing REEL_ONE source data."
+}

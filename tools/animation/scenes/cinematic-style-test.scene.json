@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "sceneId": "chapter-01-reel-01-cinematic-style-test",
+  "engine": "remotion",
+  "width": 1080,
+  "height": 1920,
+  "fps": 30,
+  "durationFrames": 360,
+  "visualBible": "blessings-of-sumer-v1",
+  "styleTarget": "cinematic illustrated mural animation",
+  "layers": [
+    { "id": "painted-sky", "role": "background" },
+    { "id": "temple-silhouette", "role": "background" },
+    { "id": "river-planes", "role": "midground" },
+    { "id": "reed-veil", "role": "foreground" },
+    { "id": "profile-figure", "role": "character" },
+    { "id": "atmosphere", "role": "effects" },
+    { "id": "caption-band", "role": "text" }
+  ],
+  "animationChannels": [
+    "slow-camera-push",
+    "mural-parallax",
+    "painted-light-sweep",
+    "river-glints",
+    "reed-veil-sway",
+    "profile-breathing",
+    "cloth-sway",
+    "dust-motes",
+    "vignette-grade"
+  ],
+  "captions": [
+    {
+      "startFrame": 45,
+      "endFrame": 300,
+      "text": "Cinematic illustrated motion test: slower camera, richer light, and layered atmosphere."
+    }
+  ],
+  "sourcePolicy": "No source or story text is changed by this animation style test."
+}

@@ -1,0 +1,28 @@
+flowchart TB
+  subgraph StudioState[Studio state]
+    Db[(PostgreSQL)]
+    Prisma[Prisma migrations]
+  end
+
+  subgraph App[Application]
+    Web[Angular UI]
+    Api[NestJS API]
+    Core[reel-core contracts]
+  end
+
+  subgraph WorkerRuntime[Worker runtime]
+    Worker[Renderer worker]
+    Adapters[Render adapters]
+    Logs[Structured logs]
+  end
+
+  Core --> Web
+  Core --> Api
+  Prisma --> Db
+  Api --> Db
+  Web --> Api
+  Worker --> Api
+  Worker --> Adapters
+  Adapters --> Logs
+  Logs --> Api
+

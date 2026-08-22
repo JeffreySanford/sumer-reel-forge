@@ -1,0 +1,19 @@
+sequenceDiagram
+  participant User
+  participant Web as Angular studio
+  participant API as NestJS API
+  participant DB as PostgreSQL
+  participant Worker as Renderer worker
+  participant Tools as Local media tools
+
+  User->>Web: Queue render
+  Web->>API: POST render job
+  API->>DB: Persist job and audit row
+  Worker->>API: Claim queued job
+  API->>DB: Create attempt and mark running
+  Worker->>Tools: Generate/compose media
+  Worker->>API: Heartbeat and structured logs
+  Worker->>API: Persist asset manifest
+  API->>DB: Store checksum, logs, status
+  Web->>API: Load generated asset for review
+

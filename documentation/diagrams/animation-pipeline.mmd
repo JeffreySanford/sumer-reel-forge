@@ -1,0 +1,13 @@
+flowchart TD
+  Reel[Approved reel data] --> Scene[Animation scene spec]
+  VisualBible[Visual bible assets] --> Scene
+  Narration[Narration audio] --> Timing[Narration timing]
+  Timing --> LipSync[Optional Rhubarb mouth cues]
+  Scene --> Remotion[Remotion composition]
+  Timing --> Remotion
+  LipSync -.-> Remotion
+  Captions[Caption timings] --> Remotion
+  Remotion --> Video[Animated MP4]
+  Video --> Validate[FFmpeg / FFprobe validation]
+  Validate --> Manifest[Manifest and checksums]
+  Manifest --> Review[Studio asset review]
