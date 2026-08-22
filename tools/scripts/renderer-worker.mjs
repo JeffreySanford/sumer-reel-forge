@@ -24,7 +24,7 @@ process.on('SIGTERM', requestStop);
 
 async function main() {
   console.log(
-    `Renderer worker ${config.workerId} polling ${config.apiBaseUrl} with ${config.adapter} adapter.`,
+    `Renderer worker ${config.workerId} polling ${config.apiBaseUrl}; fallback adapter ${config.adapter}.`,
   );
 
   do {
@@ -54,10 +54,11 @@ async function processJob(job) {
   }, config.heartbeatIntervalMs);
 
   try {
+    const pipeline = job.pipeline ?? config.adapter;
     await logger.log(
       'system',
       'info',
-      `Claimed ${job.mode} job ${job.id} for episode ${job.episodeId}.`,
+      `Claimed ${job.mode} job ${job.id} for episode ${job.episodeId} using ${pipeline} pipeline.`,
     );
     const episode = await api.getEpisode(job.episodeId);
     const outputDirectory = await prepareOutputDirectory(
@@ -68,11 +69,11 @@ async function processJob(job) {
       episode,
       job,
       outputDirectory,
-      config,
+      config: { ...config, adapter: pipeline },
       log: logger.log,
     };
     const artifacts = await withTimeout(
-      selectPipeline(config.adapter)(context),
+      selectPipeline(pipeline)(context),
       config.jobTimeoutMs,
       `Render job ${job.id}`,
     );
@@ -86,7 +87,7 @@ async function processJob(job) {
     await writeJson(manifestPath, {
       schemaVersion: 1,
       generatedAt: new Date().toISOString(),
-      adapter: config.adapter,
+      pipeline,
       workerId: config.workerId,
       job,
       episode: {
@@ -101,7 +102,7 @@ async function processJob(job) {
       path: manifestPath,
       metadata: {
         schemaVersion: 1,
-        adapter: config.adapter,
+        pipeline,
         assetCount: persistedAssets.length,
       },
     });
@@ -146,7 +147,7 @@ function selectPipeline(adapter) {
       return renderAnimationPipeline;
     default:
       throw new Error(
-        `Unknown RENDER_ADAPTER '${adapter}'. Use mock, local, editorial, or animation.`,
+        `Unknown render pipeline '${adapter}'. Use mock, local, editorial, or animation.`,
       );
   }
 }
