@@ -3,12 +3,13 @@ import { basename, join } from 'node:path';
 import { writeText } from './artifact-utils.mjs';
 import {
   assembleEditorialVideo,
+  createEditorialAmbience,
   probeDurationSeconds,
 } from './ffmpeg-adapter.mjs';
 import { runProcess } from './process-runner.mjs';
 
 export async function renderEditorialPipeline(context) {
-  const { episode, outputDirectory, config, log } = context;
+  const { episode, job, outputDirectory, config, log } = context;
   if (episode.episode !== 1) {
     throw new Error(
       `The curated editorial-v1 asset set supports episode 1, not episode ${episode.episode}.`,
@@ -19,35 +20,21 @@ export async function renderEditorialPipeline(context) {
   const narrationTextPath = join(outputDirectory, 'narration.txt');
   const narrationAudioPath = join(outputDirectory, 'narration.wav');
   const timingsPath = join(outputDirectory, 'narration-timings.json');
+  const ambiencePath = join(outputDirectory, 'ambience-bed.wav');
   const captionsPath = join(outputDirectory, 'captions.srt');
   const videoPath = join(outputDirectory, 'reel-editorial-v1.mp4');
+  const provisional = job.mode !== 'final-video';
 
   await writeText(narrationTextPath, `${episode.narration}\n`);
-  await runProcess(
-    config.windowsSpeechCommand,
-    [
-      '-NoProfile',
-      '-NonInteractive',
-      '-File',
-      config.windowsSpeechScript,
-      '-InputPath',
-      narrationTextPath,
-      '-OutputPath',
-      narrationAudioPath,
-      '-TimingsPath',
-      timingsPath,
-      '-Voice',
-      config.editorialVoice,
-      '-Rate',
-      String(config.editorialVoiceRate),
-    ],
-    {
-      cwd: outputDirectory,
-      timeoutMs: config.processTimeoutMs,
-      onStdout: (message) => log('stdout', 'info', message),
-      onStderr: (message) => log('stderr', 'warn', message),
-    },
-  );
+  const narrationMetadata = await synthesizeNarration({
+    config,
+    outputDirectory,
+    narrationTextPath,
+    narrationAudioPath,
+    timingsPath,
+    narrationIdentity: job.narrationConfig ?? episode.narrationIdentity,
+    log,
+  });
   await access(narrationAudioPath);
 
   const audioDurationSeconds = await probeDurationSeconds({
@@ -71,10 +58,20 @@ export async function renderEditorialPipeline(context) {
   });
   await writeText(captionsPath, toSrtWithMilliseconds(captions));
 
+  await createEditorialAmbience({
+    command: config.ffmpegCommand,
+    durationSeconds: episode.targetDurationSeconds,
+    outputPath: ambiencePath,
+    outputDirectory,
+    timeoutMs: config.processTimeoutMs,
+    log,
+  });
+
   await assembleEditorialVideo({
     command: config.ffmpegCommand,
     frames,
     audioPath: narrationAudioPath,
+    ambiencePath,
     captionsPath,
     title: episode.title,
     series: episode.series,
@@ -103,11 +100,20 @@ export async function renderEditorialPipeline(context) {
       assetType: 'audio',
       path: narrationAudioPath,
       metadata: {
-        adapter: 'windows-sapi',
-        voice: config.editorialVoice,
-        rate: config.editorialVoiceRate,
-        provisional: true,
+        ...narrationMetadata,
+        provisional,
         durationSeconds: audioDurationSeconds,
+      },
+    },
+    {
+      assetType: 'audio',
+      path: ambiencePath,
+      metadata: {
+        adapter: 'procedural-ffmpeg',
+        role: 'ambience-score-bed',
+        direction: 'water, low frame drum, soft lyre, restrained final rise',
+        provisional,
+        durationSeconds: episode.targetDurationSeconds,
       },
     },
     {
@@ -128,7 +134,10 @@ export async function renderEditorialPipeline(context) {
     {
       assetType: 'other',
       path: timingsPath,
-      metadata: { role: 'narration-word-timings', adapter: 'windows-sapi' },
+      metadata: {
+        role: 'narration-word-timings',
+        adapter: narrationMetadata.timingAdapter,
+      },
     },
     {
       assetType: 'video',
@@ -142,9 +151,183 @@ export async function renderEditorialPipeline(context) {
         durationSeconds: episode.targetDurationSeconds,
         captionsBurnedIn: true,
         subtitleTrack: true,
+        narrationAdapter: narrationMetadata.adapter,
+        ambienceScore: 'procedural-ffmpeg-v1',
+        provisional,
       },
     },
   ];
+}
+
+async function synthesizeNarration({
+  config,
+  outputDirectory,
+  narrationTextPath,
+  narrationAudioPath,
+  timingsPath,
+  narrationIdentity,
+  log,
+}) {
+  const processOptions = {
+    cwd: outputDirectory,
+    timeoutMs: config.processTimeoutMs,
+    onStdout: (message) => log('stdout', 'info', message),
+    onStderr: (message) => log('stderr', 'warn', message),
+  };
+  const narrationAdapter =
+    config.editorialNarrationAdapter === 'auto'
+      ? (narrationIdentity?.voiceProfile.engine ?? 'kokoro')
+      : config.editorialNarrationAdapter;
+
+  if (narrationAdapter === 'chatterbox') {
+    const controls = chatterboxControls(narrationIdentity?.stylePreset);
+    const referenceArguments = config.chatterboxReferenceAudio
+      ? ['--reference-audio', config.chatterboxReferenceAudio]
+      : [];
+    await runProcess(
+      config.chatterboxCommand,
+      [
+        'run',
+        '--project',
+        config.chatterboxProjectDirectory,
+        '--locked',
+        'python',
+        config.chatterboxScript,
+        '--text-file',
+        narrationTextPath,
+        '--output-file',
+        narrationAudioPath,
+        '--timings-file',
+        timingsPath,
+        '--model-directory',
+        config.chatterboxModelDirectory,
+        '--device',
+        config.chatterboxDevice,
+        '--exaggeration',
+        String(controls.exaggeration),
+        '--cfg-weight',
+        String(controls.cfgWeight),
+        '--temperature',
+        String(controls.temperature),
+        ...referenceArguments,
+      ],
+      processOptions,
+    );
+    return {
+      adapter: 'chatterbox',
+      timingAdapter: 'estimated-word-timing',
+      voice: narrationIdentity?.voiceProfile.slug ?? 'chatterbox-narrator',
+      model:
+        narrationIdentity?.voiceProfile.model ?? 'ResembleAI/chatterbox',
+      stylePreset: narrationIdentity?.stylePreset ?? 'mythic',
+      styleNotes: narrationIdentity?.styleNotes ?? '',
+      referenceAudio: Boolean(config.chatterboxReferenceAudio),
+      referenceAudioChecksum:
+        narrationIdentity?.voiceProfile.referenceAudioChecksum,
+      ...controls,
+    };
+  }
+
+  if (narrationAdapter === 'kokoro') {
+    const voice =
+      narrationIdentity?.voiceProfile.engine === 'kokoro'
+        ? (narrationIdentity.voiceProfile.providerVoice ?? config.kokoroVoice)
+        : config.kokoroVoice;
+    const speed = kokoroSpeedForStyle(
+      narrationIdentity?.stylePreset,
+      config.kokoroSpeed,
+    );
+    await runProcess(
+      config.kokoroCommand,
+      [
+        'run',
+        '--project',
+        config.kokoroProjectDirectory,
+        '--locked',
+        'python',
+        config.kokoroScript,
+        '--text-file',
+        narrationTextPath,
+        '--output-file',
+        narrationAudioPath,
+        '--timings-file',
+        timingsPath,
+        '--model',
+        config.kokoroModelPath,
+        '--voices',
+        config.kokoroVoicesPath,
+        '--voice',
+        voice,
+        '--speed',
+        String(speed),
+      ],
+      processOptions,
+    );
+    return {
+      adapter: 'kokoro-onnx',
+      timingAdapter: 'estimated-word-timing',
+      voice,
+      speed,
+      model: basename(config.kokoroModelPath),
+      stylePreset: narrationIdentity?.stylePreset,
+      styleNotes: narrationIdentity?.styleNotes,
+    };
+  }
+
+  await runProcess(
+    config.windowsSpeechCommand,
+    [
+      '-NoProfile',
+      '-NonInteractive',
+      '-File',
+      config.windowsSpeechScript,
+      '-InputPath',
+      narrationTextPath,
+      '-OutputPath',
+      narrationAudioPath,
+      '-TimingsPath',
+      timingsPath,
+      '-Voice',
+      config.editorialVoice,
+      '-Rate',
+      String(config.editorialVoiceRate),
+    ],
+    processOptions,
+  );
+  return {
+    adapter: 'windows-sapi',
+    timingAdapter: 'windows-sapi',
+    voice: config.editorialVoice,
+    rate: config.editorialVoiceRate,
+  };
+}
+
+function chatterboxControls(stylePreset = 'mythic') {
+  return (
+    {
+      documentary: { exaggeration: 0.25, cfgWeight: 0.5, temperature: 0.72 },
+      intimate: { exaggeration: 0.4, cfgWeight: 0.35, temperature: 0.74 },
+      mythic: { exaggeration: 0.5, cfgWeight: 0.4, temperature: 0.8 },
+      dramatic: { exaggeration: 0.7, cfgWeight: 0.3, temperature: 0.85 },
+      archival: { exaggeration: 0.2, cfgWeight: 0.55, temperature: 0.7 },
+    }[stylePreset] ?? {
+      exaggeration: 0.5,
+      cfgWeight: 0.4,
+      temperature: 0.8,
+    }
+  );
+}
+
+function kokoroSpeedForStyle(stylePreset, fallback) {
+  return (
+    {
+      documentary: 0.95,
+      intimate: 0.88,
+      mythic: 0.9,
+      dramatic: 1,
+      archival: 0.85,
+    }[stylePreset] ?? fallback
+  );
 }
 
 async function copyApprovedFrames({ episode, outputDirectory, config, log }) {

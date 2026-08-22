@@ -1,7 +1,10 @@
 import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { Prisma, PrismaClient } from '@prisma/client';
-import { CHAPTER_ONE_REELS } from '../../libs/reel-core/src/lib/reel-core';
+import { NarrationEngine, Prisma, PrismaClient } from '@prisma/client';
+import {
+  CHAPTER_ONE_REELS,
+  NARRATION_VOICE_FIXTURES,
+} from '../../libs/reel-core/src/lib/reel-core';
 
 const databaseUrl =
   process.env['DATABASE_URL'] ??
@@ -13,6 +16,44 @@ const prisma = new PrismaClient({
 const refreshExisting = process.argv.includes('--refresh');
 
 async function main(): Promise<void> {
+  const voiceProfiles = new Map<string, { id: string }>();
+  for (const voice of NARRATION_VOICE_FIXTURES) {
+    const persisted = await prisma.narrationVoiceProfile.upsert({
+      where: { slug: voice.slug },
+      create: {
+        slug: voice.slug,
+        displayName: voice.displayName,
+        description: voice.description,
+        engine: toPrismaNarrationEngine(voice.engine),
+        model: voice.model,
+        language: voice.language,
+        providerVoice: voice.providerVoice,
+        rightsBasis: voice.rightsBasis,
+        defaultExaggeration: voice.defaultExaggeration,
+        defaultCfgWeight: voice.defaultCfgWeight,
+        defaultTemperature: voice.defaultTemperature,
+      },
+      update: {
+        displayName: voice.displayName,
+        description: voice.description,
+        engine: toPrismaNarrationEngine(voice.engine),
+        model: voice.model,
+        language: voice.language,
+        providerVoice: voice.providerVoice,
+        rightsBasis: voice.rightsBasis,
+        defaultExaggeration: voice.defaultExaggeration,
+        defaultCfgWeight: voice.defaultCfgWeight,
+        defaultTemperature: voice.defaultTemperature,
+      },
+      select: { id: true },
+    });
+    voiceProfiles.set(voice.slug, persisted);
+  }
+  const chatterboxVoice = voiceProfiles.get('chatterbox-narrator');
+  if (!chatterboxVoice) {
+    throw new Error('The Chatterbox narration voice was not seeded.');
+  }
+
   const projectData = {
     slug: 'blessings-of-sumer',
     title: 'Blessings of Sumer',
@@ -22,7 +63,7 @@ async function main(): Promise<void> {
   const existingProject = await prisma.studioProject.findUnique({
     where: { slug: projectData.slug },
   });
-  const project = existingProject
+  let project = existingProject
     ? refreshExisting
       ? await prisma.studioProject.update({
           where: { id: existingProject.id },
@@ -32,7 +73,25 @@ async function main(): Promise<void> {
           },
         })
       : existingProject
-    : await prisma.studioProject.create({ data: projectData });
+    : await prisma.studioProject.create({
+        data: {
+          ...projectData,
+          defaultNarrationVoiceId: chatterboxVoice.id,
+          narrationStyleNotes:
+            'Mature, intimate, and serious; restrained rather than theatrical.',
+        },
+      });
+
+  if (!project.defaultNarrationVoiceId) {
+    project = await prisma.studioProject.update({
+      where: { id: project.id },
+      data: {
+        defaultNarrationVoiceId: chatterboxVoice.id,
+        narrationStyleNotes:
+          'Mature, intimate, and serious; restrained rather than theatrical.',
+      },
+    });
+  }
 
   const documentData = {
     title: 'Sumer Blessing',
@@ -187,6 +246,12 @@ function toReelData(reel: (typeof CHAPTER_ONE_REELS)[number]) {
 
 function toPrismaJson(value: unknown): Prisma.InputJsonValue {
   return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
+}
+
+function toPrismaNarrationEngine(
+  engine: (typeof NARRATION_VOICE_FIXTURES)[number]['engine'],
+): NarrationEngine {
+  return NarrationEngine[engine.toUpperCase() as keyof typeof NarrationEngine];
 }
 
 main()

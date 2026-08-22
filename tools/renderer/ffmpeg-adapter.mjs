@@ -126,10 +126,67 @@ export async function probeDurationSeconds({
   return duration;
 }
 
+export async function createEditorialAmbience({
+  command,
+  durationSeconds,
+  outputPath,
+  outputDirectory,
+  timeoutMs,
+  log,
+}) {
+  const duration = String(durationSeconds);
+  const drum =
+    "aevalsrc='if(lt(mod(t\\,4)\\,0.24)\\,0.22*exp(-18*mod(t\\,4))*sin(2*PI*(72-28*mod(t\\,4))*mod(t\\,4))\\,0)':" +
+    `s=48000:d=${duration}`;
+  const lyre =
+    "aevalsrc='0.035*(sin(2*PI*220*t)+0.55*sin(2*PI*330*t))*" +
+    "exp(-2.7*mod(t\\,8))*lt(mod(t\\,8)\\,1.8)':" +
+    `s=48000:d=${duration}`;
+  await runFfmpeg(
+    command,
+    [
+      '-y',
+      '-f',
+      'lavfi',
+      '-i',
+      `anoisesrc=color=pink:amplitude=0.16:sample_rate=48000:duration=${duration}:seed=20260819`,
+      '-f',
+      'lavfi',
+      '-i',
+      drum,
+      '-f',
+      'lavfi',
+      '-i',
+      lyre,
+      '-f',
+      'lavfi',
+      '-i',
+      `sine=frequency=110:sample_rate=48000:duration=${duration}`,
+      '-filter_complex',
+      '[0:a]highpass=f=180,lowpass=f=2600,tremolo=f=0.1:d=0.25,volume=0.14[water];' +
+        '[1:a]lowpass=f=190,volume=0.8[drum];' +
+        '[2:a]lowpass=f=1800,volume=0.9[lyre];' +
+        '[3:a]afade=t=in:st=44:d=12,volume=0.025[rise];' +
+        `[water][drum][lyre][rise]amix=inputs=4:normalize=0,` +
+        `highpass=f=35,lowpass=f=8000,afade=t=in:st=0:d=2,` +
+        `afade=t=out:st=${durationSeconds - 2}:d=2,` +
+        'loudnorm=I=-30:TP=-8:LRA=7,' +
+        'aformat=sample_rates=48000:channel_layouts=stereo[ambience]',
+      '-map',
+      '[ambience]',
+      '-c:a',
+      'pcm_s16le',
+      outputPath,
+    ],
+    { outputDirectory, timeoutMs, log },
+  );
+}
+
 export async function assembleEditorialVideo({
   command,
   frames,
   audioPath,
+  ambiencePath,
   captionsPath,
   title,
   series,
@@ -151,8 +208,9 @@ export async function assembleEditorialVideo({
     );
   }
   const audioInputIndex = frames.length;
-  const captionsInputIndex = frames.length + 1;
-  args.push('-i', audioPath, '-i', captionsPath);
+  const ambienceInputIndex = frames.length + 1;
+  const captionsInputIndex = frames.length + 2;
+  args.push('-i', audioPath, '-i', ambiencePath, '-i', captionsPath);
 
   const anchors = [
     [0.45, 0.45],
@@ -190,7 +248,12 @@ export async function assembleEditorialVideo({
       `x=(w-text_w)/2:y=315:enable='between(t,53.3,59.4)',` +
       `fade=t=in:st=0:d=0.7,fade=t=out:st=${durationSeconds - 0.7}:d=0.7[video]`,
     `[${audioInputIndex}:a]loudnorm=I=-16:TP=-1.5:LRA=11,aresample=48000,` +
-      `apad=whole_dur=${durationSeconds},atrim=0:${durationSeconds}[audio]`,
+      `aformat=channel_layouts=stereo,apad=whole_dur=${durationSeconds},` +
+      `atrim=0:${durationSeconds}[narration]`,
+    `[${ambienceInputIndex}:a]aresample=48000,aformat=channel_layouts=stereo,` +
+      `atrim=0:${durationSeconds}[ambience]`,
+    '[narration][ambience]amix=inputs=2:weights=1 1:normalize=0,' +
+      'loudnorm=I=-16:TP=-1.5:LRA=11,aresample=48000[audio]',
   );
 
   args.push(

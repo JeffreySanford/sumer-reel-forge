@@ -8,6 +8,9 @@ The worker has two established modes. `mock` creates deterministic storyboard ca
 - [x] `pnpm renderer:worker -- --once` claims and processes one queued job.
 - [x] `pnpm render:prototype:reel1` queues and verifies a complete Reel 1 mock render.
 - [x] `pnpm render:editorial:reel1` queues, renders, persists, and validates the curated Reel 1 draft.
+- [x] `pnpm tts:kokoro:setup` creates the locked Python environment and verifies model checksums.
+- [x] `pnpm tts:kokoro:audition` renders `af_heart` and `af_bella` comparison WAV files.
+- [x] `pnpm render:final:reel1` is the approval-gated final-video command.
 - [x] `pnpm render:watchdog -- --once` fails stale queued/running jobs through the API.
 
 ## Mock Adapter
@@ -40,13 +43,15 @@ Command argument variables are JSON arrays, not shell command strings. Supported
 - Assembly: FFmpeg with H.264 video, AAC audio, burned safe-area captions, a MovText subtitle track, and fast-start metadata.
 - Reproducibility: record prompts, checksums, command configuration, and output metadata in the render manifest.
 
-The workstation currently has the NVIDIA driver, FFmpeg, Python, and `uv`. ComfyUI, Kokoro/eSpeak NG, and Whisper still require local installation before the fully local adapter can pass preflight. The curated editorial path can use already approved assets while those tools are being installed.
+The workstation has the NVIDIA driver, FFmpeg, Python, `uv`, and a project-local Kokoro ONNX environment. `kokoro-onnx` supplies its Windows eSpeak runtime, so no elevated system installation is required. ComfyUI and Whisper still require local installation before the fully local adapter can pass preflight.
+
+Run `pnpm tts:kokoro:setup` once. It uses the locked `tools/tts/uv.lock`, installs Python 3.12 through `uv` when needed, downloads the model and voice bundle to ignored `.cache/kokoro`, and rejects files whose SHA-256 checksums do not match the pinned release assets. Model binaries and virtual environments are never committed.
 
 ## Editorial Adapter
 
-Set `RENDER_ADAPTER=editorial` for preflight. The adapter requires Windows, `pwsh.exe`, an installed System.Speech voice, FFmpeg/FFprobe, and all eight versioned PNGs in `EDITORIAL_ASSET_DIRECTORY`. `pnpm render:editorial:reel1` sets the adapter for its one-shot worker automatically.
+Set `RENDER_ADAPTER=editorial` for preflight. The adapter requires FFmpeg/FFprobe and all eight versioned PNGs in `EDITORIAL_ASSET_DIRECTORY`. Set `EDITORIAL_NARRATION_ADAPTER=kokoro` for the locked Kokoro path or `sapi` for the Windows fallback. `pnpm render:editorial:reel1` sets the render adapter for its one-shot worker automatically.
 
-The current Microsoft Mark narration is a provisional production aid, not a publication voice approval. Its word events drive authored SRT grouping; FFmpeg burns the captions into the lower-middle safe area and also stores them as a MovText track. The latest reviewed cut is documented in `docs/projects/blessings-of-sumer/chapters/chapter-01-reel-01-editorial-review.md`.
+Kokoro `af_heart` at `0.90x` is the current review voice; `af_bella` is the alternate audition. The adapter creates estimated word timings for authored SRT grouping, generates a deterministic low-level ambience bed, burns captions into the lower-middle safe area, and stores a MovText track. Both audio assets remain provisional until listening approval. The latest cut is documented in `docs/projects/blessings-of-sumer/chapters/chapter-01-reel-01-editorial-review.md`.
 
 ## Runtime Controls
 
@@ -63,6 +68,7 @@ The current Microsoft Mark narration is a provisional production aid, not a publ
 - [x] Select ComfyUI plus SDXL 1.0 as the initial local image target.
 - [ ] Install and validate the production ComfyUI workflow.
 - [x] Select Kokoro `af_heart` as the initial narration audition target.
-- [ ] Install Kokoro/eSpeak NG and complete the narration listening review.
+- [x] Install project-local Kokoro/eSpeak and render `af_heart` plus `af_bella` auditions.
+- [ ] Complete the narration and ambience listening review.
 - [ ] Review Whisper timing against the authored caption copy.
 - [x] Establish a versioned character and environment visual-bible baseline.

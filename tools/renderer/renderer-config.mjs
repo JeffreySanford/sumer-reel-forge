@@ -42,6 +42,45 @@ export function loadRendererConfig() {
       process.env.EDITORIAL_ASSET_DIRECTORY ??
         'assets/blessings-of-sumer/chapter-01/reel-01/editorial-v1',
     ),
+    editorialNarrationAdapter: stringChoice(
+      'EDITORIAL_NARRATION_ADAPTER',
+      'auto',
+      ['auto', 'sapi', 'kokoro', 'chatterbox'],
+    ),
+    chatterboxCommand: process.env.CHATTERBOX_COMMAND ?? 'uv',
+    chatterboxProjectDirectory: resolve(
+      process.env.CHATTERBOX_PROJECT_DIRECTORY ?? 'tools/chatterbox',
+    ),
+    chatterboxScript: resolve(
+      process.env.CHATTERBOX_SCRIPT ??
+        'tools/chatterbox/synthesize_chatterbox.py',
+    ),
+    chatterboxModelDirectory: resolve(
+      process.env.CHATTERBOX_MODEL_DIRECTORY ?? '.cache/chatterbox/model',
+    ),
+    chatterboxDevice: stringChoice('CHATTERBOX_DEVICE', 'auto', [
+      'auto',
+      'cuda',
+      'cpu',
+    ]),
+    chatterboxReferenceAudio: process.env.CHATTERBOX_REFERENCE_AUDIO
+      ? resolve(process.env.CHATTERBOX_REFERENCE_AUDIO)
+      : undefined,
+    kokoroCommand: process.env.KOKORO_COMMAND ?? 'uv',
+    kokoroProjectDirectory: resolve(
+      process.env.KOKORO_PROJECT_DIRECTORY ?? 'tools/tts',
+    ),
+    kokoroScript: resolve(
+      process.env.KOKORO_SCRIPT ?? 'tools/tts/synthesize_kokoro.py',
+    ),
+    kokoroModelPath: resolve(
+      process.env.KOKORO_MODEL_PATH ?? '.cache/kokoro/kokoro-v1.0.onnx',
+    ),
+    kokoroVoicesPath: resolve(
+      process.env.KOKORO_VOICES_PATH ?? '.cache/kokoro/voices-v1.0.bin',
+    ),
+    kokoroVoice: process.env.KOKORO_VOICE ?? 'af_heart',
+    kokoroSpeed: numberInRange('KOKORO_SPEED', 0.9, 0.5, 2),
     windowsSpeechCommand: process.env.WINDOWS_SPEECH_COMMAND ?? 'pwsh.exe',
     windowsSpeechScript: resolve(
       process.env.WINDOWS_SPEECH_SCRIPT ??
@@ -86,6 +125,22 @@ function integerInRange(name, fallback, minimum, maximum) {
     throw new Error(
       `${name} must be an integer from ${minimum} through ${maximum}.`,
     );
+  }
+  return value;
+}
+
+function numberInRange(name, fallback, minimum, maximum) {
+  const value = Number(process.env[name] ?? fallback);
+  if (!Number.isFinite(value) || value < minimum || value > maximum) {
+    throw new Error(`${name} must be from ${minimum} through ${maximum}.`);
+  }
+  return value;
+}
+
+function stringChoice(name, fallback, choices) {
+  const value = process.env[name] ?? fallback;
+  if (!choices.includes(value)) {
+    throw new Error(`${name} must be one of: ${choices.join(', ')}.`);
   }
   return value;
 }

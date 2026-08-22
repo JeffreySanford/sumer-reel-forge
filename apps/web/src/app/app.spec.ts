@@ -4,6 +4,7 @@ import {
   HttpTestingController,
 } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
+import { DEFAULT_NARRATION_SETTINGS } from '@sumer-reel-forge/reel-core';
 import { App } from './app';
 
 describe('App', () => {
@@ -24,6 +25,9 @@ describe('App', () => {
 
   it('renders the first reel title', async () => {
     const fixture = TestBed.createComponent(App);
+    httpTesting
+      .expectOne('/api/projects/blessings-of-sumer/chapters/1/narration')
+      .flush(DEFAULT_NARRATION_SETTINGS);
     httpTesting.expectOne('/api/chapters/1/reels').flush([]);
     httpTesting.expectOne('/api/chapters/1/reels/1').flush({
       series: 'Blessings of Sumer',
@@ -68,6 +72,9 @@ describe('App', () => {
 
   it('saves production edits', async () => {
     const fixture = TestBed.createComponent(App);
+    httpTesting
+      .expectOne('/api/projects/blessings-of-sumer/chapters/1/narration')
+      .flush(DEFAULT_NARRATION_SETTINGS);
     httpTesting.expectOne('/api/chapters/1/reels').flush([]);
     httpTesting.expectOne('/api/chapters/1/reels/1').flush({
       series: 'Blessings of Sumer',
@@ -108,7 +115,7 @@ describe('App', () => {
     await fixture.whenStable();
 
     const compiled = fixture.nativeElement as HTMLElement;
-    const logline = compiled.querySelector('textarea');
+    const logline = compiled.querySelector('.script-panel textarea');
     if (!(logline instanceof HTMLTextAreaElement)) {
       throw new Error('Expected editable logline textarea.');
     }

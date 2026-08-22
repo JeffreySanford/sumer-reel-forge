@@ -1,3 +1,9 @@
+packages:
+  - apps/*
+  - libs/*
+  - tools/*
+  - '!dist/**'
+  - '!tmp/**'
 autoInstallPeers: true
 onlyBuiltDependencies:
   - '@scarf/scarf'

@@ -15,6 +15,7 @@ import {
 import { createReadStream } from 'node:fs';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import type {
+  ChapterNarrationSettings,
   ChapterReelSummary,
   GeneratedAssetManifest,
   ReelEpisode,
@@ -38,6 +39,7 @@ import {
   UpdateReelProductionDto,
 } from './reel-production.dto';
 import { UpdateReelStatusDto } from './reel-workflow.dto';
+import { UpdateChapterNarrationSettingsDto } from './narration.dto';
 
 @Controller()
 @ApiTags('studio')
@@ -48,6 +50,38 @@ export class AppController {
   @ApiOperation({ summary: 'Return API health for local and CI checks.' })
   getHealth(): { status: string; service: string } {
     return this.appService.getHealth();
+  }
+
+  @Get('projects/:projectSlug/chapters/:chapterNumber/narration')
+  @ApiOperation({
+    summary: 'Return story and chapter narration identity settings.',
+  })
+  getChapterNarrationSettings(
+    @Param('projectSlug') projectSlug: string,
+    @Param('chapterNumber', ParseIntPipe) chapterNumber: number,
+  ): Promise<ChapterNarrationSettings> {
+    return this.appService.getChapterNarrationSettings(
+      projectSlug,
+      chapterNumber,
+    );
+  }
+
+  @Patch('projects/:projectSlug/chapters/:chapterNumber/narration')
+  @ApiOperation({
+    summary: 'Save story defaults, chapter overrides, and cast voices.',
+  })
+  updateChapterNarrationSettings(
+    @Param('projectSlug') projectSlug: string,
+    @Param('chapterNumber', ParseIntPipe) chapterNumber: number,
+    @Body() request: UpdateChapterNarrationSettingsDto,
+    @Headers('x-request-id') requestId?: string,
+  ): Promise<ChapterNarrationSettings> {
+    return this.appService.updateChapterNarrationSettings(
+      projectSlug,
+      chapterNumber,
+      request,
+      requestId,
+    );
   }
 
   @Get('chapters/1/reels')

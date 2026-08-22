@@ -37,6 +37,9 @@ Sumer Reel Forge is intended to become a reusable local studio for transforming 
 - [x] Approval and per-asset review workflows are persistent and audited.
 - [x] A deterministic 60-second Reel 1 prototype has been rendered locally.
 - [x] A visual-bible-driven 60-second Reel 1 editorial baseline has been rendered, reviewed, and persisted locally.
+- [x] Kokoro narration and a deterministic ambience score are reproducible through project-local scripts.
+- [x] Reel 1 has a 48 kHz Kokoro/ambience candidate in persistent editorial review.
+- [ ] Reel 1 listening approval and final-video rendering are complete.
 - [ ] Authentication/authorization is not implemented yet.
 
 ## Operating Principles

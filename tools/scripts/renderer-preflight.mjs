@@ -16,14 +16,7 @@ if (config.adapter === 'local') {
   );
 } else if (config.adapter === 'editorial') {
   checks.push(
-    await checkFile('Windows speech script', config.windowsSpeechScript),
-    await checkCommand('Windows speech', config.windowsSpeechCommand, [
-      '-NoProfile',
-      '-NonInteractive',
-      '-File',
-      config.windowsSpeechScript,
-      '-ListVoices',
-    ]),
+    ...(await checkEditorialNarration(config)),
     ...(await checkEditorialFrames(config.editorialAssetDirectory, 8)),
   );
 } else if (config.adapter === 'mock') {
@@ -99,4 +92,60 @@ async function checkEditorialFrames(directory, count) {
     );
   }
   return checks;
+}
+
+async function checkEditorialNarration(config) {
+  if (
+    ['auto', 'chatterbox'].includes(config.editorialNarrationAdapter)
+  ) {
+    return [
+      await checkCommand('uv', config.chatterboxCommand, ['--version']),
+      await checkFile(
+        'Chatterbox project',
+        `${config.chatterboxProjectDirectory}/uv.lock`,
+      ),
+      await checkFile('Chatterbox script', config.chatterboxScript),
+      await checkFile('Chatterbox model', config.chatterboxModelDirectory),
+      ...(config.chatterboxReferenceAudio
+        ? [
+            await checkFile(
+              'Chatterbox reference audio',
+              config.chatterboxReferenceAudio,
+            ),
+          ]
+        : []),
+      await checkCommand('Chatterbox runtime', config.chatterboxCommand, [
+        'run',
+        '--project',
+        config.chatterboxProjectDirectory,
+        '--locked',
+        '--no-sync',
+        'python',
+        '-c',
+        "import torch; assert torch.cuda.is_available() or '${config.chatterboxDevice}' == 'cpu'; print(torch.__version__)",
+      ]),
+    ];
+  }
+  if (config.editorialNarrationAdapter === 'kokoro') {
+    return [
+      await checkCommand('uv', config.kokoroCommand, ['--version']),
+      await checkFile(
+        'Kokoro project',
+        `${config.kokoroProjectDirectory}/uv.lock`,
+      ),
+      await checkFile('Kokoro script', config.kokoroScript),
+      await checkFile('Kokoro model', config.kokoroModelPath),
+      await checkFile('Kokoro voices', config.kokoroVoicesPath),
+    ];
+  }
+  return [
+    await checkFile('Windows speech script', config.windowsSpeechScript),
+    await checkCommand('Windows speech', config.windowsSpeechCommand, [
+      '-NoProfile',
+      '-NonInteractive',
+      '-File',
+      config.windowsSpeechScript,
+      '-ListVoices',
+    ]),
+  ];
 }

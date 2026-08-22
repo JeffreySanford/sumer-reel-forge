@@ -36,4 +36,8 @@ pnpm render:editorial:reel1
 
 Set `RENDER_ADAPTER=editorial` when running preflight directly. The render command sets it for its one-shot worker, queues a `draft-video` job, validates the final codecs and dimensions with FFprobe, and leaves every revision in job history. It never overwrites an earlier job or removes a Docker volume.
 
-The editorial adapter is intentionally limited to Reel 1 and requires all eight files under `EDITORIAL_ASSET_DIRECTORY`. Windows SAPI narration is marked provisional in asset metadata. Use the `local` adapter after ComfyUI, Kokoro, and Whisper are installed and approved.
+The editorial adapter is intentionally limited to Reel 1 and requires all eight files under `EDITORIAL_ASSET_DIRECTORY`. Use `pnpm tts:kokoro:setup` for the locked, checksum-verified narration runtime and `pnpm tts:kokoro:audition` for voice comparisons. Windows SAPI remains an explicit fallback.
+
+`pnpm render:final:reel1` queues `final-video` and therefore fails unless the reel is already `approved`. A successful final render returns the reel to `approved` for the separate publish decision. Never use the final command to bypass voice, score, caption, or platform review.
+
+External-process errors are retained in chunked renderer logs. The status note is bounded to the API DTO limit so even a verbose FFmpeg failure closes the job and its attempt instead of leaving it running.

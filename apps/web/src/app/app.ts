@@ -3,6 +3,9 @@ import { RouterModule } from '@angular/router';
 import {
   REEL_ONE,
   type AssetReviewStatus,
+  type ChapterNarrationSettings,
+  type NarrationRoleType,
+  type NarrationStylePreset,
   type ChapterReelSummary,
   type GeneratedAssetManifest,
   type ReelEpisode,
@@ -14,6 +17,8 @@ import {
   type RenderJobLog,
   type TimedText,
   type UpdateReelProductionRequest,
+  type UpdateChapterNarrationSettingsRequest,
+  DEFAULT_NARRATION_SETTINGS,
 } from '@sumer-reel-forge/reel-core';
 import { ReelApiService } from './reel-api.service';
 
@@ -51,6 +56,27 @@ export class App {
   protected readonly renderJobAttempts = signal<RenderJobAttempt[]>([]);
   protected readonly renderJobLogs = signal<RenderJobLog[]>([]);
   protected readonly assetReviewNotes = signal<Record<string, string>>({});
+  protected readonly narrationSettings = signal<ChapterNarrationSettings>(
+    DEFAULT_NARRATION_SETTINGS,
+  );
+  protected readonly narrationDraft =
+    signal<UpdateChapterNarrationSettingsRequest>(
+      toNarrationDraft(DEFAULT_NARRATION_SETTINGS),
+    );
+  protected readonly isSavingNarration = signal(false);
+  protected readonly narrationStylePresets: NarrationStylePreset[] = [
+    'documentary',
+    'intimate',
+    'mythic',
+    'dramatic',
+    'archival',
+  ];
+  protected readonly narrationRoleTypes: NarrationRoleType[] = [
+    'narrator',
+    'character',
+    'archival',
+    'chorus',
+  ];
 
   protected readonly selectedShot = computed(
     () => this.productionDraft().shots[this.selectedShotIndex()] ?? EMPTY_SHOT,
@@ -83,7 +109,27 @@ export class App {
     ),
   );
 
+  protected readonly effectiveNarrationVoice = computed(() => {
+    const draft = this.narrationDraft();
+    const voiceId = draft.useStoryDefault
+      ? draft.storyVoiceProfileId
+      : draft.chapterVoiceProfileId;
+    return (
+      this.narrationSettings().availableVoices.find(
+        (voice) => voice.id === voiceId,
+      ) ?? this.narrationSettings().effective.voiceProfile
+    );
+  });
+
+  protected readonly effectiveNarrationStyle = computed(() => {
+    const draft = this.narrationDraft();
+    return draft.useStoryDefault
+      ? draft.storyStylePreset
+      : (draft.chapterStylePreset ?? draft.storyStylePreset);
+  });
+
   constructor() {
+    this.loadNarrationSettings();
     this.loadOutline();
     this.selectEpisode(REEL_ONE.episode);
   }
@@ -152,6 +198,7 @@ export class App {
       .queueRenderJob({
         episodeId: this.selectedEpisode().episode,
         mode,
+        voice: this.narrationSettings().effective.voiceProfile.slug,
         notes: `Queued from Reel Forge for ${this.selectedEpisode().title}`,
       })
       .subscribe({
@@ -290,6 +337,138 @@ export class App {
       });
   }
 
+  protected saveNarrationSettings(): void {
+    this.isSavingNarration.set(true);
+    this.renderStatus.set('Saving narration identity...');
+    this.reelApi
+      .saveChapterNarrationSettings(
+        this.narrationSettings().projectSlug,
+        this.narrationSettings().chapterNumber,
+        this.narrationDraft(),
+      )
+      .subscribe({
+        next: (settings) => {
+          this.applyNarrationSettings(settings);
+          this.selectedEpisode.update((episode) => ({
+            ...episode,
+            productionStatus: 'draft',
+            narrationIdentity: settings.effective,
+          }));
+          this.outline.update((outline) =>
+            outline.map((episode) => ({
+              ...episode,
+              productionStatus: 'draft',
+            })),
+          );
+          this.renderStatus.set('Narration identity saved');
+          this.isSavingNarration.set(false);
+        },
+        error: () => {
+          this.renderStatus.set('Narration save failed');
+          this.isSavingNarration.set(false);
+        },
+      });
+  }
+
+  protected setUseStoryDefault(event: Event): void {
+    const useStoryDefault = eventChecked(event);
+    this.narrationDraft.update((draft) => ({
+      ...draft,
+      useStoryDefault,
+      chapterVoiceProfileId:
+        draft.chapterVoiceProfileId ?? draft.storyVoiceProfileId,
+      chapterStylePreset:
+        draft.chapterStylePreset ?? draft.storyStylePreset,
+      chapterStyleNotes:
+        draft.chapterStyleNotes ?? draft.storyStyleNotes,
+    }));
+  }
+
+  protected updateNarrationVoice(
+    scope: 'story' | 'chapter',
+    event: Event,
+  ): void {
+    const value = eventValue(event);
+    this.narrationDraft.update((draft) =>
+      scope === 'story'
+        ? { ...draft, storyVoiceProfileId: value }
+        : { ...draft, chapterVoiceProfileId: value },
+    );
+  }
+
+  protected updateNarrationStyle(
+    scope: 'story' | 'chapter',
+    event: Event,
+  ): void {
+    const value = eventValue(event) as NarrationStylePreset;
+    this.narrationDraft.update((draft) =>
+      scope === 'story'
+        ? { ...draft, storyStylePreset: value }
+        : { ...draft, chapterStylePreset: value },
+    );
+  }
+
+  protected updateNarrationNotes(
+    scope: 'story' | 'chapter',
+    event: Event,
+  ): void {
+    const value = eventValue(event);
+    this.narrationDraft.update((draft) =>
+      scope === 'story'
+        ? { ...draft, storyStyleNotes: value }
+        : { ...draft, chapterStyleNotes: value },
+    );
+  }
+
+  protected addNarrationRole(): void {
+    this.narrationDraft.update((draft) => ({
+      ...draft,
+      roles: [
+        ...draft.roles,
+        {
+          roleKey: `role-${draft.roles.length + 1}`,
+          displayName: 'New role',
+          roleType: 'character',
+          voiceProfileId: draft.storyVoiceProfileId,
+          stylePreset: draft.storyStylePreset,
+          styleNotes: '',
+        },
+      ],
+    }));
+  }
+
+  protected removeNarrationRole(index: number): void {
+    this.narrationDraft.update((draft) => ({
+      ...draft,
+      roles: draft.roles.filter((_, roleIndex) => roleIndex !== index),
+    }));
+  }
+
+  protected updateNarrationRole(
+    index: number,
+    field:
+      | 'displayName'
+      | 'roleType'
+      | 'voiceProfileId'
+      | 'stylePreset'
+      | 'styleNotes',
+    event: Event,
+  ): void {
+    const value = eventValue(event);
+    this.narrationDraft.update((draft) => ({
+      ...draft,
+      roles: draft.roles.map((role, roleIndex) => {
+        if (roleIndex !== index) {
+          return role;
+        }
+        const updated = { ...role, [field]: value };
+        return field === 'displayName'
+          ? { ...updated, roleKey: toRoleKey(value, index) }
+          : updated;
+      }),
+    }));
+  }
+
   protected updateDraftText(
     field: keyof Pick<
       UpdateReelProductionRequest,
@@ -372,6 +551,17 @@ export class App {
         tags,
       },
     }));
+  }
+
+  private loadNarrationSettings(): void {
+    this.reelApi
+      .getChapterNarrationSettings('blessings-of-sumer', 1)
+      .subscribe((settings) => this.applyNarrationSettings(settings));
+  }
+
+  private applyNarrationSettings(settings: ChapterNarrationSettings): void {
+    this.narrationSettings.set(settings);
+    this.narrationDraft.set(toNarrationDraft(settings));
   }
 
   private loadOutline(): void {
@@ -465,7 +655,49 @@ function toProductionDraft(episode: ReelEpisode): UpdateReelProductionRequest {
 
 function eventValue(event: Event): string {
   return event.target instanceof HTMLInputElement ||
-    event.target instanceof HTMLTextAreaElement
+    event.target instanceof HTMLTextAreaElement ||
+    event.target instanceof HTMLSelectElement
     ? event.target.value
     : '';
+}
+
+function eventChecked(event: Event): boolean {
+  return event.target instanceof HTMLInputElement
+    ? event.target.checked
+    : false;
+}
+
+function toNarrationDraft(
+  settings: ChapterNarrationSettings,
+): UpdateChapterNarrationSettingsRequest {
+  return {
+    storyVoiceProfileId: settings.storyDefault.voiceProfile.id,
+    storyStylePreset: settings.storyDefault.stylePreset,
+    storyStyleNotes: settings.storyDefault.styleNotes,
+    useStoryDefault: settings.useStoryDefault,
+    chapterVoiceProfileId:
+      settings.chapterOverride?.voiceProfile.id ??
+      settings.storyDefault.voiceProfile.id,
+    chapterStylePreset:
+      settings.chapterOverride?.stylePreset ?? settings.storyDefault.stylePreset,
+    chapterStyleNotes:
+      settings.chapterOverride?.styleNotes ?? settings.storyDefault.styleNotes,
+    roles: settings.roles.map((role) => ({
+      roleKey: role.roleKey,
+      displayName: role.displayName,
+      roleType: role.roleType,
+      voiceProfileId: role.voiceProfile?.id,
+      stylePreset: role.stylePreset,
+      styleNotes: role.styleNotes,
+    })),
+  };
+}
+
+function toRoleKey(value: string, index: number): string {
+  return (
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '') || `role-${index + 1}`
+  );
 }

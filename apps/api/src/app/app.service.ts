@@ -8,6 +8,7 @@ import { existsSync } from 'node:fs';
 import { isAbsolute, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+  type ChapterNarrationSettings,
   type ChapterReelSummary,
   type CreateGeneratedAssetRequest,
   type CreateRenderJobLogRequest,
@@ -26,6 +27,7 @@ import {
 } from './render-job.dto';
 import { UpdateReelProductionDto } from './reel-production.dto';
 import { UpdateReelStatusDto } from './reel-workflow.dto';
+import { UpdateChapterNarrationSettingsDto } from './narration.dto';
 
 export interface GeneratedAssetContent {
   filePath: string;
@@ -41,6 +43,30 @@ export class AppService {
 
   getHealth(): { status: string; service: string } {
     return { status: 'ok', service: 'sumer-reel-forge-api' };
+  }
+
+  getChapterNarrationSettings(
+    projectSlug: string,
+    chapterNumber: number,
+  ): Promise<ChapterNarrationSettings> {
+    return this.repository.getChapterNarrationSettings(
+      projectSlug,
+      chapterNumber,
+    );
+  }
+
+  updateChapterNarrationSettings(
+    projectSlug: string,
+    chapterNumber: number,
+    request: UpdateChapterNarrationSettingsDto,
+    requestId?: string,
+  ): Promise<ChapterNarrationSettings> {
+    return this.repository.updateChapterNarrationSettings(
+      projectSlug,
+      chapterNumber,
+      request,
+      requestId,
+    );
   }
 
   getChapterOneSummary(): Promise<ChapterReelSummary[]> {

@@ -1,10 +1,14 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import {
   AssetReviewStatus,
+  NarrationEngine,
+  NarrationRoleType,
+  NarrationStylePreset,
   ReelProductionStatus,
   RenderJobMode,
   RenderJobStatus,
@@ -15,6 +19,8 @@ import { Prisma } from '@prisma/client';
 import {
   CHAPTER_ONE_REELS,
   CHAPTER_ONE_SUMMARY,
+  DEFAULT_NARRATION_SETTINGS,
+  type ChapterNarrationSettings,
   type ChapterReelSummary,
   type CreateGeneratedAssetRequest,
   type CreateRenderJobLogRequest,
@@ -23,6 +29,8 @@ import {
   type RenderJob,
   type RenderJobAttempt,
   type RenderJobLog,
+  type NarrationIdentity,
+  type NarrationVoiceProfile,
   type UpdateGeneratedAssetReviewRequest,
 } from '@sumer-reel-forge/reel-core';
 import { PrismaService } from './prisma.service';
@@ -33,10 +41,21 @@ import {
 } from './render-job.dto';
 import { UpdateReelProductionDto } from './reel-production.dto';
 import { UpdateReelStatusDto } from './reel-workflow.dto';
+import { UpdateChapterNarrationSettingsDto } from './narration.dto';
 
 export const REEL_REPOSITORY = Symbol('REEL_REPOSITORY');
 
 export interface ReelRepository {
+  getChapterNarrationSettings(
+    projectSlug: string,
+    chapterNumber: number,
+  ): Promise<ChapterNarrationSettings>;
+  updateChapterNarrationSettings(
+    projectSlug: string,
+    chapterNumber: number,
+    request: UpdateChapterNarrationSettingsDto,
+    requestId?: string,
+  ): Promise<ChapterNarrationSettings>;
   getChapterOneSummary(): Promise<ChapterReelSummary[]>;
   getEpisode(episodeId: number): Promise<ReelEpisode>;
   updateEpisodeProduction(
@@ -104,6 +123,217 @@ export interface ReelRepository {
 export class PrismaReelRepository implements ReelRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  async getChapterNarrationSettings(
+    projectSlug: string,
+    chapterNumber: number,
+  ): Promise<ChapterNarrationSettings> {
+    const [chapter, availableVoices] = await Promise.all([
+      this.prisma.chapter.findFirst({
+        where: {
+          chapterNumber,
+          document: { project: { slug: projectSlug } },
+        },
+        include: {
+          document: {
+            include: { project: { include: { defaultNarrationVoice: true } } },
+          },
+          narrationVoice: true,
+          narrationRoles: {
+            include: { voiceProfile: true },
+            orderBy: { displayName: 'asc' },
+          },
+        },
+      }),
+      this.prisma.narrationVoiceProfile.findMany({
+        where: { active: true },
+        orderBy: [{ engine: 'asc' }, { displayName: 'asc' }],
+      }),
+    ]);
+
+    if (!chapter) {
+      throw new NotFoundException(
+        `Chapter ${chapterNumber} was not found in project ${projectSlug}.`,
+      );
+    }
+
+    const project = chapter.document.project;
+    const storyVoice = project.defaultNarrationVoice ?? availableVoices[0];
+    if (!storyVoice) {
+      throw new NotFoundException('No active narration voices are configured.');
+    }
+
+    const storyDefault = {
+      voiceProfile: toNarrationVoiceProfile(storyVoice),
+      stylePreset: fromPrismaNarrationStyle(project.narrationStylePreset),
+      styleNotes: project.narrationStyleNotes ?? '',
+    };
+    const chapterOverride =
+      chapter.narrationOverrideEnabled &&
+      chapter.narrationVoice &&
+      chapter.narrationStylePreset
+        ? {
+            voiceProfile: toNarrationVoiceProfile(chapter.narrationVoice),
+            stylePreset: fromPrismaNarrationStyle(
+              chapter.narrationStylePreset,
+            ),
+            styleNotes: chapter.narrationStyleNotes ?? '',
+          }
+        : undefined;
+
+    return {
+      projectSlug: project.slug,
+      projectTitle: project.title,
+      chapterNumber: chapter.chapterNumber,
+      chapterTitle: chapter.title,
+      useStoryDefault: !chapter.narrationOverrideEnabled,
+      storyDefault,
+      chapterOverride,
+      effective: chapterOverride ?? storyDefault,
+      roles: chapter.narrationRoles.map((role) => ({
+        id: role.id,
+        roleKey: role.roleKey,
+        displayName: role.displayName,
+        roleType: fromPrismaNarrationRoleType(role.roleType),
+        voiceProfile: role.voiceProfile
+          ? toNarrationVoiceProfile(role.voiceProfile)
+          : undefined,
+        stylePreset: role.stylePreset
+          ? fromPrismaNarrationStyle(role.stylePreset)
+          : undefined,
+        styleNotes: role.styleNotes ?? '',
+      })),
+      availableVoices: availableVoices.map(toNarrationVoiceProfile),
+    };
+  }
+
+  async updateChapterNarrationSettings(
+    projectSlug: string,
+    chapterNumber: number,
+    request: UpdateChapterNarrationSettingsDto,
+    requestId?: string,
+  ): Promise<ChapterNarrationSettings> {
+    if (
+      !request.useStoryDefault &&
+      (!request.chapterVoiceProfileId || !request.chapterStylePreset)
+    ) {
+      throw new BadRequestException(
+        'A chapter voice and style are required when the story default is disabled.',
+      );
+    }
+    const roleKeys = request.roles.map((role) => role.roleKey);
+    if (new Set(roleKeys).size !== roleKeys.length) {
+      throw new BadRequestException('Chapter voice role keys must be unique.');
+    }
+
+    const chapter = await this.prisma.chapter.findFirst({
+      where: {
+        chapterNumber,
+        document: { project: { slug: projectSlug } },
+      },
+      include: { document: { include: { project: true } } },
+    });
+    if (!chapter) {
+      throw new NotFoundException(
+        `Chapter ${chapterNumber} was not found in project ${projectSlug}.`,
+      );
+    }
+
+    const requestedVoiceIds = [
+      request.storyVoiceProfileId,
+      request.chapterVoiceProfileId,
+      ...request.roles.map((role) => role.voiceProfileId),
+    ].filter((value): value is string => Boolean(value));
+    const uniqueVoiceIds = [...new Set(requestedVoiceIds)];
+    const activeVoices = await this.prisma.narrationVoiceProfile.findMany({
+      where: { id: { in: uniqueVoiceIds }, active: true },
+      select: { id: true },
+    });
+    if (activeVoices.length !== uniqueVoiceIds.length) {
+      throw new BadRequestException(
+        'Every selected narration voice must exist and be active.',
+      );
+    }
+    const chapterStylePreset =
+      request.chapterStylePreset ?? request.storyStylePreset;
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.studioProject.update({
+        where: { id: chapter.document.project.id },
+        data: {
+          defaultNarrationVoiceId: request.storyVoiceProfileId,
+          narrationStylePreset: toPrismaNarrationStyle(
+            request.storyStylePreset,
+          ),
+          narrationStyleNotes: request.storyStyleNotes,
+        },
+      });
+      await tx.chapter.update({
+        where: { id: chapter.id },
+        data: {
+          narrationOverrideEnabled: !request.useStoryDefault,
+          narrationVoiceId: request.useStoryDefault
+            ? null
+            : request.chapterVoiceProfileId,
+          narrationStylePreset: request.useStoryDefault
+            ? null
+            : toPrismaNarrationStyle(chapterStylePreset),
+          narrationStyleNotes: request.useStoryDefault
+            ? null
+            : (request.chapterStyleNotes ?? ''),
+        },
+      });
+      await tx.chapterNarrationRole.deleteMany({
+        where: { chapterId: chapter.id },
+      });
+      if (request.roles.length > 0) {
+        await tx.chapterNarrationRole.createMany({
+          data: request.roles.map((role) => ({
+            chapterId: chapter.id,
+            roleKey: role.roleKey,
+            displayName: role.displayName,
+            roleType: toPrismaNarrationRoleType(role.roleType),
+            voiceProfileId: role.voiceProfileId,
+            stylePreset: role.stylePreset
+              ? toPrismaNarrationStyle(role.stylePreset)
+              : null,
+            styleNotes: role.styleNotes,
+          })),
+        });
+      }
+      const invalidated = await tx.reel.updateMany({
+        where: {
+          chapter: {
+            document: { projectId: chapter.document.project.id },
+          },
+          productionStatus: { not: ReelProductionStatus.DRAFT },
+        },
+        data: { productionStatus: ReelProductionStatus.DRAFT },
+      });
+      await tx.auditLog.create({
+        data: {
+          actor: 'local-api',
+          action: 'narration.settings.update',
+          entityType: 'chapter',
+          entityId: chapter.id,
+          requestId,
+          summary: {
+            projectSlug,
+            chapterNumber,
+            useStoryDefault: request.useStoryDefault,
+            storyVoiceProfileId: request.storyVoiceProfileId,
+            chapterVoiceProfileId: request.chapterVoiceProfileId ?? null,
+            storyStylePreset: request.storyStylePreset,
+            chapterStylePreset: request.chapterStylePreset ?? null,
+            roleCount: request.roles.length,
+            invalidatedReels: invalidated.count,
+          },
+        },
+      });
+    });
+
+    return this.getChapterNarrationSettings(projectSlug, chapterNumber);
+  }
+
   async getChapterOneSummary(): Promise<ChapterReelSummary[]> {
     const rows = await this.prisma.reel.findMany({
       where: {
@@ -159,13 +389,21 @@ export class PrismaReelRepository implements ReelRepository {
       );
 
       if (fixture) {
-        return fixture;
+        return {
+          ...fixture,
+          narrationIdentity: DEFAULT_NARRATION_SETTINGS.effective,
+        };
       }
 
       throw new NotFoundException(
         `Episode ${episodeId} is not storyboarded yet.`,
       );
     }
+
+    const narrationSettings = await this.getChapterNarrationSettings(
+      'blessings-of-sumer',
+      1,
+    );
 
     return {
       series: 'Blessings of Sumer',
@@ -191,6 +429,7 @@ export class PrismaReelRepository implements ReelRepository {
       platformNotes: row.platformNotes,
       exportMetadata: toExportMetadata(row.exportMetadata),
       productionStatus: fromPrismaProductionStatus(row.productionStatus),
+      narrationIdentity: narrationSettings.effective,
     };
   }
 
@@ -297,6 +536,23 @@ export class PrismaReelRepository implements ReelRepository {
     requestId?: string,
   ): Promise<RenderJob> {
     const episode = await this.findReelForEpisode(request.episodeId);
+    const narrationSettings = await this.getChapterNarrationSettings(
+      'blessings-of-sumer',
+      1,
+    );
+    const requestedVoice = request.voice
+      ? narrationSettings.availableVoices.find(
+          (voice) => voice.slug === request.voice,
+        )
+      : undefined;
+    if (request.voice && !requestedVoice) {
+      throw new BadRequestException(
+        `Narration voice '${request.voice}' is not active.`,
+      );
+    }
+    const narrationConfig = requestedVoice
+      ? { ...narrationSettings.effective, voiceProfile: requestedVoice }
+      : narrationSettings.effective;
 
     if (
       request.mode === 'final-video' &&
@@ -313,7 +569,8 @@ export class PrismaReelRepository implements ReelRepository {
           reelId: episode.id,
           episodeId: episode.episodeNumber,
           mode: toPrismaMode(request.mode),
-          voice: request.voice,
+          voice: narrationConfig.voiceProfile.slug,
+          narrationConfig: toPrismaJson(narrationConfig),
           notes: request.notes,
         },
       });
@@ -336,6 +593,8 @@ export class PrismaReelRepository implements ReelRepository {
             episodeId: created.episodeId,
             mode: created.mode,
             status: created.status,
+            narrationVoice: narrationConfig.voiceProfile.slug,
+            narrationStyle: narrationConfig.stylePreset,
           },
         },
       });
@@ -880,6 +1139,78 @@ export class InMemoryReelRepository implements ReelRepository {
   private readonly attempts: RenderJobAttempt[] = [];
   private readonly logs: RenderJobLog[] = [];
   private readonly episodes = structuredClone(CHAPTER_ONE_REELS);
+  private narrationSettings = structuredClone(DEFAULT_NARRATION_SETTINGS);
+
+  async getChapterNarrationSettings(
+    projectSlug: string,
+    chapterNumber: number,
+  ): Promise<ChapterNarrationSettings> {
+    if (
+      projectSlug !== this.narrationSettings.projectSlug ||
+      chapterNumber !== this.narrationSettings.chapterNumber
+    ) {
+      throw new NotFoundException(
+        `Chapter ${chapterNumber} was not found in project ${projectSlug}.`,
+      );
+    }
+    return structuredClone(this.narrationSettings);
+  }
+
+  async updateChapterNarrationSettings(
+    projectSlug: string,
+    chapterNumber: number,
+    request: UpdateChapterNarrationSettingsDto,
+  ): Promise<ChapterNarrationSettings> {
+    await this.getChapterNarrationSettings(projectSlug, chapterNumber);
+    const voiceById = new Map(
+      this.narrationSettings.availableVoices.map((voice) => [voice.id, voice]),
+    );
+    const storyVoice = voiceById.get(request.storyVoiceProfileId);
+    const chapterVoice = request.chapterVoiceProfileId
+      ? voiceById.get(request.chapterVoiceProfileId)
+      : undefined;
+    if (!storyVoice || (!request.useStoryDefault && !chapterVoice)) {
+      throw new BadRequestException(
+        'Every selected narration voice must exist and be active.',
+      );
+    }
+
+    const storyDefault = {
+      voiceProfile: storyVoice,
+      stylePreset: request.storyStylePreset,
+      styleNotes: request.storyStyleNotes,
+    };
+    const chapterOverride =
+      request.useStoryDefault || !chapterVoice || !request.chapterStylePreset
+        ? undefined
+        : {
+            voiceProfile: chapterVoice,
+            stylePreset: request.chapterStylePreset,
+            styleNotes: request.chapterStyleNotes ?? '',
+          };
+    this.narrationSettings = {
+      ...this.narrationSettings,
+      useStoryDefault: request.useStoryDefault,
+      storyDefault,
+      chapterOverride,
+      effective: chapterOverride ?? storyDefault,
+      roles: request.roles.map((role) => ({
+        id: crypto.randomUUID(),
+        roleKey: role.roleKey,
+        displayName: role.displayName,
+        roleType: role.roleType,
+        voiceProfile: role.voiceProfileId
+          ? voiceById.get(role.voiceProfileId)
+          : undefined,
+        stylePreset: role.stylePreset,
+        styleNotes: role.styleNotes,
+      })),
+    };
+    for (const episode of this.episodes) {
+      episode.productionStatus = 'draft';
+    }
+    return structuredClone(this.narrationSettings);
+  }
 
   async getChapterOneSummary(): Promise<ChapterReelSummary[]> {
     return CHAPTER_ONE_SUMMARY.map((summary) => ({
@@ -899,6 +1230,7 @@ export class InMemoryReelRepository implements ReelRepository {
       );
     }
 
+    episode.narrationIdentity = this.narrationSettings.effective;
     return episode;
   }
 
@@ -934,6 +1266,19 @@ export class InMemoryReelRepository implements ReelRepository {
 
   async createRenderJob(request: CreateRenderJobDto): Promise<RenderJob> {
     const episode = await this.getEpisode(request.episodeId);
+    const requestedVoice = request.voice
+      ? this.narrationSettings.availableVoices.find(
+          (voice) => voice.slug === request.voice,
+        )
+      : undefined;
+    if (request.voice && !requestedVoice) {
+      throw new BadRequestException(
+        `Narration voice '${request.voice}' is not active.`,
+      );
+    }
+    const narrationConfig = requestedVoice
+      ? { ...this.narrationSettings.effective, voiceProfile: requestedVoice }
+      : this.narrationSettings.effective;
     if (
       request.mode === 'final-video' &&
       episode.productionStatus !== 'approved'
@@ -950,6 +1295,8 @@ export class InMemoryReelRepository implements ReelRepository {
       status: 'queued',
       createdAt: new Date().toISOString(),
       attemptCount: 0,
+      voice: narrationConfig.voiceProfile.slug,
+      narrationConfig,
       notes: request.notes,
     };
 
@@ -1178,6 +1525,70 @@ export class InMemoryReelRepository implements ReelRepository {
   }
 }
 
+function toNarrationVoiceProfile(voice: {
+  id: string;
+  slug: string;
+  displayName: string;
+  description: string | null;
+  engine: NarrationEngine;
+  model: string;
+  language: string;
+  providerVoice: string | null;
+  referenceAudioUri: string | null;
+  referenceAudioChecksum: string | null;
+  rightsBasis: string | null;
+  defaultExaggeration: number;
+  defaultCfgWeight: number;
+  defaultTemperature: number;
+  active: boolean;
+}): NarrationVoiceProfile {
+  return {
+    id: voice.id,
+    slug: voice.slug,
+    displayName: voice.displayName,
+    description: voice.description ?? '',
+    engine: voice.engine.toLowerCase() as NarrationVoiceProfile['engine'],
+    model: voice.model,
+    language: voice.language,
+    providerVoice: voice.providerVoice ?? undefined,
+    referenceAudioAvailable: Boolean(voice.referenceAudioUri),
+    referenceAudioChecksum: voice.referenceAudioChecksum ?? undefined,
+    rightsBasis: voice.rightsBasis ?? undefined,
+    defaultExaggeration: voice.defaultExaggeration,
+    defaultCfgWeight: voice.defaultCfgWeight,
+    defaultTemperature: voice.defaultTemperature,
+    active: voice.active,
+  };
+}
+
+function toPrismaNarrationStyle(
+  style: ChapterNarrationSettings['effective']['stylePreset'],
+): NarrationStylePreset {
+  return NarrationStylePreset[
+    style.toUpperCase() as keyof typeof NarrationStylePreset
+  ];
+}
+
+function fromPrismaNarrationStyle(
+  style: NarrationStylePreset,
+): ChapterNarrationSettings['effective']['stylePreset'] {
+  return style.toLowerCase() as ChapterNarrationSettings['effective']['stylePreset'];
+}
+
+function toPrismaNarrationRoleType(
+  roleType: ChapterNarrationSettings['roles'][number]['roleType'],
+): NarrationRoleType {
+  return NarrationRoleType[
+    roleType.toUpperCase() as keyof typeof NarrationRoleType
+  ];
+}
+
+function fromPrismaNarrationRoleType(
+  roleType: NarrationRoleType,
+): ChapterNarrationSettings['roles'][number]['roleType'] {
+  return roleType.toLowerCase() as ChapterNarrationSettings['roles'][number]['roleType'];
+}
+
 function toPrismaMode(mode: CreateRenderJobDto['mode']): RenderJobMode {
   switch (mode) {
     case 'draft-video':
@@ -1213,6 +1624,8 @@ function toRenderJob(job: {
   heartbeatAt?: Date | null;
   workerId?: string | null;
   attemptCount?: number;
+  voice?: string | null;
+  narrationConfig: Prisma.JsonValue;
   notes: string | null;
 }): RenderJob {
   return {
@@ -1226,6 +1639,8 @@ function toRenderJob(job: {
     heartbeatAt: job.heartbeatAt?.toISOString(),
     workerId: job.workerId ?? undefined,
     attemptCount: job.attemptCount ?? 0,
+    voice: job.voice ?? undefined,
+    narrationConfig: toNarrationIdentity(job.narrationConfig),
     notes: job.notes ?? undefined,
   };
 }
@@ -1321,6 +1736,51 @@ function toMetadata(value: Prisma.JsonValue): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : {};
+}
+
+function toNarrationIdentity(
+  value: Prisma.JsonValue,
+): NarrationIdentity | undefined {
+  const identity = toMetadata(value);
+  const voice = toMetadata(identity['voiceProfile'] as Prisma.JsonValue);
+  if (
+    typeof voice['id'] !== 'string' ||
+    typeof voice['slug'] !== 'string' ||
+    typeof voice['displayName'] !== 'string' ||
+    typeof voice['engine'] !== 'string'
+  ) {
+    return undefined;
+  }
+  return {
+    voiceProfile: {
+      id: voice['id'],
+      slug: voice['slug'],
+      displayName: voice['displayName'],
+      description: String(voice['description'] ?? ''),
+      engine: voice['engine'] as NarrationVoiceProfile['engine'],
+      model: String(voice['model'] ?? ''),
+      language: String(voice['language'] ?? 'en'),
+      providerVoice:
+        typeof voice['providerVoice'] === 'string'
+          ? voice['providerVoice']
+          : undefined,
+      referenceAudioAvailable: Boolean(voice['referenceAudioAvailable']),
+      referenceAudioChecksum:
+        typeof voice['referenceAudioChecksum'] === 'string'
+          ? voice['referenceAudioChecksum']
+          : undefined,
+      rightsBasis:
+        typeof voice['rightsBasis'] === 'string'
+          ? voice['rightsBasis']
+          : undefined,
+      defaultExaggeration: Number(voice['defaultExaggeration'] ?? 0.5),
+      defaultCfgWeight: Number(voice['defaultCfgWeight'] ?? 0.5),
+      defaultTemperature: Number(voice['defaultTemperature'] ?? 0.8),
+      active: Boolean(voice['active']),
+    },
+    stylePreset: String(identity['stylePreset'] ?? 'mythic') as NarrationIdentity['stylePreset'],
+    styleNotes: String(identity['styleNotes'] ?? ''),
+  };
 }
 
 function toExportMetadata(

@@ -3,6 +3,8 @@ import type { Meta, StoryObj } from '@storybook/angular';
 import {
   CHAPTER_ONE_REELS,
   CHAPTER_ONE_SUMMARY,
+  DEFAULT_NARRATION_SETTINGS,
+  type UpdateChapterNarrationSettingsRequest,
   type GeneratedAssetManifest,
   type RenderJob,
   type ReelEpisode,
@@ -32,6 +34,24 @@ function withMockApi(options: {
       {
         provide: ReelApiService,
         useValue: {
+          getChapterNarrationSettings: () => of(DEFAULT_NARRATION_SETTINGS),
+          saveChapterNarrationSettings: (
+            _projectSlug: string,
+            _chapterNumber: number,
+            request: UpdateChapterNarrationSettingsRequest,
+          ) =>
+            of({
+              ...DEFAULT_NARRATION_SETTINGS,
+              useStoryDefault: request.useStoryDefault,
+              storyDefault: {
+                voiceProfile:
+                  DEFAULT_NARRATION_SETTINGS.availableVoices.find(
+                    (voice) => voice.id === request.storyVoiceProfileId,
+                  ) ?? DEFAULT_NARRATION_SETTINGS.storyDefault.voiceProfile,
+                stylePreset: request.storyStylePreset,
+                styleNotes: request.storyStyleNotes,
+              },
+            }),
           getChapterOneOutline: () =>
             of(options.outline ?? CHAPTER_ONE_SUMMARY),
           getChapterOneEpisode: (episodeId: number) =>

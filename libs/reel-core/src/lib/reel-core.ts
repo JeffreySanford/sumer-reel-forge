@@ -13,6 +13,184 @@ export interface TimedText {
   text: string;
 }
 
+export type NarrationEngine = 'chatterbox' | 'kokoro';
+export type NarrationStylePreset =
+  | 'documentary'
+  | 'intimate'
+  | 'mythic'
+  | 'dramatic'
+  | 'archival';
+export type NarrationRoleType =
+  | 'narrator'
+  | 'character'
+  | 'archival'
+  | 'chorus';
+
+export interface NarrationVoiceProfile {
+  id: string;
+  slug: string;
+  displayName: string;
+  description: string;
+  engine: NarrationEngine;
+  model: string;
+  language: string;
+  providerVoice?: string;
+  referenceAudioAvailable: boolean;
+  referenceAudioChecksum?: string;
+  rightsBasis?: string;
+  defaultExaggeration: number;
+  defaultCfgWeight: number;
+  defaultTemperature: number;
+  active: boolean;
+}
+
+export interface NarrationIdentity {
+  voiceProfile: NarrationVoiceProfile;
+  stylePreset: NarrationStylePreset;
+  styleNotes: string;
+}
+
+export interface ChapterNarrationRole {
+  id: string;
+  roleKey: string;
+  displayName: string;
+  roleType: NarrationRoleType;
+  voiceProfile?: NarrationVoiceProfile;
+  stylePreset?: NarrationStylePreset;
+  styleNotes: string;
+}
+
+export interface ChapterNarrationSettings {
+  projectSlug: string;
+  projectTitle: string;
+  chapterNumber: number;
+  chapterTitle: string;
+  useStoryDefault: boolean;
+  storyDefault: NarrationIdentity;
+  chapterOverride?: NarrationIdentity;
+  effective: NarrationIdentity;
+  roles: ChapterNarrationRole[];
+  availableVoices: NarrationVoiceProfile[];
+}
+
+export interface UpdateChapterNarrationRoleRequest {
+  roleKey: string;
+  displayName: string;
+  roleType: NarrationRoleType;
+  voiceProfileId?: string;
+  stylePreset?: NarrationStylePreset;
+  styleNotes: string;
+}
+
+export interface UpdateChapterNarrationSettingsRequest {
+  storyVoiceProfileId: string;
+  storyStylePreset: NarrationStylePreset;
+  storyStyleNotes: string;
+  useStoryDefault: boolean;
+  chapterVoiceProfileId?: string;
+  chapterStylePreset?: NarrationStylePreset;
+  chapterStyleNotes?: string;
+  roles: UpdateChapterNarrationRoleRequest[];
+}
+
+export const NARRATION_VOICE_FIXTURES: NarrationVoiceProfile[] = [
+  {
+    id: '00000000-0000-4000-8000-000000000001',
+    slug: 'chatterbox-narrator',
+    displayName: 'Chatterbox Narrator',
+    description: 'Natural production narrator with optional licensed reference audio.',
+    engine: 'chatterbox',
+    model: 'ResembleAI/chatterbox',
+    language: 'en',
+    referenceAudioAvailable: false,
+    rightsBasis: 'MIT-licensed built-in model voice',
+    defaultExaggeration: 0.45,
+    defaultCfgWeight: 0.4,
+    defaultTemperature: 0.8,
+    active: true,
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000002',
+    slug: 'kokoro-george',
+    displayName: 'George',
+    description: 'Mature British male draft narrator.',
+    engine: 'kokoro',
+    model: 'kokoro-v1.0',
+    language: 'en-gb',
+    providerVoice: 'bm_george',
+    referenceAudioAvailable: false,
+    defaultExaggeration: 0,
+    defaultCfgWeight: 0,
+    defaultTemperature: 0,
+    active: true,
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000003',
+    slug: 'kokoro-emma',
+    displayName: 'Emma',
+    description: 'Measured British female draft narrator.',
+    engine: 'kokoro',
+    model: 'kokoro-v1.0',
+    language: 'en-gb',
+    providerVoice: 'bf_emma',
+    referenceAudioAvailable: false,
+    defaultExaggeration: 0,
+    defaultCfgWeight: 0,
+    defaultTemperature: 0,
+    active: true,
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000004',
+    slug: 'kokoro-michael',
+    displayName: 'Michael',
+    description: 'American male draft narrator.',
+    engine: 'kokoro',
+    model: 'kokoro-v1.0',
+    language: 'en-us',
+    providerVoice: 'am_michael',
+    referenceAudioAvailable: false,
+    defaultExaggeration: 0,
+    defaultCfgWeight: 0,
+    defaultTemperature: 0,
+    active: true,
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000005',
+    slug: 'kokoro-heart',
+    displayName: 'Heart',
+    description: 'Expressive American female draft narrator.',
+    engine: 'kokoro',
+    model: 'kokoro-v1.0',
+    language: 'en-us',
+    providerVoice: 'af_heart',
+    referenceAudioAvailable: false,
+    defaultExaggeration: 0,
+    defaultCfgWeight: 0,
+    defaultTemperature: 0,
+    active: true,
+  },
+];
+
+export const DEFAULT_NARRATION_SETTINGS: ChapterNarrationSettings = {
+  projectSlug: 'blessings-of-sumer',
+  projectTitle: 'Blessings of Sumer',
+  chapterNumber: 1,
+  chapterTitle: 'Enki and the World Order',
+  useStoryDefault: true,
+  storyDefault: {
+    voiceProfile: NARRATION_VOICE_FIXTURES[0],
+    stylePreset: 'mythic',
+    styleNotes: 'Mature, intimate, and serious; restrained rather than theatrical.',
+  },
+  effective: {
+    voiceProfile: NARRATION_VOICE_FIXTURES[0],
+    stylePreset: 'mythic',
+    styleNotes: 'Mature, intimate, and serious; restrained rather than theatrical.',
+  },
+  roles: [],
+  availableVoices: NARRATION_VOICE_FIXTURES,
+};
+
 export interface ReelEpisode {
   series: string;
   chapter: number;
@@ -31,6 +209,7 @@ export interface ReelEpisode {
   platformNotes: string[];
   exportMetadata: ReelExportMetadata;
   productionStatus: ReelProductionStatus;
+  narrationIdentity?: NarrationIdentity;
 }
 
 export type ReelProductionStatus =
@@ -91,6 +270,8 @@ export interface RenderJob {
   heartbeatAt?: string;
   workerId?: string;
   attemptCount: number;
+  voice?: string;
+  narrationConfig?: NarrationIdentity;
   notes?: string;
 }
 

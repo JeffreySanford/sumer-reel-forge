@@ -3,6 +3,8 @@ import { Injectable, inject } from '@angular/core';
 import {
   CHAPTER_ONE_REELS,
   CHAPTER_ONE_SUMMARY,
+  DEFAULT_NARRATION_SETTINGS,
+  type ChapterNarrationSettings,
   type ChapterReelSummary,
   type GeneratedAssetManifest,
   type ReelEpisode,
@@ -12,6 +14,7 @@ import {
   type ReelProductionStatus,
   type AssetReviewStatus,
   type UpdateReelProductionRequest,
+  type UpdateChapterNarrationSettingsRequest,
   type components,
 } from '@sumer-reel-forge/reel-core';
 import { catchError, of } from 'rxjs';
@@ -27,6 +30,25 @@ export class ReelApiService {
     return this.http
       .get<ChapterReelSummary[]>('/api/chapters/1/reels')
       .pipe(catchError(() => of(CHAPTER_ONE_SUMMARY)));
+  }
+
+  getChapterNarrationSettings(projectSlug: string, chapterNumber: number) {
+    return this.http
+      .get<ChapterNarrationSettings>(
+        `/api/projects/${projectSlug}/chapters/${chapterNumber}/narration`,
+      )
+      .pipe(catchError(() => of(DEFAULT_NARRATION_SETTINGS)));
+  }
+
+  saveChapterNarrationSettings(
+    projectSlug: string,
+    chapterNumber: number,
+    request: UpdateChapterNarrationSettingsRequest,
+  ) {
+    return this.http.patch<ChapterNarrationSettings>(
+      `/api/projects/${projectSlug}/chapters/${chapterNumber}/narration`,
+      request,
+    );
   }
 
   getChapterOneEpisode(episodeId: number) {
