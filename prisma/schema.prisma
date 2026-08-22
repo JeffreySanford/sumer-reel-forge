@@ -125,6 +125,7 @@ model Reel {
   chapter               Chapter              @relation(fields: [chapterId], references: [id], onDelete: Cascade)
   shots                 ReelShot[]
   renderJobs            RenderJob[]
+  planningRuns          PlanningRun[]
 
   @@unique([chapterId, episodeNumber])
   @@map("reels")
@@ -145,6 +146,34 @@ model ReelShot {
 
   @@unique([reelId, shotNumber])
   @@map("reel_shots")
+}
+
+model PlanningRun {
+  id              String            @id @default(uuid()) @db.Uuid
+  reelId          String            @map("reel_id") @db.Uuid
+  shotNumber      Int               @map("shot_number")
+  shotKey         String            @map("shot_key")
+  provider        String
+  model           String?
+  promptVersion   String            @default("shot-plan-v1") @map("prompt_version")
+  status          PlanningRunStatus @default(PROPOSAL_READY)
+  inputHash       String            @map("input_hash")
+  outputHash      String            @map("output_hash")
+  workingHash     String            @map("working_hash")
+  input           Json
+  proposal        Json
+  workingProposal Json              @map("working_proposal")
+  durationMs      Int?              @map("duration_ms")
+  reviewedAt      DateTime?         @map("reviewed_at") @db.Timestamptz(6)
+  reviewedBy      String?           @map("reviewed_by")
+  reviewNotes     String?           @map("review_notes")
+  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
+  reel            Reel              @relation(fields: [reelId], references: [id], onDelete: Cascade)
+
+  @@index([reelId, shotNumber, createdAt])
+  @@index([status, createdAt])
+  @@map("planning_runs")
 }
 
 model GeneratedAsset {
@@ -271,6 +300,16 @@ enum ReelProductionStatus {
   PUBLISHED
 
   @@map("reel_production_status")
+}
+
+enum PlanningRunStatus {
+  PROPOSAL_READY
+  APPROVED
+  REJECTED
+  SUPERSEDED
+  FAILED
+
+  @@map("planning_run_status")
 }
 
 enum AssetReviewStatus {
