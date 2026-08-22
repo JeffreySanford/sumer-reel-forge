@@ -3,6 +3,7 @@ CREATE TYPE "render_pipeline" AS ENUM ('MOCK', 'LOCAL', 'EDITORIAL', 'ANIMATION'
 
 -- AlterTable
 ALTER TABLE "render_jobs" ADD COLUMN "pipeline" "render_pipeline";
+ALTER TABLE "render_jobs" ALTER COLUMN "pipeline" SET DEFAULT 'EDITORIAL';
 
 -- Existing queued local work should resume through the real editorial pipeline.
 -- Completed and failed history remains NULL because its original pipeline may be unknown.
