@@ -109,6 +109,7 @@ button:disabled {
 }
 
 .direction-runtime span,
+.run-lineage span,
 .mini-heading,
 dt,
 .proposal-editor label span {
@@ -140,7 +141,8 @@ dt,
 }
 
 .generate-direction,
-.approve-direction {
+.approve-direction,
+.save-direction {
   background: #174848;
   color: #f8e8b0;
 }
@@ -342,6 +344,37 @@ li + li {
   line-height: 1.55;
 }
 
+.run-lineage {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 1px;
+  margin-top: 14px;
+  overflow: hidden;
+  border: 1px solid #d8ccb4;
+  border-radius: 8px;
+  background: #d8ccb4;
+}
+
+.run-lineage > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  background: #f8f3e7;
+  padding: 10px 12px;
+}
+
+.run-lineage strong,
+.run-lineage code {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.run-lineage code {
+  color: #275a55;
+  font-size: 0.78rem;
+}
+
 .proposal-footer {
   margin-top: 14px;
   border-top: 1px solid #d8ccb4;
@@ -392,6 +425,12 @@ li + li {
   font-size: 0.76rem;
 }
 
+@media (max-width: 1180px) {
+  .run-lineage {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 1000px) {
   .direction-runtime,
   .proposal-grid,
@@ -419,7 +458,8 @@ li + li {
   .proposal-grid,
   .proposal-notes,
   .editor-grid,
-  .environment-editor {
+  .environment-editor,
+  .run-lineage {
     grid-template-columns: minmax(0, 1fr);
   }
 
