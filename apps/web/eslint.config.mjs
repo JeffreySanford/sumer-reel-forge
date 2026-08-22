@@ -2,11 +2,16 @@ import playwright from 'eslint-plugin-playwright';
 import nx from '@nx/eslint-plugin';
 import baseConfig from '../../eslint.config.mjs';
 
+const playwrightRecommended = playwright.configs['flat/recommended'];
+
 export default [
   {
     ignores: ['storybook-static/**', '**/storybook-static/**'],
   },
-  playwright.configs['flat/recommended'],
+  {
+    ...playwrightRecommended,
+    files: ['e2e/**/*.ts', '**/e2e/**/*.ts', 'playwright.config.mts'],
+  },
   ...nx.configs['flat/angular'],
   ...nx.configs['flat/angular-template'],
   ...baseConfig,

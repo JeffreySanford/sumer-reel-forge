@@ -21,6 +21,20 @@ const meta: Meta<App> = {
   argTypes: {},
 };
 
+const STORYBOOK_PLANNING_CAPABILITIES = {
+  defaultProvider: 'deterministic' as const,
+  providers: [
+    {
+      id: 'deterministic' as const,
+      available: true,
+      text: true,
+      vision: false,
+      structuredOutput: true,
+      detail: 'Storybook deterministic planning fixture.',
+    },
+  ],
+};
+
 function withMockApi(options: {
   outline?: typeof CHAPTER_ONE_SUMMARY;
   episode?: ReelEpisode;
@@ -62,6 +76,39 @@ function withMockApi(options: {
                 ) ??
                 CHAPTER_ONE_REELS[0],
             ),
+          getPlanningCapabilities: () => of(STORYBOOK_PLANNING_CAPABILITIES),
+          proposeShotPlan: (request: {
+            shotId: string;
+            provider?: 'deterministic' | 'ollama';
+            eyeTarget?: string;
+            stillnessAnchor?: string;
+            styleRules?: string[];
+            availableAssets?: string[];
+          }) =>
+            of({
+              eyeTarget: request.eyeTarget ?? 'primary-subject',
+              stillnessAnchor:
+                request.stillnessAnchor ?? 'primary-subject-composition',
+              camera: {
+                preset: 'human-review-required',
+                scaleFrom: 1,
+                scaleTo: 1,
+                easing: 'cinematicSlow',
+              },
+              motionBudget: {
+                primary: 'human-review-required',
+                subject: 'human-review-required',
+                environment: [],
+                lighting: 'human-review-required',
+              },
+              requiredAssets: request.availableAssets ?? [],
+              inheritedStyleRules: request.styleRules ?? [],
+              unresolvedQuestions: ['Choose authored motion before rendering.'],
+              rationale: 'Storybook deterministic direction fixture.',
+              provider: 'deterministic' as const,
+              shotId: request.shotId,
+              status: 'scaffold' as const,
+            }),
           saveEpisodeProduction: (
             _episodeId: number,
             request: UpdateReelProductionRequest,
