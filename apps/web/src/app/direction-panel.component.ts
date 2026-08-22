@@ -48,6 +48,8 @@ export class DirectionPanelComponent implements OnInit, OnChanges {
   protected readonly proposal = signal<ShotPlanProposal | null>(null);
   protected readonly runtimeStatus = signal('Checking local planning runtime...');
   protected readonly isGenerating = signal(false);
+  protected readonly isEditing = signal(false);
+  protected readonly hasLocalEdits = signal(false);
   protected readonly reviewState = signal<'unreviewed' | 'approved' | 'rejected'>(
     'unreviewed',
   );
@@ -87,6 +89,8 @@ export class DirectionPanelComponent implements OnInit, OnChanges {
     if (changes['shotIndex'] || changes['episode']) {
       this.proposal.set(null);
       this.reviewState.set('unreviewed');
+      this.isEditing.set(false);
+      this.hasLocalEdits.set(false);
       this.lastDurationMs.set(null);
     }
   }
@@ -122,13 +126,17 @@ export class DirectionPanelComponent implements OnInit, OnChanges {
     const startedAt = Date.now();
     this.isGenerating.set(true);
     this.reviewState.set('unreviewed');
+    this.isEditing.set(false);
+    this.hasLocalEdits.set(false);
     this.runtimeStatus.set(`Generating ${provider} direction...`);
 
     this.reelApi.proposeShotPlan({ ...input, provider }).subscribe({
       next: (proposal) => {
         this.proposal.set(proposal);
         this.lastDurationMs.set(Date.now() - startedAt);
-        this.runtimeStatus.set(`Direction ready from ${proposal.model ?? proposal.provider}`);
+        this.runtimeStatus.set(
+          `Direction ready from ${proposal.model ?? proposal.provider}`,
+        );
         this.isGenerating.set(false);
       },
       error: (error: unknown) => {
@@ -139,7 +147,73 @@ export class DirectionPanelComponent implements OnInit, OnChanges {
     });
   }
 
+  protected toggleEditing(): void {
+    if (!this.proposal()) {
+      return;
+    }
+    this.isEditing.update((value) => !value);
+    this.reviewState.set('unreviewed');
+  }
+
+  protected updateProposalText(
+    field: 'eyeTarget' | 'stillnessAnchor',
+    event: Event,
+  ): void {
+    const value = eventValue(event);
+    this.updateProposal((proposal) => ({ ...proposal, [field]: value }));
+  }
+
+  protected updateCameraText(
+    field: 'preset' | 'easing',
+    event: Event,
+  ): void {
+    const value = eventValue(event);
+    this.updateProposal((proposal) => ({
+      ...proposal,
+      camera: { ...proposal.camera, [field]: value },
+    }));
+  }
+
+  protected updateCameraScale(
+    field: 'scaleFrom' | 'scaleTo',
+    event: Event,
+  ): void {
+    const value = Number(eventValue(event));
+    if (!Number.isFinite(value) || value <= 0) {
+      return;
+    }
+    this.updateProposal((proposal) => ({
+      ...proposal,
+      camera: { ...proposal.camera, [field]: value },
+    }));
+  }
+
+  protected updateMotionText(
+    field: 'primary' | 'subject' | 'lighting',
+    event: Event,
+  ): void {
+    const value = eventValue(event);
+    this.updateProposal((proposal) => ({
+      ...proposal,
+      motionBudget: { ...proposal.motionBudget, [field]: value },
+    }));
+  }
+
+  protected updateEnvironmentMotion(index: number, event: Event): void {
+    const value = eventValue(event);
+    this.updateProposal((proposal) => ({
+      ...proposal,
+      motionBudget: {
+        ...proposal.motionBudget,
+        environment: proposal.motionBudget.environment.map((motion, motionIndex) =>
+          motionIndex === index ? value : motion,
+        ),
+      },
+    }));
+  }
+
   protected reviewProposal(state: 'approved' | 'rejected'): void {
+    this.isEditing.set(false);
     this.reviewState.set(state);
   }
 
@@ -160,6 +234,18 @@ export class DirectionPanelComponent implements OnInit, OnChanges {
       return '';
     }
     return `${(durationMs / 1000).toFixed(1)}s`;
+  }
+
+  private updateProposal(
+    update: (proposal: ShotPlanProposal) => ShotPlanProposal,
+  ): void {
+    const current = this.proposal();
+    if (!current) {
+      return;
+    }
+    this.proposal.set(update(current));
+    this.hasLocalEdits.set(true);
+    this.reviewState.set('unreviewed');
   }
 }
 
@@ -331,6 +417,14 @@ function slugify(value: string): string {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '') || 'direction'
   );
+}
+
+function eventValue(event: Event): string {
+  return event.target instanceof HTMLInputElement ||
+    event.target instanceof HTMLTextAreaElement ||
+    event.target instanceof HTMLSelectElement
+    ? event.target.value
+    : '';
 }
 
 function readHttpError(error: unknown): string {
