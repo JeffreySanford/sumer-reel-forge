@@ -187,11 +187,6 @@ async function synthesizeNarration({
     await runProcess(
       config.chatterboxCommand,
       [
-        'run',
-        '--project',
-        config.chatterboxProjectDirectory,
-        '--locked',
-        'python',
         config.chatterboxScript,
         '--text-file',
         narrationTextPath,

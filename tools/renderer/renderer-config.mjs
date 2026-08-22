@@ -47,7 +47,8 @@ export function loadRendererConfig() {
       'auto',
       ['auto', 'sapi', 'kokoro', 'chatterbox'],
     ),
-    chatterboxCommand: process.env.CHATTERBOX_COMMAND ?? 'uv',
+    chatterboxCommand:
+      process.env.CHATTERBOX_COMMAND ?? defaultChatterboxPython(),
     chatterboxProjectDirectory: resolve(
       process.env.CHATTERBOX_PROJECT_DIRECTORY ?? 'tools/chatterbox',
     ),
@@ -89,6 +90,12 @@ export function loadRendererConfig() {
     editorialVoice: process.env.EDITORIAL_VOICE ?? 'Microsoft Mark',
     editorialVoiceRate: integerInRange('EDITORIAL_VOICE_RATE', -3, -10, 10),
   };
+}
+
+function defaultChatterboxPython() {
+  const executable =
+    process.platform === 'win32' ? 'Scripts/python.exe' : 'bin/python';
+  return resolve('.cache/chatterbox/.venv', executable);
 }
 
 function positiveNumber(name, fallback) {

@@ -99,11 +99,9 @@ async function checkEditorialNarration(config) {
     ['auto', 'chatterbox'].includes(config.editorialNarrationAdapter)
   ) {
     return [
-      await checkCommand('uv', config.chatterboxCommand, ['--version']),
-      await checkFile(
-        'Chatterbox project',
-        `${config.chatterboxProjectDirectory}/uv.lock`,
-      ),
+      await checkCommand('Chatterbox Python', config.chatterboxCommand, [
+        '--version',
+      ]),
       await checkFile('Chatterbox script', config.chatterboxScript),
       await checkFile('Chatterbox model', config.chatterboxModelDirectory),
       ...(config.chatterboxReferenceAudio
@@ -115,12 +113,6 @@ async function checkEditorialNarration(config) {
           ]
         : []),
       await checkCommand('Chatterbox runtime', config.chatterboxCommand, [
-        'run',
-        '--project',
-        config.chatterboxProjectDirectory,
-        '--locked',
-        '--no-sync',
-        'python',
         '-c',
         "import torch; assert torch.cuda.is_available() or '${config.chatterboxDevice}' == 'cpu'; print(torch.__version__)",
       ]),
