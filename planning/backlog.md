@@ -28,6 +28,7 @@
 - [x] Replace Windows narration in the review candidate with project-local Kokoro.
 - [x] Add and technically validate the deterministic ambience score candidate.
 - [ ] Complete human voice/score listening approval and render the final-video candidate.
+- [ ] Establish Reel 1 as the publication-quality animation benchmark before animating Reel 2.
 
 ## Epic 3 - Local Rendering Pipeline
 
@@ -56,8 +57,10 @@
 
 ## Epic 5 - Cinematic Animation Pipeline
 
+### Technical proof - complete
+
 - [x] Add Remotion proof renderer for vertical MP4 output.
-- [x] Define layered cinematic scene schema.
+- [x] Define initial layered cinematic scene schema.
 - [x] Add animation adapter to the renderer worker.
 - [x] Add short cinematic style-test render loop.
 - [x] Add contact-sheet style-review artifact generation.
@@ -66,7 +69,41 @@
 - [x] Add second motion-proof review for shot-to-shot animation language.
 - [x] Add complete 60-second Reel 1 Remotion animation draft.
 - [x] Route full Reel 1 animation draft through the renderer worker.
-- [ ] Add Rhubarb Lip Sync integration for mouth-shape timing.
-- [ ] Add character asset conventions for pose, eye, mouth, and expression layers.
 - [x] Persist animation manifests with scene version and asset checksums.
 - [x] Review animated generated assets in the existing studio dashboard.
+
+### Reel 1 quality benchmark - active
+
+- [x] Define Reel 1 animation style bible and motion grammar.
+- [ ] Use Shot 3, Enki at the helm, as the primary 8-12 second publication-quality benchmark.
+- [ ] Create versioned layered `animation-v1` assets derived from or consistent with approved `editorial-v1` artwork.
+- [ ] Replace procedural SVG character/environment art as the principal visual source for the benchmark.
+- [ ] Implement reusable camera, parallax, atmosphere, lighting, water, boat, blink, breathing, and foreground primitives.
+- [ ] Make benchmark scene data authoritative through Remotion input props or an equivalent single scene-data path.
+- [ ] Add a fast benchmark render, sampled-frame, contact-sheet, and review-report loop.
+- [ ] Tune independent camera, boat, character, foreground, water, light, and atmosphere timing.
+- [ ] Score benchmark against art continuity, depth, motion restraint, camera, atmosphere/light, character life, and publishability.
+- [ ] Require no rubric score below 4 and publishability 5 before scaling the style.
+- [ ] Prove the same style on a second contrasting scene, preferably Shot 4 or Shot 7.
+- [ ] Propagate the approved style across all eight Reel 1 shots.
+- [ ] Render and review a complete 60-second Reel 1 animation-v1 candidate.
+- [ ] Keep final publication as an explicit human approval gate.
+
+### Deferred until Reel 1 style approval
+
+- [ ] Add Rhubarb Lip Sync integration for mouth-shape timing when visible on-camera speech actually requires it.
+- [ ] Add reusable character asset conventions for pose, eye, mouth, and expression layers beyond the minimal benchmark kit.
+- [ ] Add broad skeletal rigging only if the approved Reel 1 style demonstrates a need.
+- [ ] Begin Reel 2 animation production only after Reel 1 animation quality is approved.
+- [ ] Consider PixiJS/WebGL only when a measured rendering or scene-complexity problem justifies it.
+
+## Epic 6 - Data-Driven Animation Reuse
+
+This epic begins with Reel 1 but exists to prevent later reels from requiring one-off animation code.
+
+- [ ] Define a concrete scene schema for camera transforms, layer depth, motion presets, masks, easing, timing, and asset references.
+- [ ] Pass scene JSON into a generic Remotion composition rather than mirroring the same scene in hard-coded React.
+- [ ] Keep story/narration data sourced from the reel production record while animation scene data owns visual composition.
+- [ ] Validate asset existence, dimensions, transparency expectations, and camera overscan before rendering.
+- [ ] Record source editorial asset, derived layer checksum, semantic role, depth, and motion preset in animation manifests.
+- [ ] Ensure a future Reel 2 can be produced primarily from new data and assets rather than a new `FullReel2Animation.tsx`.
