@@ -27,7 +27,9 @@ Sprint 005 proved that Remotion, narration synchronization, worker orchestration
 
 Use:
 
-- `reel-01-animation-style-bible.md` for camera, motion, lighting, transitions, layered assets, review rubric, and shot-by-shot direction;
+- `reel-01-animation-style-bible.md` for governing camera, motion, lighting, transitions, layered assets, and shot-by-shot direction;
+- `reel-01-cinematic-direction-plan.md` for the reel-wide emotional arc, color script, lens/camera grammar, material motion rules, transition plan, character micro-performance, atmosphere palette, sound-to-motion cues, and shot intent cards;
+- `reel-01-animation-review-scorecard.md` for repeatable visual-quality scoring, hard-fail conditions, A/B comparisons, phone review, and publication thresholds;
 - `sprint-006-reel-one-animation-polish.md` for the active implementation sequence;
 - `remotion-cinematic-animation-roadmap.md` for the broader renderer roadmap.
 
@@ -46,4 +48,4 @@ Rhubarb lip sync, Reel 2 animation, skeletal rigging, and larger animation-engin
 - [x] Mutating behavior is auditable or explicitly documented as temporary.
 - [x] Long-running processes have timeout and heartbeat behavior.
 - [x] CI has bounded runtimes for steps that can hang.
-- [ ] Animation publication quality passes the Reel 1 style-bible review rubric before animation production expands to later reels.
+- [ ] Animation publication quality passes the Reel 1 style-bible and review-scorecard gates before animation production expands to later reels.
