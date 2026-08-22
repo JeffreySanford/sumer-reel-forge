@@ -14,7 +14,7 @@ The Studio must remain functional with `PLANNING_PROVIDER=deterministic` even wh
 
 ## Current Implementation Slice
 
-The first provider/runtime slice is implemented:
+The provider/runtime and first Direction-workspace slice are implemented:
 
 - [x] `PlanningProvider` abstraction.
 - [x] deterministic planning provider.
@@ -27,11 +27,19 @@ The first provider/runtime slice is implemented:
 - [x] inherited style rules are re-applied from Studio input rather than trusted from model output.
 - [x] default camera-scale delta guardrail is enforced after model generation.
 - [x] bounded Ollama request timeout.
+- [x] Qwen3 planning uses `think: false` and configurable `keep_alive`.
 - [x] `pnpm planning:ollama:check` local runtime command.
-- [x] runtime/configuration documentation.
+- [x] `pnpm planning:ollama:warm` model-preload command.
+- [x] `start:all` checks and warms Ollama automatically when `PLANNING_PROVIDER=ollama`.
+- [x] Angular Direction workspace follows the selected reel shot.
+- [x] Direction workspace displays provider, text model, vision model, proposal, open questions, and local human review state.
+- [x] Direction diagnostics distinguish deterministic PASS / REVIEW / FAIL outcomes.
+- [x] Shot 3 and Shot 4 receive their stricter benchmark planning policies while other shots receive the general motion policy.
 - [x] deterministic provider unit coverage.
+- [x] Direction request/diagnostic and root Studio integration coverage.
+- [x] runtime/configuration documentation.
 
-This slice does not yet persist planning runs or apply proposals to Scene V2.
+This slice does not yet persist planning runs, persist local Direction approval, apply proposals to Scene V2, or invoke the vision model.
 
 ## Scope
 
@@ -71,14 +79,15 @@ This slice does not yet persist planning runs or apply proposals to Scene V2.
 
 ### 5. Studio planning workspace
 
-- [ ] Add Reel Direction view.
-- [ ] Add Shot Planner view.
+- [x] Add Reel Direction view.
+- [x] Add selected-shot Shot Planner proposal surface.
+- [ ] Add persisted Direction edit/approve/reject workflow.
 - [ ] Add Asset Readiness view.
 - [ ] Add keyframe checkpoint display.
 - [ ] Add Candidate Review view with video, sampled frames, contact sheet, and scorecard.
 - [ ] Add Revision Builder showing proposed before/after scene values.
 - [ ] Add Style Decisions view with promote/override/supersede actions.
-- [ ] Add Local Production Runtime status for Ollama, configured models, ComfyUI, FFmpeg, Whisper, Kokoro, Postgres, API, and renderer worker where practical.
+- [ ] Add full Local Production Runtime status for ComfyUI, FFmpeg, Whisper, Kokoro, Postgres, API, and renderer worker. Ollama provider/model status is already implemented in Direction.
 
 ### 6. Benchmark automation
 
@@ -106,7 +115,9 @@ This slice does not yet persist planning runs or apply proposals to Scene V2.
 - [x] Support text planning independently from vision critique.
 - [x] Add bounded timeout around local model calls.
 - [x] Discover local models through Ollama capability endpoint.
+- [x] Report configured text and vision model identities to the Studio.
 - [x] Preserve human-approved style rules as authoritative Studio input.
+- [x] Warm the configured text model during Ollama-enabled local startup.
 - [ ] Persist provider/model/input hash/output hash for reproducibility.
 - [ ] Add attempt/log/retry persistence around local model calls.
 - [ ] Add prompt-template version metadata.
@@ -147,7 +158,7 @@ Sprint 007 is not proven until a new reel can:
 
 - No autonomous publication.
 - No model-driven source-story rewriting.
-- No requirement that Ollama be running for the Studio to start.
+- No requirement that Ollama be running when the deterministic provider is selected.
 - No requirement to use one specific LLM.
 - No automatic visual approval.
 - No broad multi-agent system before the single-provider workflow works.
@@ -157,6 +168,8 @@ Sprint 007 is not proven until a new reel can:
 ## Acceptance Criteria
 
 - [x] Provider-level Studio planning works with no LLM configured.
+- [x] Selected-shot Direction proposals can be generated through the Studio UI.
+- [x] Direction proposals surface deterministic guardrail diagnostics before local approval.
 - [ ] Persisted planning workflow works with no LLM configured.
 - [ ] Scene V2 and manifest proposals are validated before use.
 - [ ] Planning and review runs are auditable and reproducible.
