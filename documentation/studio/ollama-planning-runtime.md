@@ -2,11 +2,11 @@
 
 ## Purpose
 
-Use the already-installed local Ollama runtime as an optional assistant-director provider for Sumer Reel Forge while keeping deterministic planning, validation, rendering, review, and human approval independent from any model.
+Use the installed local Ollama runtime as an optional assistant-director provider for Sumer Reel Forge while keeping deterministic planning, validation, rendering, review, and human approval independent from any model.
 
 ## Current Implementation
 
-The API now exposes:
+The API exposes:
 
 ```text
 GET  /api/planning/capabilities
@@ -23,22 +23,25 @@ The Ollama provider uses:
 - `GET /api/tags` for local model discovery;
 - `POST /api/chat` for planning;
 - `stream: false` so structured responses arrive as one JSON response;
+- `think: false` for bounded shot-direction generation with Qwen3-class thinking models;
+- `keep_alive` so the configured planner remains warm between proposals;
 - a JSON Schema in the `format` field;
 - bounded request timeouts;
 - application-side validation before model output becomes a proposal.
 
 Model output is never treated as human approval.
 
-## Configuration
+## Recommended Local Configuration
 
 PowerShell example:
 
 ```powershell
 $env:PLANNING_PROVIDER="ollama"
 $env:OLLAMA_BASE_URL="http://localhost:11434"
-$env:OLLAMA_TEXT_MODEL="<your-installed-text-model>"
-$env:OLLAMA_VISION_MODEL="<your-installed-vision-model>"
-$env:PLANNING_TIMEOUT_MS="45000"
+$env:OLLAMA_TEXT_MODEL="qwen3:8b"
+$env:OLLAMA_VISION_MODEL="qwen3-vl:4b-instruct"
+$env:PLANNING_TIMEOUT_MS="120000"
+$env:OLLAMA_KEEP_ALIVE="10m"
 ```
 
 Git Bash example:
@@ -46,84 +49,103 @@ Git Bash example:
 ```bash
 export PLANNING_PROVIDER=ollama
 export OLLAMA_BASE_URL=http://localhost:11434
-export OLLAMA_TEXT_MODEL='<your-installed-text-model>'
-export OLLAMA_VISION_MODEL='<your-installed-vision-model>'
-export PLANNING_TIMEOUT_MS=45000
+export OLLAMA_TEXT_MODEL=qwen3:8b
+export OLLAMA_VISION_MODEL=qwen3-vl:4b-instruct
+export PLANNING_TIMEOUT_MS=120000
+export OLLAMA_KEEP_ALIVE=10m
 ```
 
-`OLLAMA_VISION_MODEL` is reserved for the upcoming contact-sheet / keyframe critique path. Text planning works without it.
+These shell variables do not modify the Windows PATH.
 
-## Check The Local Runtime
+## Normal Local Startup
 
-Run:
+With `PLANNING_PROVIDER=ollama`, the normal command is now:
+
+```bash
+pnpm start:all
+```
+
+`start:all` automatically performs the equivalent of:
 
 ```bash
 pnpm planning:ollama:check
+pnpm planning:ollama:warm
 ```
 
-The command lists the models reported by Ollama and warns when a configured model is not installed.
+before starting the Docker infrastructure, Nest API, and Angular Studio. This provides fail-fast local runtime validation and preloads the configured text planner.
 
-Then start the Studio/API normally and inspect:
+When `PLANNING_PROVIDER=deterministic`, the Ollama check and warm-up are skipped so deterministic development and CI do not depend on a local model runtime.
 
-```text
-GET http://localhost:3000/api/planning/capabilities
+The standalone commands remain useful for diagnostics:
+
+```bash
+pnpm planning:ollama:check
+pnpm planning:ollama:warm
+pnpm planning:shot3
 ```
 
-Expected conceptual response:
+`planning:shot3` remains a developer smoke test. Normal creative work should use the Studio Direction panel.
+
+## Direction Workspace
+
+The Angular Studio includes a selected-shot **Direction** workspace. It reads the active planning capability and shows:
+
+- provider availability;
+- configured text planner;
+- configured vision-review model;
+- structured-output readiness;
+- selected shot intent and motion;
+- Generate Direction action;
+- camera, performance, environment, and lighting proposal fields;
+- deterministic PASS / REVIEW / FAIL checks;
+- unresolved creative questions;
+- model/runtime metadata;
+- local human approve/reject controls.
+
+Selecting another shot clears the previous proposal and rebuilds the planning request for the newly selected shot.
+
+Reel 1 benchmark policies are stricter than the generic policy:
+
+- Shot 3 `enki-at-the-helm` carries the 3% camera limit, Enki facial-identity stillness anchor, narrator-only lip-sync prohibition, water motion rule, and heavy vessel physics rule;
+- Shot 4 `nammu-under-water` carries the 1% camera limit, environmental-coherence reveal rule, near-static camera requirement, and explicit anti-fantasy/horror constraints;
+- the remaining shots use the general restrained documentary, material-weight, narration-preservation, and 5% camera policy.
+
+Local approval is intentionally non-persistent. It must not be treated as a production approval until `PlanningRun` / approval-history persistence is implemented.
+
+## Capability Response
+
+A configured Ollama capability reports both planner and vision models:
 
 ```json
 {
   "defaultProvider": "ollama",
   "providers": [
     {
-      "id": "deterministic",
-      "available": true,
-      "structuredOutput": true
-    },
-    {
       "id": "ollama",
       "available": true,
-      "configuredModel": "<model>",
-      "models": ["<model>"]
+      "configuredModel": "qwen3:8b",
+      "configuredVisionModel": "qwen3-vl:4b-instruct",
+      "text": true,
+      "vision": true,
+      "structuredOutput": true
     }
   ]
 }
 ```
 
-## First Reel 1 Planning Call
+## Shot 3 Smoke Test
 
-The first live pilot should be Shot 3, Enki at the helm.
+The developer-only smoke test is:
 
-Example request body:
-
-```json
-{
-  "provider": "ollama",
-  "shotId": "enki-at-the-helm",
-  "storyFunction": "Establish Enki as the human and divine visual anchor of the voyage.",
-  "emotionalPurpose": "calm authority",
-  "eyeTarget": "enki-face",
-  "stillnessAnchor": "enki-facial-identity",
-  "styleRules": [
-    "character-closeup.camera.maxPushPercent = 3",
-    "narratorOnly.lipSync = false",
-    "foregroundOcclusion.mustAvoid = face,captions",
-    "material.water.motion = multi-frequency",
-    "material.rigid-vessel.motion = heavyPhysical"
-  ],
-  "constraints": [
-    "Do not rewrite narration.",
-    "Use one primary movement.",
-    "Prefer restrained character motion.",
-    "Preserve the approved Enki identity."
-  ],
-  "availableAssets": [
-    "assets/blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-03.png"
-  ]
-}
+```bash
+pnpm planning:shot3
 ```
 
-The response is a proposal, not a render instruction that bypasses review. The next Studio slice will persist and display these proposals before they are applied to Scene V2.
+It sends the strict Shot 3 Enki direction package to the configured planning provider. The response is a proposal, not a render instruction that bypasses review.
+
+The current UI additionally diagnoses proposal-level issues that can be stricter than the provider-wide schema guardrail. For example, the Ollama provider permits at most a 5% camera scale delta globally, while the Shot 3 Direction policy permits at most 3%.
+
+A proposal using `linear` easing is marked REVIEW rather than automatically failed. A proposal whose primary motion says camera tilt while also changing camera scale is also marked REVIEW for semantic consistency. Missing inherited style rules or a shot-specific camera-limit violation are FAIL conditions.
 
 ## Provider Responsibilities
 
@@ -154,7 +176,7 @@ All actionable output must validate against the planning schema.
 
 ## Planned Vision Review
 
-The next AI-assisted review slice should pass selected render evidence to a configured vision-capable model:
+The next AI-assisted review slice should pass selected render evidence to the configured vision-capable model:
 
 ```text
 shot intent
@@ -185,9 +207,8 @@ If a future Docker-hosted API cannot reach host Ollama, use the Docker host gate
 ## Next Implementation Slice
 
 1. persist `PlanningRun` and planning artifact records;
-2. load Reel 1 source/style context server-side instead of requiring it all in the request body;
+2. load reel source/style context server-side instead of requiring it all in the request body;
 3. implement Scene V2 validation and persistence;
-4. add the Angular Direction workspace;
-5. connect Shot 3 proposal -> human edit -> Scene V2 -> benchmark render;
-6. add vision critique for review frames/contact sheets;
-7. turn approved A/B decisions into reusable StyleDecision records.
+4. connect approved Shot 3 direction -> Scene V2 -> benchmark render;
+5. add Qwen3-VL critique for review frames/contact sheets;
+6. turn approved A/B decisions into reusable StyleDecision records.
