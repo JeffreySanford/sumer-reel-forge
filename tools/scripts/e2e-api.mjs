@@ -208,7 +208,7 @@ async function main() {
 
   run(
     pnpmCommand,
-    ['exec', 'jest', '--config', 'apps/api-e2e/jest.config.cts', '--runInBand'],
+    ['exec', 'jest', '--config', 'apps/api-e2e/jest.config.ts', '--runInBand'],
     { env: testEnv },
   );
 }

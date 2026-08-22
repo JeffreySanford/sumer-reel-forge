@@ -253,6 +253,8 @@ export class PrismaReelRepository implements ReelRepository {
         'Every selected narration voice must exist and be active.',
       );
     }
+    const chapterStylePreset =
+      request.chapterStylePreset ?? request.storyStylePreset;
 
     await this.prisma.$transaction(async (tx) => {
       await tx.studioProject.update({
@@ -274,7 +276,7 @@ export class PrismaReelRepository implements ReelRepository {
             : request.chapterVoiceProfileId,
           narrationStylePreset: request.useStoryDefault
             ? null
-            : toPrismaNarrationStyle(request.chapterStylePreset!),
+            : toPrismaNarrationStyle(chapterStylePreset),
           narrationStyleNotes: request.useStoryDefault
             ? null
             : (request.chapterStyleNotes ?? ''),
