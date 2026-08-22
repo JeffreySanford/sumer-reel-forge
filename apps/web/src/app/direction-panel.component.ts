@@ -11,12 +11,15 @@ import {
 import type { ReelEpisode, ReelShot } from '@sumer-reel-forge/reel-core';
 import { ReelApiService } from './reel-api.service';
 import type {
+  CreatePlanningRunRequest,
   DirectionCheck,
   PlanningCapabilitiesResponse,
+  PlanningRunView,
   ShotPlanProposal,
   ShotPlanRequest,
 } from './direction-planning.types';
 
+const PROJECT_SLUG = 'blessings-of-sumer';
 const REEL_ONE_SHOT_IDS = [
   'black-water-before-dawn',
   'stag-of-the-absu-coastline',
@@ -45,10 +48,14 @@ export class DirectionPanelComponent implements OnInit, OnChanges {
     null,
   );
   protected readonly planningInput = signal<ShotPlanRequest | null>(null);
+  protected readonly planningRun = signal<PlanningRunView | null>(null);
   protected readonly proposal = signal<ShotPlanProposal | null>(null);
   protected readonly runtimeStatus = signal('Checking local planning runtime...');
   protected readonly isGenerating = signal(false);
+  protected readonly isLoadingRun = signal(false);
   protected readonly isEditing = signal(false);
+  protected readonly isSavingProposal = signal(false);
+  protected readonly isReviewing = signal(false);
   protected readonly hasLocalEdits = signal(false);
   protected readonly reviewState = signal<'unreviewed' | 'approved' | 'rejected'>(
     'unreviewed',
@@ -75,6 +82,10 @@ export class DirectionPanelComponent implements OnInit, OnChanges {
     this.directionChecks().some((check) => check.status === 'fail'),
   );
 
+  protected readonly runIsEditable = computed(
+    () => this.planningRun()?.status === 'proposal-ready',
+  );
+
   ngOnInit(): void {
     this.refreshCapabilities();
   }
@@ -87,11 +98,8 @@ export class DirectionPanelComponent implements OnInit, OnChanges {
     }
 
     if (changes['shotIndex'] || changes['episode']) {
-      this.proposal.set(null);
-      this.reviewState.set('unreviewed');
-      this.isEditing.set(false);
-      this.hasLocalEdits.set(false);
-      this.lastDurationMs.set(null);
+      this.resetRunState();
+      this.loadLatestPlanningRun();
     }
   }
 
@@ -123,24 +131,30 @@ export class DirectionPanelComponent implements OnInit, OnChanges {
     }
 
     const provider = this.capabilities()?.defaultProvider ?? 'deterministic';
-    const startedAt = Date.now();
+    const request: CreatePlanningRunRequest = {
+      ...input,
+      provider,
+      projectSlug: PROJECT_SLUG,
+      chapterNumber: this.episode.chapter,
+      episodeNumber: this.episode.episode,
+      shotNumber: this.shotIndex + 1,
+    };
+
     this.isGenerating.set(true);
     this.reviewState.set('unreviewed');
     this.isEditing.set(false);
     this.hasLocalEdits.set(false);
     this.runtimeStatus.set(`Generating ${provider} direction...`);
 
-    this.reelApi.proposeShotPlan({ ...input, provider }).subscribe({
-      next: (proposal) => {
-        this.proposal.set(proposal);
-        this.lastDurationMs.set(Date.now() - startedAt);
+    this.reelApi.createPlanningRun(request).subscribe({
+      next: (run) => {
+        this.applyPlanningRun(run);
         this.runtimeStatus.set(
-          `Direction ready from ${proposal.model ?? proposal.provider}`,
+          `Direction persisted from ${run.model ?? run.provider}`,
         );
         this.isGenerating.set(false);
       },
       error: (error: unknown) => {
-        this.lastDurationMs.set(Date.now() - startedAt);
         this.runtimeStatus.set(`Direction failed: ${readHttpError(error)}`);
         this.isGenerating.set(false);
       },
@@ -148,11 +162,38 @@ export class DirectionPanelComponent implements OnInit, OnChanges {
   }
 
   protected toggleEditing(): void {
-    if (!this.proposal()) {
+    if (!this.proposal() || !this.runIsEditable()) {
       return;
     }
     this.isEditing.update((value) => !value);
-    this.reviewState.set('unreviewed');
+  }
+
+  protected saveProposalEdits(): void {
+    const run = this.planningRun();
+    const proposal = this.proposal();
+    if (
+      !run ||
+      !proposal ||
+      !this.runIsEditable() ||
+      !this.hasLocalEdits() ||
+      this.isSavingProposal()
+    ) {
+      return;
+    }
+
+    this.isSavingProposal.set(true);
+    this.runtimeStatus.set('Saving human direction edits...');
+    this.reelApi.updatePlanningRunProposal(run.id, proposal).subscribe({
+      next: (updated) => {
+        this.applyPlanningRun(updated);
+        this.runtimeStatus.set('Direction edits persisted');
+        this.isSavingProposal.set(false);
+      },
+      error: (error: unknown) => {
+        this.runtimeStatus.set(`Save failed: ${readHttpError(error)}`);
+        this.isSavingProposal.set(false);
+      },
+    });
   }
 
   protected updateProposalText(
@@ -213,12 +254,38 @@ export class DirectionPanelComponent implements OnInit, OnChanges {
   }
 
   protected reviewProposal(state: 'approved' | 'rejected'): void {
-    this.isEditing.set(false);
-    this.reviewState.set(state);
-  }
+    const run = this.planningRun();
+    if (!run || !this.runIsEditable() || this.isReviewing()) {
+      return;
+    }
+    if (this.hasLocalEdits()) {
+      this.runtimeStatus.set('Save edits before approving or rejecting this run.');
+      return;
+    }
+    if (state === 'approved' && this.proposalHasFailure()) {
+      this.runtimeStatus.set('Resolve failing guardrails before approval.');
+      return;
+    }
 
-  protected clearReview(): void {
-    this.reviewState.set('unreviewed');
+    this.isReviewing.set(true);
+    this.runtimeStatus.set(
+      state === 'approved' ? 'Approving direction...' : 'Rejecting direction...',
+    );
+    this.reelApi.reviewPlanningRun(run.id, state).subscribe({
+      next: (updated) => {
+        this.applyPlanningRun(updated);
+        this.runtimeStatus.set(
+          state === 'approved'
+            ? 'Direction approved and persisted'
+            : 'Direction rejected and persisted',
+        );
+        this.isReviewing.set(false);
+      },
+      error: (error: unknown) => {
+        this.runtimeStatus.set(`Review failed: ${readHttpError(error)}`);
+        this.isReviewing.set(false);
+      },
+    });
   }
 
   protected formatPercent(value: number): string {
@@ -236,16 +303,77 @@ export class DirectionPanelComponent implements OnInit, OnChanges {
     return `${(durationMs / 1000).toFixed(1)}s`;
   }
 
+  protected shortHash(value: string | undefined): string {
+    return value ? value.slice(0, 10) : '—';
+  }
+
+  private loadLatestPlanningRun(): void {
+    if (!this.episode || !this.shot) {
+      return;
+    }
+    const episodeNumber = this.episode.episode;
+    const shotNumber = this.shotIndex + 1;
+    this.isLoadingRun.set(true);
+
+    this.reelApi
+      .getLatestPlanningRun(
+        PROJECT_SLUG,
+        this.episode.chapter,
+        episodeNumber,
+        shotNumber,
+      )
+      .subscribe({
+        next: (run) => {
+          if (
+            this.episode.episode !== episodeNumber ||
+            this.shotIndex + 1 !== shotNumber
+          ) {
+            return;
+          }
+          if (run) {
+            this.applyPlanningRun(run);
+          }
+          this.isLoadingRun.set(false);
+        },
+        error: () => {
+          this.isLoadingRun.set(false);
+        },
+      });
+  }
+
+  private applyPlanningRun(run: PlanningRunView): void {
+    this.planningRun.set(run);
+    this.proposal.set(run.workingProposal);
+    this.lastDurationMs.set(run.durationMs ?? null);
+    this.reviewState.set(
+      run.status === 'approved'
+        ? 'approved'
+        : run.status === 'rejected'
+          ? 'rejected'
+          : 'unreviewed',
+    );
+    this.isEditing.set(false);
+    this.hasLocalEdits.set(false);
+  }
+
+  private resetRunState(): void {
+    this.planningRun.set(null);
+    this.proposal.set(null);
+    this.reviewState.set('unreviewed');
+    this.isEditing.set(false);
+    this.hasLocalEdits.set(false);
+    this.lastDurationMs.set(null);
+  }
+
   private updateProposal(
     update: (proposal: ShotPlanProposal) => ShotPlanProposal,
   ): void {
     const current = this.proposal();
-    if (!current) {
+    if (!current || !this.runIsEditable()) {
       return;
     }
     this.proposal.set(update(current));
     this.hasLocalEdits.set(true);
-    this.reviewState.set('unreviewed');
   }
 }
 
