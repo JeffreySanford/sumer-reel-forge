@@ -18,6 +18,11 @@ import {
   type components,
 } from '@sumer-reel-forge/reel-core';
 import { catchError, of } from 'rxjs';
+import type {
+  PlanningCapabilitiesResponse,
+  ShotPlanProposal,
+  ShotPlanRequest,
+} from './direction-planning.types';
 
 type CreateRenderJobDto = components['schemas']['CreateRenderJobDto'];
 type UpdateReelProductionDto = components['schemas']['UpdateReelProductionDto'];
@@ -59,6 +64,16 @@ export class ReelApiService {
     return this.http
       .get<ReelEpisode>(`/api/chapters/1/reels/${episodeId}`)
       .pipe(catchError(() => of(fallback)));
+  }
+
+  getPlanningCapabilities() {
+    return this.http.get<PlanningCapabilitiesResponse>(
+      '/api/planning/capabilities',
+    );
+  }
+
+  proposeShotPlan(request: ShotPlanRequest) {
+    return this.http.post<ShotPlanProposal>('/api/planning/shot-plan', request);
   }
 
   queueRenderJob(request: CreateRenderJobDto) {
