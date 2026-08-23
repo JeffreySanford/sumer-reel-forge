@@ -8,15 +8,18 @@ import { PlanningService } from './planning/planning.service';
 import { PrismaService } from './prisma.service';
 import { PrismaReelRepository, REEL_REPOSITORY } from './reel.repository';
 import { RequestLoggingMiddleware } from './request-logging.middleware';
+import { RuntimeCapabilitiesService } from './runtime-capabilities.service';
+import { RuntimeController } from './runtime.controller';
 
 @Module({
   imports: [],
-  controllers: [AppController, PlanningController],
+  controllers: [AppController, PlanningController, RuntimeController],
   providers: [
     AppService,
     PlanningService,
     DeterministicPlanningProvider,
     OllamaPlanningProvider,
+    RuntimeCapabilitiesService,
     PrismaService,
     {
       provide: REEL_REPOSITORY,
@@ -28,6 +31,6 @@ export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {
     consumer
       .apply(RequestLoggingMiddleware)
-      .forRoutes(AppController, PlanningController);
+      .forRoutes(AppController, PlanningController, RuntimeController);
   }
 }
