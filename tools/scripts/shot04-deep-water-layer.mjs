@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { createHash } from 'node:crypto';
-import { access, copyFile, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
-import { basename, join, resolve } from 'node:path';
+import { access, copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
 
 const MANIFEST_PATH = resolve(
   'assets/blessings-of-sumer/chapter-01/reel-01/animation-v1/manifest.json',
