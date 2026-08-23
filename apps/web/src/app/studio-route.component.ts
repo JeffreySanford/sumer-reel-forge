@@ -7,17 +7,23 @@ import type { Subscription } from 'rxjs';
   standalone: true,
   imports: [RouterLink],
   template: `
-    <a class="system-launcher" routerLink="/system" aria-label="Open host system capabilities">
-      Host System
-    </a>
+    <nav class="workspace-launchers" aria-label="Workspace utility navigation">
+      <a routerLink="/" aria-label="Return to Studio home">Studio Home</a>
+      <a routerLink="/system" aria-label="Open host system capabilities">Host System</a>
+    </nav>
   `,
   styles: [
     `
-      .system-launcher {
+      .workspace-launchers {
         position: fixed;
         right: 24px;
         bottom: 22px;
         z-index: 50;
+        display: flex;
+        gap: 7px;
+      }
+
+      .workspace-launchers a {
         border: 1px solid #2d5b5b;
         border-radius: 999px;
         background: #174848;
@@ -28,9 +34,15 @@ import type { Subscription } from 'rxjs';
         box-shadow: 0 8px 24px rgba(23, 72, 72, 0.2);
       }
 
-      .system-launcher:hover,
-      .system-launcher:focus-visible {
-        background: #1f5b5a;
+      .workspace-launchers a:first-child {
+        border-color: #56608c;
+        background: #282d53;
+        color: #e8e7ff;
+      }
+
+      .workspace-launchers a:hover,
+      .workspace-launchers a:focus-visible {
+        filter: brightness(1.12);
         outline: 2px solid #d9b86c;
         outline-offset: 2px;
       }
