@@ -23,8 +23,7 @@ export function ContainedWaterMaterialLayer({
   const filterA = `${safeSvgId(layer.id)}-water-refraction-a`;
   const filterB = `${safeSvgId(layer.id)}-water-refraction-b`;
 
-  // This is intentionally stronger than the old translated-card treatment.
-  // Human review can reduce it after the material unmistakably reads as water.
+  // Fine material motion: actual source pixels refract inside the fixed basin mask.
   const displacementA =
     (20 + Math.sin(phase * 0.73 + 0.4) * 5 + Math.sin(phase * 0.29) * 2.5) *
     settle;
@@ -79,6 +78,8 @@ export function ContainedWaterMaterialLayer({
     transformOrigin: '53% 82%',
     willChange: 'transform, opacity, filter',
   };
+
+  const rippleOrigins = [0, 0.36, 0.72];
 
   return (
     <>
@@ -166,6 +167,64 @@ export function ContainedWaterMaterialLayer({
         />
       </div>
 
+      {/*
+        Readable low-frequency motion. These perspective-flattened wave fronts
+        expand across the fixed basin mask, giving the eye a physical ripple to
+        track while the turbulence above supplies fine refraction detail.
+      */}
+      <div style={maskStyle} data-water-motion="broad-traveling-ripple">
+        {rippleOrigins.map((offset, index) => {
+          const cycle = positiveModulo(phase * 0.22 + offset, 1);
+          const envelope = Math.sin(Math.PI * cycle) * settle;
+          const scaleX = 0.42 + cycle * 2.75;
+          const scaleY = 0.38 + cycle * 2.05;
+          const opacity = envelope * (index === 0 ? 0.52 : 0.42);
+          const travelX = Math.sin(phase * 0.31 + index * 1.7) * 5;
+          const travelY = cycle * 7 - 3;
+
+          return (
+            <React.Fragment key={`ripple-${index}`}>
+              <div
+                style={{
+                  position: 'absolute',
+                  left: '53%',
+                  top: '82.5%',
+                  width: '18%',
+                  height: '5.8%',
+                  borderRadius: '50%',
+                  border: '2.2px solid rgba(255,243,205,0.9)',
+                  boxShadow:
+                    '0 0 9px rgba(255,230,176,0.48), inset 0 0 7px rgba(255,241,205,0.36)',
+                  opacity,
+                  mixBlendMode: 'screen',
+                  filter: 'blur(0.65px)',
+                  transformOrigin: '50% 50%',
+                  transform: `translate3d(calc(-50% + ${travelX}px), calc(-50% + ${travelY}px), 0) scaleX(${scaleX}) scaleY(${scaleY})`,
+                  willChange: 'transform, opacity',
+                }}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  left: '53%',
+                  top: '82.5%',
+                  width: '18%',
+                  height: '5.8%',
+                  borderRadius: '50%',
+                  border: '3.5px solid rgba(58,48,30,0.48)',
+                  opacity: envelope * 0.2,
+                  mixBlendMode: 'multiply',
+                  filter: 'blur(2px)',
+                  transformOrigin: '50% 50%',
+                  transform: `translate3d(calc(-50% + ${travelX}px), calc(-50% + ${travelY + 2}px), 0) scaleX(${scaleX * 1.035}) scaleY(${scaleY * 1.05})`,
+                  willChange: 'transform, opacity',
+                }}
+              />
+            </React.Fragment>
+          );
+        })}
+      </div>
+
       <div
         style={{
           ...maskStyle,
@@ -193,6 +252,10 @@ export function ContainedWaterMaterialLayer({
       />
     </>
   );
+}
+
+function positiveModulo(value: number, modulus: number): number {
+  return ((value % modulus) + modulus) % modulus;
 }
 
 function safeSvgId(value: string): string {
