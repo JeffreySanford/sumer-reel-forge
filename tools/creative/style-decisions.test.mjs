@@ -44,6 +44,11 @@ test('Shot 3 water inherits project and water-material decisions', () => {
     lane?.qa?.executor,
     'tools/scripts/verify-semantic-overlay-candidate.mjs',
   );
+  assert.ok(lane?.qa?.alphaCoverage?.minimum > 0);
+  assert.ok(
+    lane?.qa?.alphaCoverage?.preferredMinimum >
+      lane?.qa?.alphaCoverage?.minimum,
+  );
 });
 
 test('Shot 4 deep water inherits provisional Nammu rules and exact-source lane', () => {
@@ -100,6 +105,11 @@ test('Shot 4 coherence mask selects environmental coherence lane', () => {
   assert.equal(lane?.id, 'environmental-coherence-mask');
   assert.equal(lane?.generator?.family, 'semantic-coherence-mask');
   assert.ok(lane?.qa?.alphaCoverage?.maximum <= 0.4);
+  assert.ok(lane?.qa?.alphaCoverage?.minimum > 0);
+  assert.ok(
+    lane?.qa?.alphaCoverage?.preferredMinimum >
+      lane?.qa?.alphaCoverage?.minimum,
+  );
   assert.equal(lane?.qa?.humanReviewRequired, true);
 });
 
@@ -118,5 +128,9 @@ test('Shot 4 surface refraction is executable through the generic semantic lane'
     'tools/renderer/workflows/semantic-overlay-sam3-api.json',
   );
   assert.ok(lane?.qa?.alphaCoverage?.minimum > 0);
+  assert.ok(
+    lane?.qa?.alphaCoverage?.preferredMinimum >
+      lane?.qa?.alphaCoverage?.minimum,
+  );
   assert.ok(lane?.qa?.alphaCoverage?.maximum < 1);
 });
