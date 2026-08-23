@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 2,
+  "sceneId": "chapter-01-reel-01-shot-05-traveler-shrine-benchmark-v1",
+  "projectSlug": "blessings-of-sumer",
+  "chapterNumber": 1,
+  "reelId": "resolve-from-studio",
+  "episodeNumber": 1,
+  "visualBible": "blessings-of-sumer-v1",
+  "styleBible": "reel-01-animation-style-v1",
+  "assetVersion": "editorial-v1-flat-benchmark",
+  "assetManifestPath": "blessings-of-sumer/chapter-01/reel-01/animation-v1/manifest.json",
+  "assetStrategy": "prefer-animation-manifest",
+  "width": 1080,
+  "height": 1920,
+  "fps": 30,
+  "durationFrames": 210,
+  "shots": [
+    {
+      "id": "traveler-shrine-hospitality",
+      "sourceShotNumber": 5,
+      "sourceStartFrame": 840,
+      "startFrame": 0,
+      "durationFrames": 210,
+      "emotionalPurpose": "Turn Nammu's divine instruction into lived human dignity: water, bread, shelter, warmth, and welcome should feel practical rather than symbolic or ceremonial.",
+      "eyeTarget": "water-bread-welcome-action",
+      "stillnessAnchor": "shrine-structure",
+      "camera": {
+        "preset": "slowPush",
+        "scaleFrom": 1,
+        "scaleTo": 1.022,
+        "xFrom": 0,
+        "xTo": -3,
+        "yFrom": 0,
+        "yTo": -4,
+        "rotationFrom": 0,
+        "rotationTo": 0,
+        "easing": "cinematicSlow",
+        "settleFromProgress": 0.9
+      },
+      "layers": [
+        {
+          "id": "shot05-editorial-base",
+          "assetId": "shot05-editorial-v1-flat",
+          "assetPath": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-05.png",
+          "role": "background",
+          "material": "flattened-editorial-hospitality-art",
+          "depth": 0.5,
+          "anchor": "center",
+          "transform": {
+            "x": 0,
+            "y": 0,
+            "scale": 1
+          },
+          "motionPresets": ["cinematicSlow"],
+          "required": true
+        }
+      ],
+      "performance": [],
+      "atmosphere": [
+        {
+          "id": "hearth-smoke",
+          "preset": "smokeDrift",
+          "intensity": 0.12,
+          "depthRange": [0.45, 0.82]
+        }
+      ],
+      "lighting": [
+        {
+          "id": "warm-hearth-light",
+          "preset": "cinematicSlow",
+          "intensityFrom": 0.04,
+          "intensityTo": 0.06
+        }
+      ],
+      "captionPolicy": {
+        "safeZone": "lower-middle",
+        "avoidTargets": ["water-bread-welcome-action", "foreground-textile"],
+        "motion": "stable",
+        "maxLines": 2
+      },
+      "transitionIn": "shot-04-to-05-bright-water-shape",
+      "transitionOut": "shot-05-to-06-practical-object-match"
+    }
+  ],
+  "transitions": [],
+  "reviewMarkers": [
+    { "id": "practical-still", "progress": 0 },
+    { "id": "foreground-depth", "progress": 0.25 },
+    { "id": "water-welcome", "progress": 0.5 },
+    { "id": "lived-in-motion", "progress": 0.75 },
+    { "id": "settled-purpose", "progress": 1 }
+  ],
+  "reviewPolicy": {
+    "scorecard": "reel-01-animation-review-v1",
+    "humanApprovalRequired": true,
+    "minimumCategory": 4,
+    "publishabilityMinimum": 5,
+    "hardFailsBlockApproval": true
+  },
+  "sourcePolicy": {
+    "storyMutationAllowed": false,
+    "narrationSource": "reel-production-record",
+    "captionSource": "reel-production-record",
+    "visualSource": "versioned-animation-asset-manifest"
+  }
+}
