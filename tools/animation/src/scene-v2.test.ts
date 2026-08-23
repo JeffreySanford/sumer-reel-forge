@@ -72,6 +72,19 @@ test('contained water renderer uses true refraction instead of only translated c
   assert.match(source, /water-refraction-b/);
 });
 
+test('contained water keeps readable ripples inside a contracted basin mask without diagonal glint bands', async () => {
+  const rendererPath = resolve(
+    'tools/animation/src/ContainedWaterMaterialLayer.tsx',
+  );
+  const source = await readFile(rendererPath, 'utf8');
+
+  assert.match(source, /data-water-boundary="basin-alpha-safe"/);
+  assert.match(source, /transform: 'scale\(0\.985\)'/);
+  assert.match(source, /data-water-motion="broad-traveling-ripple"/);
+  assert.doesNotMatch(source, /repeating-linear-gradient/);
+  assert.doesNotMatch(source, /glintDrift|counterDrift/);
+});
+
 test('Shot 4 benchmark rejects camera movement above 1 percent', async () => {
   const scene = await loadScene(shotFourScenePath);
   scene.shots[0]!.camera.scaleTo = 1.02;
