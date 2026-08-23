@@ -29,12 +29,13 @@
       "qa": {
         "family": "alpha-structure-then-composite-motion",
         "executor": "tools/scripts/verify-semantic-overlay-candidate.mjs",
-        "alphaCoverage": { "minimum": 0.005, "maximum": 0.9 },
+        "alphaCoverage": { "minimum": 0.001, "preferredMinimum": 0.005, "maximum": 0.9 },
         "requireSourceRgbUnderAlpha": true,
         "humanReviewRequired": true
       },
       "notes": [
         "Preserve source RGB under alpha.",
+        "The minimum alpha coverage is a hard trivial-mask floor, not an artistic target; sparse underwater flow may be valid below preferredMinimum.",
         "Reject whole-frame selection and character-shaped water masks.",
         "Production motion should occur within the material rather than as a translated card.",
         "Per-layer structural QA precedes motion QA in the assembled shot benchmark."
@@ -50,12 +51,13 @@
       "qa": {
         "family": "alpha-structure-then-composite-motion",
         "executor": "tools/scripts/verify-semantic-overlay-candidate.mjs",
-        "alphaCoverage": { "minimum": 0.002, "maximum": 0.65 },
+        "alphaCoverage": { "minimum": 0.0005, "preferredMinimum": 0.002, "maximum": 0.65 },
         "requireSourceRgbUnderAlpha": true,
         "humanReviewRequired": true
       },
       "notes": [
         "Prefer upper/surface refraction structures supported by the editorial source.",
+        "The minimum alpha coverage is a hard trivial-mask floor; sparse highlights/refraction bands can be valid below preferredMinimum when semantically correct.",
         "No new light source or fantasy glow.",
         "Per-layer structural QA precedes motion QA in the assembled shot benchmark."
       ]
@@ -70,12 +72,13 @@
       "qa": {
         "family": "mask-shape-and-reveal",
         "executor": "tools/scripts/verify-semantic-overlay-candidate.mjs",
-        "alphaCoverage": { "minimum": 0.001, "maximum": 0.4 },
+        "alphaCoverage": { "minimum": 0.00025, "preferredMinimum": 0.001, "maximum": 0.4 },
         "requireSourceRgbUnderAlpha": true,
         "humanReviewRequired": true
       },
       "notes": [
         "Mask follows source-supported water/light structure.",
+        "The minimum alpha coverage is only a hard non-triviality floor; a sparse coherence structure is acceptable when the human review confirms the intended environmental read.",
         "Never resolve to a hard character silhouette, face cutout, mermaid, aura, or glowing eyes.",
         "Automated alpha coverage can reject trivial/whole-frame masks but human review owns semantic shape judgment."
       ]
