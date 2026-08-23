@@ -60,6 +60,18 @@ test('Shot 5 benchmark accepts source-grounded smokeDrift atmosphere', async () 
   assert.equal(scene.shots[0]?.camera.scaleTo, 1.022);
 });
 
+test('contained water renderer uses true refraction instead of only translated cards', async () => {
+  const rendererPath = resolve(
+    'tools/animation/src/ContainedWaterMaterialLayer.tsx',
+  );
+  const source = await readFile(rendererPath, 'utf8');
+
+  assert.match(source, /feTurbulence/);
+  assert.match(source, /feDisplacementMap/);
+  assert.match(source, /water-refraction-a/);
+  assert.match(source, /water-refraction-b/);
+});
+
 test('Shot 4 benchmark rejects camera movement above 1 percent', async () => {
   const scene = await loadScene(shotFourScenePath);
   scene.shots[0]!.camera.scaleTo = 1.02;
