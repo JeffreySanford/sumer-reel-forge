@@ -27,6 +27,28 @@ function spawnNode(script, envOverrides = {}) {
   });
 }
 
+function runPnpm(args) {
+  return spawnSync('pnpm', args, {
+    cwd: root,
+    shell: process.platform === 'win32',
+    stdio: 'inherit',
+    windowsHide: true,
+  });
+}
+
+function preparePrismaClient() {
+  console.log('Generating Prisma client...');
+  const result = runPnpm(['db:generate']);
+
+  if (result.error) {
+    throw result.error;
+  }
+
+  if (result.status !== 0) {
+    throw new Error(`Prisma client generation exited with code ${result.status ?? 1}.`);
+  }
+}
+
 function waitForPort(port, timeoutMs) {
   const started = Date.now();
 
@@ -81,6 +103,8 @@ function stopAll(exitCode) {
 }
 
 async function main() {
+  preparePrismaClient();
+
   coreProcess = spawnNode(coreScript);
 
   coreProcess.once('exit', (code, signal) => {
