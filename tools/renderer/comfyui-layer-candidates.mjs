@@ -282,12 +282,19 @@ export function buildLayerPrompt(shot, layer) {
       'Extract only subtle source-supported light contour or illumination. No hard aura, glowing eyes, fantasy particles, or new light sources.',
     environment:
       'Extract only the described environmental material, preserving exact source registration.',
+    atmosphere:
+      'Extract only source-visible atmospheric material such as smoke or haze. Preserve its irregular soft boundaries and partial transparency; do not select architecture, people, fire, sky, or unrelated background regions.',
   };
-  const special = layer.id.includes('nammu-coherence')
-    ? 'Nammu must read as environmental coherence within water, never as a cutout woman, mermaid, horror figure, glowing-eyed entity, or hard supernatural silhouette.'
-    : layer.id.includes('enki')
-      ? 'Enki identity is an immutable anchor: mature Mesopotamian man, existing face/hair/beard/robe/belt must remain exactly consistent with the supplied painting.'
-      : '';
+  const special =
+    layer.role === 'water' && layer.anchor === 'water-basin'
+      ? 'This is small contained practical water at the traveler shrine. Select the complete visible water surface inside the basin or spring vessel, including dim, shadowed, and reflected portions that are physically contiguous with that water. Do not select only bright highlights. Exclude the basin rim and container material, pottery, hands, bread, floor, clothing, architecture, sky, and unrelated reflections.'
+      : layer.material === 'smoke'
+        ? 'Target only smoke or hearth haze that is visibly present in the approved source. Preserve wispy low-opacity edges and disconnected curls when they belong to the same plume. Exclude flame, glowing embers, people, walls, roof, sky, dust, and general image haze.'
+        : layer.id.includes('nammu-coherence')
+          ? 'Nammu must read as environmental coherence within water, never as a cutout woman, mermaid, horror figure, glowing-eyed entity, or hard supernatural silhouette.'
+          : layer.id.includes('enki')
+            ? 'Enki identity is an immutable anchor: mature Mesopotamian man, existing face/hair/beard/robe/belt must remain exactly consistent with the supplied painting.'
+            : '';
   return [
     `Target layer: ${layer.id}. Role: ${layer.role}. Material: ${layer.material}.`,
     roleInstructions[layer.role] ??
