@@ -1,0 +1,164 @@
+<main class="home-shell">
+  <app-studio-nav />
+
+  <section class="hero" aria-labelledby="studio-home-title">
+    <div class="hero-copy">
+      <p class="eyebrow"><span></span> Local-first cinematic production</p>
+      <h1 id="studio-home-title">Build stories into <em>living reels.</em></h1>
+      <p class="hero-lede">
+        Sumer Reel Forge brings writing, visual direction, local AI, animation, review,
+        and rendering into one deliberate production studio.
+      </p>
+      <div class="hero-actions">
+        <a class="primary-action" routerLink="/projects/blessings-of-sumer">Open Blessings of Sumer <span>→</span></a>
+        <a class="secondary-action" routerLink="/reels/1/overview">Continue Reel 1</a>
+      </div>
+    </div>
+
+    <div class="hero-visual" aria-label="Studio production flow">
+      <div class="orb orb-one"></div>
+      <div class="orb orb-two"></div>
+      <div class="visual-core">
+        <span class="core-kicker">CURRENT FOCUS</span>
+        <strong>The Voyage Begins</strong>
+        <small>Animation-v1 benchmark</small>
+      </div>
+      <div class="float-card direction-card"><span>01</span><strong>Direction</strong><small>Scene intent</small></div>
+      <div class="float-card asset-card"><span>02</span><strong>Assets</strong><small>Layer candidates</small></div>
+      <div class="float-card render-card"><span>03</span><strong>Render</strong><small>Scene V2</small></div>
+    </div>
+  </section>
+
+  <section class="stat-ribbon" aria-label="Studio summary">
+    <div><strong>1</strong><span>Project loaded</span></div>
+    <div><strong>3</strong><span>Chapters</span></div>
+    <div><strong>{{ reels().length || 18 }}</strong><span>Chapter 1 reels</span></div>
+    <div><strong>{{ hostTier() }}</strong><span>Runtime tier</span></div>
+  </section>
+
+  <section class="section projects-section" aria-labelledby="projects-title">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Projects</p>
+        <h2 id="projects-title">What is in the Studio</h2>
+      </div>
+      <a routerLink="/projects/blessings-of-sumer">View project →</a>
+    </div>
+
+    <article class="project-card">
+      <div class="project-intro">
+        <div class="project-mark" aria-hidden="true">𒀭</div>
+        <div>
+          <p class="project-kicker">{{ project.kicker }}</p>
+          <h3>{{ project.title }}</h3>
+          <p>{{ project.description }}</p>
+          <div class="project-tags" aria-label="Project production technologies">
+            <span>Remotion</span><span>ComfyUI</span><span>Ollama</span><span>Local-first</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="chapter-grid" aria-label="Blessings of Sumer chapters">
+        @for (chapter of project.chapters; track chapter.number) {
+          <a
+            class="chapter-card"
+            [class.upcoming]="chapter.state === 'upcoming'"
+            [routerLink]="['/projects', project.slug, 'chapters', chapter.number]"
+          >
+            <div class="chapter-number">0{{ chapter.number }}</div>
+            <div class="chapter-status">
+              <span></span>{{ chapter.state === 'active' ? 'In production' : 'Upcoming' }}
+            </div>
+            <h4>{{ chapter.title }}</h4>
+            <p>{{ chapter.description }}</p>
+            @if (chapter.number === 1) {
+              <small>{{ reels().length || 18 }} reels planned · {{ approvedReels() }} approved</small>
+            } @else {
+              <small>Production not started</small>
+            }
+          </a>
+        }
+      </div>
+    </article>
+  </section>
+
+  <section class="section dashboard-grid" aria-label="Studio activity and host readiness">
+    <article class="focus-card panel-card">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Production focus</p>
+          <h2>Reel 1 · The Voyage Begins</h2>
+        </div>
+        <span class="pulse-chip"><i></i> Active</span>
+      </div>
+      <p class="panel-lede">
+        Reel 1 is the publication-quality laboratory: prove the visual language here,
+        then carry the approved rules into the rest of Chapter 1.
+      </p>
+      <div class="focus-steps">
+        <div class="done"><span>✓</span><p><strong>Editorial cut</strong><small>Approved source artwork</small></p></div>
+        <div class="done"><span>✓</span><p><strong>Scene V2</strong><small>Deterministic animation path</small></p></div>
+        <div class="current"><span>3</span><p><strong>Animation assets</strong><small>Water → vessel → Enki</small></p></div>
+        <div><span>4</span><p><strong>Publication benchmark</strong><small>Human quality gate</small></p></div>
+      </div>
+      <div class="card-actions">
+        <a routerLink="/reels/1/direction">Open direction workspace →</a>
+        <span>{{ activeReels() }} reels still in production</span>
+      </div>
+    </article>
+
+    <article class="host-card panel-card">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Current host</p>
+          <h2>Production machine</h2>
+        </div>
+        @if (host()) {
+          <span class="host-tier">{{ hostTier() }}</span>
+        }
+      </div>
+
+      @if (host(); as machine) {
+        <div class="host-machine">
+          <strong>{{ machine.cpu?.model || 'CPU profile available' }}</strong>
+          <span>{{ machine.cpu?.logicalCount || '—' }} logical CPU · {{ machine.memory?.totalGb || '—' }} GB RAM</span>
+        </div>
+        <div class="host-gpu">
+          <div class="gpu-icon" aria-hidden="true">GPU</div>
+          <div><strong>{{ gpuName() }}</strong><small>{{ machine.runtimePlan?.ai?.nvidiaCudaAvailable ? 'CUDA ready' : 'CUDA unavailable' }}</small></div>
+        </div>
+        <div class="host-services">
+          <span [class.ready]="machine.comfyui.online">ComfyUI</span>
+          <span [class.ready]="machine.ollama.online">Ollama</span>
+          <span [class.ready]="machine.runtimePlan?.encoding?.ffmpegAvailable">FFmpeg</span>
+          <span [class.ready]="machine.runtimePlan?.encoding?.nvencAvailable">NVENC</span>
+        </div>
+        <p class="host-summary">{{ hostReadyCount() }} projected production capabilities are ready on this host.</p>
+      } @else if (hostUnavailable()) {
+        <div class="host-empty">
+          <strong>Host profile unavailable</strong>
+          <p>Start the local stack to profile CPU, GPU, software, and production services.</p>
+        </div>
+      } @else {
+        <div class="host-empty"><strong>Profiling host…</strong><p>Reading local hardware and runtime services.</p></div>
+      }
+
+      <a class="host-link" routerLink="/system">Open Host System →</a>
+    </article>
+  </section>
+
+  <section class="section pipeline-section" aria-labelledby="pipeline-title">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Production architecture</p>
+        <h2 id="pipeline-title">One story, multiple focused workspaces</h2>
+      </div>
+    </div>
+    <div class="pipeline-grid">
+      <div><span>01</span><strong>Source</strong><p>Chapters and narration remain the editorial truth.</p></div>
+      <div><span>02</span><strong>Direction</strong><p>Shot intent, style rules, camera grammar, and review.</p></div>
+      <div><span>03</span><strong>Assets</strong><p>Human-approved artwork becomes semantic animation layers.</p></div>
+      <div><span>04</span><strong>Production</strong><p>Remotion, audio, captions, FFmpeg, and publication gates.</p></div>
+    </div>
+  </section>
+</main>
