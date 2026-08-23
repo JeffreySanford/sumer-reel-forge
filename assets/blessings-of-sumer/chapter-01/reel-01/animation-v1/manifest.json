@@ -13,7 +13,7 @@
       "shotId": "enki-at-the-helm",
       "sourceShotNumber": 3,
       "sourceFrame": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-03.png",
-      "status": "draft",
+      "status": "approved",
       "fallback": {
         "assetId": "shot03-editorial-v1-flat",
         "assetPath": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-03.png"
@@ -41,15 +41,28 @@
           "material": "atmosphere-distant",
           "depthDefault": 0.12,
           "anchor": "center",
-          "transform": { "x": 0, "y": 0, "scale": 1 },
-          "motionPresets": ["cinematicSlow"],
-          "state": "planned",
+          "transform": {
+            "x": 0,
+            "y": 0,
+            "scale": 1
+          },
+          "motionPresets": [
+            "cinematicSlow"
+          ],
+          "state": "approved",
           "hasAlpha": false,
           "source": {
             "type": "derived",
             "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-03.png"
           },
-          "review": { "status": "pending", "notes": [] }
+          "review": {
+            "status": "approved",
+            "notes": [
+              "Human-approved from layered Shot 3 audition 2026-08-23T18-56-51-956Z at 2026-08-23T19:32:10.173Z.",
+              "background preservation QA PASS: D:\\repos\\sumer-reel-forge\\tmp\\animation-assets\\candidates\\chapter-01-reel-01-animation-v1\\2026-08-23T18-55-00-094Z\\background-qa.json"
+            ]
+          },
+          "sha256": "sha256:db4b1c33afc38bd93543bd9eba8cb5b992ddfa0d3a8ca989d992bd060ec3f2b1"
         },
         {
           "id": "shot03-water-v1",
@@ -58,15 +71,28 @@
           "material": "water",
           "depthDefault": 0.28,
           "anchor": "lower-center",
-          "transform": { "x": 0, "y": 0, "scale": 1 },
-          "motionPresets": ["waterPulse"],
-          "state": "planned",
+          "transform": {
+            "x": 0,
+            "y": 0,
+            "scale": 1
+          },
+          "motionPresets": [
+            "waterPulse"
+          ],
+          "state": "approved",
           "hasAlpha": true,
           "source": {
             "type": "derived",
             "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-03.png"
           },
-          "review": { "status": "pending", "notes": [] }
+          "review": {
+            "status": "approved",
+            "notes": [
+              "Human-approved from layered Shot 3 audition 2026-08-23T18-56-51-956Z at 2026-08-23T19:32:10.173Z.",
+              "rendered-motion QA PASS: D:\\repos\\sumer-reel-forge\\tmp\\animation-previews\\shot03-water-preview\\2026-08-23T17-50-52-212Z\\motion-qa.json"
+            ]
+          },
+          "sha256": "sha256:f77eb37906ae589b0483dd3a11504ee39cc1aa28500ec10dba5de14a3b6f8979"
         },
         {
           "id": "shot03-vessel-v1",
@@ -75,15 +101,28 @@
           "material": "rigid-vessel",
           "depthDefault": 0.46,
           "anchor": "vessel-center-of-mass",
-          "transform": { "x": 0, "y": 0, "scale": 1 },
-          "motionPresets": ["heavyPhysical"],
-          "state": "planned",
+          "transform": {
+            "x": 0,
+            "y": 0,
+            "scale": 1
+          },
+          "motionPresets": [
+            "heavyPhysical"
+          ],
+          "state": "approved",
           "hasAlpha": true,
           "source": {
             "type": "derived",
             "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-03.png"
           },
-          "review": { "status": "pending", "notes": [] }
+          "review": {
+            "status": "approved",
+            "notes": [
+              "Human-approved from layered Shot 3 audition 2026-08-23T18-56-51-956Z at 2026-08-23T19:32:10.173Z.",
+              "rendered-motion QA PASS: D:\\repos\\sumer-reel-forge\\tmp\\animation-previews\\shot03-vessel-preview\\2026-08-23T18-12-26-995Z\\motion-qa.json"
+            ]
+          },
+          "sha256": "sha256:fe28b4ec5cd0efd724908a106649db782f685f76cd0e34d01e085af02467c3d4"
         },
         {
           "id": "shot03-enki-body-v1",
@@ -92,15 +131,28 @@
           "material": "cloth-heavy",
           "depthDefault": 0.58,
           "anchor": "enki-torso",
-          "transform": { "x": 0, "y": 0, "scale": 1 },
-          "motionPresets": ["breathing"],
-          "state": "planned",
+          "transform": {
+            "x": 0,
+            "y": 0,
+            "scale": 1
+          },
+          "motionPresets": [
+            "breathing"
+          ],
+          "state": "approved",
           "hasAlpha": true,
           "source": {
             "type": "derived",
             "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-03.png"
           },
-          "review": { "status": "pending", "notes": [] }
+          "review": {
+            "status": "approved",
+            "notes": [
+              "Human-approved from layered Shot 3 audition 2026-08-23T18-56-51-956Z at 2026-08-23T19:32:10.173Z.",
+              "rendered-motion QA PASS: D:\\repos\\sumer-reel-forge\\tmp\\animation-previews\\shot03-enki-body-preview\\2026-08-23T18-20-41-454Z\\motion-qa.json"
+            ]
+          },
+          "sha256": "sha256:3c7cdfdbde7776f91cf4b3f81908443b56194931a74654ecdbdb5798917aa6f5"
         },
         {
           "id": "shot03-rigging-v1",
@@ -109,15 +161,26 @@
           "material": "reed",
           "depthDefault": 0.78,
           "anchor": "rigging-root",
-          "transform": { "x": 0, "y": 0, "scale": 1 },
-          "motionPresets": ["riggingTension"],
+          "transform": {
+            "x": 0,
+            "y": 0,
+            "scale": 1
+          },
+          "motionPresets": [
+            "riggingTension"
+          ],
           "state": "planned",
           "hasAlpha": true,
           "source": {
             "type": "derived",
             "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-03.png"
           },
-          "review": { "status": "pending", "notes": ["Must not cross Enki's face or caption safe zone."] }
+          "review": {
+            "status": "pending",
+            "notes": [
+              "Must not cross Enki's face or caption safe zone."
+            ]
+          }
         },
         {
           "id": "shot03-enki-eyes-v1",
@@ -126,15 +189,26 @@
           "material": "skin",
           "depthDefault": 0.62,
           "anchor": "enki-eyes",
-          "transform": { "x": 0, "y": 0, "scale": 1 },
-          "motionPresets": ["blinkOnce"],
+          "transform": {
+            "x": 0,
+            "y": 0,
+            "scale": 1
+          },
+          "motionPresets": [
+            "blinkOnce"
+          ],
           "state": "planned",
           "hasAlpha": true,
           "source": {
             "type": "reference-state",
             "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-03.png"
           },
-          "review": { "status": "pending", "notes": ["Identity and lighting must remain stable against the open-eye source."] }
+          "review": {
+            "status": "pending",
+            "notes": [
+              "Identity and lighting must remain stable against the open-eye source."
+            ]
+          }
         }
       ]
     },
@@ -170,15 +244,24 @@
           "material": "underwater-refraction",
           "depthDefault": 0.08,
           "anchor": "center",
-          "transform": { "x": 0, "y": 0, "scale": 1 },
-          "motionPresets": ["waterPulse"],
+          "transform": {
+            "x": 0,
+            "y": 0,
+            "scale": 1
+          },
+          "motionPresets": [
+            "waterPulse"
+          ],
           "state": "planned",
           "hasAlpha": false,
           "source": {
             "type": "derived",
             "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-04.png"
           },
-          "review": { "status": "pending", "notes": [] }
+          "review": {
+            "status": "pending",
+            "notes": []
+          }
         },
         {
           "id": "shot04-mid-current-v1",
@@ -187,15 +270,25 @@
           "material": "water",
           "depthDefault": 0.34,
           "anchor": "center",
-          "transform": { "x": 0, "y": 0, "scale": 1 },
-          "motionPresets": ["waterPulse", "numinousDrift"],
+          "transform": {
+            "x": 0,
+            "y": 0,
+            "scale": 1
+          },
+          "motionPresets": [
+            "waterPulse",
+            "numinousDrift"
+          ],
           "state": "planned",
           "hasAlpha": true,
           "source": {
             "type": "derived",
             "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-04.png"
           },
-          "review": { "status": "pending", "notes": [] }
+          "review": {
+            "status": "pending",
+            "notes": []
+          }
         },
         {
           "id": "shot04-surface-refraction-v1",
@@ -204,15 +297,24 @@
           "material": "underwater-refraction",
           "depthDefault": 0.48,
           "anchor": "upper-center",
-          "transform": { "x": 0, "y": 0, "scale": 1 },
-          "motionPresets": ["waterPulse"],
+          "transform": {
+            "x": 0,
+            "y": 0,
+            "scale": 1
+          },
+          "motionPresets": [
+            "waterPulse"
+          ],
           "state": "planned",
           "hasAlpha": true,
           "source": {
             "type": "derived",
             "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-04.png"
           },
-          "review": { "status": "pending", "notes": [] }
+          "review": {
+            "status": "pending",
+            "notes": []
+          }
         },
         {
           "id": "shot04-nammu-coherence-mask-v1",
@@ -221,15 +323,26 @@
           "material": "divine-light",
           "depthDefault": 0.56,
           "anchor": "nammu-coherence-region",
-          "transform": { "x": 0, "y": 0, "scale": 1 },
-          "motionPresets": ["numinousDrift"],
+          "transform": {
+            "x": 0,
+            "y": 0,
+            "scale": 1
+          },
+          "motionPresets": [
+            "numinousDrift"
+          ],
           "state": "planned",
           "hasAlpha": true,
           "source": {
             "type": "derived",
             "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-04.png"
           },
-          "review": { "status": "pending", "notes": ["Must read as environmental coherence, not a cutout character silhouette."] }
+          "review": {
+            "status": "pending",
+            "notes": [
+              "Must read as environmental coherence, not a cutout character silhouette."
+            ]
+          }
         },
         {
           "id": "shot04-foreground-distortion-v1",
@@ -238,15 +351,24 @@
           "material": "underwater-refraction",
           "depthDefault": 0.82,
           "anchor": "center",
-          "transform": { "x": 0, "y": 0, "scale": 1 },
-          "motionPresets": ["numinousDrift"],
+          "transform": {
+            "x": 0,
+            "y": 0,
+            "scale": 1
+          },
+          "motionPresets": [
+            "numinousDrift"
+          ],
           "state": "planned",
           "hasAlpha": true,
           "source": {
             "type": "procedural",
             "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-04.png"
           },
-          "review": { "status": "pending", "notes": [] }
+          "review": {
+            "status": "pending",
+            "notes": []
+          }
         },
         {
           "id": "shot04-light-contour-v1",
@@ -255,15 +377,26 @@
           "material": "divine-light",
           "depthDefault": 0.64,
           "anchor": "nammu-coherence-region",
-          "transform": { "x": 0, "y": 0, "scale": 1 },
-          "motionPresets": ["numinousDrift"],
+          "transform": {
+            "x": 0,
+            "y": 0,
+            "scale": 1
+          },
+          "motionPresets": [
+            "numinousDrift"
+          ],
           "state": "planned",
           "hasAlpha": true,
           "source": {
             "type": "procedural",
             "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-04.png"
           },
-          "review": { "status": "pending", "notes": ["No glowing eyes, hard aura, or fantasy particle halo."] }
+          "review": {
+            "status": "pending",
+            "notes": [
+              "No glowing eyes, hard aura, or fantasy particle halo."
+            ]
+          }
         }
       ]
     }
