@@ -158,6 +158,12 @@ const ALLOWED_PRESETS = new Set<SceneV2MotionPreset>([
   'settle',
 ]);
 
+const SHOT_FOUR_CHARACTER_PERFORMANCE_PRESETS = new Set<SceneV2MotionPreset>([
+  'breathing',
+  'blinkOnce',
+  'subtleGazeShift',
+]);
+
 export function validateSceneV2(scene: SceneV2): SceneV2ValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
@@ -186,11 +192,15 @@ export function validateSceneV2(scene: SceneV2): SceneV2ValidationResult {
       errors.push(`Shot ${shot.id} settleFromProgress must be from 0 through 1.`);
     }
     const cameraDelta = Math.abs(shot.camera.scaleTo - shot.camera.scaleFrom);
-    const cameraLimit = shot.sourceShotNumber === 3 ? 0.03 : 0.05;
+    const cameraLimit =
+      shot.sourceShotNumber === 3 ? 0.03 : shot.sourceShotNumber === 4 ? 0.01 : 0.05;
     if (cameraDelta > cameraLimit + Number.EPSILON) {
       errors.push(
         `Shot ${shot.id} camera scale delta ${(cameraDelta * 100).toFixed(2)}% exceeds ${(cameraLimit * 100).toFixed(0)}%.`,
       );
+    }
+    if (shot.sourceShotNumber === 4) {
+      validateShotFourPolicy(shot, errors);
     }
     if (!shot.layers.some((layer) => layer.required)) {
       errors.push(`Shot ${shot.id} has no required visual layer.`);
@@ -228,6 +238,31 @@ export function validateSceneV2(scene: SceneV2): SceneV2ValidationResult {
   }
 
   return { valid: errors.length === 0, errors, warnings };
+}
+
+function validateShotFourPolicy(shot: SceneV2Shot, errors: string[]): void {
+  if (!['nearStatic', 'static'].includes(shot.camera.preset)) {
+    errors.push(`Shot ${shot.id} must use a nearStatic or static camera preset.`);
+  }
+  if (
+    Math.abs(shot.camera.rotationFrom) > Number.EPSILON ||
+    Math.abs(shot.camera.rotationTo) > Number.EPSILON
+  ) {
+    errors.push(`Shot ${shot.id} may not use camera rotation.`);
+  }
+
+  const enabledPerformance = shot.performance.filter((item) => item.enabled !== false);
+  if (!enabledPerformance.some((item) => item.preset === 'numinousDrift')) {
+    errors.push(`Shot ${shot.id} requires enabled numinousDrift environmental coherence.`);
+  }
+  const conventionalCharacterPerformance = enabledPerformance.filter((item) =>
+    SHOT_FOUR_CHARACTER_PERFORMANCE_PRESETS.has(item.preset),
+  );
+  if (conventionalCharacterPerformance.length) {
+    errors.push(
+      `Shot ${shot.id} may not animate Nammu with conventional character performance presets.`,
+    );
+  }
 }
 
 export function assertSceneV2(scene: SceneV2): void {
