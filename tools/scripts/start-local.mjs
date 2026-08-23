@@ -1,4 +1,3 @@
-import 'dotenv/config';
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, statSync, utimesSync } from 'node:fs';
 import net from 'node:net';
@@ -10,6 +9,11 @@ import {
   formatHardwareProfile,
 } from '../runtime/hardware-profile.mjs';
 
+const scriptPath = fileURLToPath(import.meta.url);
+const root = dirname(dirname(dirname(scriptPath)));
+
+loadLocalEnvFile();
+
 // Local-first defaults for the normal `pnpm start:all` entrypoint.
 // Explicit shell or .env values remain authoritative.
 process.env.PLANNING_PROVIDER ??= 'ollama';
@@ -19,8 +23,6 @@ process.env.OLLAMA_BASE_URL ??= 'http://localhost:11434';
 process.env.PLANNING_TIMEOUT_MS ??= '120000';
 process.env.OLLAMA_KEEP_ALIVE ??= '10m';
 
-const scriptPath = fileURLToPath(import.meta.url);
-const root = dirname(dirname(dirname(scriptPath)));
 const coreScript = join(root, 'tools', 'scripts', 'start-all.mjs');
 const rendererScript = join(root, 'tools', 'scripts', 'renderer-worker.mjs');
 const rendererAdapter = process.env.RENDER_ADAPTER ?? 'editorial';
@@ -46,6 +48,20 @@ let stopping = false;
 let coreProcess;
 let rendererProcess;
 let comfyProcess;
+
+function loadLocalEnvFile() {
+  const envPath = join(root, '.env');
+  if (!existsSync(envPath)) return;
+  if (typeof process.loadEnvFile !== 'function') {
+    throw new Error(
+      'Native .env loading requires Node 20.12 or newer. This workspace targets Node 22.',
+    );
+  }
+
+  const inheritedEnvironment = { ...process.env };
+  process.loadEnvFile(envPath);
+  Object.assign(process.env, inheritedEnvironment);
+}
 
 function spawnNode(script, envOverrides = {}) {
   return spawn(process.execPath, [script], {
