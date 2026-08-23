@@ -244,11 +244,23 @@ export function resolveSceneV2Assets(
       return shot;
     }
 
+    const editorialReference: SceneV2Layer = {
+      id: `${shot.id}-editorial-reference`,
+      assetId: manifestShot.fallback.assetId,
+      assetPath: manifestShot.fallback.assetPath,
+      role: 'environment',
+      material: 'editorial-reference',
+      depth: 0.5,
+      anchor: 'center',
+      transform: { x: 0, y: 0, scale: 1 },
+      motionPresets: [],
+      required: true,
+    };
     const approvedIds = new Set(approvedLayers.map((layer) => layer.assetId));
     layeredShotIds.push(shot.id);
     return {
       ...shot,
-      layers: approvedLayers,
+      layers: [...approvedLayers, editorialReference],
       performance: shot.performance.map((item) => {
         if (
           manifestShot.activationPolicy.enableDeferredPerformanceWhenApproved &&
