@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 2,
+  "sceneId": "chapter-01-reel-01-shot-04-nammu-benchmark-v1",
+  "projectSlug": "blessings-of-sumer",
+  "chapterNumber": 1,
+  "reelId": "resolve-from-studio",
+  "episodeNumber": 1,
+  "visualBible": "blessings-of-sumer-v1",
+  "styleBible": "reel-01-animation-style-v1",
+  "assetVersion": "editorial-v1-flat-benchmark",
+  "width": 1080,
+  "height": 1920,
+  "fps": 30,
+  "durationFrames": 240,
+  "shots": [
+    {
+      "id": "nammu-under-water",
+      "sourceShotNumber": 4,
+      "sourceStartFrame": 600,
+      "startFrame": 0,
+      "durationFrames": 240,
+      "emotionalPurpose": "Shift from trusted physical water into awe and recognition as Nammu becomes coherent within the sea without entering it as a conventional character.",
+      "eyeTarget": "water-current-coherence-region",
+      "stillnessAnchor": "camera-composition",
+      "camera": {
+        "preset": "nearStatic",
+        "scaleFrom": 1,
+        "scaleTo": 1.008,
+        "xFrom": 0,
+        "xTo": -2,
+        "yFrom": 0,
+        "yTo": 3,
+        "rotationFrom": 0,
+        "rotationTo": 0,
+        "easing": "cinematicSlow",
+        "settleFromProgress": 0.9
+      },
+      "layers": [
+        {
+          "id": "shot04-editorial-base",
+          "assetId": "shot04-editorial-v1-flat",
+          "assetPath": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-04.png",
+          "role": "background",
+          "material": "flattened-editorial-water-art",
+          "depth": 0.5,
+          "anchor": "center",
+          "transform": {
+            "x": 0,
+            "y": 0,
+            "scale": 1
+          },
+          "motionPresets": ["waterPulse"],
+          "required": true
+        }
+      ],
+      "performance": [
+        {
+          "target": "nammu-environmental-coherence",
+          "preset": "numinousDrift",
+          "startProgress": 0.18,
+          "endProgress": 0.94,
+          "intensity": 0.38,
+          "enabled": true
+        }
+      ],
+      "atmosphere": [
+        {
+          "id": "suspended-depth",
+          "preset": "numinousDrift",
+          "intensity": 0.12,
+          "depthRange": [0.12, 0.92]
+        }
+      ],
+      "lighting": [
+        {
+          "id": "subsurface-caustics",
+          "preset": "waterPulse",
+          "intensityFrom": 0.045,
+          "intensityTo": 0.085
+        }
+      ],
+      "captionPolicy": {
+        "safeZone": "lower-middle",
+        "avoidTargets": ["nammu-environmental-coherence", "surface-light"],
+        "motion": "stable",
+        "maxLines": 2
+      },
+      "transitionIn": "shot-03-to-04-water-reflection",
+      "transitionOut": "shot-04-to-05-bright-water-shape"
+    }
+  ],
+  "transitions": [],
+  "reviewMarkers": [
+    { "id": "physical-water", "progress": 0 },
+    { "id": "unusual-pattern", "progress": 0.25 },
+    { "id": "recognition", "progress": 0.55 },
+    { "id": "coherence-peak", "progress": 0.75 },
+    { "id": "dissolution", "progress": 1 }
+  ],
+  "reviewPolicy": {
+    "scorecard": "reel-01-animation-review-v1",
+    "humanApprovalRequired": true,
+    "minimumCategory": 4,
+    "publishabilityMinimum": 5,
+    "hardFailsBlockApproval": true
+  },
+  "sourcePolicy": {
+    "storyMutationAllowed": false,
+    "narrationSource": "reel-production-record",
+    "captionSource": "reel-production-record",
+    "visualSource": "versioned-animation-asset-manifest"
+  }
+}
