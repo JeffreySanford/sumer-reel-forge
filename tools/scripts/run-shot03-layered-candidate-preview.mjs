@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 
 const args = process.argv.slice(2).filter((arg) => arg !== '--');
-const script = resolve('tools/scripts/render-shot03-layered-candidate-preview.ts');
+const script = resolve('tools/scripts/render-shot03-layered-source-assets.ts');
 const result = spawnSync(
   process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm',
   ['exec', 'tsx', script, ...args],
