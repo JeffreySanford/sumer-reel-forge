@@ -102,11 +102,30 @@ async function main() {
   };
   const thresholds = lane.qa?.alphaCoverage ?? {
     minimum: 0.001,
+    preferredMinimum: 0.001,
     maximum: 0.9,
   };
+  const hardMinimum = Number.isFinite(thresholds.minimum)
+    ? thresholds.minimum
+    : 0.001;
+  const preferredMinimum = Number.isFinite(thresholds.preferredMinimum)
+    ? Math.max(thresholds.preferredMinimum, hardMinimum)
+    : hardMinimum;
+  const maximum = Number.isFinite(thresholds.maximum)
+    ? thresholds.maximum
+    : 0.9;
   const alphaCoveragePass =
-    coverage.alphaGt16 >= thresholds.minimum &&
-    coverage.alphaGt16 <= thresholds.maximum;
+    coverage.alphaGt16 >= hardMinimum &&
+    coverage.alphaGt16 <= maximum;
+  const alphaCoveragePreferred =
+    coverage.alphaGt16 >= preferredMinimum &&
+    coverage.alphaGt16 <= maximum;
+  const coverageAdvisory = !alphaCoveragePass
+    ? 'BLOCKED'
+    : alphaCoveragePreferred
+      ? 'WITHIN_PREFERRED_RANGE'
+      : 'SPARSE_REVIEW_REQUIRED';
+
   const selectedRgbChangedRatio = selectedPixels
     ? selectedRgbChanged / selectedPixels
     : 1;
@@ -131,8 +150,20 @@ async function main() {
   createDiagnostics(candidate.path, sourceDimensions, alphaPath, whitePath, blackPath);
 
   const passed = dimensionsMatch && alphaCoveragePass && sourceRgbPass;
+  const humanReviewNotes = [
+    'Confirm the semantic region matches the requested material/role rather than merely satisfying alpha coverage.',
+    lane.id === 'environmental-coherence-mask'
+      ? 'Confirm the mask reads as environmental coherence and not a hard human/mermaid/apparition silhouette.'
+      : 'Confirm the extraction is visually useful and free of unrelated subject regions.',
+  ];
+  if (coverageAdvisory === 'SPARSE_REVIEW_REQUIRED') {
+    humanReviewNotes.push(
+      `Coverage ${(coverage.alphaGt16 * 100).toFixed(3)}% passes the hard non-triviality gate but is below the preferred ${(preferredMinimum * 100).toFixed(3)}%; confirm the sparse selection is intentional and visually useful.`,
+    );
+  }
+
   const report = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     type: 'semantic-overlay-structure-qa',
     generatedAt: new Date().toISOString(),
     manifestId: manifest.manifestId,
@@ -146,7 +177,11 @@ async function main() {
     sourceDimensions,
     candidateDimensions,
     thresholds: {
-      alphaCoverage: thresholds,
+      alphaCoverage: {
+        hardMinimum,
+        preferredMinimum,
+        maximum,
+      },
       selectedRgbChangedRatioMaximum: 0.0001,
       selectedRgbMeanDiffMaximum: 0.01,
     },
@@ -160,8 +195,10 @@ async function main() {
     checks: {
       dimensionsMatch,
       alphaCoveragePass,
+      alphaCoveragePreferred,
       sourceRgbPass,
     },
+    coverageAdvisory,
     diagnostics: {
       alphaMask: alphaPath,
       candidateOnWhite: whitePath,
@@ -170,12 +207,7 @@ async function main() {
     qaStatus: passed ? 'PASS' : 'FAIL',
     motionQaStatus: 'PENDING_COMPOSITE_BENCHMARK',
     humanReviewRequired: true,
-    humanReviewNotes: [
-      'Confirm the semantic region matches the requested material/role rather than merely satisfying alpha coverage.',
-      lane.id === 'environmental-coherence-mask'
-        ? 'Confirm the mask reads as environmental coherence and not a hard human/mermaid/apparition silhouette.'
-        : 'Confirm the extraction is visually useful and free of unrelated subject regions.',
-    ],
+    humanReviewNotes,
   };
   const reportPath = join(
     candidate.runDirectory,
@@ -188,11 +220,21 @@ async function main() {
   console.log(`Candidate: ${candidate.path}`);
   console.log(`${dimensionsMatch ? '[ok]' : '[blocked]'} dimensions: ${candidateDimensions.width}x${candidateDimensions.height}`);
   console.log(
-    `${alphaCoveragePass ? '[ok]' : '[blocked]'} alpha coverage (>16): ${(coverage.alphaGt16 * 100).toFixed(3)}% (allowed ${(thresholds.minimum * 100).toFixed(3)}%–${(thresholds.maximum * 100).toFixed(1)}%)`,
+    `${alphaCoveragePass ? '[ok]' : '[blocked]'} hard alpha coverage (>16): ${(coverage.alphaGt16 * 100).toFixed(3)}% (hard ${(hardMinimum * 100).toFixed(3)}%–${(maximum * 100).toFixed(1)}%)`,
   );
+  if (alphaCoveragePass && !alphaCoveragePreferred) {
+    console.log(
+      `[review] sparse alpha coverage: ${(coverage.alphaGt16 * 100).toFixed(3)}% is below preferred ${(preferredMinimum * 100).toFixed(3)}%; structural QA may pass, but semantic usefulness must be reviewed.`,
+    );
+  } else if (alphaCoveragePreferred) {
+    console.log(
+      `[ok] preferred alpha coverage floor: ${(preferredMinimum * 100).toFixed(3)}%`,
+    );
+  }
   console.log(
     `${sourceRgbPass ? '[ok]' : '[blocked]'} source RGB under selected alpha: mean diff ${selectedRgbMeanDiff.toFixed(4)}, changed ${(selectedRgbChangedRatio * 100).toFixed(4)}%`,
   );
+  console.log(`Coverage advisory: ${coverageAdvisory}`);
   console.log(`Structure QA: ${report.qaStatus}`);
   console.log(`Motion QA: ${report.motionQaStatus}`);
   console.log(`Alpha mask: ${alphaPath}`);
