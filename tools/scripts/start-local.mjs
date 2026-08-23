@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, statSync, utimesSync } from 'node:fs';
 import net from 'node:net';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -74,6 +74,48 @@ async function prepareHardwareProfile() {
     console.warn(
       `Hardware profiling failed (${message}). Continuing with existing runtime defaults.`,
     );
+  }
+}
+
+function reconcileWorkspaceInstall() {
+  const nodeModules = join(root, 'node_modules');
+  const modulesManifest = join(nodeModules, '.modules.yaml');
+  const packageJson = join(root, 'package.json');
+  const lockfile = join(root, 'pnpm-lock.yaml');
+  const timestampToleranceMs = 2_000;
+
+  const installMissing =
+    !existsSync(nodeModules) || !existsSync(modulesManifest);
+  const installLooksStale =
+    !installMissing &&
+    (statSync(packageJson).mtimeMs - statSync(modulesManifest).mtimeMs >
+      timestampToleranceMs ||
+      statSync(lockfile).mtimeMs - statSync(modulesManifest).mtimeMs >
+        timestampToleranceMs);
+
+  if (!installMissing && !installLooksStale) {
+    return;
+  }
+
+  console.log(
+    installMissing
+      ? 'Workspace dependencies are missing; validating/installing from the lockfile...'
+      : 'Workspace dependency metadata changed; reconciling pnpm install from the lockfile...',
+  );
+
+  const result = runPnpm(['install', '--frozen-lockfile']);
+  if (result.error) {
+    throw result.error;
+  }
+  if (result.status !== 0) {
+    throw new Error(
+      `pnpm install --frozen-lockfile exited with code ${result.status ?? 1}. Run \`pnpm install\` manually if the lockfile intentionally needs to change.`,
+    );
+  }
+
+  if (existsSync(modulesManifest)) {
+    const now = new Date();
+    utimesSync(modulesManifest, now, now);
   }
 }
 
@@ -276,6 +318,7 @@ function stopAll(exitCode) {
 
 async function main() {
   await prepareHardwareProfile();
+  reconcileWorkspaceInstall();
   preparePrismaClient();
   await prepareComfyUi();
 
