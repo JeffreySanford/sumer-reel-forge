@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { access, mkdir } from 'node:fs/promises';
-import { dirname, join, resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import { runProcess } from '../renderer/process-runner.mjs';
 
 const installRoot = resolve(
