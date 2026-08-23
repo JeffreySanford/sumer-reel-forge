@@ -77,7 +77,12 @@ test('Nammu coherence prompt explicitly avoids a cutout supernatural character',
   const prompt = buildLayerPrompt(
     { ...SHOT, shotId: 'nammu-under-water', sourceShotNumber: 4 },
     {
-      ...layer('shot04-nammu-coherence-mask-v1', 'mask', 'divine-light', true),
+      ...layer(
+        'shot04-nammu-coherence-mask-v1',
+        'mask',
+        'divine-light',
+        true,
+      ),
     },
   );
 
@@ -127,12 +132,21 @@ test('generation writes candidates under tmp-style output and never mutates the 
   const sourcePath = join(assetRoot, SHOT.sourceFrame);
   const workflowPath = join(root, 'layer-workflow.json');
   const manifestPath = join(root, 'manifest.json');
-  const outputRoot = join(root, 'tmp', 'animation-assets', 'candidates', 'run');
-  await mkdir(join(sourcePath, '..'), { recursive: true });
+  const outputRoot = join(
+    root,
+    'tmp',
+    'animation-assets',
+    'candidates',
+    'run',
+  );
+  await mkdir(join(assetRoot, 'project', 'editorial-v1'), { recursive: true });
   await writeFile(sourcePath, pngHeader(1080, 1920));
   await writeFile(
     workflowPath,
-    JSON.stringify({ input: '{{SOURCE_IMAGE}}', prompt: '{{LAYER_PROMPT}}' }),
+    JSON.stringify({
+      input: '{{SOURCE_IMAGE}}',
+      prompt: '{{LAYER_PROMPT}}',
+    }),
   );
   await writeFile(manifestPath, `${JSON.stringify(MANIFEST, null, 2)}\n`);
   const manifestBefore = await readFile(manifestPath, 'utf8');
@@ -144,7 +158,11 @@ test('generation writes candidates under tmp-style output and never mutates the 
   const fetchImpl = async (url) => {
     const value = String(url);
     if (value.endsWith('/upload/image')) {
-      return Response.json({ name: 'uploaded-source.png', subfolder: '', type: 'input' });
+      return Response.json({
+        name: 'uploaded-source.png',
+        subfolder: '',
+        type: 'input',
+      });
     }
     if (value.endsWith('/prompt')) {
       return Response.json({ prompt_id: 'prompt-water' });
@@ -198,7 +216,10 @@ test('generation writes candidates under tmp-style output and never mutates the 
   assert.equal(run.candidates.length, 1);
   assert.equal(run.approvalPolicy.manifestMutated, false);
   assert.equal(run.approvalPolicy.automaticPromotionAllowed, false);
-  assert.match(run.candidates[0].candidatePath, /tmp.*animation-assets.*candidates/);
+  assert.match(
+    run.candidates[0].candidatePath,
+    /tmp.*animation-assets.*candidates/,
+  );
   assert.equal(await readFile(manifestPath, 'utf8'), manifestBefore);
 });
 
