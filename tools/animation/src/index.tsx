@@ -8,9 +8,14 @@ import {
   SceneV2Benchmark,
   type SceneV2BenchmarkProps,
 } from './SceneV2Benchmark';
+import {
+  SceneV2WaterHandoff,
+  type SceneV2WaterHandoffProps,
+} from './SceneV2WaterHandoff';
 import { proofScene } from './scene-data';
 
 const emptySceneV2Props: SceneV2BenchmarkProps = {};
+const emptyWaterHandoffProps: SceneV2WaterHandoffProps = {};
 
 function RemotionRoot() {
   return (
@@ -60,6 +65,23 @@ function RemotionRoot() {
           fps: props.scene?.fps ?? 30,
           width: props.scene?.width ?? 1080,
           height: props.scene?.height ?? 1920,
+        })}
+      />
+      <Composition
+        id="SceneV2WaterHandoff"
+        component={SceneV2WaterHandoff}
+        durationInFrames={450}
+        fps={30}
+        width={1080}
+        height={1920}
+        defaultProps={emptyWaterHandoffProps}
+        calculateMetadata={({ props }) => ({
+          durationInFrames:
+            (props.outgoingScene?.durationFrames ?? 210) +
+            (props.incomingScene?.durationFrames ?? 240),
+          fps: props.outgoingScene?.fps ?? props.incomingScene?.fps ?? 30,
+          width: props.outgoingScene?.width ?? props.incomingScene?.width ?? 1080,
+          height: props.outgoingScene?.height ?? props.incomingScene?.height ?? 1920,
         })}
       />
     </>
