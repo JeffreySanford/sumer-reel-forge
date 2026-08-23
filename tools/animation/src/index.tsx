@@ -7,6 +7,10 @@ import { ReelAnimation } from './ReelAnimation';
 import type { SceneV2BenchmarkProps } from './SceneV2Benchmark';
 import { SceneV2ResolvedBenchmark } from './SceneV2ResolvedBenchmark';
 import {
+  Shot03EnkiBodyCandidatePreview,
+  type Shot03EnkiBodyCandidatePreviewProps,
+} from './Shot03EnkiBodyCandidatePreview';
+import {
   Shot03VesselCandidatePreview,
   type Shot03VesselCandidatePreviewProps,
 } from './Shot03VesselCandidatePreview';
@@ -24,6 +28,7 @@ const emptySceneV2Props: SceneV2BenchmarkProps = {};
 const emptyWaterHandoffProps: SceneV2WaterHandoffProps = {};
 const emptyShot03WaterCandidatePreviewProps: Shot03WaterCandidatePreviewProps = {};
 const emptyShot03VesselCandidatePreviewProps: Shot03VesselCandidatePreviewProps = {};
+const emptyShot03EnkiBodyCandidatePreviewProps: Shot03EnkiBodyCandidatePreviewProps = {};
 
 function RemotionRoot() {
   return (
@@ -92,6 +97,15 @@ function RemotionRoot() {
         width={1080}
         height={1920}
         defaultProps={emptyShot03VesselCandidatePreviewProps}
+      />
+      <Composition
+        id="Shot03EnkiBodyCandidatePreview"
+        component={Shot03EnkiBodyCandidatePreview}
+        durationInFrames={150}
+        fps={30}
+        width={1080}
+        height={1920}
+        defaultProps={emptyShot03EnkiBodyCandidatePreviewProps}
       />
       <Composition
         id="SceneV2WaterHandoff"
