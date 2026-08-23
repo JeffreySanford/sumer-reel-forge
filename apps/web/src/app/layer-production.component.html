@@ -150,13 +150,13 @@
             </span>
           </div>
 
-          <div class="layer-list" role="list" aria-label="Shot production layers">
+          <div class="layer-list">
             @for (layer of shot.layers; track layer.id) {
               <button
                 type="button"
-                role="listitem"
                 class="layer-row"
                 [class.layer-row--selected]="selectedLayer()?.id === layer.id"
+                [attr.aria-label]="layerLabel(layer) + ' · ' + (layer.required ? 'Required' : 'Optional')"
                 (click)="selectLayer(layer)"
               >
                 <span class="layer-state" [class.layer-state--ready]="layer.ready" aria-hidden="true"></span>
@@ -272,15 +272,17 @@
               </div>
             }
 
-            @if (layer.lane?.notes?.length) {
-              <div class="inspector-section">
-                <p class="md3-label">Lane guardrails</p>
-                <ul class="guardrail-list">
-                  @for (note of layer.lane?.notes || []; track note) {
-                    <li>{{ note }}</li>
-                  }
-                </ul>
-              </div>
+            @if (layer.lane; as lane) {
+              @if (lane.notes.length) {
+                <div class="inspector-section">
+                  <p class="md3-label">Lane guardrails</p>
+                  <ul class="guardrail-list">
+                    @for (note of lane.notes; track note) {
+                      <li>{{ note }}</li>
+                    }
+                  </ul>
+                </div>
+              }
             }
           </aside>
         }
