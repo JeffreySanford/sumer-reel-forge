@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 2,
+  "sceneId": "chapter-01-reel-01-shot-03-benchmark-v1",
+  "projectSlug": "blessings-of-sumer",
+  "chapterNumber": 1,
+  "reelId": "resolve-from-studio",
+  "episodeNumber": 1,
+  "visualBible": "blessings-of-sumer-v1",
+  "styleBible": "reel-01-animation-style-v1",
+  "assetVersion": "editorial-v1-flat-benchmark",
+  "width": 1080,
+  "height": 1920,
+  "fps": 30,
+  "durationFrames": 210,
+  "shots": [
+    {
+      "id": "enki-at-the-helm",
+      "sourceShotNumber": 3,
+      "sourceStartFrame": 390,
+      "startFrame": 0,
+      "durationFrames": 210,
+      "emotionalPurpose": "Calm authority, traveler curiosity, and physical presence before the numinous handoff to Nammu.",
+      "eyeTarget": "enki-face",
+      "stillnessAnchor": "enki-facial-identity",
+      "camera": {
+        "preset": "slowPush",
+        "scaleFrom": 1,
+        "scaleTo": 1.024,
+        "xFrom": 0,
+        "xTo": -5,
+        "yFrom": 0,
+        "yTo": -7,
+        "rotationFrom": 0,
+        "rotationTo": 0,
+        "easing": "cinematicSlow",
+        "settleFromProgress": 0.82
+      },
+      "layers": [
+        {
+          "id": "shot03-editorial-base",
+          "assetId": "shot03-editorial-v1-flat",
+          "assetPath": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-03.png",
+          "role": "background",
+          "material": "flattened-editorial-art",
+          "depth": 0.5,
+          "anchor": "center",
+          "transform": {
+            "x": 0,
+            "y": 0,
+            "scale": 1
+          },
+          "motionPresets": ["heavyPhysical"],
+          "required": true
+        }
+      ],
+      "performance": [
+        {
+          "target": "enki-body",
+          "preset": "breathing",
+          "startProgress": 0,
+          "endProgress": 1,
+          "intensity": 0.12,
+          "enabled": false,
+          "deferredUntilAssetId": "shot03-enki-body-v1"
+        },
+        {
+          "target": "enki-eyes",
+          "preset": "blinkOnce",
+          "startProgress": 0.46,
+          "endProgress": 0.51,
+          "intensity": 1,
+          "enabled": false,
+          "deferredUntilAssetId": "shot03-enki-eyes-v1"
+        }
+      ],
+      "atmosphere": [
+        {
+          "id": "dawn-mist",
+          "preset": "mistDrift",
+          "intensity": 0.1,
+          "depthRange": [0.2, 0.7]
+        }
+      ],
+      "lighting": [
+        {
+          "id": "water-reflection",
+          "preset": "waterPulse",
+          "intensityFrom": 0.055,
+          "intensityTo": 0.11
+        }
+      ],
+      "captionPolicy": {
+        "safeZone": "lower-middle",
+        "avoidTargets": ["enki-face", "helm"],
+        "motion": "stable",
+        "maxLines": 2
+      },
+      "transitionIn": "shot-02-to-03-rigging-occlusion",
+      "transitionOut": "shot-03-to-04-water-reflection"
+    }
+  ],
+  "transitions": [],
+  "reviewMarkers": [
+    { "id": "opening", "progress": 0 },
+    { "id": "quarter", "progress": 0.25 },
+    { "id": "hero", "progress": 0.5 },
+    { "id": "handoff-prep", "progress": 0.75 },
+    { "id": "end", "progress": 1 }
+  ],
+  "reviewPolicy": {
+    "scorecard": "reel-01-animation-review-v1",
+    "humanApprovalRequired": true,
+    "minimumCategory": 4,
+    "publishabilityMinimum": 5,
+    "hardFailsBlockApproval": true
+  },
+  "sourcePolicy": {
+    "storyMutationAllowed": false,
+    "narrationSource": "reel-production-record",
+    "captionSource": "reel-production-record",
+    "visualSource": "versioned-animation-asset-manifest"
+  }
+}
