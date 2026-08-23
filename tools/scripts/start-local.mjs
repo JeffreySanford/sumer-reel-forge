@@ -10,6 +10,15 @@ import {
   formatHardwareProfile,
 } from '../runtime/hardware-profile.mjs';
 
+// Local-first defaults for the normal `pnpm start:all` entrypoint.
+// Explicit shell or .env values remain authoritative.
+process.env.PLANNING_PROVIDER ??= 'ollama';
+process.env.OLLAMA_VISION_MODEL ??= 'qwen3-vl:4b-instruct';
+process.env.OLLAMA_TEXT_MODEL ??= 'qwen3:8b';
+process.env.OLLAMA_BASE_URL ??= 'http://localhost:11434';
+process.env.PLANNING_TIMEOUT_MS ??= '120000';
+process.env.OLLAMA_KEEP_ALIVE ??= '10m';
+
 const scriptPath = fileURLToPath(import.meta.url);
 const root = dirname(dirname(dirname(scriptPath)));
 const coreScript = join(root, 'tools', 'scripts', 'start-all.mjs');
