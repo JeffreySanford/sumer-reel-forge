@@ -7,7 +7,7 @@ import {
   readdir,
   writeFile,
 } from 'node:fs/promises';
-import { basename, dirname, join, resolve } from 'node:path';
+import { basename, join, resolve } from 'node:path';
 
 const DEFAULT_MANIFEST = resolve(
   'assets/blessings-of-sumer/chapter-01/reel-01/animation-v1/manifest.json',
