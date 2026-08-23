@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 import { access, readFile } from 'node:fs/promises';
-import { isAbsolute, relative, resolve } from 'node:path';
+import { dirname, isAbsolute, relative, resolve } from 'node:path';
 
 const MANIFEST_PATH =
   'assets/blessings-of-sumer/chapter-01/reel-01/animation-v1/manifest.json';
@@ -172,7 +172,7 @@ export interface AnimationProductionStatus {
 @Injectable()
 export class AnimationProductionStatusService {
   async getStatus(): Promise<AnimationProductionStatus> {
-    const root = resolve(process.cwd());
+    const root = await findWorkspaceRoot(process.cwd());
     const assetRoot = resolve(root, 'assets');
     const manifestPath = resolve(root, MANIFEST_PATH);
     const manifest = await readJson<AnimationManifest>(manifestPath);
@@ -423,6 +423,38 @@ function characterFromLayerId(layerId: string): string | null {
     /(?:shot\d+-)?([a-z]+)-(?:body|character|face|eyes)/i,
   );
   return match?.[1]?.toLowerCase() ?? null;
+}
+
+async function findWorkspaceRoot(startPath: string): Promise<string> {
+  let current = resolve(startPath);
+
+  while (true) {
+    const hasWorkspaceMarkers =
+      (await pathExists(resolve(current, 'package.json'))) &&
+      (await pathExists(resolve(current, 'assets'))) &&
+      (await pathExists(resolve(current, 'tools')));
+
+    if (hasWorkspaceMarkers) {
+      return current;
+    }
+
+    const parent = dirname(current);
+    if (parent === current) {
+      throw new Error(
+        `Unable to locate the Sumer Reel Forge workspace root from ${startPath}.`,
+      );
+    }
+    current = parent;
+  }
+}
+
+async function pathExists(path: string): Promise<boolean> {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 async function readJson<T>(path: string): Promise<T> {
