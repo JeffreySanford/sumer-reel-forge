@@ -60,6 +60,29 @@
       ]
     },
     {
+      "id": "semantic-smoke-overlay",
+      "state": "provisional",
+      "match": { "role": "atmosphere", "material": "smoke", "hasAlpha": true },
+      "generator": {
+        "family": "sam3-semantic-overlay",
+        "workflowPath": "tools/renderer/workflows/semantic-overlay-sam3-api.json"
+      },
+      "qa": {
+        "family": "alpha-structure-then-composite-motion",
+        "executor": "tools/scripts/verify-semantic-overlay-candidate.mjs",
+        "alphaCoverage": { "minimum": 0.00025, "preferredMinimum": 0.0015, "maximum": 0.3 },
+        "requireSourceRgbUnderAlpha": true,
+        "humanReviewRequired": true
+      },
+      "notes": [
+        "PROVISIONAL: Shot 5 must validate this lane before it becomes reusable production knowledge.",
+        "Prefer source-supported smoke or hearth haze; do not invent a new plume or obscure the hospitality eye target.",
+        "Soft/sparse coverage is expected, so the minimum is only a hard non-triviality floor.",
+        "Motion should be low-opacity, irregular, rising/lateral internal drift rather than translating the extracted PNG as one card.",
+        "Human review must reject masks that mostly select architecture, faces, fire, or broad background haze instead of smoke."
+      ]
+    },
+    {
       "id": "semantic-refraction-overlay",
       "match": { "role": "reflection", "material": "underwater-refraction", "hasAlpha": true },
       "generator": {
