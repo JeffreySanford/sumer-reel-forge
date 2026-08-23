@@ -23,6 +23,10 @@ import {
   type Shot03WaterCandidatePreviewProps,
 } from './Shot03WaterCandidatePreview';
 import {
+  Shot04LayeredCandidatePreview,
+  type Shot04LayeredCandidatePreviewProps,
+} from './Shot04LayeredCandidatePreview';
+import {
   SceneV2WaterHandoff,
   type SceneV2WaterHandoffProps,
 } from './SceneV2WaterHandoff';
@@ -34,6 +38,7 @@ const emptyShot03WaterCandidatePreviewProps: Shot03WaterCandidatePreviewProps = 
 const emptyShot03VesselCandidatePreviewProps: Shot03VesselCandidatePreviewProps = {};
 const emptyShot03EnkiBodyCandidatePreviewProps: Shot03EnkiBodyCandidatePreviewProps = {};
 const emptyShot03LayeredCandidatePreviewProps: Shot03LayeredCandidatePreviewProps = {};
+const emptyShot04LayeredCandidatePreviewProps: Shot04LayeredCandidatePreviewProps = {};
 
 function RemotionRoot() {
   return (
@@ -120,6 +125,15 @@ function RemotionRoot() {
         width={1080}
         height={1920}
         defaultProps={emptyShot03LayeredCandidatePreviewProps}
+      />
+      <Composition
+        id="Shot04LayeredCandidatePreview"
+        component={Shot04LayeredCandidatePreview}
+        durationInFrames={240}
+        fps={30}
+        width={1080}
+        height={1920}
+        defaultProps={emptyShot04LayeredCandidatePreviewProps}
       />
       <Composition
         id="SceneV2WaterHandoff"
