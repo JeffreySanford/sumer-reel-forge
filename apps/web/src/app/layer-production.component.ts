@@ -73,6 +73,18 @@ export class LayerProductionComponent {
     },
   ];
 
+  protected readonly primaryGpu = computed(
+    () => this.host()?.gpu.devices?.[0] ?? null,
+  );
+  protected readonly gpuName = computed(
+    () => this.primaryGpu()?.name ?? 'No NVIDIA device reported',
+  );
+  protected readonly gpuVramLabel = computed(() => {
+    const memoryTotalMb = this.primaryGpu()?.memoryTotalMb;
+    return memoryTotalMb
+      ? `${(memoryTotalMb / 1024).toFixed(1)} GB VRAM`
+      : 'VRAM unknown';
+  });
   protected readonly gpuReady = computed(
     () => Boolean(this.host()?.runtimePlan?.ai?.nvidiaCudaAvailable),
   );
