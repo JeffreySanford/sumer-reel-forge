@@ -22,8 +22,10 @@
           }
         ],
         "styles": [
+          "apps/web/src/md3.scss",
           "apps/web/src/styles.scss",
-          "apps/web/src/studio-routing.scss"
+          "apps/web/src/studio-routing.scss",
+          "apps/web/src/studio-home-visuals.scss"
         ]
       },
       "configurations": {
