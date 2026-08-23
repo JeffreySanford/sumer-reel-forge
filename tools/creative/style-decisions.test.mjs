@@ -160,13 +160,25 @@ test('Shot 5 shrine base reuses exact preservation mechanics for stable architec
   assert.equal(lane?.qa?.family, 'checksum-identity');
 });
 
-test('Shot 5 contained water uses localized two-stage SAM3 and stays provisional', () => {
+test('Shot 5 contained water inherits approved containment and readability decisions', () => {
+  const shot = {
+    shotId: 'traveler-shrine-hospitality',
+    sourceShotNumber: 5,
+  };
   const layer = {
     id: 'shot05-welcome-water-v1',
     role: 'water',
     material: 'water',
     hasAlpha: true,
   };
+  const context = buildDecisionContext({ manifest, shot, layer });
+  const decisions = resolveStyleDecisions(library, context);
+  const ids = new Set(decisions.map((decision) => decision.id));
+
+  assert.ok(ids.has('water-motion-material-internal'));
+  assert.ok(ids.has('shot5-contained-water-fixed-boundary'));
+  assert.ok(ids.has('shot5-contained-water-readable-ripple-refraction'));
+  assert.ok(ids.has('shot5-contained-water-no-diagonal-streaks'));
 
   const lane = resolveLayerProductionLane(lanes, layer);
   assert.equal(lane?.id, 'semantic-contained-water-overlay');
@@ -180,7 +192,7 @@ test('Shot 5 contained water uses localized two-stage SAM3 and stays provisional
   assert.equal(lane?.qa?.humanReviewRequired, true);
 });
 
-test('Shot 5 smoke is executable but remains explicitly provisional until benchmark approval', () => {
+test('Shot 5 smoke stays executable but is optional when source evidence is sparse', () => {
   const shot = {
     shotId: 'traveler-shrine-hospitality',
     sourceShotNumber: 5,
@@ -196,7 +208,12 @@ test('Shot 5 smoke is executable but remains explicitly provisional until benchm
   const smokeDecision = decisions.find(
     (decision) => decision.id === 'smoke-motion-provisional-material-rule',
   );
+  const optionalDecision = decisions.find(
+    (decision) => decision.id === 'shot5-smoke-optional-without-source-evidence',
+  );
   assert.equal(smokeDecision?.state, 'provisional');
+  assert.equal(optionalDecision?.state, 'approved');
+  assert.equal(optionalDecision?.value, 'optional-when-source-evidence-is-sparse');
 
   const lane = resolveLayerProductionLane(lanes, layer);
   assert.equal(lane?.id, 'semantic-smoke-overlay');
