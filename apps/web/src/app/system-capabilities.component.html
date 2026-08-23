@@ -1,0 +1,188 @@
+<main class="system-shell">
+  <header class="system-header">
+    <div class="system-brand">
+      <span class="system-mark">SRF</span>
+      <div>
+        <p class="eyebrow">Reel Forge Runtime</p>
+        <h1>Host System</h1>
+      </div>
+    </div>
+    <div class="system-actions">
+      <a routerLink="/reels/1/overview">Back to Studio</a>
+      <button type="button" (click)="refresh()" [disabled]="loading()">
+        {{ loading() ? 'Refreshing…' : 'Refresh' }}
+      </button>
+    </div>
+  </header>
+
+  @if (loading() && !capabilities()) {
+    <section class="state-card" aria-live="polite">
+      <p class="eyebrow">Local Probe</p>
+      <h2>Reading this host…</h2>
+      <p>Checking the startup hardware profile and live local services.</p>
+    </section>
+  }
+
+  @if (error()) {
+    <section class="state-card error-card" role="alert">
+      <p class="eyebrow">Capabilities unavailable</p>
+      <h2>The local runtime profile could not be loaded.</h2>
+      <p>{{ error() }}</p>
+      <p>Run <code>pnpm start:all</code> to regenerate the host profile.</p>
+    </section>
+  }
+
+  @if (capabilities(); as host) {
+    <section class="host-hero">
+      <div>
+        <p class="eyebrow">Current Local Host</p>
+        <h2>{{ host.host }}</h2>
+        <p class="host-summary">
+          {{ host.cpu?.model || 'CPU model unavailable' }} · {{ host.platform }} / {{ host.arch }}
+        </p>
+      </div>
+      <div class="hero-status">
+        <span>{{ host.runtimePlan?.tier || 'unclassified' }}</span>
+        <span>{{ readyProjectionCount() }} capabilities ready</span>
+        <span>{{ host.source }}</span>
+      </div>
+    </section>
+
+    <section class="metric-grid" aria-label="Host hardware summary">
+      <article class="metric-card">
+        <p class="eyebrow">CPU</p>
+        <strong>{{ host.cpu?.logicalCount || '—' }}</strong>
+        <span>logical processors</span>
+        <small>{{ host.cpu?.averageReportedMhz || '—' }} MHz reported average</small>
+      </article>
+      <article class="metric-card">
+        <p class="eyebrow">Memory</p>
+        <strong>{{ host.memory?.totalGb || '—' }} GB</strong>
+        <span>{{ host.memory?.freeGb || '—' }} GB free at profile time</span>
+        <small>{{ host.runtimePlan?.reserves?.estimatedMemoryGbReserved || '—' }} GB reserved by policy</small>
+      </article>
+      <article class="metric-card">
+        <p class="eyebrow">GPU</p>
+        <strong>{{ gpu()?.name || 'No GPU reported' }}</strong>
+        <span>{{ gbFromMb(gpu()?.memoryTotalMb) }} VRAM</span>
+        <small>{{ gpu()?.vendor || 'Unknown vendor' }} · driver {{ gpu()?.driverVersion || 'unknown' }}</small>
+      </article>
+      <article class="metric-card">
+        <p class="eyebrow">Disk</p>
+        <strong>{{ host.disk?.freeGb || '—' }} GB</strong>
+        <span>free</span>
+        <small>{{ host.disk?.totalGb || '—' }} GB total</small>
+      </article>
+    </section>
+
+    <section class="section-block">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Derived Runtime Plan</p>
+          <h2>How Reel Forge will use this machine</h2>
+        </div>
+        <span>Profiled {{ formatObservedAt(host.profileGeneratedAt) }}</span>
+      </div>
+
+      <div class="runtime-grid">
+        <article class="runtime-card">
+          <p class="eyebrow">Remotion</p>
+          <h3>{{ host.runtimePlan?.remotion?.parallelRenders || 1 }} × {{ host.runtimePlan?.remotion?.concurrencyPerRender || 1 }}</h3>
+          <p>parallel renders × workers per render</p>
+          <small>
+            {{ host.runtimePlan?.remotion?.hardwareAcceleration || 'default' }} hardware ·
+            {{ host.runtimePlan?.remotion?.gl || 'default' }} GL
+          </small>
+        </article>
+        <article class="runtime-card">
+          <p class="eyebrow">Ollama</p>
+          <h3>{{ host.runtimePlan?.ai?.ollamaReviewConcurrency || 1 }} review(s)</h3>
+          <p>{{ host.ollama.online ? host.ollama.models.length + ' local models reachable' : 'service offline' }}</p>
+          <small>{{ host.ollama.baseUrl }}</small>
+        </article>
+        <article class="runtime-card">
+          <p class="eyebrow">ComfyUI</p>
+          <h3>{{ host.runtimePlan?.ai?.comfyConcurrency || 1 }} job(s)</h3>
+          <p>{{ host.comfyui.online ? host.comfyui.detail : 'service offline' }}</p>
+          <small>{{ host.runtimePlan?.ai?.comfyVramMode || 'unclassified VRAM mode' }}</small>
+        </article>
+        <article class="runtime-card">
+          <p class="eyebrow">Encoding</p>
+          <h3>{{ host.runtimePlan?.encoding?.preferredH264Encoder || 'libx264' }}</h3>
+          <p>{{ host.runtimePlan?.encoding?.nvencAvailable ? 'NVENC detected' : 'software H.264 path' }}</p>
+          <small>FFmpeg {{ host.runtimePlan?.encoding?.ffmpegAvailable ? 'available' : 'not detected' }}</small>
+        </article>
+      </div>
+    </section>
+
+    <section class="section-block">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Software Inventory</p>
+          <h2>Available local tools and services</h2>
+        </div>
+        <span>Observed {{ formatObservedAt(host.observedAt) }}</span>
+      </div>
+
+      <div class="software-grid">
+        @for (item of host.software; track item.id) {
+          <article class="software-row" [attr.data-status]="item.status">
+            <span class="status-dot" aria-hidden="true"></span>
+            <div>
+              <strong>{{ item.label }}</strong>
+              <p>{{ item.detail }}</p>
+            </div>
+            <div class="software-meta">
+              <span>{{ statusLabel(item.status) }}</span>
+              @if (item.version) { <small>{{ item.version }}</small> }
+            </div>
+          </article>
+        }
+      </div>
+    </section>
+
+    <section class="section-block projections-block">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Projected Capability</p>
+          <h2>What should be possible on this host</h2>
+        </div>
+        <span>Conservative projections, not benchmarks</span>
+      </div>
+
+      <div class="projection-grid">
+        @for (projection of host.projections; track projection.id) {
+          <article class="projection-card" [attr.data-status]="projection.status">
+            <div class="projection-heading">
+              <span>{{ statusLabel(projection.status) }}</span>
+              <h3>{{ projection.title }}</h3>
+            </div>
+            <p>{{ projection.summary }}</p>
+            <div class="basis-list" aria-label="Projection basis">
+              @for (basis of projection.basis; track basis) { <span>{{ basis }}</span> }
+            </div>
+            @if (projection.recommendation) {
+              <small class="recommendation">{{ projection.recommendation }}</small>
+            }
+          </article>
+        }
+      </div>
+    </section>
+
+    <section class="next-step-card">
+      <div>
+        <p class="eyebrow">Next Production Step</p>
+        <h2>Animation-v1 layer generation</h2>
+        <p>
+          The next quality increase comes from separating water, vessel, Enki, cloth/rigging,
+          atmosphere, refraction, and masks instead of asking one flattened painting to carry every motion channel.
+        </p>
+      </div>
+      @if (host.comfyui.online && host.runtimePlan?.ai?.nvidiaCudaAvailable) {
+        <span class="next-ready">Host ready for GPU candidate generation</span>
+      } @else {
+        <span class="next-limited">Start/configure ComfyUI to enable GPU layer candidates</span>
+      }
+    </section>
+  }
+</main>
