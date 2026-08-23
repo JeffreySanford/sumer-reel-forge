@@ -1,12 +1,19 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "registryId": "animation-production-lanes-v1",
   "lanes": [
     {
       "id": "exact-source-preservation",
       "match": { "role": "background", "material": "underwater-refraction", "hasAlpha": false },
-      "generator": { "family": "source-preservation" },
-      "qa": { "family": "checksum-identity", "humanReviewRequired": true },
+      "generator": {
+        "family": "source-preservation",
+        "executor": "tools/scripts/source-preservation-layer.mjs"
+      },
+      "qa": {
+        "family": "checksum-identity",
+        "executor": "tools/scripts/source-preservation-layer.mjs",
+        "humanReviewRequired": true
+      },
       "notes": [
         "Use when the editorial background itself is the stillness anchor.",
         "No synthesis, crop, resize, or pixel mutation is allowed."
@@ -15,49 +22,92 @@
     {
       "id": "semantic-water-overlay",
       "match": { "role": "water", "material": "water", "hasAlpha": true },
-      "generator": { "family": "sam3-semantic-overlay" },
-      "qa": { "family": "alpha-diagnostic-plus-motion", "humanReviewRequired": true },
+      "generator": {
+        "family": "sam3-semantic-overlay",
+        "workflowPath": "tools/renderer/workflows/semantic-overlay-sam3-api.json"
+      },
+      "qa": {
+        "family": "alpha-structure-then-composite-motion",
+        "executor": "tools/scripts/verify-semantic-overlay-candidate.mjs",
+        "alphaCoverage": { "minimum": 0.005, "maximum": 0.9 },
+        "requireSourceRgbUnderAlpha": true,
+        "humanReviewRequired": true
+      },
       "notes": [
         "Preserve source RGB under alpha.",
         "Reject whole-frame selection and character-shaped water masks.",
-        "Production motion should occur within the material rather than as a translated card."
+        "Production motion should occur within the material rather than as a translated card.",
+        "Per-layer structural QA precedes motion QA in the assembled shot benchmark."
       ]
     },
     {
       "id": "semantic-refraction-overlay",
       "match": { "role": "reflection", "material": "underwater-refraction", "hasAlpha": true },
-      "generator": { "family": "sam3-semantic-overlay" },
-      "qa": { "family": "alpha-diagnostic-plus-motion", "humanReviewRequired": true },
+      "generator": {
+        "family": "sam3-semantic-overlay",
+        "workflowPath": "tools/renderer/workflows/semantic-overlay-sam3-api.json"
+      },
+      "qa": {
+        "family": "alpha-structure-then-composite-motion",
+        "executor": "tools/scripts/verify-semantic-overlay-candidate.mjs",
+        "alphaCoverage": { "minimum": 0.002, "maximum": 0.65 },
+        "requireSourceRgbUnderAlpha": true,
+        "humanReviewRequired": true
+      },
       "notes": [
         "Prefer upper/surface refraction structures supported by the editorial source.",
-        "No new light source or fantasy glow."
+        "No new light source or fantasy glow.",
+        "Per-layer structural QA precedes motion QA in the assembled shot benchmark."
       ]
     },
     {
       "id": "environmental-coherence-mask",
       "match": { "role": "mask", "material": "divine-light", "hasAlpha": true },
-      "generator": { "family": "semantic-coherence-mask" },
-      "qa": { "family": "mask-shape-and-reveal", "humanReviewRequired": true },
+      "generator": {
+        "family": "semantic-coherence-mask",
+        "workflowPath": "tools/renderer/workflows/semantic-overlay-sam3-api.json"
+      },
+      "qa": {
+        "family": "mask-shape-and-reveal",
+        "executor": "tools/scripts/verify-semantic-overlay-candidate.mjs",
+        "alphaCoverage": { "minimum": 0.001, "maximum": 0.4 },
+        "requireSourceRgbUnderAlpha": true,
+        "humanReviewRequired": true
+      },
       "notes": [
         "Mask follows source-supported water/light structure.",
-        "Never resolve to a hard character silhouette, face cutout, mermaid, aura, or glowing eyes."
+        "Never resolve to a hard character silhouette, face cutout, mermaid, aura, or glowing eyes.",
+        "Automated alpha coverage can reject trivial/whole-frame masks but human review owns semantic shape judgment."
       ]
     },
     {
       "id": "masked-background-repair",
       "match": { "role": "background", "material": "atmosphere-distant", "hasAlpha": false },
-      "generator": { "family": "masked-inpainting" },
-      "qa": { "family": "outside-preservation-plus-inside-reconstruction", "humanReviewRequired": true },
+      "generator": { "family": "masked-inpainting", "executionMode": "dependency-aware-dedicated" },
+      "qa": {
+        "family": "outside-preservation-plus-inside-reconstruction",
+        "humanReviewRequired": true
+      },
       "notes": [
         "Build the removal mask from the exact reviewed foreground candidates.",
-        "Outside-mask editorial pixels must remain unchanged."
+        "Outside-mask editorial pixels must remain unchanged.",
+        "Dependency-aware repair remains a dedicated lane until foreground dependency resolution is generalized."
       ]
     },
     {
       "id": "rigid-prop-extraction",
       "match": { "role": "major-prop", "material": "rigid-vessel", "hasAlpha": true },
-      "generator": { "family": "sam3-semantic-overlay" },
-      "qa": { "family": "alpha-diagnostic-plus-motion", "humanReviewRequired": true },
+      "generator": {
+        "family": "sam3-semantic-overlay",
+        "workflowPath": "tools/renderer/workflows/semantic-overlay-sam3-api.json"
+      },
+      "qa": {
+        "family": "alpha-structure-then-composite-motion",
+        "executor": "tools/scripts/verify-semantic-overlay-candidate.mjs",
+        "alphaCoverage": { "minimum": 0.002, "maximum": 0.65 },
+        "requireSourceRgbUnderAlpha": true,
+        "humanReviewRequired": true
+      },
       "notes": [
         "Preserve exact silhouette/material detail.",
         "Use low-frequency rigid-body motion; never deform the prop."
@@ -66,8 +116,17 @@
     {
       "id": "character-source-extraction",
       "match": { "role": "character", "hasAlpha": true },
-      "generator": { "family": "sam3-semantic-overlay" },
-      "qa": { "family": "identity-alpha-plus-motion", "humanReviewRequired": true },
+      "generator": {
+        "family": "sam3-semantic-overlay",
+        "workflowPath": "tools/renderer/workflows/semantic-overlay-sam3-api.json"
+      },
+      "qa": {
+        "family": "identity-alpha-then-composite-motion",
+        "executor": "tools/scripts/verify-semantic-overlay-candidate.mjs",
+        "alphaCoverage": { "minimum": 0.001, "maximum": 0.65 },
+        "requireSourceRgbUnderAlpha": true,
+        "humanReviewRequired": true
+      },
       "notes": [
         "Preserve face, hands, costume, lighting, silhouette, and painterly identity.",
         "Motion QA never substitutes for human identity review."
@@ -76,8 +135,17 @@
     {
       "id": "foreground-source-extraction",
       "match": { "role": "foreground-occluder", "hasAlpha": true },
-      "generator": { "family": "sam3-semantic-overlay" },
-      "qa": { "family": "alpha-diagnostic-plus-safe-zone-review", "humanReviewRequired": true },
+      "generator": {
+        "family": "sam3-semantic-overlay",
+        "workflowPath": "tools/renderer/workflows/semantic-overlay-sam3-api.json"
+      },
+      "qa": {
+        "family": "alpha-structure-plus-safe-zone-review",
+        "executor": "tools/scripts/verify-semantic-overlay-candidate.mjs",
+        "alphaCoverage": { "minimum": 0.001, "maximum": 0.5 },
+        "requireSourceRgbUnderAlpha": true,
+        "humanReviewRequired": true
+      },
       "notes": [
         "Foreground must remain subordinate and must avoid face/caption safe zones."
       ]
@@ -85,7 +153,7 @@
     {
       "id": "procedural-light-overlay",
       "match": { "role": "light", "hasAlpha": true },
-      "generator": { "family": "procedural-or-source-derived-light" },
+      "generator": { "family": "procedural-or-source-derived-light", "executionMode": "human-designed" },
       "qa": { "family": "source-consistency-and-reveal", "humanReviewRequired": true },
       "notes": [
         "No hard aura, glowing eyes, or particle halo.",
