@@ -9,10 +9,16 @@ import {
 } from '../renderer/artifact-utils.mjs';
 import { loadRendererConfig } from '../renderer/renderer-config.mjs';
 import { loadSceneV2ForRender } from '../animation/src/scene-v2-asset-loader';
+import {
+  formatLocalRenderProfile,
+  getLocalRenderProfile,
+  remotionPerformanceArgs,
+} from '../animation/src/local-render-profile';
 
 async function main(): Promise<void> {
   const root = resolve('.');
   const config = loadRendererConfig();
+  const renderProfile = getLocalRenderProfile();
   const scenePath = resolve(
     process.argv[2] ??
       'tools/animation/scenes/reel-01-shot-03-benchmark.scene-v2.json',
@@ -45,8 +51,10 @@ async function main(): Promise<void> {
   console.log(
     `Assets: ${assetResolution.mode}${loaded.manifestPath ? ` via ${loaded.manifestPath}` : ''}`,
   );
+  console.log(`Hardware: ${formatLocalRenderProfile(renderProfile)}`);
   console.log(`Output: ${videoPath}`);
 
+  const startedAt = Date.now();
   await run(
     'pnpm',
     [
@@ -60,10 +68,12 @@ async function main(): Promise<void> {
       `--public-dir=${resolve('assets')}`,
       '--codec=h264',
       '--pixel-format=yuv420p',
+      ...remotionPerformanceArgs(renderProfile),
       '--overwrite',
     ],
     root,
   );
+  const renderDurationMs = Date.now() - startedAt;
 
   const reviewFrames: Array<{
     id: string;
@@ -151,6 +161,8 @@ async function main(): Promise<void> {
     sceneId: scene.sceneId,
     sourceShotNumber,
     sourceStartFrame: scene.shots[0]?.sourceStartFrame,
+    renderProfile,
+    renderDurationMs,
     assetResolution: {
       mode: assetResolution.mode,
       manifestId: assetResolution.manifestId,
@@ -178,6 +190,7 @@ async function main(): Promise<void> {
   });
 
   console.log(`Rendered benchmark: ${videoPath}`);
+  console.log(`Render time: ${(renderDurationMs / 1000).toFixed(1)}s`);
   console.log(`Review contact sheet: ${contactSheetPath}`);
   console.log(`Manifest: ${manifestPath}`);
 }
