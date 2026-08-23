@@ -121,10 +121,10 @@ export class AnimationProductionEvidenceService {
         ? `/api/runtime/animation-production/evidence/${sourceShotNumber}/contact-sheet`
         : null,
       videoPath: available
-        ? relative(root, videoPath).replaceAll('\\', '/')
+        ? relative(root, videoPath).replace(/\\/g, '/')
         : null,
       contactSheetPath: available
-        ? relative(root, contactSheetPath).replaceAll('\\', '/')
+        ? relative(root, contactSheetPath).replace(/\\/g, '/')
         : null,
       renderedAt,
     };
