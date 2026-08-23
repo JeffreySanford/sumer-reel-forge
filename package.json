@@ -15,6 +15,8 @@
     "build": "nx run-many -t build",
     "comfyui:models:setup": "node tools/scripts/setup-comfyui.mjs --models-only",
     "comfyui:setup": "node tools/scripts/setup-comfyui.mjs",
+    "comfyui:water:preflight": "node tools/scripts/shot03-water-layer.mjs preflight",
+    "comfyui:water:generate": "node tools/scripts/shot03-water-layer.mjs generate",
     "creative:test": "node --test tools/creative/creative-quality.test.mjs",
     "db:generate": "prisma generate",
     "db:deploy": "prisma migrate deploy",
