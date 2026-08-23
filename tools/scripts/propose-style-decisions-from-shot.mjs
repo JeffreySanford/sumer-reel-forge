@@ -86,6 +86,7 @@ async function main() {
         rationale:
           'This production lane successfully produced an approved required benchmark layer. Reuse when role/material/alpha semantics match.',
         source: { shotId: shot.shotId, layerId: layer.id, sha256: layer.sha256 },
+        laneEvidence: { laneId: lane.id, match: lane.match },
       });
     }
 
@@ -102,12 +103,27 @@ async function main() {
     }
   }
 
-  const annotated = proposals.map((proposal) => ({
-    ...proposal,
-    alreadyCaptured: findEquivalentDecision(library, proposal) ?? null,
-    approvalRequired: true,
-  }));
+  const annotated = proposals.map((proposal) => {
+    const styleDecision = findEquivalentDecision(library, proposal);
+    const productionLane = findEquivalentLane(laneRegistry, proposal);
+    return {
+      ...proposal,
+      alreadyCaptured: styleDecision ?? productionLane ?? null,
+      capturedBy: styleDecision
+        ? 'style-decision-library'
+        : productionLane
+          ? 'production-lane-registry'
+          : null,
+      approvalRequired: true,
+    };
+  });
   const uncaptured = annotated.filter((proposal) => !proposal.alreadyCaptured);
+  const styleCaptured = annotated.filter(
+    (proposal) => proposal.capturedBy === 'style-decision-library',
+  );
+  const laneCaptured = annotated.filter(
+    (proposal) => proposal.capturedBy === 'production-lane-registry',
+  );
 
   const outputPath = resolve(
     options.output ??
@@ -115,11 +131,12 @@ async function main() {
   );
   await mkdir(dirname(outputPath), { recursive: true });
   const result = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     type: 'style-decision-proposals',
     generatedAt: new Date().toISOString(),
     sourceManifestPath: manifestPath,
     styleDecisionLibraryId: library.libraryId,
+    productionLaneRegistryId: laneRegistry.registryId,
     benchmark: {
       shotId: shot.shotId,
       sourceShotNumber: shot.sourceShotNumber,
@@ -128,9 +145,16 @@ async function main() {
     },
     policy: {
       libraryMutated: false,
+      laneRegistryMutated: false,
       automaticApprovalAllowed: false,
       humanReviewRequired: true,
       broaderScopeGeneralizationRequiresHumanJudgment: true,
+    },
+    coverage: {
+      generated: annotated.length,
+      capturedAsStyleKnowledge: styleCaptured.length,
+      capturedAsExecutionKnowledge: laneCaptured.length,
+      uncaptured: uncaptured.length,
     },
     proposals: annotated,
     uncapturedProposalCount: uncaptured.length,
@@ -140,13 +164,14 @@ async function main() {
   console.log(`Style decision proposals — Shot ${shot.sourceShotNumber} / ${shot.shotId}`);
   console.log(`[ok] approved required layers: ${requiredLayers.length}/${requiredLayers.length}`);
   console.log(`[ok] generated proposals: ${annotated.length}`);
-  console.log(`[ok] already represented in library: ${annotated.length - uncaptured.length}`);
-  console.log(`[review] uncaptured proposals: ${uncaptured.length}`);
+  console.log(`[ok] captured as style knowledge: ${styleCaptured.length}`);
+  console.log(`[ok] captured as execution knowledge: ${laneCaptured.length}`);
+  console.log(`[review] genuinely uncaptured proposals: ${uncaptured.length}`);
   for (const proposal of uncaptured) {
     console.log(`  - ${proposal.path} = ${JSON.stringify(proposal.value)} (${formatScope(proposal.suggestedScope)})`);
   }
   console.log(`Proposal file: ${outputPath}`);
-  console.log('The approved style library was NOT modified.');
+  console.log('The approved style library and production-lane registry were NOT modified.');
 }
 
 function findEquivalentDecision(library, proposal) {
@@ -154,9 +179,41 @@ function findEquivalentDecision(library, proposal) {
     (decision) => decision.state === 'approved' && decision.path === proposal.path,
   );
   const exact = candidates.find(
-    (decision) => JSON.stringify(decision.value) === JSON.stringify(proposal.value),
+    (decision) =>
+      JSON.stringify(decision.value) === JSON.stringify(proposal.value) &&
+      scopeCompatible(decision.scope ?? {}, proposal.suggestedScope ?? {}),
   );
   return exact?.id;
+}
+
+function findEquivalentLane(laneRegistry, proposal) {
+  if (proposal.kind !== 'production-lane-rule') return undefined;
+  const lane = (laneRegistry.lanes ?? []).find((item) => item.id === proposal.value);
+  if (!lane) return undefined;
+  const scope = proposal.suggestedScope ?? {};
+  return matchSubset(lane.match ?? {}, {
+    material: scope.material,
+    role: scope.role,
+    hasAlpha: scope.hasAlpha,
+  })
+    ? lane.id
+    : undefined;
+}
+
+function scopeCompatible(decisionScope, proposalScope) {
+  if (decisionScope.type !== proposalScope.type) return false;
+  for (const [key, value] of Object.entries(proposalScope)) {
+    if (key === 'type') continue;
+    if (decisionScope[key] !== value) return false;
+  }
+  return true;
+}
+
+function matchSubset(expected, actual) {
+  for (const [key, value] of Object.entries(expected)) {
+    if (actual[key] !== value) return false;
+  }
+  return true;
 }
 
 async function findBenchmarkScene(shot) {
