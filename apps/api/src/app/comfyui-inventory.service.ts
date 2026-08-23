@@ -1,9 +1,18 @@
 import { Injectable } from '@nestjs/common';
 
-const LAYER_NODE_PATTERN =
-  /(sam|segment|mask|matting|rembg|remove.?background|background.?remove|biref|grounding|florence|clip.?seg|transparent|alpha|depth|inpaint)/i;
+const SEGMENTATION_NODE_PATTERN =
+  /(^SAM\d|segment|grounding|florence|clip.?seg|RTDETR_detect|CreateBoundingBoxes|CropByBBoxes|LayersFromBoundingBoxes)/i;
+const BACKGROUND_REMOVAL_NODE_PATTERN =
+  /(remove.?background|background.?removal|biref|green.?screen)/i;
+const MATTING_NODE_PATTERN =
+  /(matting|transparent|alpha|JoinImageWithAlpha|SplitImageWithAlpha)/i;
+const DEPTH_NODE_PATTERN = /(depth|DA3Inference|MoGeInference|MoGePanoramaInference)/i;
+const INPAINT_NODE_PATTERN =
+  /(inpaint|eraser|genfill|gen.?fill|expandimage|expand.?image|FluxErase|FluxProFill)/i;
+const MASK_OPERATION_NODE_PATTERN =
+  /(^BatchMasksNode$|^CropMask$|^FeatherMask$|^GrowMask$|^ImageColorToMask$|^ImageCompositeMasked$|^ImageToMask$|^InvertMask$|^LatentCompositeMasked$|^LoadImageMask$|^MaskComposite$|^MaskPreview$|^MaskToImage$|^MediaPipeFaceMask$|^ResizeImageMaskNode$|^SetLatentNoiseMask$|^SolidMask$|^ThresholdMask$|^VAEEncodeForInpaint$|^ConditioningSetMask$)/i;
 const RESOURCE_INPUT_PATTERN =
-  /(model|ckpt|checkpoint|vae|lora|control|sam|ground|clip|unet|detector|segment|segm)/i;
+  /(model|ckpt|checkpoint|vae|lora|control|sam|ground|clip|unet|detector|segment|segm|background|removal|biref|depth)/i;
 
 export interface ComfyUiResourceChoice {
   nodeType: string;
@@ -37,11 +46,7 @@ export function summarizeComfyObjectInfo(objectInfo: unknown) {
   const nodeTypes = Object.keys(info).sort();
   const layerNodeTypes = nodeTypes.filter((nodeType) => {
     const definition = isRecord(info[nodeType]) ? info[nodeType] : {};
-    return LAYER_NODE_PATTERN.test(
-      [nodeType, definition['display_name'], definition['category']]
-        .filter(Boolean)
-        .join(' '),
-    );
+    return isLayerProductionNode(nodeType, definition);
   });
   const resources: ComfyUiResourceChoice[] = [];
 
@@ -135,17 +140,37 @@ function emptyInventory(
   };
 }
 
+function isLayerProductionNode(
+  nodeType: string,
+  definition: Record<string, unknown>,
+): boolean {
+  const searchable = [
+    nodeType,
+    definition['display_name'],
+    definition['category'],
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  return (
+    SEGMENTATION_NODE_PATTERN.test(searchable) ||
+    BACKGROUND_REMOVAL_NODE_PATTERN.test(searchable) ||
+    MATTING_NODE_PATTERN.test(searchable) ||
+    DEPTH_NODE_PATTERN.test(searchable) ||
+    INPAINT_NODE_PATTERN.test(searchable) ||
+    MASK_OPERATION_NODE_PATTERN.test(nodeType)
+  );
+}
+
 function buildFamilies(nodeTypes: string[]): ComfyUiLayerFamilies {
   return {
-    segmentation: nodeTypes.filter((value) =>
-      /(sam|segment|grounding|florence|clip.?seg)/i.test(value),
-    ),
-    matting: nodeTypes.filter((value) => /(matting|alpha|transparent)/i.test(value)),
+    segmentation: nodeTypes.filter((value) => SEGMENTATION_NODE_PATTERN.test(value)),
+    matting: nodeTypes.filter((value) => MATTING_NODE_PATTERN.test(value)),
     backgroundRemoval: nodeTypes.filter((value) =>
-      /(rembg|remove.?background|background.?remove|biref)/i.test(value),
+      BACKGROUND_REMOVAL_NODE_PATTERN.test(value),
     ),
-    depth: nodeTypes.filter((value) => /depth/i.test(value)),
-    inpaint: nodeTypes.filter((value) => /inpaint/i.test(value)),
+    depth: nodeTypes.filter((value) => DEPTH_NODE_PATTERN.test(value)),
+    inpaint: nodeTypes.filter((value) => INPAINT_NODE_PATTERN.test(value)),
   };
 }
 
