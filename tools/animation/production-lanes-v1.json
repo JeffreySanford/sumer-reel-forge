@@ -38,6 +38,29 @@
       ]
     },
     {
+      "id": "semantic-contained-water-overlay",
+      "state": "provisional",
+      "match": { "id": "shot05-welcome-water-v1", "role": "water", "material": "water", "hasAlpha": true },
+      "generator": {
+        "family": "sam3-semantic-overlay",
+        "workflowPath": "tools/renderer/workflows/semantic-contained-water-sam3-api.json"
+      },
+      "qa": {
+        "family": "alpha-structure-then-composite-motion",
+        "executor": "tools/scripts/verify-semantic-overlay-candidate.mjs",
+        "alphaCoverage": { "minimum": 0.001, "preferredMinimum": 0.005, "maximum": 0.2 },
+        "requireSourceRgbUnderAlpha": true,
+        "humanReviewRequired": true
+      },
+      "notes": [
+        "PROVISIONAL: Shot 5 validates a localized contained-water extraction pattern before reuse.",
+        "Stage 1 uses text detection to locate the basin/spring region; Stage 2 feeds the detected bounding box back into SAM3 for box-guided segmentation.",
+        "Keep the same hard non-triviality floor as the proven water lane until the localized mask is visually reviewed; do not lower QA merely to pass a sparse extraction.",
+        "Reject basin rim, pottery, hands, bread, clothing, floor, and architecture.",
+        "Preserve source RGB under alpha and judge motion only in the assembled benchmark."
+      ]
+    },
+    {
       "id": "semantic-water-overlay",
       "match": { "role": "water", "material": "water", "hasAlpha": true },
       "generator": {
