@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "transitionId": "reel-01-shot-03-to-04-water-handoff-v1",
+  "projectSlug": "blessings-of-sumer",
+  "chapterNumber": 1,
+  "episodeNumber": 1,
+  "width": 1080,
+  "height": 1920,
+  "fps": 30,
+  "outgoingScenePath": "tools/animation/scenes/reel-01-shot-03-benchmark.scene-v2.json",
+  "incomingScenePath": "tools/animation/scenes/reel-01-shot-04-nammu-benchmark.scene-v2.json",
+  "transition": {
+    "type": "waterMaterialHandoff",
+    "preRollFrames": 24,
+    "postRollFrames": 24,
+    "coverPeak": 0.86,
+    "refractionStrength": 0.72,
+    "coolShift": 0.38,
+    "materialContinuityRequired": true,
+    "genericDissolveAllowed": false
+  },
+  "reviewMarkers": [
+    { "id": "shot3-settle", "frame": 174 },
+    { "id": "reflection-dominates", "frame": 198 },
+    { "id": "material-cut", "frame": 210 },
+    { "id": "underwater-arrival", "frame": 228 },
+    { "id": "nammu-recognition", "frame": 330 }
+  ],
+  "reviewPolicy": {
+    "humanApprovalRequired": true,
+    "hardFails": [
+      "generic-crossfade",
+      "white-flash",
+      "hard-black-cut",
+      "loss-of-water-continuity",
+      "camera-jolt-at-cut",
+      "fantasy-particle-burst"
+    ]
+  }
+}
