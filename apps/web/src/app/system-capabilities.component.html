@@ -1,182 +1,181 @@
-<main class="system-shell">
-  <header class="system-header">
-    <div class="system-brand">
-      <span class="system-mark">SRF</span>
-      <div>
-        <p class="eyebrow">Reel Forge Runtime</p>
-        <h1>Host System</h1>
-      </div>
+<main class="system-shell md3-page">
+  <app-studio-nav />
+
+  <header class="system-header md3-container">
+    <div>
+      <p class="md3-label">Reel Forge Runtime</p>
+      <h1 class="md3-display-medium">Host System</h1>
     </div>
-    <div class="system-actions">
-      <a routerLink="/reels/1/overview">Back to Studio</a>
-      <button type="button" (click)="refresh()" [disabled]="loading()">
+    <div class="system-actions md3-cluster">
+      <a class="md3-button md3-button--outlined" routerLink="/">Studio Home</a>
+      <button class="md3-button md3-button--filled" type="button" (click)="refresh()" [disabled]="loading()">
         {{ loading() ? 'Refreshing…' : 'Refresh' }}
       </button>
     </div>
   </header>
 
   @if (loading() && !capabilities()) {
-    <section class="state-card" aria-live="polite">
-      <p class="eyebrow">Local Probe</p>
-      <h2>Reading this host…</h2>
-      <p>Checking the startup hardware profile and live local services.</p>
+    <section class="state-card md3-container md3-card md3-card--elevated md3-pad-8" aria-live="polite">
+      <p class="md3-label">Local Probe</p>
+      <h2 class="md3-headline-medium">Reading this host…</h2>
+      <p class="md3-body-medium">Checking the startup hardware profile and live local services.</p>
     </section>
   }
 
   @if (error()) {
-    <section class="state-card error-card" role="alert">
-      <p class="eyebrow">Capabilities unavailable</p>
-      <h2>The local runtime profile could not be loaded.</h2>
-      <p>{{ error() }}</p>
-      <p>Run <code>pnpm start:all</code> to regenerate the host profile.</p>
+    <section class="state-card error-card md3-container md3-card md3-pad-8" role="alert">
+      <p class="md3-label">Capabilities unavailable</p>
+      <h2 class="md3-headline-medium">The local runtime profile could not be loaded.</h2>
+      <p class="md3-body-medium">{{ error() }}</p>
+      <p class="md3-body-small">Run <code>pnpm start:all</code> to regenerate the host profile.</p>
     </section>
   }
 
   @if (capabilities(); as host) {
-    <section class="host-hero">
+    <section class="host-hero md3-container md3-card md3-card--elevated md3-pad-8">
       <div>
-        <p class="eyebrow">Current Local Host</p>
-        <h2>{{ host.host }}</h2>
-        <p class="host-summary">
+        <p class="md3-label">Current Local Host</p>
+        <h2 class="md3-headline-large">{{ host.host }}</h2>
+        <p class="host-summary md3-body-medium">
           {{ host.cpu?.model || 'CPU model unavailable' }} · {{ host.platform }} / {{ host.arch }}
         </p>
       </div>
-      <div class="hero-status">
-        <span>{{ host.runtimePlan?.tier || 'unclassified' }}</span>
-        <span>{{ readyProjectionCount() }} capabilities ready</span>
-        <span>{{ host.source }}</span>
+      <div class="hero-status md3-cluster">
+        <span class="md3-chip md3-chip--primary">{{ host.runtimePlan?.tier || 'unclassified' }}</span>
+        <span class="md3-chip md3-chip--success">{{ readyProjectionCount() }} capabilities ready</span>
+        <span class="md3-chip">{{ host.source }}</span>
       </div>
     </section>
 
-    <section class="metric-grid" aria-label="Host hardware summary">
-      <article class="metric-card">
-        <p class="eyebrow">CPU</p>
+    <section class="metric-grid md3-container md3-grid md3-grid--4" aria-label="Host hardware summary">
+      <article class="metric-card md3-card md3-card--filled md3-pad-5">
+        <p class="md3-label">CPU</p>
         <strong>{{ host.cpu?.logicalCount || '—' }}</strong>
-        <span>logical processors</span>
-        <small>{{ host.cpu?.averageReportedMhz || '—' }} MHz reported average</small>
+        <span class="md3-body-small">logical processors</span>
+        <small class="md3-muted">{{ host.cpu?.averageReportedMhz || '—' }} MHz reported average</small>
       </article>
-      <article class="metric-card">
-        <p class="eyebrow">Memory</p>
+      <article class="metric-card md3-card md3-card--filled md3-pad-5">
+        <p class="md3-label">Memory</p>
         <strong>{{ host.memory?.totalGb || '—' }} GB</strong>
-        <span>{{ host.memory?.freeGb || '—' }} GB free at profile time</span>
-        <small>{{ host.runtimePlan?.reserves?.estimatedMemoryGbReserved || '—' }} GB reserved by policy</small>
+        <span class="md3-body-small">{{ host.memory?.freeGb || '—' }} GB free at profile time</span>
+        <small class="md3-muted">{{ host.runtimePlan?.reserves?.estimatedMemoryGbReserved || '—' }} GB reserved by policy</small>
       </article>
-      <article class="metric-card">
-        <p class="eyebrow">GPU</p>
+      <article class="metric-card md3-card md3-card--filled md3-pad-5">
+        <p class="md3-label">GPU</p>
         <strong>{{ gpu()?.name || 'No GPU reported' }}</strong>
-        <span>{{ gbFromMb(gpu()?.memoryTotalMb) }} VRAM</span>
-        <small>{{ gpu()?.vendor || 'Unknown vendor' }} · driver {{ gpu()?.driverVersion || 'unknown' }}</small>
+        <span class="md3-body-small">{{ gbFromMb(gpu()?.memoryTotalMb) }} VRAM</span>
+        <small class="md3-muted">{{ gpu()?.vendor || 'Unknown vendor' }} · driver {{ gpu()?.driverVersion || 'unknown' }}</small>
       </article>
-      <article class="metric-card">
-        <p class="eyebrow">Disk</p>
+      <article class="metric-card md3-card md3-card--filled md3-pad-5">
+        <p class="md3-label">Disk</p>
         <strong>{{ host.disk?.freeGb || '—' }} GB</strong>
-        <span>free</span>
-        <small>{{ host.disk?.totalGb || '—' }} GB total</small>
+        <span class="md3-body-small">free</span>
+        <small class="md3-muted">{{ host.disk?.totalGb || '—' }} GB total</small>
       </article>
     </section>
 
-    <section class="section-block">
-      <div class="section-heading">
+    <section class="section-block md3-container md3-card md3-pad-6">
+      <div class="md3-section-header">
         <div>
-          <p class="eyebrow">Derived Runtime Plan</p>
-          <h2>How Reel Forge will use this machine</h2>
+          <p class="md3-label">Derived Runtime Plan</p>
+          <h2 class="md3-headline-medium">How Reel Forge will use this machine</h2>
         </div>
-        <span>Profiled {{ formatObservedAt(host.profileGeneratedAt) }}</span>
+        <span class="md3-body-small">Profiled {{ formatObservedAt(host.profileGeneratedAt) }}</span>
       </div>
 
-      <div class="runtime-grid">
-        <article class="runtime-card">
-          <p class="eyebrow">Remotion</p>
-          <h3>{{ host.runtimePlan?.remotion?.parallelRenders || 1 }} × {{ host.runtimePlan?.remotion?.concurrencyPerRender || 1 }}</h3>
-          <p>parallel renders × workers per render</p>
-          <small>
+      <div class="runtime-grid md3-grid md3-grid--4">
+        <article class="runtime-card md3-card md3-card--filled md3-pad-5">
+          <p class="md3-label">Remotion</p>
+          <h3 class="md3-title-large">{{ host.runtimePlan?.remotion?.parallelRenders || 1 }} × {{ host.runtimePlan?.remotion?.concurrencyPerRender || 1 }}</h3>
+          <p class="md3-body-small">parallel renders × workers per render</p>
+          <small class="md3-muted">
             {{ host.runtimePlan?.remotion?.hardwareAcceleration || 'default' }} hardware ·
             {{ host.runtimePlan?.remotion?.gl || 'default' }} GL
           </small>
         </article>
-        <article class="runtime-card">
-          <p class="eyebrow">Ollama</p>
-          <h3>{{ host.runtimePlan?.ai?.ollamaReviewConcurrency || 1 }} review(s)</h3>
-          <p>{{ host.ollama.online ? host.ollama.models.length + ' local models reachable' : 'service offline' }}</p>
-          <small>{{ host.ollama.baseUrl }}</small>
+        <article class="runtime-card md3-card md3-card--filled md3-pad-5">
+          <p class="md3-label">Ollama</p>
+          <h3 class="md3-title-large">{{ host.runtimePlan?.ai?.ollamaReviewConcurrency || 1 }} review(s)</h3>
+          <p class="md3-body-small">{{ host.ollama.online ? host.ollama.models.length + ' local models reachable' : 'service offline' }}</p>
+          <small class="md3-muted">{{ host.ollama.baseUrl }}</small>
         </article>
-        <article class="runtime-card">
-          <p class="eyebrow">ComfyUI</p>
-          <h3>{{ host.runtimePlan?.ai?.comfyConcurrency || 1 }} job(s)</h3>
-          <p>{{ host.comfyui.online ? host.comfyui.detail : 'service offline' }}</p>
-          <small>
+        <article class="runtime-card md3-card md3-card--filled md3-pad-5">
+          <p class="md3-label">ComfyUI</p>
+          <h3 class="md3-title-large">{{ host.runtimePlan?.ai?.comfyConcurrency || 1 }} job(s)</h3>
+          <p class="md3-body-small">{{ host.comfyui.online ? host.comfyui.detail : 'service offline' }}</p>
+          <small class="md3-muted">
             {{ host.runtimePlan?.ai?.comfyVramMode || 'unclassified VRAM mode' }} ·
             layer workflow {{ host.comfyui.layerWorkflowReady ? 'ready' : 'not configured' }}
           </small>
         </article>
-        <article class="runtime-card">
-          <p class="eyebrow">Encoding</p>
-          <h3>{{ host.runtimePlan?.encoding?.preferredH264Encoder || 'libx264' }}</h3>
-          <p>{{ host.runtimePlan?.encoding?.nvencAvailable ? 'NVENC detected' : 'software H.264 path' }}</p>
-          <small>FFmpeg {{ host.runtimePlan?.encoding?.ffmpegAvailable ? 'available' : 'not detected' }}</small>
+        <article class="runtime-card md3-card md3-card--filled md3-pad-5">
+          <p class="md3-label">Encoding</p>
+          <h3 class="md3-title-large">{{ host.runtimePlan?.encoding?.preferredH264Encoder || 'libx264' }}</h3>
+          <p class="md3-body-small">{{ host.runtimePlan?.encoding?.nvencAvailable ? 'NVENC detected' : 'software H.264 path' }}</p>
+          <small class="md3-muted">FFmpeg {{ host.runtimePlan?.encoding?.ffmpegAvailable ? 'available' : 'not detected' }}</small>
         </article>
       </div>
     </section>
 
-    <section class="section-block">
-      <div class="section-heading">
+    <section class="section-block md3-container md3-card md3-pad-6">
+      <div class="md3-section-header">
         <div>
-          <p class="eyebrow">Software Inventory</p>
-          <h2>Available local tools and services</h2>
+          <p class="md3-label">Software Inventory</p>
+          <h2 class="md3-headline-medium">Available local tools and services</h2>
         </div>
-        <span>Observed {{ formatObservedAt(host.observedAt) }}</span>
+        <span class="md3-body-small">Observed {{ formatObservedAt(host.observedAt) }}</span>
       </div>
 
-      <div class="software-grid">
+      <div class="software-grid md3-grid md3-grid--2">
         @for (item of host.software; track item.id) {
-          <article class="software-row" [attr.data-status]="item.status">
+          <article class="software-row md3-card md3-card--filled md3-pad-4" [attr.data-status]="item.status">
             <span class="status-dot" aria-hidden="true"></span>
             <div>
               <strong>{{ item.label }}</strong>
-              <p>{{ item.detail }}</p>
+              <p class="md3-body-small">{{ item.detail }}</p>
             </div>
             <div class="software-meta">
               <span>{{ statusLabel(item.status) }}</span>
-              @if (item.version) { <small>{{ item.version }}</small> }
+              @if (item.version) { <small class="md3-muted">{{ item.version }}</small> }
             </div>
           </article>
         }
       </div>
     </section>
 
-    <section class="section-block projections-block">
-      <div class="section-heading">
+    <section class="section-block projections-block md3-container md3-card md3-pad-6">
+      <div class="md3-section-header">
         <div>
-          <p class="eyebrow">Projected Capability</p>
-          <h2>What should be possible on this host</h2>
+          <p class="md3-label">Projected Capability</p>
+          <h2 class="md3-headline-medium">What should be possible on this host</h2>
         </div>
-        <span>Conservative projections, not benchmarks</span>
+        <span class="md3-body-small">Conservative projections, not benchmarks</span>
       </div>
 
-      <div class="projection-grid">
+      <div class="projection-grid md3-grid md3-grid--2">
         @for (projection of host.projections; track projection.id) {
-          <article class="projection-card" [attr.data-status]="projection.status">
-            <div class="projection-heading">
-              <span>{{ statusLabel(projection.status) }}</span>
-              <h3>{{ projection.title }}</h3>
+          <article class="projection-card md3-card md3-card--filled md3-pad-5" [attr.data-status]="projection.status">
+            <div class="projection-heading md3-cluster">
+              <span class="md3-chip">{{ statusLabel(projection.status) }}</span>
+              <h3 class="md3-title-medium">{{ projection.title }}</h3>
             </div>
-            <p>{{ projection.summary }}</p>
-            <div class="basis-list" aria-label="Projection basis">
-              @for (basis of projection.basis; track basis) { <span>{{ basis }}</span> }
+            <p class="md3-body-medium">{{ projection.summary }}</p>
+            <div class="basis-list md3-cluster" aria-label="Projection basis">
+              @for (basis of projection.basis; track basis) { <span class="md3-chip">{{ basis }}</span> }
             </div>
             @if (projection.recommendation) {
-              <small class="recommendation">{{ projection.recommendation }}</small>
+              <small class="recommendation md3-muted">{{ projection.recommendation }}</small>
             }
           </article>
         }
       </div>
     </section>
 
-    <section class="next-step-card">
+    <section class="next-step-card md3-container md3-card md3-card--elevated md3-pad-6">
       <div>
-        <p class="eyebrow">Next Production Step</p>
-        <h2>Animation-v1 layer generation</h2>
-        <p>
+        <p class="md3-label">Next Production Step</p>
+        <h2 class="md3-headline-medium">Animation-v1 layer generation</h2>
+        <p class="md3-body-medium">
           The next quality increase comes from separating water, vessel, Enki, cloth/rigging,
           atmosphere, refraction, and masks instead of asking one flattened painting to carry every motion channel.
         </p>
@@ -186,11 +185,11 @@
         host.comfyui.layerWorkflowReady &&
         host.runtimePlan?.ai?.nvidiaCudaAvailable
       ) {
-        <span class="next-ready">Host ready for GPU candidate generation</span>
+        <span class="md3-chip md3-chip--success">Host ready for GPU candidate generation</span>
       } @else if (host.comfyui.online && !host.comfyui.layerWorkflowReady) {
-        <span class="next-limited">Configure COMFYUI_LAYER_WORKFLOW_PATH to enable layer candidates</span>
+        <span class="md3-chip md3-chip--warning">Configure COMFYUI_LAYER_WORKFLOW_PATH to enable layer candidates</span>
       } @else {
-        <span class="next-limited">Start/configure ComfyUI to enable GPU layer candidates</span>
+        <span class="md3-chip md3-chip--warning">Start/configure ComfyUI to enable GPU layer candidates</span>
       }
     </section>
   }
