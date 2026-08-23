@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { basename, isAbsolute, join, relative, resolve } from 'node:path';
+import { prepareBackgroundMaskCandidates } from './prepare-shot03-background-mask-candidates.mjs';
 
 const CANDIDATE_ROOT = resolve(
   'tmp/animation-assets/candidates/chapter-01-reel-01-animation-v1',
@@ -32,17 +33,24 @@ for (const input of approvedInputs) {
 }
 console.log('');
 
+// Background reconstruction needs a robust removal matte, not every tiny
+// anti-aliased/noise pixel carried by the production candidates. Build
+// temporary alpha-only derivatives from the QA-passed candidates; the original
+// candidate PNGs and animation-v1 remain untouched.
+const maskInputs = prepareBackgroundMaskCandidates(approvedInputs);
+if (!maskInputs.enki || !maskInputs.vessel) {
+  throw new Error('Could not prepare both Enki and vessel background mask inputs.');
+}
+
 const script = resolve('tools/scripts/shot03-background-layer.mjs');
-const enki = approvedInputs.find((item) => item.layerId === 'shot03-enki-body-v1');
-const vessel = approvedInputs.find((item) => item.layerId === 'shot03-vessel-v1');
 const forwarded = process.argv.slice(3).filter((arg) => arg !== '--');
 const result = spawnSync(
   process.execPath,
   [
     script,
     command,
-    `--enki-candidate-dir=${enki.candidateRunDirectory}`,
-    `--vessel-candidate-dir=${vessel.candidateRunDirectory}`,
+    `--enki-candidate-dir=${maskInputs.enki.candidateRunDirectory}`,
+    `--vessel-candidate-dir=${maskInputs.vessel.candidateRunDirectory}`,
     ...forwarded,
   ],
   {
