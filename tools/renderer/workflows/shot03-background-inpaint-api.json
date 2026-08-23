@@ -5,32 +5,20 @@
     },
     "class_type": "LoadImage",
     "_meta": {
-      "title": "Approved Shot 3 editorial source"
+      "title": "Shot 3 cropped editorial source"
     }
   },
   "2": {
     "inputs": {
-      "image": "{{AUXILIARY_IMAGE}}"
+      "image": "{{AUXILIARY_IMAGE}}",
+      "channel": "red"
     },
-    "class_type": "LoadImage",
+    "class_type": "LoadImageMask",
     "_meta": {
-      "title": "Validated Enki + vessel removal mask"
+      "title": "Validated Enki + vessel removal mask crop"
     }
   },
   "3": {
-    "inputs": {
-      "image": [
-        "2",
-        0
-      ],
-      "channel": "red"
-    },
-    "class_type": "ImageToMask",
-    "_meta": {
-      "title": "Convert removal image to inpaint mask"
-    }
-  },
-  "4": {
     "inputs": {
       "ckpt_name": "sd-v1-5-inpainting.safetensors"
     },
@@ -39,11 +27,11 @@
       "title": "Stable Diffusion 1.5 inpainting"
     }
   },
-  "5": {
+  "4": {
     "inputs": {
       "text": "conservative continuation of the existing painted ancient river environment, water, sky, distant landscape, natural atmospheric continuity, preserve the supplied palette, lighting, brushwork, perspective and historical visual language. Fill only the removed foreground regions with plausible background already implied by adjacent pixels. {{LAYER_PROMPT}}",
       "clip": [
-        "4",
+        "3",
         1
       ]
     },
@@ -52,11 +40,11 @@
       "title": "Background continuation prompt"
     }
   },
-  "6": {
+  "5": {
     "inputs": {
       "text": "person, man, human figure, face, body, robe, boat, vessel, ship, mast, new object, new composition, changed palette, changed lighting, text, watermark, logo, fantasy redesign, modern object. {{NEGATIVE_PROMPT}}",
       "clip": [
-        "4",
+        "3",
         1
       ]
     },
@@ -65,49 +53,49 @@
       "title": "Reject foreground subject regeneration"
     }
   },
-  "7": {
+  "6": {
     "inputs": {
       "pixels": [
         "1",
         0
       ],
       "vae": [
-        "4",
+        "3",
         2
       ],
       "mask": [
-        "3",
+        "2",
         0
       ],
-      "grow_mask_by": 12
+      "grow_mask_by": 8
     },
     "class_type": "VAEEncodeForInpaint",
     "_meta": {
       "title": "Encode only masked background vacancies"
     }
   },
-  "8": {
+  "7": {
     "inputs": {
       "seed": "{{SEED}}",
-      "steps": 28,
+      "steps": 24,
       "cfg": 5.5,
       "sampler_name": "dpmpp_2m",
       "scheduler": "karras",
       "denoise": 1,
       "model": [
-        "4",
+        "3",
         0
       ],
       "positive": [
-        "5",
+        "4",
         0
       ],
       "negative": [
-        "6",
+        "5",
         0
       ],
       "latent_image": [
-        "7",
+        "6",
         0
       ]
     },
@@ -116,56 +104,33 @@
       "title": "Conservative masked inpaint"
     }
   },
-  "9": {
+  "8": {
     "inputs": {
       "samples": [
-        "8",
+        "7",
         0
       ],
       "vae": [
-        "4",
+        "3",
         2
       ]
     },
     "class_type": "VAEDecode",
     "_meta": {
-      "title": "Decode reconstructed background"
+      "title": "Decode reconstructed background crop"
     }
   },
-  "10": {
-    "inputs": {
-      "destination": [
-        "1",
-        0
-      ],
-      "source": [
-        "9",
-        0
-      ],
-      "x": 0,
-      "y": 0,
-      "resize_source": false,
-      "mask": [
-        "3",
-        0
-      ]
-    },
-    "class_type": "ImageCompositeMasked",
-    "_meta": {
-      "title": "Restore untouched editorial pixels outside removal mask"
-    }
-  },
-  "11": {
+  "9": {
     "inputs": {
       "filename_prefix": "{{OUTPUT_PREFIX}}",
       "images": [
-        "10",
+        "8",
         0
       ]
     },
     "class_type": "SaveImage",
     "_meta": {
-      "title": "Save full-canvas background candidate"
+      "title": "Save reconstructed background crop"
     }
   }
 }
