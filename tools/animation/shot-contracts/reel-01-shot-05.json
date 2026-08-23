@@ -23,7 +23,6 @@
       "requiredLayerIds": [
         "shot05-shrine-base-v1",
         "shot05-welcome-water-v1",
-        "shot05-foreground-textile-v1",
         "shot05-smoke-v1"
       ],
       "enableDeferredPerformanceWhenApproved": true
@@ -91,7 +90,8 @@
         "review": {
           "status": "pending",
           "notes": [
-            "Foreground cloth creates depth without obscuring the water/bread/welcome eye target or caption safe zone."
+            "Optional/deferred for the first benchmark. Moving this textile over the unmodified editorial base would duplicate the original foreground edge; enable it only after a dependency-aware removal/repair path is available.",
+            "When enabled, foreground cloth creates depth without obscuring the water/bread/welcome eye target or caption safe zone."
           ]
         }
       },
@@ -113,7 +113,7 @@
         "review": {
           "status": "pending",
           "notes": [
-            "This is intentionally the first unresolved Shot 5 lane. Establish a reusable smoke extraction/motion contract rather than forcing it through a water or generic foreground recipe."
+            "This is intentionally the first provisional Shot 5 lane. Establish a reusable smoke extraction/motion contract rather than forcing it through a water or generic foreground recipe."
           ]
         }
       },
