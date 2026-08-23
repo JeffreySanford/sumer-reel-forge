@@ -47,18 +47,29 @@ export class AnimationProductionEvidenceService {
     kind: AnimationEvidenceKind,
   ): Promise<AnimationBenchmarkEvidenceContent> {
     const root = await findWorkspaceRoot(process.cwd());
-    const evidence = await this.resolveEvidence(root, sourceShotNumber);
+    const renderRoot = resolve(root, 'tmp/renders');
+    const folder = resolve(
+      renderRoot,
+      `shot${sourceShotNumber}-scene-v2-benchmark`,
+    );
     const filePath =
-      kind === 'video' ? evidence.videoPath : evidence.contactSheetPath;
+      kind === 'video'
+        ? resolve(folder, `shot${sourceShotNumber}-scene-v2-benchmark.mp4`)
+        : resolve(
+            folder,
+            `shot${sourceShotNumber}-scene-v2-benchmark-contact-sheet.png`,
+          );
 
-    if (!evidence.available || !filePath) {
+    assertInside(
+      renderRoot,
+      filePath,
+      `Shot ${sourceShotNumber} benchmark evidence`,
+    );
+    if (!(await exists(filePath))) {
       throw new NotFoundException(
         `No ${kind} benchmark evidence is available for Shot ${sourceShotNumber}.`,
       );
     }
-
-    const renderRoot = resolve(root, 'tmp/renders');
-    assertInside(renderRoot, filePath, `Shot ${sourceShotNumber} benchmark evidence`);
 
     return {
       filePath,
