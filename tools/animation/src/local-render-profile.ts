@@ -6,6 +6,8 @@ export interface LocalRenderProfile {
   logicalCpuCount: number;
   totalMemoryGb: number;
   concurrency: number;
+  parallelRenders: number;
+  ollamaReviewConcurrency: number;
   hardwareAcceleration: 'if-possible' | 'disable';
   gl?: 'angle' | 'egl' | 'swiftshader' | 'swangle' | 'vulkan' | 'angle-egl';
   source?: 'environment' | 'startup-profile' | 'fallback';
@@ -18,9 +20,13 @@ interface StartupHardwareProfile {
   memory?: { totalGb?: number };
   runtimePlan?: {
     remotion?: {
+      parallelRenders?: number;
       concurrencyPerRender?: number;
       hardwareAcceleration?: 'if-possible' | 'disable';
       gl?: string;
+    };
+    ai?: {
+      ollamaReviewConcurrency?: number;
     };
   };
 }
@@ -38,6 +44,7 @@ export function getLocalRenderProfile(
       Math.round((totalmem() / 1024 ** 3) * 10) / 10,
   );
   const requestedConcurrency = parsePositiveInteger(
+    'ANIMATION_RENDER_CONCURRENCY',
     env.ANIMATION_RENDER_CONCURRENCY,
   );
   const profiledConcurrency = positiveInteger(
@@ -49,6 +56,28 @@ export function getLocalRenderProfile(
   );
   const concurrency =
     requestedConcurrency ?? profiledConcurrency ?? fallbackConcurrency;
+  const requestedParallelRenders = parsePositiveInteger(
+    'ANIMATION_PARALLEL_RENDERS',
+    env.ANIMATION_PARALLEL_RENDERS,
+  );
+  const profiledParallelRenders = positiveInteger(
+    startupProfile?.runtimePlan?.remotion?.parallelRenders,
+  );
+  const fallbackParallelRenders =
+    logicalCpuCount >= 16 && totalMemoryGb >= 24 ? 2 : 1;
+  const parallelRenders =
+    requestedParallelRenders ??
+    profiledParallelRenders ??
+    fallbackParallelRenders;
+  const requestedOllamaReviewConcurrency = parsePositiveInteger(
+    'ANIMATION_OLLAMA_REVIEW_CONCURRENCY',
+    env.ANIMATION_OLLAMA_REVIEW_CONCURRENCY,
+  );
+  const profiledOllamaReviewConcurrency = positiveInteger(
+    startupProfile?.runtimePlan?.ai?.ollamaReviewConcurrency,
+  );
+  const ollamaReviewConcurrency =
+    requestedOllamaReviewConcurrency ?? profiledOllamaReviewConcurrency ?? 1;
   const profiledHardwareAcceleration =
     startupProfile?.runtimePlan?.remotion?.hardwareAcceleration;
   const hardwareAcceleration =
@@ -64,16 +93,23 @@ export function getLocalRenderProfile(
       : platform() === 'win32'
         ? 'angle'
         : undefined;
-  const source = requestedConcurrency
-    ? 'environment'
-    : profiledConcurrency
-      ? 'startup-profile'
-      : 'fallback';
+  const source =
+    requestedConcurrency ||
+    requestedParallelRenders ||
+    requestedOllamaReviewConcurrency
+      ? 'environment'
+      : profiledConcurrency ||
+          profiledParallelRenders ||
+          profiledOllamaReviewConcurrency
+        ? 'startup-profile'
+        : 'fallback';
 
   return {
     logicalCpuCount,
     totalMemoryGb,
     concurrency,
+    parallelRenders,
+    ollamaReviewConcurrency,
     hardwareAcceleration,
     gl,
     source,
@@ -110,16 +146,17 @@ export function remotionPerformanceArgs(
 export function formatLocalRenderProfile(profile = getLocalRenderProfile()): string {
   const gl = profile.gl ? `, GL ${profile.gl}` : '';
   const source = profile.source ? `, source ${profile.source}` : '';
-  return `${profile.logicalCpuCount} logical CPUs, ${profile.totalMemoryGb} GB RAM, concurrency ${profile.concurrency}, hardware ${profile.hardwareAcceleration}${gl}${source}`;
+  return `${profile.logicalCpuCount} logical CPUs, ${profile.totalMemoryGb} GB RAM, concurrency ${profile.concurrency}, parallel renders ${profile.parallelRenders}, Ollama reviews ${profile.ollamaReviewConcurrency}, hardware ${profile.hardwareAcceleration}${gl}${source}`;
 }
 
-function parsePositiveInteger(value: string | undefined): number | undefined {
+function parsePositiveInteger(
+  name: string,
+  value: string | undefined,
+): number | undefined {
   if (!value?.trim()) return undefined;
   const parsed = Number(value);
   if (!Number.isInteger(parsed) || parsed <= 0) {
-    throw new Error(
-      `ANIMATION_RENDER_CONCURRENCY must be a positive integer, received ${value}.`,
-    );
+    throw new Error(`${name} must be a positive integer, received ${value}.`);
   }
   return parsed;
 }
