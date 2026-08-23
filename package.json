@@ -165,12 +165,18 @@
       "uuid": "11.1.1"
     },
     "onlyBuiltDependencies": [
+      "@parcel/watcher",
       "@prisma/client",
       "@prisma/engines",
       "@scarf/scarf",
+      "@swc/core",
       "esbuild",
+      "less",
+      "lmdb",
+      "msgpackr-extract",
       "nx",
-      "prisma"
+      "prisma",
+      "unrs-resolver"
     ]
   }
 }
