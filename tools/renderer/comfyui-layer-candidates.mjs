@@ -136,8 +136,6 @@ export async function generateLayerCandidates(options = {}) {
   assertCandidateOutputRoot(candidateBase, outputRoot);
   await mkdir(outputRoot, { recursive: true });
 
-  // Store promises immediately so parallel layer jobs from the same shot share
-  // one ComfyUI source upload instead of racing duplicate uploads.
   const sourceUploads = new Map();
   const generated = [];
 
@@ -291,12 +289,12 @@ export function buildLayerPrompt(shot, layer) {
       ? 'Enki identity is an immutable anchor: mature Mesopotamian man, existing face/hair/beard/robe/belt must remain exactly consistent with the supplied painting.'
       : '';
   return [
-    preserve,
-    fullCanvas,
     `Target layer: ${layer.id}. Role: ${layer.role}. Material: ${layer.material}.`,
     roleInstructions[layer.role] ??
       'Extract only the requested layer and keep unrelated pixels transparent.',
     special,
+    preserve,
+    fullCanvas,
   ]
     .filter(Boolean)
     .join(' ');
