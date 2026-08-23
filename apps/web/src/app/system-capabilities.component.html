@@ -104,7 +104,10 @@
           <p class="eyebrow">ComfyUI</p>
           <h3>{{ host.runtimePlan?.ai?.comfyConcurrency || 1 }} job(s)</h3>
           <p>{{ host.comfyui.online ? host.comfyui.detail : 'service offline' }}</p>
-          <small>{{ host.runtimePlan?.ai?.comfyVramMode || 'unclassified VRAM mode' }}</small>
+          <small>
+            {{ host.runtimePlan?.ai?.comfyVramMode || 'unclassified VRAM mode' }} ·
+            layer workflow {{ host.comfyui.layerWorkflowReady ? 'ready' : 'not configured' }}
+          </small>
         </article>
         <article class="runtime-card">
           <p class="eyebrow">Encoding</p>
@@ -178,8 +181,14 @@
           atmosphere, refraction, and masks instead of asking one flattened painting to carry every motion channel.
         </p>
       </div>
-      @if (host.comfyui.online && host.runtimePlan?.ai?.nvidiaCudaAvailable) {
+      @if (
+        host.comfyui.online &&
+        host.comfyui.layerWorkflowReady &&
+        host.runtimePlan?.ai?.nvidiaCudaAvailable
+      ) {
         <span class="next-ready">Host ready for GPU candidate generation</span>
+      } @else if (host.comfyui.online && !host.comfyui.layerWorkflowReady) {
+        <span class="next-limited">Configure COMFYUI_LAYER_WORKFLOW_PATH to enable layer candidates</span>
       } @else {
         <span class="next-limited">Start/configure ComfyUI to enable GPU layer candidates</span>
       }
