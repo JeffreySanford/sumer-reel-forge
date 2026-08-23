@@ -1,4 +1,5 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { AnimationProductionStatusService } from './animation-production-status.service';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ComfyUiInventoryService } from './comfyui-inventory.service';
@@ -22,6 +23,7 @@ import { RuntimeController } from './runtime.controller';
     OllamaPlanningProvider,
     RuntimeCapabilitiesService,
     ComfyUiInventoryService,
+    AnimationProductionStatusService,
     PrismaService,
     {
       provide: REEL_REPOSITORY,
