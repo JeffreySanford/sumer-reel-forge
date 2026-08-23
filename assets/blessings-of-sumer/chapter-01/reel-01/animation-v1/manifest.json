@@ -216,7 +216,7 @@
       "shotId": "nammu-under-water",
       "sourceShotNumber": 4,
       "sourceFrame": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-04.png",
-      "status": "draft",
+      "status": "approved",
       "fallback": {
         "assetId": "shot04-editorial-v1-flat",
         "assetPath": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-04.png"
@@ -252,16 +252,20 @@
           "motionPresets": [
             "waterPulse"
           ],
-          "state": "planned",
+          "state": "approved",
           "hasAlpha": false,
           "source": {
             "type": "derived",
             "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-04.png"
           },
           "review": {
-            "status": "pending",
-            "notes": []
-          }
+            "status": "approved",
+            "notes": [
+              "Human-approved from layered Shot 4 audition 2026-08-23T20-20-24-097Z at 2026-08-23T20:21:27.576Z.",
+              "exact-source preservation QA PASS: D:\\repos\\sumer-reel-forge\\tmp\\animation-assets\\candidates\\chapter-01-reel-01-animation-v1\\2026-08-23T19-51-05-629Z\\deep-water-qa.json"
+            ]
+          },
+          "sha256": "sha256:5c5d79a3c9d3c7a8b88117ad65972d1ae0dda45767b4dd6c34528f52001e0d02"
         },
         {
           "id": "shot04-mid-current-v1",
@@ -279,16 +283,21 @@
             "waterPulse",
             "numinousDrift"
           ],
-          "state": "planned",
+          "state": "approved",
           "hasAlpha": true,
           "source": {
             "type": "derived",
             "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-04.png"
           },
           "review": {
-            "status": "pending",
-            "notes": []
-          }
+            "status": "approved",
+            "notes": [
+              "Human-approved from layered Shot 4 audition 2026-08-23T20-20-24-097Z at 2026-08-23T20:21:27.576Z.",
+              "semantic structure QA PASS: D:\\repos\\sumer-reel-forge\\tmp\\animation-assets\\candidates\\chapter-01-reel-01-animation-v1\\2026-08-23T19-51-19-858Z\\shot04-mid-current-v1-structure-qa.json",
+              "Coverage advisory at approval: SPARSE_REVIEW_REQUIRED."
+            ]
+          },
+          "sha256": "sha256:eb482919f5edb7abb5670572f6bb7577104aa19f5b75d43d83849339d23bca35"
         },
         {
           "id": "shot04-surface-refraction-v1",
@@ -305,16 +314,21 @@
           "motionPresets": [
             "waterPulse"
           ],
-          "state": "planned",
+          "state": "approved",
           "hasAlpha": true,
           "source": {
             "type": "derived",
             "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-04.png"
           },
           "review": {
-            "status": "pending",
-            "notes": []
-          }
+            "status": "approved",
+            "notes": [
+              "Human-approved from layered Shot 4 audition 2026-08-23T20-20-24-097Z at 2026-08-23T20:21:27.576Z.",
+              "semantic structure QA PASS: D:\\repos\\sumer-reel-forge\\tmp\\animation-assets\\candidates\\chapter-01-reel-01-animation-v1\\2026-08-23T20-03-41-306Z\\shot04-surface-refraction-v1-structure-qa.json",
+              "Coverage advisory at approval: SPARSE_REVIEW_REQUIRED."
+            ]
+          },
+          "sha256": "sha256:e60eb4f1a8c15a406200dd7f443f52df3b1a8d73d945fa51bc7de3fd95417f0c"
         },
         {
           "id": "shot04-nammu-coherence-mask-v1",
@@ -331,18 +345,22 @@
           "motionPresets": [
             "numinousDrift"
           ],
-          "state": "planned",
+          "state": "approved",
           "hasAlpha": true,
           "source": {
             "type": "derived",
             "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-04.png"
           },
           "review": {
-            "status": "pending",
+            "status": "approved",
             "notes": [
-              "Must read as environmental coherence, not a cutout character silhouette."
+              "Must read as environmental coherence, not a cutout character silhouette.",
+              "Human-approved from layered Shot 4 audition 2026-08-23T20-20-24-097Z at 2026-08-23T20:21:27.576Z.",
+              "semantic structure QA PASS: D:\\repos\\sumer-reel-forge\\tmp\\animation-assets\\candidates\\chapter-01-reel-01-animation-v1\\2026-08-23T20-04-00-399Z\\shot04-nammu-coherence-mask-v1-structure-qa.json",
+              "Coverage advisory at approval: SPARSE_REVIEW_REQUIRED."
             ]
-          }
+          },
+          "sha256": "sha256:9786d571b7a61c7fcdaef2326e07340a6f6c5c0061daf3767d70b7f30e222c96"
         },
         {
           "id": "shot04-foreground-distortion-v1",
