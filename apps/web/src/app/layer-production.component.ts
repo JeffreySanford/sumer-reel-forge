@@ -81,13 +81,6 @@ export class LayerProductionComponent {
   protected readonly inventoryReady = computed(
     () => (this.inventory()?.nodeCount ?? 0) > 0,
   );
-  protected readonly layerPipelineReady = computed(
-    () =>
-      this.gpuReady() &&
-      this.comfyReady() &&
-      this.inventoryReady() &&
-      this.workflowReady(),
-  );
   protected readonly shots = computed(() => this.production()?.shots ?? []);
   protected readonly selectedShot = computed<AnimationProductionShotStatus | null>(
     () =>
@@ -229,7 +222,9 @@ export class LayerProductionComponent {
 
   protected decisionValue(value: unknown): string {
     if (typeof value === 'string') return value;
-    if (typeof value === 'boolean' || typeof value === 'number') return String(value);
-    return JSON.stringify(value);
+    if (typeof value === 'boolean' || typeof value === 'number') {
+      return String(value);
+    }
+    return JSON.stringify(value) ?? String(value);
   }
 }
