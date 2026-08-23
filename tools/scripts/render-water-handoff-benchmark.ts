@@ -10,6 +10,11 @@ import {
 import { loadRendererConfig } from '../renderer/renderer-config.mjs';
 import { loadSceneV2ForRender } from '../animation/src/scene-v2-asset-loader';
 import type { WaterMaterialHandoffConfig } from '../animation/src/SceneV2WaterHandoff';
+import {
+  formatLocalRenderProfile,
+  getLocalRenderProfile,
+  remotionPerformanceArgs,
+} from '../animation/src/local-render-profile';
 
 interface WaterHandoffBenchmarkConfig {
   schemaVersion: 1;
@@ -33,6 +38,7 @@ interface WaterHandoffBenchmarkConfig {
 async function main(): Promise<void> {
   const root = resolve('.');
   const rendererConfig = loadRendererConfig();
+  const renderProfile = getLocalRenderProfile();
   const configPath = resolve(
     process.argv[2] ??
       'tools/animation/scenes/reel-01-shot-03-to-04-water-handoff.json',
@@ -107,8 +113,10 @@ async function main(): Promise<void> {
   console.log(`Rendering ${benchmark.transitionId}...`);
   console.log(`Outgoing: ${outgoingPath} [${outgoingLoaded.assetResolution.mode}]`);
   console.log(`Incoming: ${incomingPath} [${incomingLoaded.assetResolution.mode}]`);
+  console.log(`Hardware: ${formatLocalRenderProfile(renderProfile)}`);
   console.log(`Output: ${videoPath}`);
 
+  const startedAt = Date.now();
   await run(
     'pnpm',
     [
@@ -122,10 +130,12 @@ async function main(): Promise<void> {
       `--public-dir=${resolve('assets')}`,
       '--codec=h264',
       '--pixel-format=yuv420p',
+      ...remotionPerformanceArgs(renderProfile),
       '--overwrite',
     ],
     root,
   );
+  const renderDurationMs = Date.now() - startedAt;
 
   const reviewFrames: Array<{
     id: string;
@@ -208,6 +218,8 @@ async function main(): Promise<void> {
     composition: 'SceneV2WaterHandoff',
     transitionId: benchmark.transitionId,
     configPath,
+    renderProfile,
+    renderDurationMs,
     outgoingScene: {
       path: outgoingPath,
       sceneId: outgoingScene.sceneId,
@@ -240,6 +252,7 @@ async function main(): Promise<void> {
   });
 
   console.log(`Rendered benchmark: ${videoPath}`);
+  console.log(`Render time: ${(renderDurationMs / 1000).toFixed(1)}s`);
   console.log(`Review contact sheet: ${contactSheetPath}`);
   console.log(`Manifest: ${manifestPath}`);
 }
