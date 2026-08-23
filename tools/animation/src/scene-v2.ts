@@ -10,6 +10,7 @@ export type SceneV2MotionPreset =
   | 'subtleGazeShift'
   | 'numinousDrift'
   | 'mistDrift'
+  | 'smokeDrift'
   | 'riseReveal'
   | 'settle';
 
@@ -157,6 +158,7 @@ const ALLOWED_PRESETS = new Set<SceneV2MotionPreset>([
   'subtleGazeShift',
   'numinousDrift',
   'mistDrift',
+  'smokeDrift',
   'riseReveal',
   'settle',
 ]);
