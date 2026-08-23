@@ -11,9 +11,6 @@ const INPUT_ROOT = resolve(
 );
 const ASSET_ROOT = resolve('assets');
 const LAYER_ID = 'shot03-background-v1';
-const WIDTH = 1080;
-const HEIGHT = 1920;
-const PIXELS = WIDTH * HEIGHT;
 const DEFAULT_PIXEL_CHANGE_THRESHOLD = 2;
 
 const options = parseOptions(process.argv.slice(2).filter((arg) => arg !== '--'));
@@ -46,9 +43,25 @@ for (const [label, path] of [
   if (!existsSync(path)) throw new Error(`${label} not found: ${path}`);
 }
 
-const source = decodeFrame(sourcePath, 'rgb24', PIXELS * 3);
-const candidate = decodeFrame(candidatePath, 'rgb24', PIXELS * 3);
-const mask = decodeFrame(maskPath, 'gray', PIXELS);
+const sourceDimensions = readPngDimensions(sourcePath, 'Source');
+const candidateDimensions = readPngDimensions(candidatePath, 'Candidate');
+const maskDimensions = readPngDimensions(maskPath, 'Removal mask');
+assertSameDimensions('Candidate', candidateDimensions, sourceDimensions);
+assertSameDimensions('Removal mask', maskDimensions, sourceDimensions);
+if (
+  metadata.sourceDimensions &&
+  (metadata.sourceDimensions.width !== sourceDimensions.width ||
+    metadata.sourceDimensions.height !== sourceDimensions.height)
+) {
+  throw new Error(
+    `Candidate metadata source dimensions ${metadata.sourceDimensions.width}x${metadata.sourceDimensions.height} do not match actual source ${sourceDimensions.width}x${sourceDimensions.height}.`,
+  );
+}
+
+const pixels = sourceDimensions.width * sourceDimensions.height;
+const source = decodeFrame(sourcePath, 'rgb24', pixels * 3);
+const candidate = decodeFrame(candidatePath, 'rgb24', pixels * 3);
+const mask = decodeFrame(maskPath, 'gray', pixels);
 
 let insideCount = 0;
 let outsideCount = 0;
@@ -57,7 +70,7 @@ let outsideDiffSum = 0;
 let insideChanged = 0;
 let outsideChanged = 0;
 
-for (let pixel = 0; pixel < PIXELS; pixel += 1) {
+for (let pixel = 0; pixel < pixels; pixel += 1) {
   const offset = pixel * 3;
   const difference =
     (Math.abs(source[offset] - candidate[offset]) +
@@ -65,9 +78,8 @@ for (let pixel = 0; pixel < PIXELS; pixel += 1) {
       Math.abs(source[offset + 2] - candidate[offset + 2])) /
     3;
 
-  // The final composite uses the grayscale removal mask as alpha. Any non-zero
-  // mask value is therefore part of the permitted repair region, including
-  // anti-aliased silhouette edges. Pixels with mask=0 must remain editorial-v1.
+  // Any non-zero mask value is an allowed repair pixel, including antialiased
+  // silhouette boundaries. A zero-mask pixel must remain editorial-v1.
   const inside = mask[pixel] > 0;
   if (inside) {
     insideCount += 1;
@@ -80,7 +92,7 @@ for (let pixel = 0; pixel < PIXELS; pixel += 1) {
   }
 }
 
-const maskRatio = insideCount / PIXELS;
+const maskRatio = insideCount / pixels;
 const insideMeanDifference = insideCount ? insideDiffSum / insideCount : 0;
 const outsideMeanDifference = outsideCount ? outsideDiffSum / outsideCount : 0;
 const insideChangedRatio = insideCount ? insideChanged / insideCount : 0;
@@ -88,9 +100,14 @@ const outsideChangedRatio = outsideCount ? outsideChanged / outsideCount : 0;
 
 const checks = [
   {
+    id: 'editorial-resolution',
+    pass: true,
+    detail: `${sourceDimensions.width}x${sourceDimensions.height} asset resolution`,
+  },
+  {
     id: 'mask-coverage',
     pass: maskRatio >= options.minMaskRatio && maskRatio <= options.maxMaskRatio,
-    detail: `${(maskRatio * 100).toFixed(3)}% of canvas selected`,
+    detail: `${(maskRatio * 100).toFixed(3)}% of editorial canvas selected`,
   },
   {
     id: 'outside-preservation',
@@ -121,7 +138,8 @@ const report = {
   candidatePath,
   sourcePath,
   maskPath,
-  crop: metadata.backgroundInputs?.crop ?? null,
+  assetDimensions: sourceDimensions,
+  renderCanvasIndependent: true,
   pass,
   thresholds: {
     pixelChangeThreshold: options.pixelChangeThreshold,
@@ -144,18 +162,16 @@ const report = {
   checks,
   contactSheetPath,
   interpretation:
-    'PASS proves the candidate changed the validated removal region while preserving editorial-v1 wherever the blend mask is zero. It does not replace human review of whether the reconstructed river/background is visually plausible.',
+    'PASS proves the editorial-resolution candidate changed the intended removal region while preserving source pixels outside that mask. Remotion separately scales/composes the asset onto the 1080x1920 reel canvas. Human review still decides whether reconstruction is visually plausible.',
 };
 const reportPath = join(runDirectory, 'background-qa.json');
 writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
 
 console.log('Shot 3 background reconstruction verification');
 console.log(`Candidate: ${candidatePath}`);
-if (report.crop) {
-  console.log(
-    `Working crop: ${report.crop.width}x${report.crop.height} @ (${report.crop.x}, ${report.crop.y})`,
-  );
-}
+console.log(
+  `Asset resolution: ${sourceDimensions.width}x${sourceDimensions.height} (render canvas is independent)`,
+);
 for (const check of checks) {
   console.log(`[${check.pass ? 'ok' : 'fail'}] ${check.id}: ${check.detail}`);
 }
@@ -164,6 +180,29 @@ console.log(`Review contact sheet: ${contactSheetPath}`);
 console.log(`Report: ${reportPath}`);
 console.log('Human review is still required before promotion.');
 if (!pass) process.exitCode = 2;
+
+function readPngDimensions(path, label) {
+  const buffer = readFileSync(path);
+  if (
+    buffer.length < 24 ||
+    buffer.subarray(0, 8).toString('hex') !== '89504e470d0a1a0a' ||
+    buffer.subarray(12, 16).toString('ascii') !== 'IHDR'
+  ) {
+    throw new Error(`${label} is not a valid PNG.`);
+  }
+  return {
+    width: buffer.readUInt32BE(16),
+    height: buffer.readUInt32BE(20),
+  };
+}
+
+function assertSameDimensions(label, actual, expected) {
+  if (actual.width !== expected.width || actual.height !== expected.height) {
+    throw new Error(
+      `${label} is ${actual.width}x${actual.height}; expected editorial source ${expected.width}x${expected.height}.`,
+    );
+  }
+}
 
 function decodeFrame(path, pixelFormat, expectedBytes) {
   const result = spawnSync(
@@ -186,20 +225,18 @@ function decodeFrame(path, pixelFormat, expectedBytes) {
       cwd: process.cwd(),
       env: process.env,
       encoding: null,
-      maxBuffer: 32 * 1024 * 1024,
+      maxBuffer: Math.max(32 * 1024 * 1024, expectedBytes + 1024),
       windowsHide: true,
       shell: false,
     },
   );
   if (result.error) throw result.error;
   if (result.status !== 0) {
-    throw new Error(
-      `ffmpeg could not decode ${path}: ${String(result.stderr ?? '').trim()}`,
-    );
+    throw new Error(`ffmpeg could not decode ${path}: ${String(result.stderr ?? '').trim()}`);
   }
   if (!Buffer.isBuffer(result.stdout) || result.stdout.length !== expectedBytes) {
     throw new Error(
-      `${basename(path)} decoded to ${result.stdout?.length ?? 0} bytes; expected ${expectedBytes} for ${WIDTH}x${HEIGHT} ${pixelFormat}.`,
+      `${basename(path)} decoded to ${result.stdout?.length ?? 0} bytes; expected ${expectedBytes}.`,
     );
   }
   return result.stdout;
@@ -313,17 +350,11 @@ function parseOptions(args) {
     } else if (arg.startsWith('--max-outside-mean-diff=')) {
       options.maxOutsideMeanDiff = numberOption(arg, '--max-outside-mean-diff=');
     } else if (arg.startsWith('--max-outside-changed-ratio=')) {
-      options.maxOutsideChangedRatio = numberOption(
-        arg,
-        '--max-outside-changed-ratio=',
-      );
+      options.maxOutsideChangedRatio = numberOption(arg, '--max-outside-changed-ratio=');
     } else if (arg.startsWith('--min-inside-mean-diff=')) {
       options.minInsideMeanDiff = numberOption(arg, '--min-inside-mean-diff=');
     } else if (arg.startsWith('--min-inside-changed-ratio=')) {
-      options.minInsideChangedRatio = numberOption(
-        arg,
-        '--min-inside-changed-ratio=',
-      );
+      options.minInsideChangedRatio = numberOption(arg, '--min-inside-changed-ratio=');
     } else {
       throw new Error(`Unknown option ${arg}`);
     }
