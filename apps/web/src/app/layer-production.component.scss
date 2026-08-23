@@ -67,7 +67,10 @@
 }
 
 .summary-value {
-  font: var(--md-sys-typescale-headline-large);
+  font-family: var(--md-sys-typescale-font-family);
+  font-size: var(--md-sys-typescale-headline-large-size);
+  font-weight: 650;
+  line-height: 1.05;
   color: var(--md-sys-color-on-surface);
 }
 
@@ -78,6 +81,7 @@
 }
 
 .shot-card {
+  appearance: none;
   width: 100%;
   text-align: left;
   color: inherit;
@@ -119,7 +123,9 @@
 }
 
 .shot-number {
-  font: var(--md-sys-typescale-label-large);
+  font-family: var(--md-sys-typescale-font-family);
+  font-size: var(--md-sys-typescale-label-large-size);
+  font-weight: 700;
   letter-spacing: 0.12em;
   color: var(--md-sys-color-primary);
 }
@@ -137,7 +143,8 @@
   justify-content: space-between;
   gap: var(--md-sys-space-4);
   margin-top: var(--md-sys-space-4);
-  font: var(--md-sys-typescale-body-small);
+  font-family: var(--md-sys-typescale-font-family);
+  font-size: var(--md-sys-typescale-body-small-size);
 }
 
 .shot-layer-dots {
@@ -262,7 +269,9 @@
 }
 
 .fact > span {
-  font: var(--md-sys-typescale-label-medium);
+  font-family: var(--md-sys-typescale-font-family);
+  font-size: var(--md-sys-typescale-label-medium-size);
+  font-weight: 650;
   color: var(--md-sys-color-on-surface-variant);
 }
 
