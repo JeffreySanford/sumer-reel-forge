@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Use the installed local Ollama runtime as an optional assistant-director provider for Sumer Reel Forge while keeping deterministic planning, validation, rendering, review, and human approval independent from any model.
+Use the installed local Ollama runtime as an optional assistant-director and visual critic for Sumer Reel Forge while keeping deterministic planning, validation, rendering, review, and human approval independent from any model.
 
 ## Current Implementation
 
@@ -174,19 +174,98 @@ Responsible for proposing:
 
 All actionable output must validate against the planning schema.
 
-## Planned Vision Review
+## Automated Candidate Review
 
-The next AI-assisted review slice should pass selected render evidence to the configured vision-capable model:
+The local review command is:
+
+```bash
+pnpm animation:shot:review -- --shot=5
+```
+
+It performs the current review pipeline in one command:
 
 ```text
-shot intent
-+ approved style rules
-+ 0 / 25 / 50 / 75 / 100% frames
-+ contact sheet
+exact required candidate set
+-> Scene V2 layered render
+-> upstream QA verification
+-> media metadata verification
+-> aggregate Scene V2 frame-difference verification
+-> optional Ollama vision critique
+-> shot-review.json
+-> human review state
+```
+
+The review command never promotes candidates and never records human approval.
+
+The deterministic motion verifier now identifies its scope as **aggregate scene motion**. When the Scene V2 camera moves, it records that camera motion contributes to the measured frame difference and explicitly states that an aggregate PASS does not independently prove material-local motion. Material-local ROI/baseline differential QA remains a separate hardening step.
+
+### Vision evidence package
+
+When `OLLAMA_VISION_MODEL` is configured and installed, the review command sends a bounded evidence package to the local vision model:
+
+```text
+approved editorial source
++ review contact sheet
++ selected early/middle/late review frames
++ required/optional layer contract
++ stillness anchor and eye target
++ approved/provisional style decisions
++ deterministic QA results
 + review rubric
 ```
 
-The model should return a structured critique proposal. It may identify issues and suggest Scene V2 changes, but it may not approve the candidate.
+The vision model returns schema-constrained JSON with one of:
+
+```text
+PASS_ADVISORY
+REVIEW_REQUIRED
+FAIL_ADVISORY
+```
+
+It also returns confidence, findings, per-material assessments, and recommendations. The resulting `ollama-vision-review.json` is advisory evidence only.
+
+The reviewer is specifically asked to look for:
+
+- camera motion being mistaken for material motion;
+- translated-card motion;
+- mask bleed and edge ghosts;
+- diagonal streak/glint artifacts;
+- identity drift;
+- caption or eye-target competition;
+- implausible physical behavior;
+- intended material motion that remains perceptually static;
+- optional/deferred layers being incorrectly treated as mandatory.
+
+Shot 5 established the first review knowledge captured from this workflow: contained water keeps a fixed basin boundary, uses readable broad ripple plus fine refraction, forbids diagonal glint bands above the basin, and does not require smoke when source evidence is too sparse to support a meaningful smoke layer.
+
+### Review command options
+
+```bash
+pnpm animation:shot:review -- --shot=5 --skip-ai
+pnpm animation:shot:review -- --shot=5 --skip-render
+pnpm animation:shot:review -- --shot=5 --require-ai
+pnpm animation:shot:review -- --shot=5 --review-guides
+```
+
+`--require-ai` fails the command if the configured vision review cannot run. Without it, Ollama outages or missing models do not break deterministic review.
+
+## Quality Commands
+
+The source-code and creative/animation quality surfaces are intentionally separated:
+
+```bash
+pnpm quality
+pnpm quality:creative
+pnpm quality:animation
+pnpm animation:shot:review -- --shot=N
+```
+
+- `quality` remains the full repository quality command;
+- `quality:creative` runs creative/style decision tests;
+- `quality:animation` runs Scene V2 and renderer tests;
+- `animation:shot:review` is the expensive local evidence/render review path and may use Ollama.
+
+This keeps normal CI independent from GPU/model availability while making local production review repeatable.
 
 ## Docker Boundary
 
@@ -196,19 +275,19 @@ If a future Docker-hosted API cannot reach host Ollama, use the Docker host gate
 
 ## Reliability Rules
 
-- Ollama outages must not break deterministic planning.
+- Ollama outages must not break deterministic planning or deterministic review unless `--require-ai` is explicitly requested.
 - Local model calls have bounded timeouts.
 - Model names are configuration, not domain data.
 - Model output is treated as untrusted structured input until validated.
-- Planning source/style versions should be persisted when PlanningRun storage is implemented.
+- Planning/review source and style versions should be persisted when run-history storage is implemented.
 - No AI provider may mark a shot or reel human-approved.
+- No AI provider may promote candidates.
 - No AI provider may silently rewrite source story text.
 
 ## Next Implementation Slice
 
-1. persist `PlanningRun` and planning artifact records;
-2. load reel source/style context server-side instead of requiring it all in the request body;
-3. implement Scene V2 validation and persistence;
-4. connect approved Shot 3 direction -> Scene V2 -> benchmark render;
-5. add Qwen3-VL critique for review frames/contact sheets;
-6. turn approved A/B decisions into reusable StyleDecision records.
+1. add material-local ROI or baseline-differential render QA so camera motion cannot satisfy a material-motion gate;
+2. persist `PlanningRun` / review artifact records and model/input hashes;
+3. expose `shot-review.json` and Ollama critique in the Production Cockpit;
+4. benchmark Qwen3-VL 4B versus 8B on approved/rejected Reel 1 evidence;
+5. promote proven benchmark decisions into reusable lane-level quality contracts only after enough human-reviewed examples exist.
