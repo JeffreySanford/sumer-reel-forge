@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "registryId": "animation-production-lanes-v1",
+  "lanes": [
+    {
+      "id": "exact-source-preservation",
+      "match": { "role": "background", "material": "underwater-refraction", "hasAlpha": false },
+      "generator": { "family": "source-preservation" },
+      "qa": { "family": "checksum-identity", "humanReviewRequired": true },
+      "notes": [
+        "Use when the editorial background itself is the stillness anchor.",
+        "No synthesis, crop, resize, or pixel mutation is allowed."
+      ]
+    },
+    {
+      "id": "semantic-water-overlay",
+      "match": { "role": "water", "material": "water", "hasAlpha": true },
+      "generator": { "family": "sam3-semantic-overlay" },
+      "qa": { "family": "alpha-diagnostic-plus-motion", "humanReviewRequired": true },
+      "notes": [
+        "Preserve source RGB under alpha.",
+        "Reject whole-frame selection and character-shaped water masks.",
+        "Production motion should occur within the material rather than as a translated card."
+      ]
+    },
+    {
+      "id": "semantic-refraction-overlay",
+      "match": { "role": "reflection", "material": "underwater-refraction", "hasAlpha": true },
+      "generator": { "family": "sam3-semantic-overlay" },
+      "qa": { "family": "alpha-diagnostic-plus-motion", "humanReviewRequired": true },
+      "notes": [
+        "Prefer upper/surface refraction structures supported by the editorial source.",
+        "No new light source or fantasy glow."
+      ]
+    },
+    {
+      "id": "environmental-coherence-mask",
+      "match": { "role": "mask", "material": "divine-light", "hasAlpha": true },
+      "generator": { "family": "semantic-coherence-mask" },
+      "qa": { "family": "mask-shape-and-reveal", "humanReviewRequired": true },
+      "notes": [
+        "Mask follows source-supported water/light structure.",
+        "Never resolve to a hard character silhouette, face cutout, mermaid, aura, or glowing eyes."
+      ]
+    },
+    {
+      "id": "masked-background-repair",
+      "match": { "role": "background", "material": "atmosphere-distant", "hasAlpha": false },
+      "generator": { "family": "masked-inpainting" },
+      "qa": { "family": "outside-preservation-plus-inside-reconstruction", "humanReviewRequired": true },
+      "notes": [
+        "Build the removal mask from the exact reviewed foreground candidates.",
+        "Outside-mask editorial pixels must remain unchanged."
+      ]
+    },
+    {
+      "id": "rigid-prop-extraction",
+      "match": { "role": "major-prop", "material": "rigid-vessel", "hasAlpha": true },
+      "generator": { "family": "sam3-semantic-overlay" },
+      "qa": { "family": "alpha-diagnostic-plus-motion", "humanReviewRequired": true },
+      "notes": [
+        "Preserve exact silhouette/material detail.",
+        "Use low-frequency rigid-body motion; never deform the prop."
+      ]
+    },
+    {
+      "id": "character-source-extraction",
+      "match": { "role": "character", "hasAlpha": true },
+      "generator": { "family": "sam3-semantic-overlay" },
+      "qa": { "family": "identity-alpha-plus-motion", "humanReviewRequired": true },
+      "notes": [
+        "Preserve face, hands, costume, lighting, silhouette, and painterly identity.",
+        "Motion QA never substitutes for human identity review."
+      ]
+    },
+    {
+      "id": "foreground-source-extraction",
+      "match": { "role": "foreground-occluder", "hasAlpha": true },
+      "generator": { "family": "sam3-semantic-overlay" },
+      "qa": { "family": "alpha-diagnostic-plus-safe-zone-review", "humanReviewRequired": true },
+      "notes": [
+        "Foreground must remain subordinate and must avoid face/caption safe zones."
+      ]
+    },
+    {
+      "id": "procedural-light-overlay",
+      "match": { "role": "light", "hasAlpha": true },
+      "generator": { "family": "procedural-or-source-derived-light" },
+      "qa": { "family": "source-consistency-and-reveal", "humanReviewRequired": true },
+      "notes": [
+        "No hard aura, glowing eyes, or particle halo.",
+        "Use only subtle source-supported illumination."
+      ]
+    }
+  ]
+}
