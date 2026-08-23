@@ -1,0 +1,85 @@
+{
+  "1": {
+    "inputs": {
+      "image": "{{SOURCE_IMAGE}}"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Approved Shot 3 editorial source"
+    }
+  },
+  "2": {
+    "inputs": {
+      "ckpt_name": "sam3.1_multiplex_fp16.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "SAM 3.1 Multiplex FP16"
+    }
+  },
+  "3": {
+    "inputs": {
+      "text": "entire standing man, full human figure, robed male figure, head, beard, torso, arms, hands, robe, clothing. {{LAYER_PROMPT}}",
+      "clip": [
+        "2",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Enki full-figure semantic prompt"
+    }
+  },
+  "4": {
+    "inputs": {
+      "model": [
+        "2",
+        0
+      ],
+      "image": [
+        "1",
+        0
+      ],
+      "conditioning": [
+        "3",
+        0
+      ],
+      "threshold": 0.45,
+      "refine_iterations": 3,
+      "individual_masks": false
+    },
+    "class_type": "SAM3_Detect",
+    "_meta": {
+      "title": "Segment Shot 3 Enki body"
+    }
+  },
+  "5": {
+    "inputs": {
+      "image": [
+        "1",
+        0
+      ],
+      "alpha": [
+        "4",
+        0
+      ]
+    },
+    "class_type": "JoinImageWithAlpha",
+    "_meta": {
+      "title": "Preserve source pixels and apply Enki alpha"
+    }
+  },
+  "6": {
+    "inputs": {
+      "filename_prefix": "{{OUTPUT_PREFIX}}",
+      "images": [
+        "5",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save registered transparent Enki body candidate"
+    }
+  }
+}
