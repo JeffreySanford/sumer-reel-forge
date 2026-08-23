@@ -70,16 +70,44 @@ Run once from the repository root:
 pnpm comfyui:setup
 ```
 
-The setup command:
+The setup command now provisions the complete baseline visual-AI runtime needed for layer-production work:
 
 - verifies the NVIDIA driver first;
 - resolves the latest stable ComfyUI release rather than following unstable development commits;
 - installs ComfyUI under ignored `.cache/comfyui/ComfyUI`;
 - creates an isolated Python 3.13 environment under `.cache/comfyui/.venv`;
 - installs NVIDIA-enabled PyTorch and the ComfyUI dependencies;
-- verifies that PyTorch can actually see the CUDA GPU.
+- verifies that PyTorch can actually see the CUDA GPU;
+- downloads the curated Reel Forge vision models listed in `tools/comfyui/managed-models.json`;
+- verifies every managed model with its pinned SHA-256 before it is accepted;
+- writes an ignored `.cache/comfyui/managed-models-state.json` record of the verified local model state.
 
-The setup is intentionally non-destructive. Re-running it uses an existing checkout and virtual environment instead of silently upgrading the runtime. Normal `start:all` startup never installs or updates ComfyUI.
+The baseline managed models are intentionally small and purpose-specific rather than a general collection of generative checkpoints:
+
+| Model | Purpose | ComfyUI location | Approx. size |
+| --- | --- | --- | ---: |
+| `sam3.1_multiplex_fp16.safetensors` | text/box/point-guided semantic segmentation for water, subjects, props, masks | `models/checkpoints/` | 1.75 GB |
+| `birefnet.safetensors` | foreground/background separation and clean alpha masks | `models/background_removal/` | 444 MB |
+
+SAM 3.1 is distributed under its upstream `sam-license`; BiRefNet is MIT licensed. The source URLs, destination paths, and pinned hashes live in the tracked managed-model manifest so the installer is auditable and reproducible.
+
+Downloads are atomic. Files are streamed to a `.part` file, verified, and only then renamed into ComfyUI's model directory. An interrupted or corrupt download is rejected. Re-running setup hashes an existing managed file and reuses it when it still matches the pinned artifact; it does not download the same multi-gigabyte file again.
+
+For a machine like this one where the ComfyUI/Python runtime is already installed and only the curated models need to be added or reverified, use:
+
+```sh
+pnpm comfyui:models:setup
+```
+
+The full setup remains intentionally non-destructive. Re-running it uses an existing checkout and virtual environment instead of silently upgrading the ComfyUI source tree. Normal `start:all` startup never installs or updates ComfyUI or downloads models.
+
+To provision only the runtime and deliberately skip the curated models:
+
+```sh
+pnpm comfyui:setup -- --runtime-only
+```
+
+or set `COMFYUI_INSTALL_MODELS=false`.
 
 ### Normal startup after setup
 
@@ -104,6 +132,7 @@ COMFYUI_BASE_URL=http://127.0.0.1:8188
 COMFYUI_DIRECTORY=.cache/comfyui/ComfyUI
 COMFYUI_VENV_DIRECTORY=.cache/comfyui/.venv
 COMFYUI_MANAGED=true
+COMFYUI_INSTALL_MODELS=true
 ```
 
 ### Verify the ComfyUI host
@@ -123,7 +152,7 @@ GET http://localhost:3000/api/runtime/capabilities
 GET http://localhost:3000/api/runtime/comfyui-inventory
 ```
 
-The first production target is Reel 1 Shot 3 water, `shot03-water-v1`. The dedicated `COMFYUI_LAYER_WORKFLOW_PATH` remains intentionally unset until the installed node/model inventory is known and the first API-format layer workflow has been designed and tested on this machine.
+The first production target is Reel 1 Shot 3 water, `shot03-water-v1`. The curated setup now supplies the SAM 3.1 and BiRefNet model prerequisites. The dedicated `COMFYUI_LAYER_WORKFLOW_PATH` remains a separate production contract: the first API-format workflow must be authored and validated specifically for preservation-first Shot 3 extraction before candidate generation is enabled.
 
 ### GPU memory note
 
