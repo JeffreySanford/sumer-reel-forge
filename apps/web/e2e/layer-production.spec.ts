@@ -95,6 +95,12 @@ const READY_INVENTORY = {
   },
 };
 
+const NO_BENCHMARK_EVIDENCE = {
+  schemaVersion: 1,
+  observedAt: new Date(0).toISOString(),
+  shots: [],
+};
+
 function readyLayer({
   id,
   role,
@@ -312,6 +318,9 @@ async function mockProductionApis(page: import('@playwright/test').Page) {
   await page.route('**/api/runtime/animation-production', async (route) => {
     await route.fulfill({ json: READY_PRODUCTION });
   });
+  await page.route('**/api/runtime/animation-production-evidence', async (route) => {
+    await route.fulfill({ json: NO_BENCHMARK_EVIDENCE });
+  });
 }
 
 test('presents approved production benchmarks from the live manifest contract', async ({
@@ -330,6 +339,8 @@ test('presents approved production benchmarks from the live manifest contract', 
   await expect(page.getByText('masked-background-repair')).toBeVisible();
   await expect(page.getByText('Verified', { exact: true })).toBeVisible();
   await expect(page.getByText('cinematicSlow', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Production benchmark' })).toBeVisible();
+  await expect(page.getByText('No local benchmark evidence yet.')).toBeVisible();
 
   await page.getByRole('button', { name: /SHOT 4.*Nammu Under Water/i }).click();
   await page
@@ -382,6 +393,9 @@ test('keeps approved production truth visible when the local GPU engine is offli
   });
   await page.route('**/api/runtime/animation-production', async (route) => {
     await route.fulfill({ json: READY_PRODUCTION });
+  });
+  await page.route('**/api/runtime/animation-production-evidence', async (route) => {
+    await route.fulfill({ json: NO_BENCHMARK_EVIDENCE });
   });
 
   await page.goto('/production/layers');
