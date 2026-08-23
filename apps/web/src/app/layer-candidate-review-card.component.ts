@@ -7,6 +7,8 @@ export type LayerCandidateReviewState =
   | 'approved'
   | 'rejected';
 
+export type LayerCandidateQaKind = 'motion' | 'preservation';
+
 @Component({
   selector: 'app-layer-candidate-review-card',
   standalone: true,
@@ -19,6 +21,7 @@ export class LayerCandidateReviewCardComponent {
   @Input({ required: true }) layerLabel = '';
   @Input() material = '';
   @Input() state: LayerCandidateReviewState = 'candidate';
+  @Input() qaKind: LayerCandidateQaKind = 'motion';
   @Input() meanDifference: number | null = null;
   @Input() changedPixelRatio: number | null = null;
   @Input() previewAvailable = false;
@@ -32,9 +35,9 @@ export class LayerCandidateReviewCardComponent {
   protected stateLabel(): string {
     switch (this.state) {
       case 'qa-pass':
-        return 'Motion QA passed';
+        return `${this.qaName()} passed`;
       case 'qa-fail':
-        return 'Motion QA failed';
+        return `${this.qaName()} failed`;
       case 'approved':
         return 'Approved';
       case 'rejected':
@@ -44,8 +47,28 @@ export class LayerCandidateReviewCardComponent {
     }
   }
 
+  protected qaName(): string {
+    return this.qaKind === 'preservation' ? 'Preservation QA' : 'Motion QA';
+  }
+
+  protected meanMetricLabel(): string {
+    return this.qaKind === 'preservation'
+      ? 'Outside mean diff'
+      : 'Mean frame diff';
+  }
+
+  protected changedMetricLabel(): string {
+    return this.qaKind === 'preservation'
+      ? 'Inside changed'
+      : 'Changed pixels';
+  }
+
   protected canApprove(): boolean {
     return this.state === 'qa-pass';
+  }
+
+  protected approvalGuardrail(): string {
+    return `Approval stays locked until ${this.qaName().toLowerCase()} passes.`;
   }
 
   protected changedPercent(): string {
