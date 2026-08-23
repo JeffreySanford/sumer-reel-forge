@@ -9,6 +9,7 @@ const meta: Meta<LayerCandidateReviewCardComponent> = {
     layerLabel: 'Water',
     material: 'fluid / reflective',
     state: 'candidate',
+    qaKind: 'motion',
     previewAvailable: true,
     diagnosticAvailable: true,
     note: 'AI-generated candidate remains isolated until human review approves it.',
@@ -59,6 +60,36 @@ export const EnkiIdentityReview: Story = {
     meanDifference: 0.35,
     changedPixelRatio: 0.025,
     note: 'Rendered-motion QA passed. Approval still requires human confirmation that Enki\'s face, hands, robe silhouette, lighting, and painterly identity remain intact.',
+  },
+};
+
+export const BackgroundPreservationQaPassed: Story = {
+  args: {
+    layerId: 'shot03-background-v1',
+    layerLabel: 'Background plate',
+    material: 'atmosphere / distant environment',
+    state: 'qa-pass',
+    qaKind: 'preservation',
+    meanDifference: 0.0,
+    changedPixelRatio: 0.62,
+    previewAvailable: true,
+    diagnosticAvailable: true,
+    note: 'Preservation QA passed: pixels outside the validated Enki + vessel removal mask remained editorial-v1 while the vacated region was reconstructed. Human review still decides whether the river and atmosphere are plausible.',
+  },
+};
+
+export const BackgroundPreservationQaFailed: Story = {
+  args: {
+    layerId: 'shot03-background-v1',
+    layerLabel: 'Background plate',
+    material: 'atmosphere / distant environment',
+    state: 'qa-fail',
+    qaKind: 'preservation',
+    meanDifference: 1.4,
+    changedPixelRatio: 0.03,
+    previewAvailable: true,
+    diagnosticAvailable: true,
+    note: 'Background reconstruction changed pixels outside the allowed mask or failed to replace enough of the removed foreground region.',
   },
 };
 
