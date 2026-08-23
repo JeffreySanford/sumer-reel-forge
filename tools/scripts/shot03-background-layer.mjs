@@ -1,20 +1,8 @@
 import 'dotenv/config';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import {
-  access,
-  mkdir,
-  readFile,
-  readdir,
-  writeFile,
-} from 'node:fs/promises';
-import {
-  basename,
-  isAbsolute,
-  join,
-  relative,
-  resolve,
-} from 'node:path';
+import { access, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
+import { basename, isAbsolute, join, relative, resolve } from 'node:path';
 import { checkWorkflowHostCompatibility } from '../renderer/comfyui-workflow-doctor.mjs';
 
 const MANIFEST_PATH = resolve(
@@ -37,8 +25,6 @@ const BASE_URL = (
 const BACKGROUND_LAYER_ID = 'shot03-background-v1';
 const ENKI_LAYER_ID = 'shot03-enki-body-v1';
 const VESSEL_LAYER_ID = 'shot03-vessel-v1';
-const WIDTH = 1080;
-const HEIGHT = 1920;
 const CROP_ALIGNMENT = 8;
 const DEFAULT_CROP_PADDING = 64;
 const MASK_BOUNDARY_THRESHOLD = 8;
@@ -59,16 +45,18 @@ async function main() {
   }
 
   const sourcePath = resolve(ASSET_ROOT, shot.sourceFrame);
-  const enki = await resolveLayerCandidate(
-    ENKI_LAYER_ID,
-    options.enkiCandidateDir,
+  const sourceDimensions = readPngDimensions(
+    await readFile(sourcePath),
+    'Shot 3 editorial source',
   );
+  const enki = await resolveLayerCandidate(ENKI_LAYER_ID, options.enkiCandidateDir);
   const vessel = await resolveLayerCandidate(
     VESSEL_LAYER_ID,
     options.vesselCandidateDir,
   );
   const input = await prepareInpaintInputs({
     sourcePath,
+    sourceDimensions,
     enki,
     vessel,
     padding: options.padding,
@@ -77,6 +65,11 @@ async function main() {
   const checks = [
     await fileCheck('Animation manifest', MANIFEST_PATH),
     await fileCheck('Shot 3 source', sourcePath),
+    {
+      ok: true,
+      name: 'Editorial source dimensions',
+      detail: `${sourceDimensions.width}x${sourceDimensions.height}`,
+    },
     await fileCheck('QA-passed Enki candidate', enki.path),
     await fileCheck('QA-passed vessel candidate', vessel.path),
     await fileCheck('Combined removal mask', input.maskPath),
@@ -85,7 +78,7 @@ async function main() {
     {
       ok: input.maskCoverageRatio >= 0.005 && input.maskCoverageRatio <= 0.7,
       name: 'Removal-mask coverage',
-      detail: `${(input.maskCoverageRatio * 100).toFixed(3)}% of full canvas`,
+      detail: `${(input.maskCoverageRatio * 100).toFixed(3)}% of editorial canvas`,
     },
     await httpCheck('ComfyUI', `${BASE_URL}/system_stats`),
   ];
@@ -102,6 +95,7 @@ async function main() {
     input,
     checks,
     compatibility,
+    sourceDimensions,
   });
   const ready = checks.every((check) => check.ok) && compatibility.ok;
 
@@ -111,7 +105,7 @@ async function main() {
   }
   if (!ready) {
     throw new Error(
-      'Shot 3 background generation is blocked. If the inpainting checkpoint is unavailable, run `pnpm comfyui:models:setup`, restart ComfyUI/start:all, then rerun this preflight.',
+      'Shot 3 background generation is blocked by preflight or ComfyUI workflow compatibility.',
     );
   }
 
@@ -166,8 +160,10 @@ async function main() {
 
   console.log('');
   console.log('Generating Shot 3 background crop with masked inpainting...');
+  console.log(`Editorial source: ${sourceDimensions.width}x${sourceDimensions.height}`);
   console.log(`Crop: ${formatCrop(input.crop)}`);
   console.log(`Seed: ${seed}`);
+
   const queued = await fetchJson(`${BASE_URL}/prompt`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -222,11 +218,11 @@ async function main() {
   });
   const candidateBytes = await readFile(candidatePath);
   const candidateDimensions = readPngDimensions(candidateBytes, BACKGROUND_LAYER_ID);
-  if (candidateDimensions.width !== WIDTH || candidateDimensions.height !== HEIGHT) {
-    throw new Error(
-      `${BACKGROUND_LAYER_ID} dimensions ${candidateDimensions.width}x${candidateDimensions.height} do not match ${WIDTH}x${HEIGHT}.`,
-    );
-  }
+  assertSameDimensions(
+    'background candidate',
+    candidateDimensions,
+    sourceDimensions,
+  );
 
   const candidate = {
     schemaVersion: 1,
@@ -240,7 +236,7 @@ async function main() {
     sourceFrame: shot.sourceFrame,
     intendedApprovedPath: layer.path ?? null,
     expectedAlpha: false,
-    sourceDimensions: { width: WIDTH, height: HEIGHT },
+    sourceDimensions,
     candidateDimensions,
     candidatePath,
     sha256: sha256(candidateBytes),
@@ -265,6 +261,8 @@ async function main() {
       sourceUpload,
       maskUpload,
       policy: {
+        assetResolution: 'editorial-source',
+        renderResolutionIndependent: true,
         inpaintOnlyCroppedWorkingRegion: true,
         compositeOnlyThroughValidatedMask: true,
         preserveFullCanvasOutsideMask: true,
@@ -300,7 +298,7 @@ async function main() {
   );
 
   console.log('');
-  console.log('Generated 1 full-canvas background candidate.');
+  console.log('Generated 1 editorial-resolution background candidate.');
   console.log(`Candidate workspace: ${outputRoot}`);
   console.log(`Candidate PNG: ${candidatePath}`);
   console.log(`Generated crop: ${generatedCropPath}`);
@@ -309,10 +307,24 @@ async function main() {
   console.log('The candidate remains pending human review and background QA.');
 }
 
-async function prepareInpaintInputs({ sourcePath, enki, vessel, padding }) {
+async function prepareInpaintInputs({
+  sourcePath,
+  sourceDimensions,
+  enki,
+  vessel,
+  padding,
+}) {
   const stamp = new Date().toISOString().replace(/[:.]/g, '-');
   const directory = join(INPUT_ROOT, stamp);
   await mkdir(directory, { recursive: true });
+
+  const enkiDimensions = readPngDimensions(await readFile(enki.path), ENKI_LAYER_ID);
+  const vesselDimensions = readPngDimensions(
+    await readFile(vessel.path),
+    VESSEL_LAYER_ID,
+  );
+  assertSameDimensions('Enki candidate', enkiDimensions, sourceDimensions);
+  assertSameDimensions('vessel candidate', vesselDimensions, sourceDimensions);
 
   const maskPath = join(directory, 'enki-vessel-removal-mask.png');
   runFfmpeg(
@@ -336,38 +348,42 @@ async function prepareInpaintInputs({ sourcePath, enki, vessel, padding }) {
     'combine Enki and vessel alpha masks',
   );
 
-  for (const [label, path] of [
-    ['source', sourcePath],
-    ['Enki candidate', enki.path],
-    ['vessel candidate', vessel.path],
-    ['removal mask', maskPath],
-  ]) {
-    const dimensions = readPngDimensions(await readFile(path), label);
-    if (dimensions.width !== WIDTH || dimensions.height !== HEIGHT) {
-      throw new Error(
-        `${label} is ${dimensions.width}x${dimensions.height}; expected ${WIDTH}x${HEIGHT}.`,
-      );
-    }
-  }
+  const maskDimensions = readPngDimensions(await readFile(maskPath), 'removal mask');
+  assertSameDimensions('removal mask', maskDimensions, sourceDimensions);
 
-  const maskPixels = decodeGrayMask(maskPath, WIDTH, HEIGHT);
-  const maskAnalysis = analyzeMask(maskPixels, WIDTH, HEIGHT);
-  const resolvedPadding = padding ?? positiveInteger(
-    process.env.SRF_BACKGROUND_INPAINT_PADDING,
-    DEFAULT_CROP_PADDING,
+  const maskPixels = decodeGrayMask(
+    maskPath,
+    sourceDimensions.width,
+    sourceDimensions.height,
   );
-  const crop = paddedAlignedCrop(maskAnalysis.bounds, resolvedPadding);
+  const maskAnalysis = analyzeMask(
+    maskPixels,
+    sourceDimensions.width,
+    sourceDimensions.height,
+  );
+  const resolvedPadding =
+    padding ??
+    positiveInteger(
+      process.env.SRF_BACKGROUND_INPAINT_PADDING,
+      DEFAULT_CROP_PADDING,
+    );
+  const crop = paddedAlignedCrop(
+    maskAnalysis.bounds,
+    resolvedPadding,
+    sourceDimensions.width,
+    sourceDimensions.height,
+  );
   const sourceCropPath = join(directory, 'editorial-source-crop.png');
   const maskCropPath = join(directory, 'removal-mask-crop.png');
-
   cropPng(sourcePath, sourceCropPath, crop);
   cropPng(maskPath, maskCropPath, crop);
 
   const inputManifest = {
-    schemaVersion: 2,
+    schemaVersion: 3,
     type: 'shot03-background-inpaint-inputs',
     generatedAt: new Date().toISOString(),
     sourcePath,
+    sourceDimensions,
     enki: {
       runDirectory: enki.runDirectory,
       candidatePath: enki.path,
@@ -386,6 +402,8 @@ async function prepareInpaintInputs({ sourcePath, enki, vessel, padding }) {
     sourceCropPath,
     maskCropPath,
     policy: {
+      assetResolution: 'editorial-source',
+      renderResolutionIndependent: true,
       useQaPassedCandidateSilhouettes: true,
       resegmentForegroundForBackground: false,
       inpaintOnlyCroppedWorkingRegion: true,
@@ -439,28 +457,46 @@ function analyzeMask(mask, width, height) {
   };
 }
 
-function paddedAlignedCrop(bounds, padding) {
+function paddedAlignedCrop(bounds, padding, frameWidth, frameHeight) {
   const left = alignDown(Math.max(0, bounds.x - padding), CROP_ALIGNMENT);
   const top = alignDown(Math.max(0, bounds.y - padding), CROP_ALIGNMENT);
-  const right = Math.min(
-    WIDTH,
+  let right = Math.min(
+    frameWidth,
     alignUp(bounds.x + bounds.width + padding, CROP_ALIGNMENT),
   );
-  const bottom = Math.min(
-    HEIGHT,
+  let bottom = Math.min(
+    frameHeight,
     alignUp(bounds.y + bounds.height + padding, CROP_ALIGNMENT),
   );
-  const crop = {
-    x: left,
-    y: top,
-    width: right - left,
-    height: bottom - top,
-  };
+
+  // Diffusion inputs need dimensions aligned to the latent grid. If the source
+  // edge is not aligned, move the crop origin inward rather than resizing the
+  // editorial image.
+  let width = right - left;
+  let height = bottom - top;
+  let x = left;
+  let y = top;
+  if (width % CROP_ALIGNMENT) {
+    const alignedWidth = alignDown(width, CROP_ALIGNMENT);
+    x = Math.max(0, right - alignedWidth);
+    width = alignedWidth;
+  }
+  if (height % CROP_ALIGNMENT) {
+    const alignedHeight = alignDown(height, CROP_ALIGNMENT);
+    y = Math.max(0, bottom - alignedHeight);
+    height = alignedHeight;
+  }
+  right = x + width;
+  bottom = y + height;
+
+  const crop = { x, y, width: right - x, height: bottom - y };
   if (crop.width <= 0 || crop.height <= 0) {
     throw new Error(`Invalid background crop: ${formatCrop(crop)}`);
   }
   if (crop.width % CROP_ALIGNMENT || crop.height % CROP_ALIGNMENT) {
-    throw new Error(`Background crop must align to ${CROP_ALIGNMENT}px: ${formatCrop(crop)}`);
+    throw new Error(
+      `Background crop must align to ${CROP_ALIGNMENT}px: ${formatCrop(crop)}`,
+    );
   }
   return crop;
 }
@@ -505,7 +541,7 @@ function decodeGrayMask(path, width, height) {
       cwd: process.cwd(),
       env: process.env,
       encoding: null,
-      maxBuffer: 8 * 1024 * 1024,
+      maxBuffer: Math.max(8 * 1024 * 1024, width * height + 1024),
       windowsHide: true,
       shell: false,
     },
@@ -559,7 +595,7 @@ function composeFullCanvasCandidate({
       '1',
       outputPath,
     ],
-    'composite reconstructed crop into full editorial frame',
+    'composite reconstructed crop into editorial frame',
   );
 }
 
@@ -678,10 +714,7 @@ function replaceTokens(value, replacements) {
   }
   if (value && typeof value === 'object') {
     return Object.fromEntries(
-      Object.entries(value).map(([key, item]) => [
-        key,
-        replaceTokens(item, replacements),
-      ]),
+      Object.entries(value).map(([key, item]) => [key, replaceTokens(item, replacements)]),
     );
   }
   return value;
@@ -695,6 +728,7 @@ function printPreflight({
   input,
   checks,
   compatibility,
+  sourceDimensions,
 }) {
   console.log('Shot 3 background reconstruction preflight');
   console.log(
@@ -721,11 +755,14 @@ function printPreflight({
   console.log(`Combined removal mask: ${input.maskPath}`);
   console.log(`GPU working crop: ${formatCrop(input.crop)}`);
   console.log(
-    `Crop area: ${((input.crop.width * input.crop.height) / (WIDTH * HEIGHT) * 100).toFixed(1)}% of full frame`,
+    `Crop area: ${((input.crop.width * input.crop.height) / (sourceDimensions.width * sourceDimensions.height) * 100).toFixed(1)}% of editorial frame`,
   );
   console.log('* required for animation-v1 activation');
   console.log(
-    '* ComfyUI works only on the cropped repair region; the final full frame is rebuilt from editorial-v1 plus the validated mask.',
+    `* assets stay at editorial resolution ${sourceDimensions.width}x${sourceDimensions.height}; Remotion owns the separate 1080x1920 render canvas.`,
+  );
+  console.log(
+    '* ComfyUI works only on the cropped repair region; the final editorial-resolution frame is rebuilt from source pixels plus the validated mask.',
   );
 }
 
@@ -740,9 +777,7 @@ function parseOptions(args) {
       parsed.outputRoot = arg.slice('--output='.length);
     } else if (arg.startsWith('--seed=')) {
       const seed = Number(arg.slice('--seed='.length));
-      if (!Number.isSafeInteger(seed) || seed < 0) {
-        throw new Error(`Invalid ${arg}`);
-      }
+      if (!Number.isSafeInteger(seed) || seed < 0) throw new Error(`Invalid ${arg}`);
       parsed.seed = seed;
     } else if (arg.startsWith('--padding=')) {
       const padding = Number(arg.slice('--padding='.length));
@@ -812,6 +847,14 @@ function readPngDimensions(buffer, label) {
   };
 }
 
+function assertSameDimensions(label, actual, expected) {
+  if (actual.width !== expected.width || actual.height !== expected.height) {
+    throw new Error(
+      `${label} is ${actual.width}x${actual.height}; expected editorial source ${expected.width}x${expected.height}.`,
+    );
+  }
+}
+
 function runFfmpeg(args, label) {
   const result = spawnSync(process.env.FFMPEG_COMMAND ?? 'ffmpeg', args, {
     cwd: process.cwd(),
@@ -823,9 +866,7 @@ function runFfmpeg(args, label) {
   });
   if (result.error) throw result.error;
   if (result.status !== 0) {
-    throw new Error(
-      `ffmpeg could not ${label}: ${String(result.stderr ?? '').trim()}`,
-    );
+    throw new Error(`ffmpeg could not ${label}: ${String(result.stderr ?? '').trim()}`);
   }
 }
 
