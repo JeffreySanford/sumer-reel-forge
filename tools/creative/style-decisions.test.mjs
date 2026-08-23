@@ -32,7 +32,18 @@ test('Shot 3 water inherits project and water-material decisions', () => {
   assert.ok(ids.has('project-editorial-source-immutable'));
   assert.ok(ids.has('project-human-approval-final-gate'));
   assert.ok(ids.has('water-motion-material-internal'));
-  assert.equal(resolveLayerProductionLane(lanes, layer)?.id, 'semantic-water-overlay');
+  assert.ok(ids.has('water-approved-motion-presets'));
+
+  const lane = resolveLayerProductionLane(lanes, layer);
+  assert.equal(lane?.id, 'semantic-water-overlay');
+  assert.equal(
+    lane?.generator?.workflowPath,
+    'tools/renderer/workflows/semantic-overlay-sam3-api.json',
+  );
+  assert.equal(
+    lane?.qa?.executor,
+    'tools/scripts/verify-semantic-overlay-candidate.mjs',
+  );
 });
 
 test('Shot 4 deep water inherits provisional Nammu rules and exact-source lane', () => {
@@ -50,7 +61,14 @@ test('Shot 4 deep water inherits provisional Nammu rules and exact-source lane',
   assert.ok(ids.has('nammu-near-static-camera'));
   assert.ok(ids.has('nammu-environmental-coherence'));
   assert.ok(ids.has('nammu-deep-water-source-anchor'));
-  assert.equal(resolveLayerProductionLane(lanes, layer)?.id, 'exact-source-preservation');
+
+  const lane = resolveLayerProductionLane(lanes, layer);
+  assert.equal(lane?.id, 'exact-source-preservation');
+  assert.equal(
+    lane?.generator?.executor,
+    'tools/scripts/source-preservation-layer.mjs',
+  );
+  assert.equal(lane?.qa?.family, 'checksum-identity');
 });
 
 test('provisional rules can be excluded for approved-only inheritance', () => {
@@ -66,6 +84,7 @@ test('provisional rules can be excluded for approved-only inheritance', () => {
   const ids = new Set(decisions.map((decision) => decision.id));
 
   assert.ok(ids.has('water-motion-material-internal'));
+  assert.ok(ids.has('water-approved-motion-presets'));
   assert.ok(!ids.has('nammu-near-static-camera'));
   assert.ok(!ids.has('nammu-environmental-coherence'));
 });
@@ -77,5 +96,27 @@ test('Shot 4 coherence mask selects environmental coherence lane', () => {
     material: 'divine-light',
     hasAlpha: true,
   };
-  assert.equal(resolveLayerProductionLane(lanes, layer)?.id, 'environmental-coherence-mask');
+  const lane = resolveLayerProductionLane(lanes, layer);
+  assert.equal(lane?.id, 'environmental-coherence-mask');
+  assert.equal(lane?.generator?.family, 'semantic-coherence-mask');
+  assert.ok(lane?.qa?.alphaCoverage?.maximum <= 0.4);
+  assert.equal(lane?.qa?.humanReviewRequired, true);
+});
+
+test('Shot 4 surface refraction is executable through the generic semantic lane', () => {
+  const layer = {
+    id: 'shot04-surface-refraction-v1',
+    role: 'reflection',
+    material: 'underwater-refraction',
+    hasAlpha: true,
+  };
+  const lane = resolveLayerProductionLane(lanes, layer);
+  assert.equal(lane?.id, 'semantic-refraction-overlay');
+  assert.equal(lane?.generator?.family, 'sam3-semantic-overlay');
+  assert.equal(
+    lane?.generator?.workflowPath,
+    'tools/renderer/workflows/semantic-overlay-sam3-api.json',
+  );
+  assert.ok(lane?.qa?.alphaCoverage?.minimum > 0);
+  assert.ok(lane?.qa?.alphaCoverage?.maximum < 1);
 });
