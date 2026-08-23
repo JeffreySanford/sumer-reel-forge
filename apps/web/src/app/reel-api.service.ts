@@ -17,7 +17,7 @@ import {
   type UpdateChapterNarrationSettingsRequest,
   type components,
 } from '@sumer-reel-forge/reel-core';
-import { catchError, of } from 'rxjs';
+import { catchError, filter, of } from 'rxjs';
 import type {
   CreatePlanningRunRequest,
   PlanningCapabilitiesResponse,
@@ -32,6 +32,7 @@ type UpdateReelProductionDto = components['schemas']['UpdateReelProductionDto'];
 @Injectable({ providedIn: 'root' })
 export class ReelApiService {
   private readonly http = inject(HttpClient);
+  private episodeRequestSequence = 0;
 
   getChapterOneOutline() {
     return this.http
@@ -59,13 +60,17 @@ export class ReelApiService {
   }
 
   getChapterOneEpisode(episodeId: number) {
+    const requestSequence = ++this.episodeRequestSequence;
     const fallback =
       CHAPTER_ONE_REELS.find((episode) => episode.episode === episodeId) ??
       CHAPTER_ONE_REELS[0];
 
     return this.http
       .get<ReelEpisode>(`/api/chapters/1/reels/${episodeId}`)
-      .pipe(catchError(() => of(fallback)));
+      .pipe(
+        catchError(() => of(fallback)),
+        filter(() => requestSequence === this.episodeRequestSequence),
+      );
   }
 
   getPlanningCapabilities() {

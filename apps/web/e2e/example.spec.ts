@@ -34,7 +34,14 @@ test('deep links load the requested reel and tab', async ({ page }) => {
   await mockOperationalRoutes(page);
   await mockReelRoutes(page);
 
+  const reelTwoLoaded = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'GET' &&
+      new URL(response.url()).pathname === '/api/chapters/1/reels/2' &&
+      response.status() === 200,
+  );
   await page.goto('/reels/2/shots');
+  await reelTwoLoaded;
 
   await expect(page).toHaveURL(/\/reels\/2\/shots$/);
   await expect(
