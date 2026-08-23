@@ -43,15 +43,6 @@ export function ContainedWaterMaterialLayer({
   const driftBX = Math.cos(phase * 0.48 + 1.3) * 2.1 * settle;
   const driftBY = Math.sin(phase * 0.39 + 0.4) * 1.1 * settle;
 
-  const glintDrift =
-    (Math.sin(phase * 0.91) * 42 +
-      Math.sin(phase * 0.33 + 1.1) * 18) *
-    settle;
-  const counterDrift =
-    (Math.cos(phase * 0.61 + 0.6) * 31 +
-      Math.sin(phase * 0.25) * 13) *
-    settle;
-
   const maskStyle: React.CSSProperties = {
     position: 'absolute',
     inset: 0,
@@ -77,6 +68,14 @@ export function ContainedWaterMaterialLayer({
     objectFit: 'cover',
     transformOrigin: '53% 82%',
     willChange: 'transform, opacity, filter',
+  };
+
+  // Readable ripples use a slightly contracted copy of the alpha mask so bright
+  // wave crests cannot touch the stone rim even when the source mask is tight.
+  const safeRippleMaskStyle: React.CSSProperties = {
+    ...maskStyle,
+    transformOrigin: '53% 83.2%',
+    transform: 'scale(0.985)',
   };
 
   const rippleOrigins = [0, 0.36, 0.72];
@@ -144,7 +143,7 @@ export function ContainedWaterMaterialLayer({
         </defs>
       </svg>
 
-      <div style={maskStyle}>
+      <div style={maskStyle} data-water-boundary="basin-alpha">
         <Img
           src={source}
           style={{
@@ -168,19 +167,24 @@ export function ContainedWaterMaterialLayer({
       </div>
 
       {/*
-        Readable low-frequency motion. These perspective-flattened wave fronts
-        expand across the fixed basin mask, giving the eye a physical ripple to
-        track while the turbulence above supplies fine refraction detail.
+        Readable low-frequency motion. The ripple envelope is deliberately
+        flatter and lower than the first benchmark pass. It remains inside a
+        slightly contracted basin-alpha mask, so no crest can bleed onto the
+        upper stone rim. The previous diagonal glint bands were removed.
       */}
-      <div style={maskStyle} data-water-motion="broad-traveling-ripple">
+      <div
+        style={safeRippleMaskStyle}
+        data-water-motion="broad-traveling-ripple"
+        data-water-boundary="basin-alpha-safe"
+      >
         {rippleOrigins.map((offset, index) => {
           const cycle = positiveModulo(phase * 0.22 + offset, 1);
           const envelope = Math.sin(Math.PI * cycle) * settle;
           const scaleX = 0.42 + cycle * 2.75;
-          const scaleY = 0.38 + cycle * 2.05;
-          const opacity = envelope * (index === 0 ? 0.52 : 0.42);
+          const scaleY = 0.34 + cycle * 1.38;
+          const opacity = envelope * (index === 0 ? 0.5 : 0.4);
           const travelX = Math.sin(phase * 0.31 + index * 1.7) * 5;
-          const travelY = cycle * 7 - 3;
+          const travelY = cycle * 4 - 1;
 
           return (
             <React.Fragment key={`ripple-${index}`}>
@@ -188,16 +192,16 @@ export function ContainedWaterMaterialLayer({
                 style={{
                   position: 'absolute',
                   left: '53%',
-                  top: '82.5%',
-                  width: '18%',
-                  height: '5.8%',
+                  top: '83.2%',
+                  width: '17.5%',
+                  height: '5.1%',
                   borderRadius: '50%',
-                  border: '2.2px solid rgba(255,243,205,0.9)',
+                  border: '2px solid rgba(255,243,205,0.88)',
                   boxShadow:
-                    '0 0 9px rgba(255,230,176,0.48), inset 0 0 7px rgba(255,241,205,0.36)',
+                    '0 0 8px rgba(255,230,176,0.42), inset 0 0 6px rgba(255,241,205,0.32)',
                   opacity,
                   mixBlendMode: 'screen',
-                  filter: 'blur(0.65px)',
+                  filter: 'blur(0.7px)',
                   transformOrigin: '50% 50%',
                   transform: `translate3d(calc(-50% + ${travelX}px), calc(-50% + ${travelY}px), 0) scaleX(${scaleX}) scaleY(${scaleY})`,
                   willChange: 'transform, opacity',
@@ -207,16 +211,16 @@ export function ContainedWaterMaterialLayer({
                 style={{
                   position: 'absolute',
                   left: '53%',
-                  top: '82.5%',
-                  width: '18%',
-                  height: '5.8%',
+                  top: '83.2%',
+                  width: '17.5%',
+                  height: '5.1%',
                   borderRadius: '50%',
-                  border: '3.5px solid rgba(58,48,30,0.48)',
-                  opacity: envelope * 0.2,
+                  border: '3px solid rgba(58,48,30,0.42)',
+                  opacity: envelope * 0.17,
                   mixBlendMode: 'multiply',
                   filter: 'blur(2px)',
                   transformOrigin: '50% 50%',
-                  transform: `translate3d(calc(-50% + ${travelX}px), calc(-50% + ${travelY + 2}px), 0) scaleX(${scaleX * 1.035}) scaleY(${scaleY * 1.05})`,
+                  transform: `translate3d(calc(-50% + ${travelX}px), calc(-50% + ${travelY + 1.6}px), 0) scaleX(${scaleX * 1.025}) scaleY(${scaleY * 1.04})`,
                   willChange: 'transform, opacity',
                 }}
               />
@@ -224,32 +228,6 @@ export function ContainedWaterMaterialLayer({
           );
         })}
       </div>
-
-      <div
-        style={{
-          ...maskStyle,
-          opacity: 0.38 + Math.sin(phase * 0.66 + 0.4) * 0.065,
-          mixBlendMode: 'screen',
-          background:
-            'repeating-linear-gradient(102deg, transparent 0 24px, rgba(255,239,196,0.38) 29px 35px, transparent 41px 63px)',
-          filter: 'blur(1px)',
-          transform: `translate3d(${glintDrift}px, ${Math.sin(phase * 0.44) * 2.2}px, 0)`,
-          willChange: 'transform, opacity',
-        }}
-      />
-
-      <div
-        style={{
-          ...maskStyle,
-          opacity: 0.25 + Math.cos(phase * 0.49 + 1.3) * 0.045,
-          mixBlendMode: 'soft-light',
-          background:
-            'repeating-linear-gradient(80deg, transparent 0 35px, rgba(116,187,195,0.34) 41px 49px, transparent 56px 82px)',
-          filter: 'blur(1.6px)',
-          transform: `translate3d(${counterDrift}px, ${Math.sin(phase * 0.41 + 0.5) * 2.5}px, 0)`,
-          willChange: 'transform, opacity',
-        }}
-      />
     </>
   );
 }
