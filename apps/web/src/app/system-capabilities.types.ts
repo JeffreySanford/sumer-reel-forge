@@ -1,4 +1,8 @@
-export type HostCapabilityStatus = 'ready' | 'limited' | 'unavailable' | 'unknown';
+export type HostCapabilityStatus =
+  | 'ready'
+  | 'limited'
+  | 'unavailable'
+  | 'unknown';
 
 export interface HostSoftwareCapability {
   id: string;
@@ -52,7 +56,13 @@ export interface HostCapabilities {
     };
   } | null;
   ollama: { baseUrl: string; online: boolean; models: string[] };
-  comfyui: { baseUrl: string; online: boolean; detail: string };
+  comfyui: {
+    baseUrl: string;
+    online: boolean;
+    detail: string;
+    layerWorkflowPath?: string | null;
+    layerWorkflowReady?: boolean;
+  };
   runtimePlan: {
     tier?: string;
     remotion?: {

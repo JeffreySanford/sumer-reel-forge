@@ -45,6 +45,8 @@ const HOST_CAPABILITIES = {
     baseUrl: 'http://127.0.0.1:8188',
     online: true,
     detail: 'Online on NVIDIA RTX Test',
+    layerWorkflowPath: 'D:/workflows/layer-candidates.json',
+    layerWorkflowReady: true,
   },
   runtimePlan: {
     tier: 'workstation',
@@ -74,12 +76,50 @@ const HOST_CAPABILITIES = {
     },
   },
   software: [
-    { id: 'node', label: 'Node.js', status: 'ready', detail: 'Application runtime', version: 'v22' },
-    { id: 'remotion', label: 'Remotion', status: 'ready', detail: 'Deterministic animation renderer', version: '4.0.515' },
-    { id: 'ollama', label: 'Ollama', status: 'ready', detail: '2 local model(s) reachable' },
-    { id: 'comfyui', label: 'ComfyUI', status: 'ready', detail: 'Online on NVIDIA RTX Test' },
-    { id: 'cuda', label: 'NVIDIA / CUDA', status: 'ready', detail: 'NVIDIA driver detected' },
-    { id: 'nvenc', label: 'NVENC', status: 'ready', detail: 'Hardware H.264 encoding is available' },
+    {
+      id: 'node',
+      label: 'Node.js',
+      status: 'ready',
+      detail: 'Application runtime',
+      version: 'v22',
+    },
+    {
+      id: 'remotion',
+      label: 'Remotion',
+      status: 'ready',
+      detail: 'Deterministic animation renderer',
+      version: '4.0.515',
+    },
+    {
+      id: 'ollama',
+      label: 'Ollama',
+      status: 'ready',
+      detail: '2 local model(s) reachable',
+    },
+    {
+      id: 'comfyui',
+      label: 'ComfyUI',
+      status: 'ready',
+      detail: 'Online on NVIDIA RTX Test',
+    },
+    {
+      id: 'comfyui-layer-workflow',
+      label: 'ComfyUI Layer Workflow',
+      status: 'ready',
+      detail: 'Candidate workflow available',
+    },
+    {
+      id: 'cuda',
+      label: 'NVIDIA / CUDA',
+      status: 'ready',
+      detail: 'NVIDIA driver detected',
+    },
+    {
+      id: 'nvenc',
+      label: 'NVENC',
+      status: 'ready',
+      detail: 'Hardware H.264 encoding is available',
+    },
   ],
   projections: [
     {
@@ -93,13 +133,21 @@ const HOST_CAPABILITIES = {
       id: 'animation-layer-generation',
       title: 'GPU animation-layer generation',
       status: 'ready',
-      summary: 'ComfyUI is reachable; plan 1 generation job at a time in normalvram mode.',
-      basis: ['ComfyUI reachability', 'GPU/VRAM', 'CUDA capability'],
+      summary:
+        'ComfyUI is reachable; plan 1 generation job at a time in normalvram mode.',
+      basis: [
+        'ComfyUI reachability',
+        'Dedicated layer workflow',
+        'GPU/VRAM',
+        'CUDA capability',
+      ],
     },
   ],
 };
 
-test('shows host hardware, software, and projected capabilities', async ({ page }) => {
+test('shows host hardware, software, and projected capabilities', async ({
+  page,
+}) => {
   await mockStudioStartup(page);
   await page.route('**/api/runtime/capabilities', async (route) => {
     await route.fulfill({ json: HOST_CAPABILITIES });
@@ -107,19 +155,33 @@ test('shows host hardware, software, and projected capabilities', async ({ page 
 
   await page.goto('/system');
 
-  await expect(page.getByRole('heading', { name: 'Host System' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'reel-forge-test-host' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Host System' }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'reel-forge-test-host' }),
+  ).toBeVisible();
   await expect(page.getByText('NVIDIA RTX Test', { exact: true })).toBeVisible();
   await expect(page.getByText('64 GB', { exact: true })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'What should be possible on this host' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'GPU animation-layer generation' })).toBeVisible();
-  await expect(page.getByText('Host ready for GPU candidate generation')).toBeVisible();
+  await expect(
+    page.getByRole('heading', {
+      name: 'What should be possible on this host',
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'GPU animation-layer generation' }),
+  ).toBeVisible();
+  await expect(
+    page.getByText('Host ready for GPU candidate generation'),
+  ).toBeVisible();
 
   await page.getByRole('link', { name: 'Back to Studio' }).click();
   await expect(page).toHaveURL(/\/reels\/1\/overview$/);
 });
 
-async function mockStudioStartup(page: import('@playwright/test').Page): Promise<void> {
+async function mockStudioStartup(
+  page: import('@playwright/test').Page,
+): Promise<void> {
   await page.route(
     '**/api/projects/blessings-of-sumer/chapters/1/narration',
     async (route) => route.fulfill({ json: DEFAULT_NARRATION_SETTINGS }),
@@ -130,8 +192,12 @@ async function mockStudioStartup(page: import('@playwright/test').Page): Promise
   await page.route('**/api/chapters/1/reels/1', async (route) => {
     await route.fulfill({ json: REEL_ONE });
   });
-  await page.route('**/api/render-jobs**', async (route) => route.fulfill({ json: [] }));
-  await page.route('**/api/generated-assets**', async (route) => route.fulfill({ json: [] }));
+  await page.route('**/api/render-jobs**', async (route) =>
+    route.fulfill({ json: [] }),
+  );
+  await page.route('**/api/generated-assets**', async (route) =>
+    route.fulfill({ json: [] }),
+  );
   await page.route('**/api/planning/**', async (route) => {
     const url = new URL(route.request().url());
     if (url.pathname.endsWith('/capabilities')) {
