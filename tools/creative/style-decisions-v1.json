@@ -1,0 +1,169 @@
+{
+  "schemaVersion": 1,
+  "libraryId": "blessings-of-sumer-animation-style-decisions-v1",
+  "principle": "AI proposes. Rules constrain. Human directs.",
+  "decisions": [
+    {
+      "id": "project-editorial-source-immutable",
+      "state": "approved",
+      "scope": { "type": "project", "projectSlug": "blessings-of-sumer" },
+      "path": "source.editorialMutationAllowed",
+      "value": false,
+      "rationale": "Approved editorial artwork is the visual authority and must never be overwritten by candidate generation or promotion.",
+      "source": { "type": "workflow-rule", "reference": "animation-v1 candidate lifecycle" }
+    },
+    {
+      "id": "project-human-approval-final-gate",
+      "state": "approved",
+      "scope": { "type": "project", "projectSlug": "blessings-of-sumer" },
+      "path": "review.humanApprovalRequired",
+      "value": true,
+      "rationale": "Technical QA can reject candidates but cannot approve artistic publication quality.",
+      "source": { "type": "workflow-rule", "reference": "Shot 3 promotion gate" }
+    },
+    {
+      "id": "project-candidates-never-auto-promote",
+      "state": "approved",
+      "scope": { "type": "project", "projectSlug": "blessings-of-sumer" },
+      "path": "assetLifecycle.automaticPromotionAllowed",
+      "value": false,
+      "rationale": "Generation and review must remain separated from canonical animation-v1 mutation.",
+      "source": { "type": "approved-benchmark", "shotId": "enki-at-the-helm" }
+    },
+    {
+      "id": "project-preserve-editorial-asset-resolution",
+      "state": "approved",
+      "scope": { "type": "project", "projectSlug": "blessings-of-sumer" },
+      "path": "assets.preserveEditorialResolution",
+      "value": true,
+      "rationale": "Layer assets stay registered at source editorial resolution; the render canvas is a separate presentation concern.",
+      "source": { "type": "approved-benchmark", "shotId": "enki-at-the-helm" }
+    },
+    {
+      "id": "project-render-canvas-independent",
+      "state": "approved",
+      "scope": { "type": "reel", "projectSlug": "blessings-of-sumer", "chapterNumber": 1, "episodeNumber": 1 },
+      "path": "render.canvas",
+      "value": { "width": 1080, "height": 1920, "fps": 30 },
+      "rationale": "Native editorial assets are composed onto the vertical output canvas at render time rather than resized during asset production.",
+      "source": { "type": "approved-benchmark", "shotId": "enki-at-the-helm" }
+    },
+    {
+      "id": "project-checksum-provenance-required",
+      "state": "approved",
+      "scope": { "type": "project", "projectSlug": "blessings-of-sumer" },
+      "path": "promotion.requireChecksumProvenance",
+      "value": true,
+      "rationale": "Promotion must prove that the reviewed candidate is the exact file entering animation-v1.",
+      "source": { "type": "approved-benchmark", "shotId": "enki-at-the-helm" }
+    },
+    {
+      "id": "project-extraction-source-pixels-authoritative",
+      "state": "approved",
+      "scope": { "type": "project", "projectSlug": "blessings-of-sumer" },
+      "path": "extraction.sourcePixelsAuthoritative",
+      "value": true,
+      "rationale": "Semantic extraction lanes preserve source RGB and use alpha to isolate material instead of redrawing the approved art.",
+      "source": { "type": "approved-benchmark", "shotId": "enki-at-the-helm" }
+    },
+    {
+      "id": "background-repair-mask-only",
+      "state": "approved",
+      "scope": { "type": "role", "role": "background" },
+      "path": "backgroundRepair.inpaintOnlyRemovalMask",
+      "value": true,
+      "rationale": "When foreground removal requires synthesis, generated pixels are restricted to the removal region and untouched editorial pixels are restored exactly outside it.",
+      "source": { "type": "approved-benchmark", "shotId": "enki-at-the-helm", "layerId": "shot03-background-v1" }
+    },
+    {
+      "id": "background-repair-outside-preservation",
+      "state": "approved",
+      "scope": { "type": "role", "role": "background" },
+      "path": "qa.background.outsideMaskChangedPixelsMaximum",
+      "value": 0,
+      "rationale": "Shot 3 demonstrated exact outside-mask preservation as a practical deterministic QA gate.",
+      "source": { "type": "approved-benchmark", "shotId": "enki-at-the-helm", "layerId": "shot03-background-v1" }
+    },
+    {
+      "id": "water-motion-material-internal",
+      "state": "approved",
+      "scope": { "type": "material", "material": "water" },
+      "path": "motion.water.strategy",
+      "value": "multi-frequency-material-internal",
+      "rationale": "Production water should read as refraction/current/highlight motion within the material rather than translating a whole PNG like a card.",
+      "source": { "type": "approved-benchmark", "shotId": "enki-at-the-helm", "layerId": "shot03-water-v1" }
+    },
+    {
+      "id": "rigid-vessel-heavy-physical",
+      "state": "approved",
+      "scope": { "type": "material", "material": "rigid-vessel" },
+      "path": "motion.primaryPreset",
+      "value": "heavyPhysical",
+      "rationale": "Large rigid vessels use restrained low-frequency inertia rather than elastic or puppet-like deformation.",
+      "source": { "type": "approved-benchmark", "shotId": "enki-at-the-helm", "layerId": "shot03-vessel-v1" }
+    },
+    {
+      "id": "character-on-vessel-shares-parent-inertia",
+      "state": "approved",
+      "scope": { "type": "shot", "shotId": "enki-at-the-helm" },
+      "path": "characterMotion.parentInertia",
+      "value": "vessel",
+      "rationale": "Enki remains physically planted by sharing vessel inertia; only micro-performance is layered on top.",
+      "source": { "type": "approved-benchmark", "shotId": "enki-at-the-helm", "layerId": "shot03-enki-body-v1" }
+    },
+    {
+      "id": "enki-identity-is-stillness-anchor",
+      "state": "approved",
+      "scope": { "type": "character", "character": "enki" },
+      "path": "character.identityDeformationAllowed",
+      "value": false,
+      "rationale": "Breathing and inertia may move the registered body layer, but facial identity, beard, hands, costume, lighting, and silhouette must remain source-consistent.",
+      "source": { "type": "approved-benchmark", "shotId": "enki-at-the-helm", "layerId": "shot03-enki-body-v1" }
+    },
+    {
+      "id": "foreground-avoids-face-and-captions",
+      "state": "approved",
+      "scope": { "type": "role", "role": "foreground-occluder" },
+      "path": "occlusion.mustAvoid",
+      "value": ["face", "captions"],
+      "rationale": "Foreground depth cues remain subordinate to identity and reading channels.",
+      "source": { "type": "approved-benchmark", "shotId": "enki-at-the-helm" }
+    },
+    {
+      "id": "nammu-near-static-camera",
+      "state": "provisional",
+      "scope": { "type": "shot", "shotId": "nammu-under-water" },
+      "path": "camera.maxScaleDelta",
+      "value": 0.01,
+      "rationale": "Nammu's recognition should emerge from environmental change rather than camera emphasis.",
+      "source": { "type": "creative-policy", "reference": "reel-01-quality-policy.json" }
+    },
+    {
+      "id": "nammu-environmental-coherence",
+      "state": "provisional",
+      "scope": { "type": "shot", "shotId": "nammu-under-water" },
+      "path": "reveal.mode",
+      "value": "environmental-coherence",
+      "rationale": "Nammu should become recognizable within water, refraction, negative space, and light rather than enter as a conventional character layer.",
+      "source": { "type": "creative-policy", "reference": "reel-01-quality-policy.json" }
+    },
+    {
+      "id": "nammu-forbid-generic-fantasy-apparition",
+      "state": "provisional",
+      "scope": { "type": "shot", "shotId": "nammu-under-water" },
+      "path": "reveal.forbiddenTreatments",
+      "value": ["literal-character-fade", "mermaid", "glowing-eyes", "horror-stinger", "particle-explosion", "hard-aura"],
+      "rationale": "The scene should remain numinous and source-grounded rather than collapse into generic fantasy VFX language.",
+      "source": { "type": "creative-policy", "reference": "reel-01-quality-policy.json" }
+    },
+    {
+      "id": "nammu-deep-water-source-anchor",
+      "state": "provisional",
+      "scope": { "type": "layer", "layerId": "shot04-deep-water-v1" },
+      "path": "generation.strategy",
+      "value": "exact-editorial-source-copy",
+      "rationale": "The deep-water base acts as the immutable visual anchor; environmental life is layered above it rather than synthesized into the base.",
+      "source": { "type": "shot4-benchmark-plan", "shotId": "nammu-under-water" }
+    }
+  ]
+}
