@@ -16,6 +16,9 @@ const shotFourScenePath = resolve(
 const shotFiveScenePath = resolve(
   'tools/animation/scenes/reel-01-shot-05-traveler-shrine-benchmark.scene-v2.json',
 );
+const shotFiveContractPath = resolve(
+  'tools/animation/shot-contracts/reel-01-shot-05.json',
+);
 
 async function loadScene(scenePath = shotThreeScenePath): Promise<SceneV2> {
   return JSON.parse(await readFile(scenePath, 'utf8')) as SceneV2;
@@ -58,6 +61,24 @@ test('Shot 5 benchmark accepts source-grounded smokeDrift atmosphere', async () 
   assert.equal(scene.shots[0]?.stillnessAnchor, 'shrine-structure');
   assert.equal(scene.shots[0]?.atmosphere[0]?.preset, 'smokeDrift');
   assert.equal(scene.shots[0]?.camera.scaleTo, 1.022);
+});
+
+test('Shot 5 requires shrine and water while keeping smoke optional and defined', async () => {
+  const contract = JSON.parse(await readFile(shotFiveContractPath, 'utf8'));
+  const required = contract.shot?.activationPolicy?.requiredLayerIds ?? [];
+  const smoke = contract.shot?.layers?.find(
+    (layer: { id?: string }) => layer.id === 'shot05-smoke-v1',
+  );
+
+  assert.deepEqual(required, [
+    'shot05-shrine-base-v1',
+    'shot05-welcome-water-v1',
+  ]);
+  assert.ok(smoke, 'Shot 5 smoke layer should remain available as an optional lane.');
+  assert.equal(smoke.state, 'planned');
+  assert.equal(smoke.review?.status, 'pending');
+  assert.match(smoke.review?.notes?.join('\n') ?? '', /Optional\/deferred/);
+  assert.equal(required.includes('shot05-smoke-v1'), false);
 });
 
 test('contained water renderer uses true refraction instead of only translated cards', async () => {
