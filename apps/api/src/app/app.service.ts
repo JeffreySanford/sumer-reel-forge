@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { RenderPipeline as PrismaRenderPipeline } from '@prisma/client';
 import { existsSync } from 'node:fs';
 import { isAbsolute, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -17,8 +18,10 @@ import {
   type RenderJob,
   type RenderJobAttempt,
   type RenderJobLog,
+  type RenderPipeline,
   type UpdateGeneratedAssetReviewRequest,
 } from '@sumer-reel-forge/reel-core';
+import { PrismaService } from './prisma.service';
 import { REEL_REPOSITORY, type ReelRepository } from './reel.repository';
 import {
   ClaimRenderJobDto,
@@ -39,6 +42,7 @@ export interface GeneratedAssetContent {
 export class AppService {
   constructor(
     @Inject(REEL_REPOSITORY) private readonly repository: ReelRepository,
+    private readonly prisma: PrismaService,
   ) {}
 
   getHealth(): { status: string; service: string } {
@@ -97,41 +101,54 @@ export class AppService {
     return this.repository.updateEpisodeStatus(episodeId, request, requestId);
   }
 
-  createRenderJob(
+  async createRenderJob(
     request: CreateRenderJobDto,
     requestId?: string,
   ): Promise<RenderJob> {
-    return this.repository.createRenderJob(request, requestId);
+    const job = await this.repository.createRenderJob(request, requestId);
+    return this.setRenderJobPipeline(job, request.pipeline ?? 'editorial');
   }
 
-  getRenderJobs(episodeId?: number): Promise<RenderJob[]> {
-    return this.repository.getRenderJobs(episodeId);
+  async getRenderJobs(episodeId?: number): Promise<RenderJob[]> {
+    return this.withRenderPipelines(
+      await this.repository.getRenderJobs(episodeId),
+    );
   }
 
-  getStaleRenderJobs(maxAgeSeconds: number): Promise<RenderJob[]> {
-    return this.repository.getStaleRenderJobs(maxAgeSeconds);
+  async getStaleRenderJobs(maxAgeSeconds: number): Promise<RenderJob[]> {
+    return this.withRenderPipelines(
+      await this.repository.getStaleRenderJobs(maxAgeSeconds),
+    );
   }
 
-  markStaleRenderJobsFailed(
+  async markStaleRenderJobsFailed(
     maxAgeSeconds: number,
     requestId?: string,
   ): Promise<RenderJob[]> {
-    return this.repository.markStaleRenderJobsFailed(maxAgeSeconds, requestId);
+    return this.withRenderPipelines(
+      await this.repository.markStaleRenderJobsFailed(
+        maxAgeSeconds,
+        requestId,
+      ),
+    );
   }
 
-  claimNextRenderJob(
+  async claimNextRenderJob(
     request: ClaimRenderJobDto,
     requestId?: string,
   ): Promise<RenderJob | null> {
-    return this.repository.claimNextRenderJob(request, requestId);
+    const job = await this.repository.claimNextRenderJob(request, requestId);
+    return job ? this.withRenderPipeline(job) : null;
   }
 
-  updateRenderJobStatus(
+  async updateRenderJobStatus(
     jobId: string,
     request: UpdateRenderJobStatusDto,
     requestId?: string,
   ): Promise<RenderJob> {
-    return this.repository.updateRenderJobStatus(jobId, request, requestId);
+    return this.withRenderPipeline(
+      await this.repository.updateRenderJobStatus(jobId, request, requestId),
+    );
   }
 
   createGeneratedAsset(
@@ -160,12 +177,27 @@ export class AppService {
     );
   }
 
-  regenerateGeneratedAsset(
+  async regenerateGeneratedAsset(
     assetId: string,
     notes?: string,
     requestId?: string,
   ): Promise<RenderJob> {
-    return this.repository.regenerateGeneratedAsset(assetId, notes, requestId);
+    const source = await this.prisma.generatedAsset.findUnique({
+      where: { id: assetId },
+      select: {
+        renderJob: {
+          select: { pipeline: true },
+        },
+      },
+    });
+    const sourcePipeline =
+      fromPrismaPipeline(source?.renderJob?.pipeline) ?? 'editorial';
+    const job = await this.repository.regenerateGeneratedAsset(
+      assetId,
+      notes,
+      requestId,
+    );
+    return this.setRenderJobPipeline(job, sourcePipeline);
   }
 
   createRenderJobLog(
@@ -183,12 +215,22 @@ export class AppService {
     return this.repository.getRenderJobAttempts(jobId);
   }
 
-  retryRenderJob(
+  async retryRenderJob(
     jobId: string,
     notes?: string,
     requestId?: string,
   ): Promise<RenderJob> {
-    return this.repository.retryRenderJob(jobId, notes, requestId);
+    const existing = await this.prisma.renderJob.findUnique({
+      where: { id: jobId },
+      select: { pipeline: true },
+    });
+    const pipeline = fromPrismaPipeline(existing?.pipeline) ?? 'editorial';
+    const job = await this.repository.retryRenderJob(
+      jobId,
+      notes,
+      requestId,
+    );
+    return this.setRenderJobPipeline(job, pipeline);
   }
 
   async getGeneratedAssetContent(
@@ -220,6 +262,64 @@ export class AppService {
       contentType: contentTypeFor(asset.assetType, filePath),
     };
   }
+
+  private async setRenderJobPipeline(
+    job: RenderJob,
+    pipeline: RenderPipeline,
+  ): Promise<RenderJob> {
+    await this.prisma.renderJob.update({
+      where: { id: job.id },
+      data: { pipeline: toPrismaPipeline(pipeline) },
+    });
+    return { ...job, pipeline };
+  }
+
+  private async withRenderPipeline(job: RenderJob): Promise<RenderJob> {
+    const row = await this.prisma.renderJob.findUnique({
+      where: { id: job.id },
+      select: { pipeline: true },
+    });
+    return {
+      ...job,
+      pipeline: fromPrismaPipeline(row?.pipeline),
+    };
+  }
+
+  private async withRenderPipelines(jobs: RenderJob[]): Promise<RenderJob[]> {
+    if (jobs.length === 0) {
+      return jobs;
+    }
+    const rows = await this.prisma.renderJob.findMany({
+      where: { id: { in: jobs.map((job) => job.id) } },
+      select: { id: true, pipeline: true },
+    });
+    const pipelineById = new Map(
+      rows.map((row) => [row.id, fromPrismaPipeline(row.pipeline)]),
+    );
+    return jobs.map((job) => ({
+      ...job,
+      pipeline: pipelineById.get(job.id),
+    }));
+  }
+}
+
+function toPrismaPipeline(pipeline: RenderPipeline): PrismaRenderPipeline {
+  switch (pipeline) {
+    case 'mock':
+      return PrismaRenderPipeline.MOCK;
+    case 'local':
+      return PrismaRenderPipeline.LOCAL;
+    case 'animation':
+      return PrismaRenderPipeline.ANIMATION;
+    case 'editorial':
+      return PrismaRenderPipeline.EDITORIAL;
+  }
+}
+
+function fromPrismaPipeline(
+  pipeline: PrismaRenderPipeline | null | undefined,
+): RenderPipeline | undefined {
+  return pipeline?.toLowerCase() as RenderPipeline | undefined;
 }
 
 function contentTypeFor(

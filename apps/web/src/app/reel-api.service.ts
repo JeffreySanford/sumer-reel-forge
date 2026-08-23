@@ -19,7 +19,9 @@ import {
 } from '@sumer-reel-forge/reel-core';
 import { catchError, of } from 'rxjs';
 import type {
+  CreatePlanningRunRequest,
   PlanningCapabilitiesResponse,
+  PlanningRunView,
   ShotPlanProposal,
   ShotPlanRequest,
 } from './direction-planning.types';
@@ -74,6 +76,45 @@ export class ReelApiService {
 
   proposeShotPlan(request: ShotPlanRequest) {
     return this.http.post<ShotPlanProposal>('/api/planning/shot-plan', request);
+  }
+
+  createPlanningRun(request: CreatePlanningRunRequest) {
+    return this.http.post<PlanningRunView>('/api/planning/runs', request);
+  }
+
+  getLatestPlanningRun(
+    projectSlug: string,
+    chapterNumber: number,
+    episodeNumber: number,
+    shotNumber: number,
+  ) {
+    const query = new URLSearchParams({
+      projectSlug,
+      chapterNumber: String(chapterNumber),
+      episodeNumber: String(episodeNumber),
+      shotNumber: String(shotNumber),
+    });
+    return this.http.get<PlanningRunView | null>(
+      `/api/planning/runs/latest?${query.toString()}`,
+    );
+  }
+
+  updatePlanningRunProposal(runId: string, proposal: ShotPlanProposal) {
+    return this.http.patch<PlanningRunView>(
+      `/api/planning/runs/${runId}/proposal`,
+      { proposal },
+    );
+  }
+
+  reviewPlanningRun(
+    runId: string,
+    decision: 'approved' | 'rejected',
+    notes?: string,
+  ) {
+    return this.http.patch<PlanningRunView>(
+      `/api/planning/runs/${runId}/review`,
+      { decision, notes },
+    );
   }
 
   queueRenderJob(request: CreateRenderJobDto) {

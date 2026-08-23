@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { PrismaService } from './prisma.service';
 import { InMemoryReelRepository, REEL_REPOSITORY } from './reel.repository';
 
 describe('AppController', () => {
@@ -14,6 +15,13 @@ describe('AppController', () => {
         {
           provide: REEL_REPOSITORY,
           useClass: InMemoryReelRepository,
+        },
+        {
+          provide: PrismaService,
+          useValue: {
+            renderJob: {},
+            generatedAsset: {},
+          },
         },
       ],
     }).compile();

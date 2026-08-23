@@ -27,6 +27,15 @@ export class CreateRenderJobDto implements RenderJobRequest {
   @IsIn(['storyboard', 'draft-video', 'final-video'])
   mode!: RenderJobRequest['mode'];
 
+  @ApiPropertyOptional({
+    enum: ['mock', 'local', 'editorial', 'animation'],
+    example: 'editorial',
+    default: 'editorial',
+  })
+  @IsOptional()
+  @IsIn(['mock', 'local', 'editorial', 'animation'])
+  pipeline?: RenderJobRequest['pipeline'];
+
   @ApiPropertyOptional({ example: 'calm mythic narrator' })
   @IsOptional()
   @IsString()

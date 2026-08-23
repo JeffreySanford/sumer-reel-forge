@@ -21,7 +21,10 @@
             "input": "apps/web/public"
           }
         ],
-        "styles": ["apps/web/src/styles.scss"]
+        "styles": [
+          "apps/web/src/styles.scss",
+          "apps/web/src/studio-routing.scss"
+        ]
       },
       "configurations": {
         "production": {

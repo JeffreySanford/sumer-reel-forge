@@ -1,17 +1,53 @@
 import { Test } from '@nestjs/testing';
 import { AppService } from './app.service';
+import { PrismaService } from './prisma.service';
 import { InMemoryReelRepository, REEL_REPOSITORY } from './reel.repository';
 
 describe('AppService', () => {
   let service: AppService;
+  const pipelineByJob = new Map<string, string>();
 
   beforeAll(async () => {
+    const prismaMock = {
+      renderJob: {
+        update: async ({
+          where,
+          data,
+        }: {
+          where: { id: string };
+          data: { pipeline: string };
+        }) => {
+          pipelineByJob.set(where.id, data.pipeline);
+          return { id: where.id, pipeline: data.pipeline };
+        },
+        findUnique: async ({ where }: { where: { id: string } }) => ({
+          pipeline: pipelineByJob.get(where.id) ?? null,
+        }),
+        findMany: async ({
+          where,
+        }: {
+          where: { id: { in: string[] } };
+        }) =>
+          (where.id.in ?? []).map((id: string) => ({
+            id,
+            pipeline: pipelineByJob.get(id) ?? null,
+          })),
+      },
+      generatedAsset: {
+        findUnique: async () => null,
+      },
+    };
+
     const app = await Test.createTestingModule({
       providers: [
         AppService,
         {
           provide: REEL_REPOSITORY,
           useClass: InMemoryReelRepository,
+        },
+        {
+          provide: PrismaService,
+          useValue: prismaMock,
         },
       ],
     }).compile();
@@ -29,7 +65,7 @@ describe('AppService', () => {
   });
 
   describe('createRenderJob', () => {
-    it('queues a render job for an existing episode', async () => {
+    it('queues a render job for an existing episode with editorial pipeline', async () => {
       const job = await service.createRenderJob({
         episodeId: 1,
         mode: 'storyboard',
@@ -37,6 +73,7 @@ describe('AppService', () => {
       });
 
       expect(job.status).toBe('queued');
+      expect(job.pipeline).toBe('editorial');
       await expect(service.getRenderJobs()).resolves.toEqual([job]);
     });
 
@@ -52,6 +89,7 @@ describe('AppService', () => {
       });
 
       expect(updated.status).toBe('running');
+      expect(updated.pipeline).toBe('editorial');
     });
   });
 });

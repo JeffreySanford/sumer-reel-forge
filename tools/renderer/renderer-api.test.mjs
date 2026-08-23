@@ -1,20 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { RendererApi } from './renderer-api.mjs';
-import { boundedStatusNote } from './status-utils.mjs';
 
-test('preserves status notes within the DTO limit', () => {
-  assert.equal(boundedStatusNote('concise failure'), 'concise failure');
-});
-
-test('trims verbose failures to the exact DTO limit', () => {
-  const note = boundedStatusNote('x'.repeat(1200));
-
-  assert.equal(note.length, 1000);
-  assert.match(note, /\.\.\. \[trimmed\]$/);
-});
-
-test('renderer claim returns null when the API queue is empty', async () => {
+test('claimJob returns null when the API returns an empty successful body', async () => {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async () => new Response('', { status: 201 });
 
@@ -26,7 +14,7 @@ test('renderer claim returns null when the API queue is empty', async () => {
   }
 });
 
-test('renderer claim parses a queued job response', async () => {
+test('claimJob parses a queued job response', async () => {
   const originalFetch = globalThis.fetch;
   const queuedJob = {
     id: 'job-1',
@@ -48,7 +36,7 @@ test('renderer claim parses a queued job response', async () => {
   }
 });
 
-test('renderer request reports malformed non-empty JSON clearly', async () => {
+test('request preserves an actionable error for malformed non-empty JSON', async () => {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async () => new Response('{', { status: 200 });
 

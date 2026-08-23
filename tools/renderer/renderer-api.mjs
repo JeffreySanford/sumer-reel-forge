@@ -66,6 +66,22 @@ export class RendererApi {
         `${options.operation ?? 'request'} failed with HTTP ${response.status}: ${details}`,
       );
     }
-    return response.status === 204 ? undefined : response.json();
+
+    if (response.status === 204) {
+      return undefined;
+    }
+
+    const body = await response.text();
+    if (!body.trim()) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(body);
+    } catch (error) {
+      throw new Error(
+        `${options.operation ?? 'request'} returned invalid JSON: ${error.message}`,
+      );
+    }
   }
 }

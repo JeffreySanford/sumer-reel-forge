@@ -4,8 +4,10 @@ import {
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { provideRouter, withDisabledInitialNavigation } from '@angular/router';
 import { DEFAULT_NARRATION_SETTINGS } from '@sumer-reel-forge/reel-core';
 import { App } from './app';
+import { appRoutes } from './app.routes';
 
 const TEST_EPISODE = {
   series: 'Blessings of Sumer',
@@ -63,19 +65,56 @@ const PLANNING_CAPABILITIES = {
   ],
 };
 
+const DIRECTION_PROPOSAL = {
+  eyeTarget: 'waterline',
+  stillnessAnchor: 'primary-subject-composition',
+  camera: {
+    preset: 'cinematicSlow',
+    scaleFrom: 1,
+    scaleTo: 1.02,
+    easing: 'cinematicSlow',
+  },
+  motionBudget: {
+    primary: 'slow-push',
+    subject: 'boat-silhouette',
+    environment: ['water-multi-frequency'],
+    lighting: 'pre-dawn-natural',
+  },
+  requiredAssets: [
+    'assets/blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-01.png',
+  ],
+  inheritedStyleRules: [
+    'camera.default.maxPushPercent = 5',
+    'narratorOnly.lipSync = false',
+    'foregroundOcclusion.mustAvoid = captions',
+    'material.water.motion = multi-frequency',
+  ],
+  unresolvedQuestions: [],
+  rationale: 'Keep the opening restrained and physically credible.',
+  provider: 'ollama' as const,
+  model: 'qwen3:8b',
+  shotId: 'black-water-before-dawn',
+  status: 'proposal' as const,
+};
+
 describe('App', () => {
   let httpTesting: HttpTestingController;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [App],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter(appRoutes, withDisabledInitialNavigation()),
+      ],
     }).compileComponents();
 
     httpTesting = TestBed.inject(HttpTestingController);
   });
 
   afterEach(() => {
+    flushLatestPlanningRuns(httpTesting);
     httpTesting.verify();
   });
 
@@ -84,9 +123,7 @@ describe('App', () => {
     flushParentStartup(httpTesting, TEST_EPISODE);
 
     fixture.detectChanges();
-    httpTesting
-      .expectOne('/api/planning/capabilities')
-      .flush(PLANNING_CAPABILITIES);
+    flushDirectionStartup(httpTesting);
 
     await fixture.whenStable();
     fixture.detectChanges();
@@ -107,9 +144,7 @@ describe('App', () => {
     });
 
     fixture.detectChanges();
-    httpTesting
-      .expectOne('/api/planning/capabilities')
-      .flush(PLANNING_CAPABILITIES);
+    flushDirectionStartup(httpTesting);
     await fixture.whenStable();
 
     const compiled = fixture.nativeElement as HTMLElement;
@@ -146,16 +181,17 @@ describe('App', () => {
 
     await fixture.whenStable();
     fixture.detectChanges();
+    flushLatestPlanningRuns(httpTesting);
+    await fixture.whenStable();
+    fixture.detectChanges();
     expect(compiled.textContent).toContain('Production saved');
   });
 
-  it('requests direction for the selected shot from Ollama', async () => {
+  it('creates a persisted direction run for the selected shot', async () => {
     const fixture = TestBed.createComponent(App);
     flushParentStartup(httpTesting, TEST_EPISODE);
     fixture.detectChanges();
-    httpTesting
-      .expectOne('/api/planning/capabilities')
-      .flush(PLANNING_CAPABILITIES);
+    flushDirectionStartup(httpTesting);
     await fixture.whenStable();
     fixture.detectChanges();
 
@@ -168,46 +204,39 @@ describe('App', () => {
     }
 
     generateButton.click();
-    const planningRequest = httpTesting.expectOne('/api/planning/shot-plan');
+    const planningRequest = httpTesting.expectOne('/api/planning/runs');
     expect(planningRequest.request.method).toBe('POST');
     expect(planningRequest.request.body.provider).toBe('ollama');
     expect(planningRequest.request.body.shotId).toBe('black-water-before-dawn');
+    expect(planningRequest.request.body.projectSlug).toBe('blessings-of-sumer');
+    expect(planningRequest.request.body.episodeNumber).toBe(1);
+    expect(planningRequest.request.body.shotNumber).toBe(1);
+
     planningRequest.flush({
-      eyeTarget: 'waterline',
-      stillnessAnchor: 'primary-subject-composition',
-      camera: {
-        preset: 'cinematicSlow',
-        scaleFrom: 1,
-        scaleTo: 1.02,
-        easing: 'cinematicSlow',
-      },
-      motionBudget: {
-        primary: 'slow-push',
-        subject: 'boat-silhouette',
-        environment: ['water-multi-frequency'],
-        lighting: 'pre-dawn-natural',
-      },
-      requiredAssets: [
-        'assets/blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-01.png',
-      ],
-      inheritedStyleRules: [
-        'camera.default.maxPushPercent = 5',
-        'narratorOnly.lipSync = false',
-        'foregroundOcclusion.mustAvoid = captions',
-        'material.water.motion = multi-frequency',
-      ],
-      unresolvedQuestions: [],
-      rationale: 'Keep the opening restrained and physically credible.',
+      id: '11111111-1111-4111-8111-111111111111',
+      reelId: '22222222-2222-4222-8222-222222222222',
+      shotNumber: 1,
+      shotKey: 'black-water-before-dawn',
       provider: 'ollama',
       model: 'qwen3:8b',
-      shotId: 'black-water-before-dawn',
-      status: 'proposal',
+      promptVersion: 'shot-plan-v1',
+      status: 'proposal-ready',
+      inputHash: 'a'.repeat(64),
+      outputHash: 'b'.repeat(64),
+      workingHash: 'b'.repeat(64),
+      input: planningRequest.request.body,
+      proposal: DIRECTION_PROPOSAL,
+      workingProposal: DIRECTION_PROPOSAL,
+      durationMs: 3900,
+      createdAt: new Date(0).toISOString(),
+      updatedAt: new Date(0).toISOString(),
     });
 
     await fixture.whenStable();
     fixture.detectChanges();
     expect(compiled.textContent).toContain('Keep the opening restrained');
     expect(compiled.textContent).toContain('Camera policy');
+    expect(compiled.textContent).toContain('proposal-ready');
   });
 });
 
@@ -222,4 +251,21 @@ function flushParentStartup(
   httpTesting.expectOne('/api/chapters/1/reels/1').flush(episode);
   httpTesting.expectOne('/api/render-jobs?episodeId=1').flush([]);
   httpTesting.expectOne('/api/generated-assets?episodeId=1').flush([]);
+}
+
+function flushDirectionStartup(httpTesting: HttpTestingController): void {
+  httpTesting
+    .expectOne('/api/planning/capabilities')
+    .flush(PLANNING_CAPABILITIES);
+  flushLatestPlanningRuns(httpTesting);
+}
+
+function flushLatestPlanningRuns(httpTesting: HttpTestingController): void {
+  const latestRequests = httpTesting.match((request) =>
+    request.url.startsWith('/api/planning/runs/latest'),
+  );
+  for (const latest of latestRequests) {
+    expect(latest.request.method).toBe('GET');
+    latest.flush(null);
+  }
 }

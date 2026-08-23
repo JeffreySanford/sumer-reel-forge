@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 export function loadRendererConfig() {
   return {
     apiBaseUrl: process.env.API_BASE_URL ?? 'http://localhost:3000/api',
-    adapter: process.env.RENDER_ADAPTER ?? 'mock',
+    adapter: process.env.RENDER_ADAPTER ?? 'editorial',
     outputRoot: resolve(process.env.RENDER_OUTPUT_ROOT ?? 'tmp/renders'),
     workerId: process.env.RENDER_WORKER_ID ?? `local-renderer-${process.pid}`,
     heartbeatIntervalMs: positiveNumber('RENDER_HEARTBEAT_INTERVAL_MS', 10000),

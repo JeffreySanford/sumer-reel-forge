@@ -30,6 +30,13 @@ export interface ShotPlanRequest {
   availableAssets?: string[];
 }
 
+export interface CreatePlanningRunRequest extends ShotPlanRequest {
+  projectSlug: string;
+  chapterNumber: number;
+  episodeNumber: number;
+  shotNumber: number;
+}
+
 export interface ShotPlanProposal {
   provider: PlanningProviderId;
   model?: string;
@@ -53,6 +60,36 @@ export interface ShotPlanProposal {
   inheritedStyleRules: string[];
   unresolvedQuestions: string[];
   rationale: string;
+}
+
+export type PlanningRunState =
+  | 'proposal-ready'
+  | 'approved'
+  | 'rejected'
+  | 'superseded'
+  | 'failed';
+
+export interface PlanningRunView {
+  id: string;
+  reelId: string;
+  shotNumber: number;
+  shotKey: string;
+  provider: string;
+  model?: string;
+  promptVersion: string;
+  status: PlanningRunState;
+  inputHash: string;
+  outputHash: string;
+  workingHash: string;
+  input: ShotPlanRequest;
+  proposal: ShotPlanProposal;
+  workingProposal: ShotPlanProposal;
+  durationMs?: number;
+  reviewedAt?: string;
+  reviewedBy?: string;
+  reviewNotes?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface DirectionCheck {
