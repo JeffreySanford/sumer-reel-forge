@@ -1,4 +1,5 @@
 import { Route } from '@angular/router';
+import { App } from './app';
 import { ChapterOverviewComponent } from './chapter-overview.component';
 import { ProjectOverviewComponent } from './project-overview.component';
 import { StudioHomeComponent } from './studio-home.component';
@@ -25,6 +26,7 @@ export const appRoutes: Route[] = [
   },
   {
     path: 'reels/:episodeId',
+    component: App,
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'overview' },
       { path: 'overview', component: StudioRouteComponent },
