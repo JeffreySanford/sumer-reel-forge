@@ -81,6 +81,7 @@
     "@nx/playwright": "23.1.1",
     "@nx/storybook": "23.1.1",
     "@nx/vite": "23.1.1",
+    "@nx/vitest": "23.1.1",
     "@nx/web": "23.1.1",
     "@nx/webpack": "23.1.1",
     "@nx/workspace": "23.1.1",
