@@ -78,9 +78,13 @@ test('approved Shot 3 activation layers switch to layered mode and wake matching
   assert.equal(resolution.mode, 'layered');
   assert.deepEqual(resolution.layeredShotIds, ['enki-at-the-helm']);
   assert.equal(resolution.scene.assetVersion, 'animation-v1');
-  assert.equal(resolution.scene.shots[0]?.layers.length, 4);
+  assert.equal(resolution.scene.shots[0]?.layers.length, 5);
   assert.equal(
     resolution.scene.shots[0]?.layers.some((layer) => layer.assetId === 'shot03-enki-body-v1'),
+    true,
+  );
+  assert.equal(
+    resolution.scene.shots[0]?.layers.some((layer) => layer.material === 'editorial-reference'),
     true,
   );
   assert.equal(resolution.scene.shots[0]?.performance[0]?.preset, 'breathing');
