@@ -1,17 +1,31 @@
-import { spawnSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { resolve } from 'node:path';
 
-const args = process.argv.slice(2).filter((arg) => arg !== '--');
+const forwardedArgs = process.argv.slice(2).filter((arg) => arg !== '--');
 const script = resolve('tools/scripts/render-shot03-layered-source-assets.ts');
-const result = spawnSync(
-  process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm',
-  ['exec', 'tsx', script, ...args],
+
+const child = spawn(
+  'pnpm',
+  ['exec', 'tsx', script, ...forwardedArgs],
   {
-    cwd: process.cwd(),
+    cwd: resolve('.'),
     env: process.env,
+    shell: process.platform === 'win32',
     stdio: 'inherit',
     windowsHide: true,
   },
 );
-if (result.error) throw result.error;
-process.exitCode = result.status ?? 1;
+
+child.once('error', (error) => {
+  console.error(error instanceof Error ? error.stack ?? error.message : String(error));
+  process.exitCode = 1;
+});
+
+child.once('exit', (code, signal) => {
+  if (signal) {
+    console.error(`Shot 3 layered candidate preview stopped by signal ${signal}.`);
+    process.exitCode = 1;
+    return;
+  }
+  process.exitCode = code ?? 1;
+});
