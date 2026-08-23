@@ -50,6 +50,18 @@ export const VesselCandidateReady: Story = {
   },
 };
 
+export const EnkiIdentityReview: Story = {
+  args: {
+    layerId: 'shot03-enki-body-v1',
+    layerLabel: 'Enki body',
+    material: 'character / organic',
+    state: 'qa-pass',
+    meanDifference: 0.35,
+    changedPixelRatio: 0.025,
+    note: 'Rendered-motion QA passed. Approval still requires human confirmation that Enki\'s face, hands, robe silhouette, lighting, and painterly identity remain intact.',
+  },
+};
+
 export const Approved: Story = {
   args: {
     state: 'approved',
