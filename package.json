@@ -13,6 +13,8 @@
     "animation:smoke:reel1:core": "tsx tools/scripts/animation-smoke-reel1.ts",
     "animation:shot3:candidate-preview": "node tools/scripts/run-shot03-layered-candidate-preview.mjs",
     "animation:shot3:candidate-verify": "node tools/scripts/verify-shot03-layered-preview.mjs",
+    "animation:shot3:promotion-plan": "node tools/scripts/promote-shot03-layered-candidates.mjs",
+    "animation:shot3:promote": "node tools/scripts/promote-shot03-layered-candidates.mjs --apply",
     "api": "nx serve api",
     "build": "nx run-many -t build",
     "comfyui:models:setup": "node tools/scripts/setup-comfyui.mjs --models-only",
