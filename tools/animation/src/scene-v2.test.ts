@@ -4,6 +4,7 @@ import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
+import * as ts from 'typescript';
 import {
   validateSceneV2,
   type SceneV2,
@@ -53,6 +54,53 @@ test('Scene V2 cannot mutate story text', async () => {
   assert.match(result.errors.join('\n'), /may not mutate story text/);
 });
 
+test('Shot 3 benchmark renderer contains no top-level await', async () => {
+  const scriptPath = resolve('tools/scripts/render-scene-v2-benchmark.ts');
+  const source = await readFile(scriptPath, 'utf8');
+  const sourceFile = ts.createSourceFile(
+    scriptPath,
+    source,
+    ts.ScriptTarget.ES2022,
+    true,
+    ts.ScriptKind.TS,
+  );
+  const violations: string[] = [];
+
+  const visit = (node: ts.Node): void => {
+    if (isFunctionBoundary(node)) {
+      return;
+    }
+
+    if (ts.isAwaitExpression(node)) {
+      const { line, character } = sourceFile.getLineAndCharacterOfPosition(
+        node.getStart(sourceFile),
+      );
+      violations.push(`await at ${line + 1}:${character + 1}`);
+      return;
+    }
+
+    if (ts.isForOfStatement(node) && node.awaitModifier) {
+      const { line, character } = sourceFile.getLineAndCharacterOfPosition(
+        node.getStart(sourceFile),
+      );
+      violations.push(`for-await at ${line + 1}:${character + 1}`);
+      return;
+    }
+
+    ts.forEachChild(node, visit);
+  };
+
+  for (const statement of sourceFile.statements) {
+    visit(statement);
+  }
+
+  assert.deepEqual(
+    violations,
+    [],
+    `Benchmark renderer must stay CommonJS-compatible: ${violations.join(', ')}`,
+  );
+});
+
 test(
   'Remotion registers SceneV2Benchmark with the real Shot 3 props',
   { timeout: 60_000 },
@@ -75,6 +123,18 @@ test(
     assert.match(output, /(?:^|\s)SceneV2Benchmark(?:\s|$)/);
   },
 );
+
+function isFunctionBoundary(node: ts.Node): boolean {
+  return (
+    ts.isFunctionDeclaration(node) ||
+    ts.isFunctionExpression(node) ||
+    ts.isArrowFunction(node) ||
+    ts.isMethodDeclaration(node) ||
+    ts.isConstructorDeclaration(node) ||
+    ts.isGetAccessorDeclaration(node) ||
+    ts.isSetAccessorDeclaration(node)
+  );
+}
 
 function runCommand(command: string, args: string[]): Promise<string> {
   return new Promise((resolvePromise, rejectPromise) => {

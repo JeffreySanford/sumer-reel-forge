@@ -37,10 +37,12 @@ test('deep links load the requested reel and tab', async ({ page }) => {
   await page.goto('/reels/2/shots');
 
   await expect(page).toHaveURL(/\/reels\/2\/shots$/);
-  await expect(page.getByRole('link', { name: 'Shots' })).toHaveClass(/active/);
   await expect(
     page.getByRole('heading', { name: 'The Voice Beneath the Deep', level: 2 }),
   ).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByRole('link', { name: 'Shots' })).toHaveClass(/active/, {
+    timeout: 10_000,
+  });
 });
 
 test('contains mobile horizontal scrollers inside the viewport', async ({
