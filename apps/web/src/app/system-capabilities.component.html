@@ -8,6 +8,7 @@
     </div>
     <div class="system-actions md3-cluster">
       <a class="md3-button md3-button--outlined" routerLink="/">Studio Home</a>
+      <a class="md3-button md3-button--tonal" routerLink="/production/layers">Layer Production</a>
       <button class="md3-button md3-button--filled" type="button" (click)="refresh()" [disabled]="loading()">
         {{ loading() ? 'Refreshing…' : 'Refresh' }}
       </button>
@@ -64,7 +65,10 @@
         <p class="md3-label">GPU</p>
         <strong>{{ gpu()?.name || 'No GPU reported' }}</strong>
         <span class="md3-body-small">{{ gbFromMb(gpu()?.memoryTotalMb) }} VRAM</span>
-        <small class="md3-muted">{{ gpu()?.vendor || 'Unknown vendor' }} · driver {{ gpu()?.driverVersion || 'unknown' }}</small>
+        <small class="md3-muted">
+          {{ host.runtimePlan?.ai?.nvidiaCudaAvailable ? 'CUDA ready' : 'CUDA unavailable' }} ·
+          {{ gpu()?.vendor || 'Unknown vendor' }} · driver {{ gpu()?.driverVersion || 'unknown' }}
+        </small>
       </article>
       <article class="metric-card md3-card md3-card--filled md3-pad-5">
         <p class="md3-label">Disk</p>
@@ -101,18 +105,20 @@
         </article>
         <article class="runtime-card md3-card md3-card--filled md3-pad-5">
           <p class="md3-label">ComfyUI</p>
-          <h3 class="md3-title-large">{{ host.runtimePlan?.ai?.comfyConcurrency || 1 }} job(s)</h3>
-          <p class="md3-body-small">{{ host.comfyui.online ? host.comfyui.detail : 'service offline' }}</p>
+          <h3 class="md3-title-large">{{ host.comfyui.online ? 'Online' : 'Offline' }}</h3>
+          <p class="md3-body-small">{{ host.comfyui.online ? host.comfyui.detail : 'GPU remains available; ComfyUI service is not reachable' }}</p>
           <small class="md3-muted">
             {{ host.runtimePlan?.ai?.comfyVramMode || 'unclassified VRAM mode' }} ·
-            layer workflow {{ host.comfyui.layerWorkflowReady ? 'ready' : 'not configured' }}
+            {{ host.runtimePlan?.ai?.comfyConcurrency || 1 }} generation job(s)
           </small>
         </article>
         <article class="runtime-card md3-card md3-card--filled md3-pad-5">
-          <p class="md3-label">Encoding</p>
-          <h3 class="md3-title-large">{{ host.runtimePlan?.encoding?.preferredH264Encoder || 'libx264' }}</h3>
-          <p class="md3-body-small">{{ host.runtimePlan?.encoding?.nvencAvailable ? 'NVENC detected' : 'software H.264 path' }}</p>
-          <small class="md3-muted">FFmpeg {{ host.runtimePlan?.encoding?.ffmpegAvailable ? 'available' : 'not detected' }}</small>
+          <p class="md3-label">Layer workflow</p>
+          <h3 class="md3-title-large">{{ host.comfyui.layerWorkflowReady ? 'Ready' : 'Setup required' }}</h3>
+          <p class="md3-body-small">
+            {{ host.comfyui.layerWorkflowReady ? 'Dedicated API-format workflow configured' : 'GPU readiness is independent from workflow configuration' }}
+          </p>
+          <small class="md3-muted">{{ host.comfyui.layerWorkflowPath || 'COMFYUI_LAYER_WORKFLOW_PATH not configured' }}</small>
         </article>
       </div>
     </section>
@@ -135,7 +141,7 @@
               <p class="md3-body-small">{{ item.detail }}</p>
             </div>
             <div class="software-meta">
-              <span>{{ statusLabel(item.status) }}</span>
+              <span>{{ statusLabel(item.status, item.id) }}</span>
               @if (item.version) { <small class="md3-muted">{{ item.version }}</small> }
             </div>
           </article>
@@ -156,7 +162,7 @@
         @for (projection of host.projections; track projection.id) {
           <article class="projection-card md3-card md3-card--filled md3-pad-5" [attr.data-status]="projection.status">
             <div class="projection-heading md3-cluster">
-              <span class="md3-chip">{{ statusLabel(projection.status) }}</span>
+              <span class="md3-chip">{{ statusLabel(projection.status, projection.id) }}</span>
               <h3 class="md3-title-medium">{{ projection.title }}</h3>
             </div>
             <p class="md3-body-medium">{{ projection.summary }}</p>
@@ -180,16 +186,14 @@
           atmosphere, refraction, and masks instead of asking one flattened painting to carry every motion channel.
         </p>
       </div>
-      @if (
-        host.comfyui.online &&
-        host.comfyui.layerWorkflowReady &&
-        host.runtimePlan?.ai?.nvidiaCudaAvailable
-      ) {
-        <span class="md3-chip md3-chip--success">Host ready for GPU candidate generation</span>
-      } @else if (host.comfyui.online && !host.comfyui.layerWorkflowReady) {
-        <span class="md3-chip md3-chip--warning">Configure COMFYUI_LAYER_WORKFLOW_PATH to enable layer candidates</span>
+      @if (!host.runtimePlan?.ai?.nvidiaCudaAvailable) {
+        <span class="md3-chip md3-chip--error">NVIDIA GPU acceleration is not detected</span>
+      } @else if (!host.comfyui.online) {
+        <span class="md3-chip md3-chip--warning">GPU ready · start ComfyUI to inspect layer capabilities</span>
+      } @else if (!host.comfyui.layerWorkflowReady) {
+        <span class="md3-chip md3-chip--warning">GPU + ComfyUI ready · layer workflow setup required</span>
       } @else {
-        <span class="md3-chip md3-chip--warning">Start/configure ComfyUI to enable GPU layer candidates</span>
+        <span class="md3-chip md3-chip--success">Host ready for GPU candidate generation</span>
       }
     </section>
   }
