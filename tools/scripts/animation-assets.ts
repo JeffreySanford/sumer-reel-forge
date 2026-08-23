@@ -15,7 +15,7 @@ const DEFAULT_MANIFEST =
 
 async function main(): Promise<void> {
   const command = process.argv[2] ?? 'status';
-  const options = parseOptions(process.argv.slice(3));
+  const options = parseOptions(process.argv.slice(3).filter((arg) => arg !== '--'));
   const manifestPath = resolve(options.manifest ?? DEFAULT_MANIFEST);
   const assetRoot = resolve(options.assetRoot ?? 'assets');
   const manifest = JSON.parse(
