@@ -1,5 +1,5 @@
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
-import { basename, join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import {
   buildDecisionContext,
   loadProductionLaneRegistry,
@@ -127,10 +127,7 @@ async function main() {
     options.output ??
       join(DEFAULT_OUTPUT_ROOT, `shot-${String(options.shotNumber).padStart(2, '0')}-production-plan.json`),
   );
-  await mkdir(resolve(outputPath, '..'), { recursive: true }).catch(async () => {
-    const directory = outputPath.slice(0, Math.max(outputPath.lastIndexOf('/'), outputPath.lastIndexOf('\\')));
-    if (directory) await mkdir(directory, { recursive: true });
-  });
+  await mkdir(dirname(outputPath), { recursive: true });
   await writeFile(outputPath, `${JSON.stringify(plan, null, 2)}\n`, 'utf8');
 
   printPlan(plan, outputPath);
