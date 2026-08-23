@@ -4,7 +4,6 @@ import { arch, cpus, freemem, hostname, platform, totalmem } from 'node:os';
 import { dirname, resolve } from 'node:path';
 
 const GIB = 1024 ** 3;
-const MIB = 1024 ** 2;
 
 export async function collectHardwareProfile(options = {}) {
   const root = resolve(options.root ?? '.');
@@ -69,7 +68,9 @@ export async function collectAndPersistHardwareProfile(options = {}) {
 export function deriveRuntimePlan(profile, env = {}) {
   const logicalCpuCount = Math.max(1, Number(profile.cpu?.logicalCount ?? 1));
   const totalMemoryGb = Math.max(1, Number(profile.memory?.totalGb ?? 1));
-  const gpuDevices = Array.isArray(profile.gpu?.devices) ? profile.gpu.devices : [];
+  const gpuDevices = Array.isArray(profile.gpu?.devices)
+    ? profile.gpu.devices
+    : [];
   const maxVramGb = gpuDevices.reduce(
     (max, gpu) => Math.max(max, Number(gpu.memoryTotalMb ?? 0) / 1024),
     0,
@@ -81,9 +82,16 @@ export function deriveRuntimePlan(profile, env = {}) {
   const automaticParallelRenders =
     logicalCpuCount >= 16 && totalMemoryGb >= 24 ? 2 : 1;
   const parallelRenders =
-    positiveInteger(env.ANIMATION_PARALLEL_RENDERS) ?? automaticParallelRenders;
+    positiveInteger(env.ANIMATION_PARALLEL_RENDERS) ??
+    automaticParallelRenders;
   const reservedCpu =
-    logicalCpuCount >= 16 ? 4 : logicalCpuCount >= 8 ? 2 : logicalCpuCount >= 4 ? 1 : 0;
+    logicalCpuCount >= 16
+      ? 4
+      : logicalCpuCount >= 8
+        ? 2
+        : logicalCpuCount >= 4
+          ? 1
+          : 0;
   const cpuBudget = Math.max(1, logicalCpuCount - reservedCpu);
   const cpuPerRender = Math.max(1, Math.floor(cpuBudget / parallelRenders));
   const memoryWorkerCap = Math.max(
@@ -96,7 +104,8 @@ export function deriveRuntimePlan(profile, env = {}) {
     12,
   );
   const remotionConcurrency =
-    positiveInteger(env.ANIMATION_RENDER_CONCURRENCY) ?? automaticRemotionConcurrency;
+    positiveInteger(env.ANIMATION_RENDER_CONCURRENCY) ??
+    automaticRemotionConcurrency;
 
   const automaticOllamaReviewConcurrency =
     maxVramGb >= 20 ? 3 : maxVramGb >= 8 ? 2 : 1;
@@ -115,7 +124,7 @@ export function deriveRuntimePlan(profile, env = {}) {
           : 'cpu-or-lowvram';
 
   return {
-    tier: classifyTier(logicalCpuCount, totalMemoryGb, maxVramGb),
+    tier: classifyTier(logicalCpuCount, totalMemoryGb),
     remotion: {
       parallelRenders,
       concurrencyPerRender: remotionConcurrency,
@@ -146,22 +155,53 @@ export function deriveRuntimePlan(profile, env = {}) {
     },
     reserves: {
       logicalCpuReserved: reservedCpu,
-      estimatedMemoryGbReserved: Math.max(4, Math.round(totalMemoryGb * 0.2)),
+      estimatedMemoryGbReserved: Math.max(
+        4,
+        Math.round(totalMemoryGb * 0.2),
+      ),
     },
   };
 }
 
-export function applyHardwareProfileEnvironment(profile, env = process.env, outputPath) {
+export function applyHardwareProfileEnvironment(
+  profile,
+  env = process.env,
+  outputPath,
+) {
   const plan = profile.runtimePlan;
   if (outputPath && !env.SRF_HARDWARE_PROFILE_PATH) {
     env.SRF_HARDWARE_PROFILE_PATH = outputPath;
   }
-  setDefault(env, 'ANIMATION_RENDER_CONCURRENCY', plan.remotion.concurrencyPerRender);
-  setDefault(env, 'ANIMATION_PARALLEL_RENDERS', plan.remotion.parallelRenders);
-  setDefault(env, 'ANIMATION_HARDWARE_ACCELERATION', plan.remotion.hardwareAcceleration);
-  if (plan.remotion.gl) setDefault(env, 'ANIMATION_REMOTION_GL', plan.remotion.gl);
-  setDefault(env, 'ANIMATION_OLLAMA_REVIEW_CONCURRENCY', plan.ai.ollamaReviewConcurrency);
+  setDefault(
+    env,
+    'ANIMATION_RENDER_CONCURRENCY',
+    plan.remotion.concurrencyPerRender,
+  );
+  setDefault(
+    env,
+    'ANIMATION_PARALLEL_RENDERS',
+    plan.remotion.parallelRenders,
+  );
+  setDefault(
+    env,
+    'ANIMATION_HARDWARE_ACCELERATION',
+    plan.remotion.hardwareAcceleration,
+  );
+  if (plan.remotion.gl) {
+    setDefault(env, 'ANIMATION_REMOTION_GL', plan.remotion.gl);
+  }
+  setDefault(
+    env,
+    'ANIMATION_OLLAMA_REVIEW_CONCURRENCY',
+    plan.ai.ollamaReviewConcurrency,
+  );
   setDefault(env, 'COMFYUI_MAX_PARALLEL', plan.ai.comfyConcurrency);
+  setDefault(env, 'SRF_COMFYUI_VRAM_MODE', plan.ai.comfyVramMode);
+  setDefault(
+    env,
+    'SRF_PREFERRED_H264_ENCODER',
+    plan.encoding.preferredH264Encoder,
+  );
   if (!env.CHATTERBOX_DEVICE || env.CHATTERBOX_DEVICE === 'auto') {
     env.CHATTERBOX_DEVICE = plan.ai.chatterboxDevice;
   }
@@ -180,13 +220,20 @@ export function formatHardwareProfile(profile, outputPath) {
         .join('; ')
     : 'no GPU detected';
   const models = profile.ollama.online
-    ? profile.ollama.models.slice(0, 5).join(', ') || 'online / no models reported'
+    ? profile.ollama.models.slice(0, 5).join(', ') ||
+      'online / no models reported'
     : 'offline';
   const plan = profile.runtimePlan;
+  const diskText =
+    Number.isFinite(profile.disk?.freeGb) &&
+    Number.isFinite(profile.disk?.totalGb)
+      ? `${profile.disk.freeGb} GB free / ${profile.disk.totalGb} GB total`
+      : 'unavailable';
   return [
     'Hardware profile',
     `  CPU: ${profile.cpu.model} / ${profile.cpu.logicalCount} logical`,
     `  RAM: ${profile.memory.totalGb} GB total / ${profile.memory.freeGb} GB free`,
+    `  Disk: ${diskText}`,
     `  GPU: ${gpuText}`,
     `  CUDA: ${plan.ai.nvidiaCudaAvailable ? 'available through NVIDIA driver' : 'not detected'}${profile.gpu.cudaToolkit ? ` / toolkit ${profile.gpu.cudaToolkit}` : ''}`,
     `  FFmpeg: ${profile.media.ffmpegAvailable ? 'available' : 'not detected'} / NVENC ${plan.encoding.nvencAvailable ? 'available' : 'not detected'}`,
@@ -250,11 +297,22 @@ function detectGenericGpu(runCommand) {
     if (!result.ok) return [];
     return result.stdout
       .split(/\r?\n/)
-      .filter((line) => /(VGA compatible controller|3D controller|Display controller)/i.test(line))
-      .map((line, index) => ({ vendor: inferVendor(line), index, name: line.trim() }));
+      .filter((line) =>
+        /(VGA compatible controller|3D controller|Display controller)/i.test(
+          line,
+        ),
+      )
+      .map((line, index) => ({
+        vendor: inferVendor(line),
+        index,
+        name: line.trim(),
+      }));
   }
   if (platform() === 'darwin') {
-    const result = runCommand('system_profiler', ['SPDisplaysDataType', '-json']);
+    const result = runCommand('system_profiler', [
+      'SPDisplaysDataType',
+      '-json',
+    ]);
     if (!result.ok) return [];
     try {
       const parsed = JSON.parse(result.stdout);
@@ -288,12 +346,17 @@ function detectFfmpeg(runCommand, ffmpegCommand) {
 function detectCudaToolkit(runCommand) {
   const result = runCommand('nvcc', ['--version']);
   if (!result.ok) return undefined;
-  const match = `${result.stdout}\n${result.stderr}`.match(/release\s+(\d+(?:\.\d+)?)/i);
+  const match = `${result.stdout}\n${result.stderr}`.match(
+    /release\s+(\d+(?:\.\d+)?)/i,
+  );
   return match?.[1];
 }
 
 async function detectOllama(fetchImpl, env) {
-  const baseUrl = (env.OLLAMA_BASE_URL ?? 'http://localhost:11434').replace(/\/$/, '');
+  const baseUrl = (env.OLLAMA_BASE_URL ?? 'http://localhost:11434').replace(
+    /\/$/,
+    '',
+  );
   if (typeof fetchImpl !== 'function') {
     return { baseUrl, online: false, models: [] };
   }
@@ -340,8 +403,8 @@ function defaultRunCommand(command, args) {
   };
 }
 
-function classifyTier(cpuCount, memoryGb, vramGb) {
-  if (cpuCount >= 16 && memoryGb >= 32 && vramGb >= 8) return 'workstation';
+function classifyTier(cpuCount, memoryGb) {
+  if (cpuCount >= 16 && memoryGb >= 32) return 'workstation';
   if (cpuCount >= 8 && memoryGb >= 16) return 'performance';
   if (cpuCount >= 4 && memoryGb >= 8) return 'standard';
   return 'constrained';
@@ -356,13 +419,21 @@ function inferVendor(name) {
 }
 
 function positiveInteger(value) {
-  if (value === undefined || value === null || String(value).trim() === '') return undefined;
+  if (
+    value === undefined ||
+    value === null ||
+    String(value).trim() === ''
+  ) {
+    return undefined;
+  }
   const parsed = Number(value);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
 }
 
 function setDefault(env, name, value) {
-  if (env[name] === undefined || env[name] === '') env[name] = String(value);
+  if (env[name] === undefined || env[name] === '') {
+    env[name] = String(value);
+  }
 }
 
 function clamp(value, minimum, maximum) {
