@@ -130,16 +130,22 @@ const HOST_CAPABILITIES = {
       basis: ['Remotion', 'FFmpeg', 'CPU/RAM runtime plan'],
     },
     {
+      id: 'nvidia-gpu-acceleration',
+      title: 'NVIDIA GPU acceleration',
+      status: 'ready',
+      summary: 'NVIDIA RTX Test is available for CUDA workloads with 10.0 GB VRAM.',
+      basis: ['nvidia-smi', 'GPU/VRAM', 'NVIDIA driver'],
+    },
+    {
       id: 'animation-layer-generation',
-      title: 'GPU animation-layer generation',
+      title: 'Animation-layer pipeline',
       status: 'ready',
       summary:
-        'ComfyUI is reachable; plan 1 generation job at a time in normalvram mode.',
+        'GPU acceleration and ComfyUI are ready; plan 1 generation job at a time in normalvram mode.',
       basis: [
+        'NVIDIA GPU acceleration',
         'ComfyUI reachability',
         'Dedicated layer workflow',
-        'GPU/VRAM',
-        'CUDA capability',
       ],
     },
   ],
@@ -169,14 +175,17 @@ test('shows host hardware, software, and projected capabilities', async ({
     }),
   ).toBeVisible();
   await expect(
-    page.getByRole('heading', { name: 'GPU animation-layer generation' }),
+    page.getByRole('heading', { name: 'NVIDIA GPU acceleration' }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Animation-layer pipeline' }),
   ).toBeVisible();
   await expect(
     page.getByText('Host ready for GPU candidate generation'),
   ).toBeVisible();
 
-  await page.getByRole('link', { name: 'Back to Studio' }).click();
-  await expect(page).toHaveURL(/\/reels\/1\/overview$/);
+  await page.getByRole('link', { name: 'Studio Home' }).click();
+  await expect(page).toHaveURL(/\/$/);
 });
 
 async function mockStudioStartup(
