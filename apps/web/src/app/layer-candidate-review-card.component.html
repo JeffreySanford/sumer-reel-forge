@@ -1,0 +1,56 @@
+<article class="review-card" [attr.data-state]="state">
+  <header class="review-card__header">
+    <div>
+      <p class="review-card__eyebrow">{{ material || 'animation layer' }}</p>
+      <h3>{{ layerLabel }}</h3>
+      <code>{{ layerId }}</code>
+    </div>
+    <span class="review-card__status">{{ stateLabel() }}</span>
+  </header>
+
+  <div class="review-card__evidence" aria-label="Candidate evidence">
+    <div>
+      <span>Preview</span>
+      <strong>{{ previewAvailable ? 'Ready' : 'Missing' }}</strong>
+    </div>
+    <div>
+      <span>Diagnostic</span>
+      <strong>{{ diagnosticAvailable ? 'Ready' : 'Missing' }}</strong>
+    </div>
+    <div>
+      <span>Mean frame diff</span>
+      <strong>{{ meanDifferenceLabel() }}</strong>
+    </div>
+    <div>
+      <span>Changed pixels</span>
+      <strong>{{ changedPercent() }}</strong>
+    </div>
+  </div>
+
+  @if (note) {
+    <p class="review-card__note">{{ note }}</p>
+  }
+
+  <footer class="review-card__actions">
+    <button type="button" class="review-card__button review-card__button--quiet" (click)="regenerate.emit()">
+      Regenerate
+    </button>
+    <button type="button" class="review-card__button review-card__button--danger" (click)="reject.emit()">
+      Reject
+    </button>
+    <button
+      type="button"
+      class="review-card__button review-card__button--primary"
+      [disabled]="!canApprove()"
+      (click)="approve.emit()"
+    >
+      Approve
+    </button>
+  </footer>
+
+  @if (!canApprove() && state !== 'approved') {
+    <p class="review-card__guardrail">
+      Approval stays locked until rendered-motion QA passes.
+    </p>
+  }
+</article>
