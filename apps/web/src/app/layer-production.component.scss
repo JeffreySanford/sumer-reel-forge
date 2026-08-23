@@ -13,6 +13,7 @@
 .runtime-strip,
 .inventory-card,
 .shot-decisions,
+.benchmark-evidence,
 .md3-section,
 .cockpit {
   margin-top: var(--md-sys-space-6);
@@ -162,6 +163,61 @@
 
 .shot-layer-dots .shot-layer-dot--ready {
   background: var(--md-sys-color-primary);
+}
+
+.benchmark-evidence {
+  display: grid;
+  gap: var(--md-sys-space-5);
+  overflow: hidden;
+  background:
+    linear-gradient(150deg, color-mix(in srgb, var(--md-sys-color-tertiary) 8%, transparent), transparent 52%),
+    var(--md-sys-color-surface-container-low);
+}
+
+.benchmark-evidence__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--md-sys-space-5);
+}
+
+.benchmark-media {
+  display: grid;
+  gap: var(--md-sys-space-3);
+  min-width: 0;
+  margin: 0;
+}
+
+.benchmark-media video,
+.benchmark-media img {
+  display: block;
+  width: 100%;
+  max-height: 560px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-sys-shape-corner-large);
+  background: var(--md-sys-color-surface-container-lowest);
+  object-fit: contain;
+}
+
+.benchmark-media figcaption {
+  display: grid;
+  gap: 3px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.benchmark-media figcaption span {
+  overflow-wrap: anywhere;
+  font-size: var(--md-sys-typescale-body-small-size);
+}
+
+.benchmark-empty {
+  display: grid;
+  gap: var(--md-sys-space-2);
+  border-radius: var(--md-sys-shape-corner-large);
+}
+
+.benchmark-empty p {
+  margin: 0;
+  color: var(--md-sys-color-on-surface-variant);
 }
 
 .cockpit {
@@ -359,7 +415,8 @@
 }
 
 @media (max-width: 1100px) {
-  .cockpit {
+  .cockpit,
+  .benchmark-evidence__grid {
     grid-template-columns: 1fr;
   }
 
