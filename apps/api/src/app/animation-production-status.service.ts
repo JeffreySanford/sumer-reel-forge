@@ -186,7 +186,6 @@ export class AnimationProductionStatusService {
     const shots = await Promise.all(
       (manifest.shots ?? []).map((shot) =>
         this.resolveShot({
-          root,
           assetRoot,
           manifest,
           laneRegistry,
@@ -228,14 +227,12 @@ export class AnimationProductionStatusService {
   }
 
   private async resolveShot({
-    root,
     assetRoot,
     manifest,
     laneRegistry,
     styleLibrary,
     shot,
   }: {
-    root: string;
     assetRoot: string;
     manifest: AnimationManifest;
     laneRegistry: ProductionLaneRegistry;
@@ -261,7 +258,7 @@ export class AnimationProductionStatusService {
           assertInside(assetRoot, targetPath, `${layer.id} production asset`);
         }
         const bytes = targetPath ? await readFileOptional(targetPath) : null;
-        const dimensions = bytes ? readPngDimensions(bytes, layer.id) : null;
+        const dimensions = bytes ? readPngDimensions(bytes) : null;
         const fileExists = Boolean(bytes);
         const actualChecksum = bytes ? sha256(bytes) : null;
         const expectedChecksum = normalizeSha256(layer.sha256);
@@ -289,14 +286,29 @@ export class AnimationProductionStatusService {
         )
           ? 'SPARSE_REVIEW_REQUIRED'
           : null;
-        const qaEvidenceRecorded = reviewNotes.some((note) => note.includes('QA PASS'));
-        const layerDecisions = resolveDecisions(styleLibrary.decisions ?? [], {
-          ...shotContext,
-          layerId: layer.id,
-          role: layer.role,
-          material: layer.material,
-          character: layer.role === 'character' ? characterFromLayerId(layer.id) : null,
-        }, new Set(['project', 'reel', 'role', 'material', 'material-role', 'layer', 'character']));
+        const qaEvidenceRecorded = reviewNotes.some((note) =>
+          note.includes('QA PASS'),
+        );
+        const layerDecisions = resolveDecisions(
+          styleLibrary.decisions ?? [],
+          {
+            ...shotContext,
+            layerId: layer.id,
+            role: layer.role,
+            material: layer.material,
+            character:
+              layer.role === 'character' ? characterFromLayerId(layer.id) : null,
+          },
+          new Set([
+            'project',
+            'reel',
+            'role',
+            'material',
+            'material-role',
+            'layer',
+            'character',
+          ]),
+        );
 
         return {
           id: layer.id,
@@ -332,9 +344,12 @@ export class AnimationProductionStatusService {
     );
 
     const requiredLayers = layers.filter((layer) => layer.required);
-    const readyRequiredLayerCount = requiredLayers.filter((layer) => layer.ready).length;
+    const readyRequiredLayerCount = requiredLayers.filter(
+      (layer) => layer.ready,
+    ).length;
     const layeredReady =
-      requiredLayers.length > 0 && readyRequiredLayerCount === requiredLayers.length;
+      requiredLayers.length > 0 &&
+      readyRequiredLayerCount === requiredLayers.length;
 
     return {
       shotId: shot.shotId,
@@ -371,7 +386,9 @@ function resolveLane(
   };
   return (
     lanes.find((lane) =>
-      Object.entries(lane.match ?? {}).every(([key, value]) => context[key] === value),
+      Object.entries(lane.match ?? {}).every(
+        ([key, value]) => context[key] === value,
+      ),
     ) ?? null
   );
 }
@@ -402,7 +419,9 @@ function resolveDecisions(
 }
 
 function characterFromLayerId(layerId: string): string | null {
-  const match = layerId.match(/(?:shot\d+-)?([a-z]+)-(?:body|character|face|eyes)/i);
+  const match = layerId.match(
+    /(?:shot\d+-)?([a-z]+)-(?:body|character|face|eyes)/i,
+  );
   return match?.[1]?.toLowerCase() ?? null;
 }
 
@@ -423,12 +442,11 @@ async function readPngDimensionsOptional(
   path: string,
 ): Promise<{ width: number; height: number } | null> {
   const bytes = await readFileOptional(path);
-  return bytes ? readPngDimensions(bytes, path) : null;
+  return bytes ? readPngDimensions(bytes) : null;
 }
 
 function readPngDimensions(
   buffer: Buffer,
-  label: string,
 ): { width: number; height: number } | null {
   if (
     buffer.length < 24 ||
@@ -445,7 +463,9 @@ function readPngDimensions(
 
 function normalizeSha256(value?: string): string | null {
   if (!value) return null;
-  const normalized = value.startsWith('sha256:') ? value.slice('sha256:'.length) : value;
+  const normalized = value.startsWith('sha256:')
+    ? value.slice('sha256:'.length)
+    : value;
   return /^[0-9a-f]{64}$/i.test(normalized) ? normalized.toLowerCase() : null;
 }
 
