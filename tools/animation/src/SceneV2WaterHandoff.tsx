@@ -5,7 +5,7 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from 'remotion';
-import { SceneV2Benchmark } from './SceneV2Benchmark';
+import { SceneV2ResolvedBenchmark } from './SceneV2ResolvedBenchmark';
 import { clamp, type SceneV2 } from './scene-v2';
 
 export interface WaterMaterialHandoffConfig {
@@ -46,7 +46,7 @@ export function SceneV2WaterHandoff({
   return (
     <AbsoluteFill style={{ backgroundColor: '#061317', overflow: 'hidden' }}>
       <Sequence from={0} durationInFrames={outgoingScene.durationFrames}>
-        <SceneV2Benchmark
+        <SceneV2ResolvedBenchmark
           scene={outgoingScene}
           showReviewGuides={showReviewGuides}
         />
@@ -55,7 +55,7 @@ export function SceneV2WaterHandoff({
         from={cutFrame}
         durationInFrames={incomingScene.durationFrames}
       >
-        <SceneV2Benchmark
+        <SceneV2ResolvedBenchmark
           scene={incomingScene}
           showReviewGuides={showReviewGuides}
         />
