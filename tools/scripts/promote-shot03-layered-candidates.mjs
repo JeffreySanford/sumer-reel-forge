@@ -23,7 +23,13 @@ const MANIFEST_PATH = resolve(
   'assets/blessings-of-sumer/chapter-01/reel-01/animation-v1/manifest.json',
 );
 const ASSET_ROOT = resolve('assets');
-const PREVIEW_ROOT = resolve('tmp/animation-previews/shot03-layered-preview');
+const CANDIDATE_ROOT = resolve(
+  'tmp/animation-assets/candidates/chapter-01-reel-01-animation-v1',
+);
+const PREVIEW_ROOT = resolve('tmp/animation-previews');
+const LAYERED_PREVIEW_ROOT = resolve(
+  'tmp/animation-previews/shot03-layered-preview',
+);
 const PROMOTION_ROOT = resolve('tmp/animation-assets/promotions/shot03');
 const EXPECTED_LAYER_IDS = [
   'shot03-background-v1',
@@ -44,7 +50,7 @@ async function main() {
   const previewDirectory = options.previewDir
     ? resolve(options.previewDir)
     : await newestQaPassedPreview();
-  assertInside(PREVIEW_ROOT, previewDirectory, 'Layered preview');
+  assertInside(LAYERED_PREVIEW_ROOT, previewDirectory, 'Layered preview');
 
   const previewManifestPath = join(previewDirectory, 'preview-manifest.json');
   const layeredQaPath = join(previewDirectory, 'motion-qa.json');
@@ -83,12 +89,19 @@ async function main() {
       record.candidateRunDirectory,
       'candidateRunDirectory',
     );
+    assertInside(CANDIDATE_ROOT, candidateRunDirectory, `${layerId} candidate run`);
+
     const candidatePath = resolveRequiredPath(record.candidatePath, 'candidatePath');
     assertInside(candidateRunDirectory, candidatePath, `${layerId} candidate PNG`);
-    if (!(await exists(candidatePath))) throw new Error(`${layerId} candidate not found: ${candidatePath}`);
+    if (!(await exists(candidatePath))) {
+      throw new Error(`${layerId} candidate not found: ${candidatePath}`);
+    }
 
     const qaPath = resolveRequiredPath(record.qaPath, 'qaPath');
-    if (!(await exists(qaPath))) throw new Error(`${layerId} QA report not found: ${qaPath}`);
+    assertQaEvidencePath(qaPath, candidateRunDirectory, layerId);
+    if (!(await exists(qaPath))) {
+      throw new Error(`${layerId} QA report not found: ${qaPath}`);
+    }
     const qa = JSON.parse(await readFile(qaPath, 'utf8'));
     if (qa.pass !== true) throw new Error(`${layerId} upstream QA is not passing.`);
 
@@ -112,7 +125,6 @@ async function main() {
       checksum,
       dimensions: readPngDimensions(bytes, layerId),
       targetPath,
-      manifestLayer: layer,
     });
   }
 
@@ -145,31 +157,60 @@ async function main() {
     );
   }
 
-  await promote({ manifest, shot, previewDirectory, layeredQaPath, candidates, dimensions });
+  await promote({
+    manifest,
+    shot,
+    previewDirectory,
+    layeredQaPath,
+    candidates,
+    dimensions,
+  });
 }
 
-async function promote({ manifest, shot, previewDirectory, layeredQaPath, candidates, dimensions }) {
+async function promote({
+  manifest,
+  shot,
+  previewDirectory,
+  layeredQaPath,
+  candidates,
+  dimensions,
+}) {
   const stamp = new Date().toISOString().replace(/[:.]/g, '-');
   const staged = [];
   try {
     for (const candidate of candidates) {
       await mkdir(dirname(candidate.targetPath), { recursive: true });
+
+      if (await exists(candidate.targetPath)) {
+        const existingChecksum = sha256(await readFile(candidate.targetPath));
+        if (existingChecksum !== candidate.checksum) {
+          throw new Error(
+            `${candidate.layerId} target already exists with a different checksum. Refusing to overwrite ${candidate.targetPath}.`,
+          );
+        }
+        staged.push({ ...candidate, tempPath: null, alreadyPresent: true });
+        continue;
+      }
+
       const tempPath = `${candidate.targetPath}.promotion-${stamp}.tmp`;
       await copyFile(candidate.candidatePath, tempPath);
       const stagedChecksum = sha256(await readFile(tempPath));
       if (stagedChecksum !== candidate.checksum) {
         throw new Error(`${candidate.layerId} staged copy checksum mismatch.`);
       }
-      staged.push({ ...candidate, tempPath });
+      staged.push({ ...candidate, tempPath, alreadyPresent: false });
     }
 
     for (const candidate of staged) {
+      if (!candidate.tempPath) continue;
       await rename(candidate.tempPath, candidate.targetPath);
     }
   } finally {
     await Promise.all(
       staged.map(async (candidate) => {
-        if (await exists(candidate.tempPath)) await rm(candidate.tempPath, { force: true });
+        if (candidate.tempPath && (await exists(candidate.tempPath))) {
+          await rm(candidate.tempPath, { force: true });
+        }
       }),
     );
   }
@@ -251,20 +292,25 @@ function printPlan({ previewDirectory, layeredQaPath, candidates, dimensions }) 
 async function newestQaPassedPreview() {
   let entries;
   try {
-    entries = await readdir(PREVIEW_ROOT, { withFileTypes: true });
+    entries = await readdir(LAYERED_PREVIEW_ROOT, { withFileTypes: true });
   } catch {
-    throw new Error(`No layered preview root found at ${PREVIEW_ROOT}.`);
+    throw new Error(`No layered preview root found at ${LAYERED_PREVIEW_ROOT}.`);
   }
   const directories = entries
     .filter((entry) => entry.isDirectory())
-    .map((entry) => join(PREVIEW_ROOT, entry.name))
+    .map((entry) => join(LAYERED_PREVIEW_ROOT, entry.name))
     .sort((a, b) => basename(b).localeCompare(basename(a)));
 
   for (const directory of directories) {
     try {
       const qa = JSON.parse(await readFile(join(directory, 'motion-qa.json'), 'utf8'));
-      const preview = JSON.parse(await readFile(join(directory, 'preview-manifest.json'), 'utf8'));
-      if (qa.pass === true && preview.previewType === 'shot03-layered-candidate-preview') {
+      const preview = JSON.parse(
+        await readFile(join(directory, 'preview-manifest.json'), 'utf8'),
+      );
+      if (
+        qa.pass === true &&
+        preview.previewType === 'shot03-layered-candidate-preview'
+      ) {
         return directory;
       }
     } catch {
@@ -278,16 +324,26 @@ function parseOptions(args) {
   const result = { apply: false, confirm: undefined, previewDir: undefined };
   for (const arg of args) {
     if (arg === '--apply') result.apply = true;
-    else if (arg.startsWith('--confirm=')) result.confirm = arg.slice('--confirm='.length);
-    else if (arg.startsWith('--preview-dir=')) result.previewDir = arg.slice('--preview-dir='.length);
-    else throw new Error(`Unknown option ${arg}`);
+    else if (arg.startsWith('--confirm=')) {
+      result.confirm = arg.slice('--confirm='.length);
+    } else if (arg.startsWith('--preview-dir=')) {
+      result.previewDir = arg.slice('--preview-dir='.length);
+    } else throw new Error(`Unknown option ${arg}`);
   }
   return result;
 }
 
+function assertQaEvidencePath(qaPath, candidateRunDirectory, layerId) {
+  if (isInside(candidateRunDirectory, qaPath)) return;
+  if (isInside(PREVIEW_ROOT, qaPath)) return;
+  throw new Error(
+    `${layerId} QA evidence must remain under its candidate run or animation preview root: ${qaPath}`,
+  );
+}
+
 function resolveRequiredPath(value, label) {
   if (typeof value !== 'string' || !value) throw new Error(`Missing ${label}.`);
-  return isAbsolute(value) ? resolve(value) : resolve(value);
+  return resolve(value);
 }
 
 function readPngDimensions(buffer, label) {
@@ -299,7 +355,10 @@ function readPngDimensions(buffer, label) {
   ) {
     throw new Error(`${label} is not a valid PNG.`);
   }
-  return { width: buffer.readUInt32BE(16), height: buffer.readUInt32BE(20) };
+  return {
+    width: buffer.readUInt32BE(16),
+    height: buffer.readUInt32BE(20),
+  };
 }
 
 function sha256(value) {
@@ -316,8 +375,12 @@ async function exists(path) {
 }
 
 function assertInside(parent, child, label) {
-  const path = relative(resolve(parent), resolve(child));
-  if (path.startsWith('..') || isAbsolute(path)) {
+  if (!isInside(parent, child)) {
     throw new Error(`${label} must remain under ${parent}: ${child}`);
   }
+}
+
+function isInside(parent, child) {
+  const path = relative(resolve(parent), resolve(child));
+  return path === '' || (!path.startsWith('..') && !isAbsolute(path));
 }
