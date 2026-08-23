@@ -94,6 +94,15 @@
       "source": { "type": "approved-benchmark", "shotId": "enki-at-the-helm", "layerId": "shot03-water-v1" }
     },
     {
+      "id": "water-approved-motion-presets",
+      "state": "approved",
+      "scope": { "type": "material", "material": "water" },
+      "path": "motion.presets",
+      "value": ["waterPulse"],
+      "rationale": "Shot 3 human approval established waterPulse as the baseline material preset for source-derived water overlays; later benchmarks may extend this list rather than replace the material-internal motion rule.",
+      "source": { "type": "approved-benchmark", "shotId": "enki-at-the-helm", "layerId": "shot03-water-v1" }
+    },
+    {
       "id": "rigid-vessel-heavy-physical",
       "state": "approved",
       "scope": { "type": "material", "material": "rigid-vessel" },
@@ -101,6 +110,42 @@
       "value": "heavyPhysical",
       "rationale": "Large rigid vessels use restrained low-frequency inertia rather than elastic or puppet-like deformation.",
       "source": { "type": "approved-benchmark", "shotId": "enki-at-the-helm", "layerId": "shot03-vessel-v1" }
+    },
+    {
+      "id": "rigid-vessel-approved-motion-presets",
+      "state": "approved",
+      "scope": { "type": "material", "material": "rigid-vessel" },
+      "path": "motion.presets",
+      "value": ["heavyPhysical"],
+      "rationale": "Shot 3 human approval confirms the manifest-level preset association for rigid vessel layers.",
+      "source": { "type": "approved-benchmark", "shotId": "enki-at-the-helm", "layerId": "shot03-vessel-v1" }
+    },
+    {
+      "id": "cloth-heavy-approved-motion-presets",
+      "state": "approved",
+      "scope": { "type": "material", "material": "cloth-heavy" },
+      "path": "motion.presets",
+      "value": ["breathing"],
+      "rationale": "Shot 3 human approval confirms restrained breathing as the baseline micro-performance preset for the source-derived cloth-heavy Enki layer; parent inertia remains shot-context dependent.",
+      "source": { "type": "approved-benchmark", "shotId": "enki-at-the-helm", "layerId": "shot03-enki-body-v1" }
+    },
+    {
+      "id": "atmosphere-distant-approved-motion-presets",
+      "state": "approved",
+      "scope": { "type": "material", "material": "atmosphere-distant" },
+      "path": "motion.presets",
+      "value": ["cinematicSlow"],
+      "rationale": "Shot 3 human approval confirms cinematicSlow as the baseline preset association for the repaired distant background plate.",
+      "source": { "type": "approved-benchmark", "shotId": "enki-at-the-helm", "layerId": "shot03-background-v1" }
+    },
+    {
+      "id": "shot3-approved-stillness-anchor",
+      "state": "approved",
+      "scope": { "type": "shot", "shotId": "enki-at-the-helm" },
+      "path": "composition.stillnessAnchor",
+      "value": "enki-facial-identity",
+      "rationale": "The approved physical benchmark keeps Enki facial identity as the compositional stillness anchor while environmental and vessel motion occur around it.",
+      "source": { "type": "approved-benchmark", "shotId": "enki-at-the-helm" }
     },
     {
       "id": "character-on-vessel-shares-parent-inertia",
