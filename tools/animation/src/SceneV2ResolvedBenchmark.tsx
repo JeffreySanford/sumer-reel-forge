@@ -127,6 +127,18 @@ function AnimatedLayer({
   progress: number;
   fps: number;
 }) {
+  if (layer.motionPresets.includes('smokeDrift')) {
+    return (
+      <SmokeMaterialLayer
+        layer={layer}
+        shot={shot}
+        frame={frame}
+        progress={progress}
+        fps={fps}
+      />
+    );
+  }
+
   const phase = frame / fps;
   const settleWeight = progress > 0.8 ? 1 - (progress - 0.8) / 0.2 : 1;
   let x = layer.transform.x;
@@ -183,6 +195,72 @@ function AnimatedLayer({
         transform: `translate3d(${x}px, ${y}px, 0) scale(${scale}) rotate(${rotation}deg)`,
       }}
     />
+  );
+}
+
+function SmokeMaterialLayer({
+  layer,
+  shot,
+  frame,
+  progress,
+  fps,
+}: {
+  layer: SceneV2Layer;
+  shot: SceneV2Shot;
+  frame: number;
+  progress: number;
+  fps: number;
+}) {
+  const phase = frame / fps;
+  const atmosphere = shot.atmosphere.find((item) => item.preset === 'smokeDrift');
+  const intensity = clamp(atmosphere?.intensity ?? 0.12, 0.04, 0.25);
+  const source = staticFile(layer.assetPath);
+  const baseX = layer.transform.x;
+  const baseY = layer.transform.y;
+  const baseScale = layer.transform.scale;
+  const origin = transformOriginForAnchor(layer.anchor);
+
+  const channels = [
+    {
+      opacity: 0.58 + intensity * 0.32,
+      x: Math.sin(phase * 0.31 + 0.2) * 0.7,
+      y: -progress * 1.4 + Math.cos(phase * 0.23 + 0.7) * 0.45,
+      scale: 1 + Math.sin(phase * 0.17 + 0.3) * 0.0014,
+      blur: 0.35,
+    },
+    {
+      opacity: 0.24,
+      x: Math.sin(phase * 0.19 + 1.4) * 1.55,
+      y: -progress * 2.8 + Math.cos(phase * 0.27 + 1.1) * 0.75,
+      scale: 1.002 + Math.sin(phase * 0.13 + 0.8) * 0.0018,
+      blur: 1.4,
+    },
+    {
+      opacity: 0.12,
+      x: Math.sin(phase * 0.14 + 2.1) * 2.2,
+      y: -progress * 4.1 + Math.cos(phase * 0.18 + 2.4) * 1.0,
+      scale: 1.004 + Math.sin(phase * 0.11 + 1.5) * 0.0022,
+      blur: 2.5,
+    },
+  ];
+
+  return (
+    <>
+      {channels.map((channel, index) => (
+        <Img
+          key={`${layer.id}-smoke-${index}`}
+          src={source}
+          style={{
+            ...styles.layer,
+            opacity: channel.opacity,
+            filter: `blur(${channel.blur}px)`,
+            mixBlendMode: index === 0 ? 'normal' : 'screen',
+            transformOrigin: origin,
+            transform: `translate3d(${baseX + channel.x}px, ${baseY + channel.y}px, 0) scale(${baseScale * channel.scale})`,
+          }}
+        />
+      ))}
+    </>
   );
 }
 
@@ -432,6 +510,8 @@ function transformOriginForAnchor(anchor: string): string {
   if (anchor.includes('eyes')) return '50% 34%';
   if (anchor.includes('rigging-root')) return '50% 18%';
   if (anchor.includes('vessel')) return '50% 62%';
+  if (anchor.includes('smoke')) return '50% 68%';
+  if (anchor.includes('textile')) return '50% 24%';
   if (anchor.includes('lower')) return '50% 72%';
   if (anchor.includes('upper')) return '50% 28%';
   return '50% 50%';
@@ -466,7 +546,7 @@ const styles: Record<string, React.CSSProperties> = {
     height: '100%',
     objectFit: 'cover',
     display: 'block',
-    willChange: 'transform, opacity',
+    willChange: 'transform, opacity, filter',
   },
   waterLightWindow: {
     position: 'absolute',
