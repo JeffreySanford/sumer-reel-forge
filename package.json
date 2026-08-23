@@ -27,8 +27,6 @@
     "e2e:ci": "nx run web:e2e-ci",
     "e2e:api": "node tools/scripts/e2e-api.mjs",
     "format": "nx format:write",
-    "hardware:profile": "node tools/scripts/profile-hardware.mjs",
-    "hardware:test": "node --test tools/runtime/hardware-profile.test.mjs",
     "lint": "pnpm tts:lint && pnpm renderer:lint && nx run-many -t eslint:lint",
     "openapi:types": "openapi-typescript http://localhost:3000/api/docs-json -o libs/reel-core/src/lib/api-contract.ts",
     "planning:ollama:check": "node tools/scripts/check-ollama-planning.mjs",
@@ -65,7 +63,7 @@
     "storybook": "nx storybook web",
     "security:audit": "pnpm audit --prod --audit-level high",
     "storybook:build": "nx build-storybook web",
-    "test": "pnpm workspace:check && pnpm creative:test && pnpm hardware:test && pnpm scene-v2:test && pnpm tts:test && pnpm renderer:test && nx run-many -t test",
+    "test": "pnpm workspace:check && pnpm creative:test && pnpm scene-v2:test && pnpm tts:test && pnpm renderer:test && nx run-many -t test",
     "web": "nx serve web",
     "workspace:check": "node tools/scripts/check-workspace-consistency.mjs"
   },
