@@ -1,19 +1,38 @@
-const LAYER_NODE_PATTERN =
-  /(sam|segment|mask|matting|rembg|remove.?background|background.?remove|biref|grounding|florence|clip.?seg|transparent|alpha|depth|inpaint)/i;
+const SEGMENTATION_NODE_PATTERN =
+  /(^SAM\d|segment|grounding|florence|clip.?seg|RTDETR_detect|CreateBoundingBoxes|CropByBBoxes|LayersFromBoundingBoxes)/i;
+const BACKGROUND_REMOVAL_NODE_PATTERN =
+  /(remove.?background|background.?removal|biref|green.?screen)/i;
+const MATTING_NODE_PATTERN =
+  /(matting|transparent|alpha|JoinImageWithAlpha|SplitImageWithAlpha)/i;
+const DEPTH_NODE_PATTERN = /(depth|DA3Inference|MoGeInference|MoGePanoramaInference)/i;
+const INPAINT_NODE_PATTERN =
+  /(inpaint|eraser|genfill|gen.?fill|expandimage|expand.?image|FluxErase|FluxProFill)/i;
+const MASK_OPERATION_NODE_PATTERN =
+  /(^BatchMasksNode$|^CropMask$|^FeatherMask$|^GrowMask$|^ImageColorToMask$|^ImageCompositeMasked$|^ImageToMask$|^InvertMask$|^LatentCompositeMasked$|^LoadImageMask$|^MaskComposite$|^MaskPreview$|^MaskToImage$|^MediaPipeFaceMask$|^ResizeImageMaskNode$|^SetLatentNoiseMask$|^SolidMask$|^ThresholdMask$|^VAEEncodeForInpaint$|^ConditioningSetMask$)/i;
 const RESOURCE_INPUT_PATTERN =
-  /(model|ckpt|checkpoint|vae|lora|control|sam|ground|clip|unet|detector|segment|segm)/i;
+  /(model|ckpt|checkpoint|vae|lora|control|sam|ground|clip|unet|detector|segment|segm|background|removal|biref|depth)/i;
+
+function isLayerProductionNode(nodeType, definition = {}) {
+  const searchable = [nodeType, definition.display_name, definition.category]
+    .filter(Boolean)
+    .join(' ');
+
+  return (
+    SEGMENTATION_NODE_PATTERN.test(searchable) ||
+    BACKGROUND_REMOVAL_NODE_PATTERN.test(searchable) ||
+    MATTING_NODE_PATTERN.test(searchable) ||
+    DEPTH_NODE_PATTERN.test(searchable) ||
+    INPAINT_NODE_PATTERN.test(searchable) ||
+    MASK_OPERATION_NODE_PATTERN.test(nodeType)
+  );
+}
 
 export function summarizeComfyObjectInfo(objectInfo) {
   const info = objectInfo && typeof objectInfo === 'object' ? objectInfo : {};
   const nodeTypes = Object.keys(info).sort();
-  const layerNodeTypes = nodeTypes.filter((nodeType) => {
-    const definition = info[nodeType] ?? {};
-    return LAYER_NODE_PATTERN.test(
-      [nodeType, definition.display_name, definition.category]
-        .filter(Boolean)
-        .join(' '),
-    );
-  });
+  const layerNodeTypes = nodeTypes.filter((nodeType) =>
+    isLayerProductionNode(nodeType, info[nodeType] ?? {}),
+  );
   const resources = [];
 
   for (const nodeType of nodeTypes) {
