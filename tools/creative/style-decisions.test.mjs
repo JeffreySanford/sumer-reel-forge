@@ -134,3 +134,54 @@ test('Shot 4 surface refraction is executable through the generic semantic lane'
   );
   assert.ok(lane?.qa?.alphaCoverage?.maximum < 1);
 });
+
+test('Shot 5 shrine base reuses exact preservation mechanics for stable architecture', () => {
+  const shot = {
+    shotId: 'traveler-shrine-hospitality',
+    sourceShotNumber: 5,
+  };
+  const layer = {
+    id: 'shot05-shrine-base-v1',
+    role: 'background',
+    material: 'architectural-background',
+    hasAlpha: false,
+  };
+  const context = buildDecisionContext({ manifest, shot, layer });
+  const decisions = resolveStyleDecisions(library, context);
+  const ids = new Set(decisions.map((decision) => decision.id));
+
+  assert.ok(ids.has('shot5-stable-documentary-camera'));
+  assert.ok(ids.has('shot5-shrine-structure-stillness-anchor'));
+  assert.ok(ids.has('shot5-practical-hospitality-not-tableau'));
+
+  const lane = resolveLayerProductionLane(lanes, layer);
+  assert.equal(lane?.id, 'stable-architecture-preservation');
+  assert.equal(lane?.generator?.family, 'source-preservation');
+  assert.equal(lane?.qa?.family, 'checksum-identity');
+});
+
+test('Shot 5 smoke is executable but remains explicitly provisional until benchmark approval', () => {
+  const shot = {
+    shotId: 'traveler-shrine-hospitality',
+    sourceShotNumber: 5,
+  };
+  const layer = {
+    id: 'shot05-smoke-v1',
+    role: 'atmosphere',
+    material: 'smoke',
+    hasAlpha: true,
+  };
+  const context = buildDecisionContext({ manifest, shot, layer });
+  const decisions = resolveStyleDecisions(library, context);
+  const smokeDecision = decisions.find(
+    (decision) => decision.id === 'smoke-motion-provisional-material-rule',
+  );
+  assert.equal(smokeDecision?.state, 'provisional');
+
+  const lane = resolveLayerProductionLane(lanes, layer);
+  assert.equal(lane?.id, 'semantic-smoke-overlay');
+  assert.equal(lane?.state, 'provisional');
+  assert.equal(lane?.generator?.family, 'sam3-semantic-overlay');
+  assert.equal(lane?.qa?.humanReviewRequired, true);
+  assert.ok(lane?.qa?.alphaCoverage?.minimum > 0);
+});
