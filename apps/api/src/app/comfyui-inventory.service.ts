@@ -110,7 +110,7 @@ export class ComfyUiInventoryService {
       return emptyInventory(
         baseUrl,
         observedAt,
-        error instanceof Error ? error.message : 'ComfyUI inventory probe failed.',
+        describeComfyFetchFailure(error, baseUrl),
       );
     }
   }
@@ -147,6 +147,17 @@ function buildFamilies(nodeTypes: string[]): ComfyUiLayerFamilies {
     depth: nodeTypes.filter((value) => /depth/i.test(value)),
     inpaint: nodeTypes.filter((value) => /inpaint/i.test(value)),
   };
+}
+
+function describeComfyFetchFailure(error: unknown, baseUrl: string): string {
+  if (!(error instanceof Error)) {
+    return `ComfyUI is not reachable at ${baseUrl}.`;
+  }
+  const cause = (
+    error as Error & { cause?: { code?: string; message?: string } }
+  ).cause;
+  const detail = cause?.code ?? cause?.message ?? error.message;
+  return `ComfyUI is not reachable at ${baseUrl}: ${detail}`;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
