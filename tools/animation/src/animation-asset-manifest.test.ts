@@ -6,6 +6,7 @@ import {
   resolveSceneV2Assets,
   validateAnimationAssetManifest,
   type AnimationAssetManifest,
+  type AnimationAssetManifestShot,
 } from './animation-asset-manifest';
 import { loadSceneV2ForRender } from './scene-v2-asset-loader';
 import type { SceneV2 } from './scene-v2';
@@ -28,21 +29,52 @@ async function loadScene(path = shotThreeScenePath): Promise<SceneV2> {
   return JSON.parse(await readFile(path, 'utf8')) as SceneV2;
 }
 
-test('animation-v1 manifest is valid while layers remain planned', async () => {
+function requireShot(
+  manifest: AnimationAssetManifest,
+  shotId: string,
+): AnimationAssetManifestShot {
+  const shot = manifest.shots.find((candidate) => candidate.shotId === shotId);
+  assert.ok(shot, `Manifest is missing ${shotId}.`);
+  return shot;
+}
+
+function setRequiredLayerState(
+  shot: AnimationAssetManifestShot,
+  state: 'planned' | 'approved',
+): void {
+  for (const layer of shot.layers) {
+    if (!shot.activationPolicy.requiredLayerIds.includes(layer.id)) continue;
+    layer.state = state;
+    layer.review.status = state === 'approved' ? 'approved' : 'pending';
+    if (state === 'planned') delete layer.sha256;
+  }
+}
+
+test('current animation-v1 manifest is valid with approved benchmark shots', async () => {
   const manifest = await loadManifest();
   const result = validateAnimationAssetManifest(manifest);
 
   assert.equal(result.valid, true, result.errors.join('\n'));
-  assert.equal(manifest.shots.length, 2);
-  assert.equal(
-    manifest.shots.flatMap((shot) => shot.layers).every((layer) => layer.state === 'planned'),
-    true,
-  );
+  assert.ok(manifest.shots.length >= 2);
+
+  for (const shotId of ['enki-at-the-helm', 'nammu-under-water']) {
+    const shot = requireShot(manifest, shotId);
+    assert.equal(shot.status, 'approved');
+    for (const requiredId of shot.activationPolicy.requiredLayerIds) {
+      const layer = shot.layers.find((candidate) => candidate.id === requiredId);
+      assert.ok(layer, `Missing required layer ${requiredId}.`);
+      assert.equal(layer.state, 'approved');
+      assert.equal(layer.review.status, 'approved');
+    }
+  }
 });
 
-test('Shot 3 stays on the approved editorial fallback until all activation layers are approved', async () => {
+test('Shot 3 falls back safely when an activation set is not approved', async () => {
   const manifest = await loadManifest();
   const scene = await loadScene();
+  const shot = requireShot(manifest, 'enki-at-the-helm');
+  setRequiredLayerState(shot, 'planned');
+
   const resolution = resolveSceneV2Assets(scene, manifest);
 
   assert.equal(resolution.mode, 'fallback');
@@ -64,15 +96,9 @@ test('Shot 3 stays on the approved editorial fallback until all activation layer
 test('approved Shot 3 activation layers switch to layered mode and wake matching deferred performance', async () => {
   const manifest = await loadManifest();
   const scene = await loadScene();
-  const shot = manifest.shots.find((candidate) => candidate.shotId === 'enki-at-the-helm');
-  assert.ok(shot);
-
-  for (const layer of shot.layers) {
-    if (shot.activationPolicy.requiredLayerIds.includes(layer.id)) {
-      layer.state = 'approved';
-      layer.review.status = 'approved';
-    }
-  }
+  const shot = requireShot(manifest, 'enki-at-the-helm');
+  setRequiredLayerState(shot, 'planned');
+  setRequiredLayerState(shot, 'approved');
 
   const resolution = resolveSceneV2Assets(scene, manifest);
   assert.equal(resolution.mode, 'layered');
@@ -80,11 +106,15 @@ test('approved Shot 3 activation layers switch to layered mode and wake matching
   assert.equal(resolution.scene.assetVersion, 'animation-v1');
   assert.equal(resolution.scene.shots[0]?.layers.length, 5);
   assert.equal(
-    resolution.scene.shots[0]?.layers.some((layer) => layer.assetId === 'shot03-enki-body-v1'),
+    resolution.scene.shots[0]?.layers.some(
+      (layer) => layer.assetId === 'shot03-enki-body-v1',
+    ),
     true,
   );
   assert.equal(
-    resolution.scene.shots[0]?.layers.some((layer) => layer.material === 'editorial-reference'),
+    resolution.scene.shots[0]?.layers.some(
+      (layer) => layer.material === 'editorial-reference',
+    ),
     true,
   );
   assert.equal(resolution.scene.shots[0]?.performance[0]?.preset, 'breathing');
@@ -95,7 +125,10 @@ test('approved Shot 3 activation layers switch to layered mode and wake matching
 
 test('approved layer state still requires explicit approved human review', async () => {
   const manifest = await loadManifest();
-  const layer = manifest.shots[0]!.layers[0]!;
+  const shot = requireShot(manifest, 'enki-at-the-helm');
+  const requiredId = shot.activationPolicy.requiredLayerIds[0]!;
+  const layer = shot.layers.find((candidate) => candidate.id === requiredId);
+  assert.ok(layer);
   layer.state = 'approved';
   layer.review.status = 'pending';
 
@@ -104,29 +137,51 @@ test('approved layer state still requires explicit approved human review', async
   assert.match(result.errors.join('\n'), /requires approved human review/);
 });
 
-test('Shot 4 manifest fallback does not introduce conventional Nammu character motion', async () => {
+test('Shot 4 fallback does not introduce conventional Nammu character motion', async () => {
   const manifest = await loadManifest();
   const scene = await loadScene(shotFourScenePath);
+  const shot = requireShot(manifest, 'nammu-under-water');
+  setRequiredLayerState(shot, 'planned');
+
   const resolution = resolveSceneV2Assets(scene, manifest);
 
   assert.equal(resolution.mode, 'fallback');
   assert.equal(
-    resolution.scene.shots[0]?.performance.some((item) => item.preset === 'blinkOnce'),
+    resolution.scene.shots[0]?.performance.some(
+      (item) => item.preset === 'blinkOnce',
+    ),
     false,
   );
   assert.equal(
-    resolution.scene.shots[0]?.performance.some((item) => item.preset === 'breathing'),
+    resolution.scene.shots[0]?.performance.some(
+      (item) => item.preset === 'breathing',
+    ),
     false,
   );
 });
 
-test('render loader ignores nonexistent planned layers and verifies only active fallback assets', async () => {
-  const loaded = await loadSceneV2ForRender(shotThreeScenePath, resolve('assets'));
+test('render loader verifies the active approved Shot 3 layered assets', async () => {
+  const loaded = await loadSceneV2ForRender(
+    shotThreeScenePath,
+    resolve('assets'),
+  );
 
-  assert.equal(loaded.assetResolution.mode, 'fallback');
-  assert.match(loaded.manifestPath ?? '', /animation-v1[\\/]manifest\.json$/);
+  assert.equal(loaded.assetResolution.mode, 'layered');
+  assert.match(
+    loaded.manifestPath ?? '',
+    /animation-v1[\\/]manifest\.json$/,
+  );
+  assert.deepEqual(loaded.assetResolution.layeredShotIds, ['enki-at-the-helm']);
   assert.equal(
-    loaded.scene.shots[0]?.layers[0]?.assetPath,
-    'blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-03.png',
+    loaded.scene.shots[0]?.layers.some(
+      (layer) => layer.assetId === 'shot03-enki-body-v1',
+    ),
+    true,
+  );
+  assert.equal(
+    loaded.scene.shots[0]?.layers.some(
+      (layer) => layer.material === 'editorial-reference',
+    ),
+    true,
   );
 });
