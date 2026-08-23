@@ -134,6 +134,57 @@
     </section>
 
     @if (selectedShot(); as shot) {
+      <section class="benchmark-evidence md3-container md3-card md3-card--elevated md3-pad-6">
+        <div class="md3-section-header">
+          <div>
+            <p class="md3-label">Visual evidence · Shot {{ shot.sourceShotNumber }}</p>
+            <h2 class="md3-headline-medium">Production benchmark</h2>
+          </div>
+          @if (selectedEvidence(); as evidence) {
+            <span class="md3-chip" [class.md3-chip--success]="evidence.available" [class.md3-chip--warning]="!evidence.available">
+              {{ evidence.available ? 'Scene V2 evidence available' : 'Not rendered locally' }}
+            </span>
+          } @else {
+            <span class="md3-chip md3-chip--warning">Not rendered locally</span>
+          }
+        </div>
+
+        @if (selectedEvidence(); as evidence) {
+          @if (evidence.available && evidence.videoUrl && evidence.contactSheetUrl) {
+            <div class="benchmark-evidence__grid">
+              <figure class="benchmark-media">
+                <video controls preload="metadata" [src]="evidence.videoUrl">
+                  Your browser does not support embedded benchmark video.
+                </video>
+                <figcaption>
+                  <strong>Scene V2 benchmark</strong>
+                  <span>{{ evidence.videoPath }}</span>
+                </figcaption>
+              </figure>
+              <figure class="benchmark-media">
+                <img [src]="evidence.contactSheetUrl" [alt]="'Shot ' + shot.sourceShotNumber + ' benchmark review contact sheet'" />
+                <figcaption>
+                  <strong>Review contact sheet</strong>
+                  <span>{{ evidence.contactSheetPath }}</span>
+                </figcaption>
+              </figure>
+            </div>
+          } @else {
+            <div class="benchmark-empty md3-surface md3-surface--high md3-pad-5">
+              <strong>No local benchmark evidence yet.</strong>
+              <p class="md3-body-medium">
+                Render the production Scene V2 benchmark for Shot {{ shot.sourceShotNumber }} and refresh. The Cockpit will discover the MP4 and contact sheet automatically.
+              </p>
+            </div>
+          }
+        } @else {
+          <div class="benchmark-empty md3-surface md3-surface--high md3-pad-5">
+            <strong>No local benchmark evidence yet.</strong>
+            <p class="md3-body-medium">The production contract remains valid; visual evidence is a local review artifact.</p>
+          </div>
+        }
+      </section>
+
       <section class="cockpit md3-container">
         <div class="cockpit__layers md3-card md3-card--filled md3-pad-6">
           <div class="md3-section-header">
