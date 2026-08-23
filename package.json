@@ -74,7 +74,7 @@
     "scene-v2:test": "tsx --test tools/animation/src/scene-v2.test.ts tools/animation/src/water-handoff.test.ts tools/animation/src/animation-asset-manifest.test.ts tools/animation/src/animation-asset-readiness.test.ts tools/animation/src/local-render-profile.test.ts tools/animation/src/remotion-shared-render.test.ts",
     "tts:chatterbox:setup": "node tools/scripts/setup-chatterbox.mjs",
     "tts:kokoro:setup": "node tools/scripts/setup-kokoro.mjs",
-    "tts:kokoro:audition": "tsx tools/scripts/audition-kokoro.mjs",
+    "tts:kokoro:audition": "node tools/scripts/audition-kokoro.mjs",
     "tts:lint": "uv run --project tools/tts --locked ruff check tools/tts tools/chatterbox",
     "tts:test": "uv run --project tools/tts --locked python -m unittest discover -s tools/tts -p test_*.py && uv run --project tools/tts --locked python -m unittest discover -s tools/chatterbox -p test_*.py",
     "start:all": "node tools/scripts/start-local.mjs",
