@@ -5,134 +5,359 @@
     <div class="md3-breadcrumbs">
       <a routerLink="/">Studio</a>
       <span aria-hidden="true">/</span>
-      <span>Layer Production</span>
+      <span>Animation Production</span>
     </div>
     <div class="layer-title-row">
       <div>
-        <p class="md3-label">Animation-v1 preparation</p>
-        <h1 class="md3-display-medium">Layer Production</h1>
+        <p class="md3-label">Production Cockpit · animation-v1</p>
+        <h1 class="md3-display-medium">Animation Production</h1>
         <p class="md3-body-large layer-lede">
-          Turn an approved painting into animation-ready material without degrading the painting that made the shot worth keeping.
+          See what the planner inferred, what deterministic rules verified, and what a human approved before a candidate became production material.
         </p>
       </div>
       <div class="md3-cluster">
         <a class="md3-button md3-button--outlined" routerLink="/system">Host System</a>
         <button class="md3-button md3-button--filled" type="button" (click)="refresh()" [disabled]="loading()">
-          {{ loading() ? 'Refreshing…' : 'Refresh inventory' }}
+          {{ loading() ? 'Refreshing…' : 'Refresh production' }}
         </button>
       </div>
     </div>
   </header>
 
   @if (error()) {
-    <section class="md3-container md3-card md3-pad-6" role="alert">
-      <p class="md3-label">Readiness unavailable</p>
-      <h2 class="md3-headline-medium">The local production inventory could not be loaded.</h2>
+    <section class="md3-container md3-card md3-pad-6 cockpit-error" role="alert">
+      <p class="md3-label">Production status unavailable</p>
+      <h2 class="md3-headline-medium">The live production contract could not be loaded.</h2>
       <p class="md3-body-medium">{{ error() }}</p>
     </section>
   }
 
+  @if (production(); as prod) {
+    <section class="production-hero md3-container md3-card md3-card--elevated md3-pad-8">
+      <div class="production-hero__copy md3-stack md3-stack--tight">
+        <div class="md3-cluster">
+          <span class="md3-chip md3-chip--success">Manifest live</span>
+          <span class="md3-chip">{{ prod.assetVersion }}</span>
+          <span class="md3-chip">{{ prod.sourceEditorialVersion || 'editorial source' }} immutable</span>
+        </div>
+        <p class="md3-label">Reel 1 production contract</p>
+        <h2 class="md3-headline-large">{{ prod.summary.layeredReadyCount }}/{{ prod.summary.shotCount }} benchmark shots layered-ready</h2>
+        <p class="md3-body-large">{{ prod.principle }}</p>
+        <p class="md3-body-small production-path">{{ prod.manifestPath }}</p>
+      </div>
+
+      <aside class="next-action md3-surface md3-surface--high md3-pad-5">
+        <p class="md3-label">Next safe action</p>
+        <h3 class="md3-title-medium">
+          {{ allKnownShotsReady() ? 'Scale the proven pipeline' : 'Resolve production gates' }}
+        </h3>
+        <p class="md3-body-medium">{{ nextStep() }}</p>
+        <span
+          class="md3-chip"
+          [class.md3-chip--success]="allKnownShotsReady()"
+          [class.md3-chip--warning]="!allKnownShotsReady()"
+        >
+          {{ allKnownShotsReady() ? 'Current benchmarks healthy' : 'Human review remains active' }}
+        </span>
+      </aside>
+    </section>
+
+    <section class="summary-grid md3-container md3-grid md3-grid--4" aria-label="Animation production summary">
+      <article class="gate-card md3-card md3-card--filled md3-pad-5">
+        <p class="md3-label">Production shots</p>
+        <strong class="summary-value">{{ prod.summary.layeredReadyCount }}/{{ prod.summary.shotCount }}</strong>
+        <span class="md3-chip" [class.md3-chip--success]="prod.summary.layeredReadyCount === prod.summary.shotCount">
+          layered-ready
+        </span>
+      </article>
+      <article class="gate-card md3-card md3-card--filled md3-pad-5">
+        <p class="md3-label">Required layers</p>
+        <strong class="summary-value">{{ prod.summary.approvedRequiredLayerCount }}/{{ prod.summary.requiredLayerCount }}</strong>
+        <span class="md3-body-small">file + manifest + review + checksum + registration</span>
+      </article>
+      <article class="gate-card md3-card md3-card--filled md3-pad-5">
+        <p class="md3-label">Style knowledge</p>
+        <strong class="summary-value">Live</strong>
+        <span class="md3-body-small">{{ prod.styleDecisionLibraryId }}</span>
+      </article>
+      <article class="gate-card md3-card md3-card--filled md3-pad-5">
+        <p class="md3-label">Lane registry</p>
+        <strong class="summary-value">Deterministic</strong>
+        <span class="md3-body-small">{{ prod.laneRegistryId }}</span>
+      </article>
+    </section>
+
+    <section class="md3-container md3-section">
+      <div class="md3-section-header">
+        <div>
+          <p class="md3-label">Approved benchmarks</p>
+          <h2 class="md3-headline-medium">Production shots</h2>
+        </div>
+        <span class="md3-body-small">Select a shot to inspect its production contract</span>
+      </div>
+
+      <div class="shot-grid">
+        @for (shot of prod.shots; track shot.shotId) {
+          <button
+            type="button"
+            class="shot-card md3-card md3-card--filled md3-pad-5"
+            [class.shot-card--selected]="selectedShot()?.sourceShotNumber === shot.sourceShotNumber"
+            (click)="selectShot(shot)"
+            [attr.aria-pressed]="selectedShot()?.sourceShotNumber === shot.sourceShotNumber"
+          >
+            <div class="shot-card__top">
+              <span class="shot-number">SHOT {{ shot.sourceShotNumber }}</span>
+              <span
+                class="md3-chip"
+                [class.md3-chip--success]="shot.activationState === 'layered-ready'"
+                [class.md3-chip--warning]="shot.activationState !== 'layered-ready'"
+              >
+                {{ shot.activationState === 'layered-ready' ? 'LAYERED READY' : 'EDITORIAL FALLBACK' }}
+              </span>
+            </div>
+            <h3 class="md3-title-large">{{ shotTitle(shot) }}</h3>
+            <p class="md3-body-small shot-id">{{ shot.shotId }}</p>
+            <div class="shot-meter" aria-label="Required layer readiness">
+              <span>{{ shot.readyRequiredLayerCount }}/{{ shot.requiredLayerCount }} required approved</span>
+              <span>{{ shot.optionalLayerCount }} optional</span>
+            </div>
+            <div class="shot-layer-dots" aria-hidden="true">
+              @for (layer of shot.layers; track layer.id) {
+                @if (layer.required) {
+                  <span [class.shot-layer-dot--ready]="layer.ready"></span>
+                }
+              }
+            </div>
+          </button>
+        }
+      </div>
+    </section>
+
+    @if (selectedShot(); as shot) {
+      <section class="cockpit md3-container">
+        <div class="cockpit__layers md3-card md3-card--filled md3-pad-6">
+          <div class="md3-section-header">
+            <div>
+              <p class="md3-label">Shot {{ shot.sourceShotNumber }} material contract</p>
+              <h2 class="md3-headline-medium">{{ shotTitle(shot) }}</h2>
+            </div>
+            <span
+              class="md3-chip"
+              [class.md3-chip--success]="shot.activationState === 'layered-ready'"
+              [class.md3-chip--warning]="shot.activationState !== 'layered-ready'"
+            >
+              {{ shot.readyRequiredLayerCount }}/{{ shot.requiredLayerCount }} required
+            </span>
+          </div>
+
+          <div class="layer-list" role="list" aria-label="Shot production layers">
+            @for (layer of shot.layers; track layer.id) {
+              <button
+                type="button"
+                role="listitem"
+                class="layer-row"
+                [class.layer-row--selected]="selectedLayer()?.id === layer.id"
+                (click)="selectLayer(layer)"
+              >
+                <span class="layer-state" [class.layer-state--ready]="layer.ready" aria-hidden="true"></span>
+                <span class="layer-row__main">
+                  <strong>{{ layerLabel(layer) }}</strong>
+                  <small>{{ layer.id }}</small>
+                </span>
+                <span class="layer-row__meta">
+                  <span>{{ layer.required ? 'Required' : 'Optional' }}</span>
+                  <span>{{ layer.material }}</span>
+                </span>
+                <span
+                  class="md3-chip"
+                  [class.md3-chip--success]="layer.ready"
+                  [class.md3-chip--warning]="!layer.ready && layer.required"
+                >
+                  {{ layer.ready ? 'APPROVED' : layer.state.toUpperCase() }}
+                </span>
+              </button>
+            }
+          </div>
+        </div>
+
+        @if (selectedLayer(); as layer) {
+          <aside class="cockpit__inspector md3-card md3-card--elevated md3-pad-6">
+            <div class="inspector-heading">
+              <div>
+                <p class="md3-label">Selected layer</p>
+                <h2 class="md3-headline-medium">{{ layerLabel(layer) }}</h2>
+                <code>{{ layer.id }}</code>
+              </div>
+              <span
+                class="md3-chip"
+                [class.md3-chip--success]="layer.ready"
+                [class.md3-chip--warning]="!layer.ready"
+              >
+                {{ layer.ready ? 'Production ready' : 'Not production ready' }}
+              </span>
+            </div>
+
+            <div class="inspector-grid">
+              <div class="fact">
+                <span>Production lane</span>
+                <strong>{{ layer.lane?.id || 'No automatic lane' }}</strong>
+              </div>
+              <div class="fact">
+                <span>Generator</span>
+                <strong>{{ layer.lane?.generatorFamily || 'Human designed' }}</strong>
+              </div>
+              <div class="fact">
+                <span>QA family</span>
+                <strong>{{ layer.lane?.qaFamily || 'Human review' }}</strong>
+              </div>
+              <div class="fact">
+                <span>Resolution</span>
+                <strong>
+                  {{ layer.dimensions ? layer.dimensions.width + '×' + layer.dimensions.height : 'Missing' }}
+                </strong>
+              </div>
+              <div class="fact">
+                <span>Checksum</span>
+                <strong>{{ layer.checksumMatches ? 'Verified' : 'Not verified' }}</strong>
+                <small>{{ shortChecksum(layer.sha256) }}</small>
+              </div>
+              <div class="fact">
+                <span>Human review</span>
+                <strong>{{ layer.reviewStatus }}</strong>
+                <small>{{ layer.qaEvidenceRecorded ? 'QA evidence recorded' : 'QA evidence not recorded' }}</small>
+              </div>
+            </div>
+
+            @if (layer.coverageAdvisory) {
+              <div class="review-advisory">
+                <span class="md3-chip md3-chip--warning">{{ layer.coverageAdvisory }}</span>
+                <p class="md3-body-small">Sparse semantic coverage passed the structural floor and was accepted through human review.</p>
+              </div>
+            }
+
+            @if (layer.motionPresets.length) {
+              <div class="inspector-section">
+                <p class="md3-label">Motion grammar</p>
+                <div class="md3-cluster">
+                  @for (preset of layer.motionPresets; track preset) {
+                    <span class="md3-chip md3-chip--primary">{{ preset }}</span>
+                  }
+                </div>
+              </div>
+            }
+
+            @if (layer.decisions.length) {
+              <div class="inspector-section">
+                <p class="md3-label">Inherited style decisions</p>
+                <div class="decision-list">
+                  @for (decision of layer.decisions; track decision.id) {
+                    <article class="decision-item">
+                      <div class="decision-item__top">
+                        <strong>{{ decision.path }}</strong>
+                        <span
+                          class="md3-chip"
+                          [class.md3-chip--success]="decision.state === 'approved'"
+                          [class.md3-chip--warning]="decision.state !== 'approved'"
+                        >
+                          {{ decision.state }}
+                        </span>
+                      </div>
+                      <code>{{ decisionValue(decision.value) }}</code>
+                      @if (decision.rationale) {
+                        <p class="md3-body-small">{{ decision.rationale }}</p>
+                      }
+                    </article>
+                  }
+                </div>
+              </div>
+            }
+
+            @if (layer.lane?.notes?.length) {
+              <div class="inspector-section">
+                <p class="md3-label">Lane guardrails</p>
+                <ul class="guardrail-list">
+                  @for (note of layer.lane?.notes || []; track note) {
+                    <li>{{ note }}</li>
+                  }
+                </ul>
+              </div>
+            }
+          </aside>
+        }
+      </section>
+
+      @if (shot.decisions.length) {
+        <section class="shot-decisions md3-container md3-card md3-pad-6">
+          <div class="md3-section-header">
+            <div>
+              <p class="md3-label">Shot-level creative contract</p>
+              <h2 class="md3-headline-medium">Inherited benchmark decisions</h2>
+            </div>
+            <span class="md3-body-small">Approved and provisional rules remain visibly distinct</span>
+          </div>
+          <div class="decision-grid">
+            @for (decision of shot.decisions; track decision.id) {
+              <article class="decision-card md3-surface md3-surface--high md3-pad-4">
+                <div class="decision-item__top">
+                  <strong>{{ decision.path }}</strong>
+                  <span
+                    class="md3-chip"
+                    [class.md3-chip--success]="decision.state === 'approved'"
+                    [class.md3-chip--warning]="decision.state !== 'approved'"
+                  >
+                    {{ decision.state }}
+                  </span>
+                </div>
+                <code>{{ decisionValue(decision.value) }}</code>
+                @if (decision.rationale) {
+                  <p class="md3-body-small">{{ decision.rationale }}</p>
+                }
+              </article>
+            }
+          </div>
+        </section>
+      }
+    }
+  }
+
   @if (host(); as machine) {
-    <section class="gate-grid md3-container md3-grid md3-grid--4" aria-label="Layer production gates">
+    <section class="runtime-strip md3-container md3-grid md3-grid--4" aria-label="Local runtime status">
       <article class="gate-card md3-card md3-card--filled md3-pad-5">
         <p class="md3-label">Source artwork</p>
-        <h2 class="md3-title-large">Approved</h2>
+        <h2 class="md3-title-large">Immutable</h2>
         <span class="md3-chip md3-chip--success">editorial-v1 locked</span>
-        <p class="md3-body-small">Generation may create candidates, but the approved painting remains immutable.</p>
       </article>
-
       <article class="gate-card md3-card md3-card--filled md3-pad-5">
         <p class="md3-label">NVIDIA GPU</p>
         <h2 class="md3-title-large">{{ gpuReady() ? 'Ready' : 'Unavailable' }}</h2>
         <span class="md3-chip" [class.md3-chip--success]="gpuReady()" [class.md3-chip--error]="!gpuReady()">
           {{ gpuName() }}
         </span>
-        <p class="md3-body-small">
-          {{ gpuVramLabel() }}
-          · {{ machine.runtimePlan?.ai?.comfyVramMode || 'VRAM mode unknown' }}
-        </p>
+        <p class="md3-body-small">{{ gpuVramLabel() }} · {{ machine.runtimePlan?.ai?.comfyVramMode || 'VRAM mode unknown' }}</p>
       </article>
-
       <article class="gate-card md3-card md3-card--filled md3-pad-5">
         <p class="md3-label">ComfyUI</p>
         <h2 class="md3-title-large">{{ comfyReady() ? 'Online' : 'Offline' }}</h2>
         <span class="md3-chip" [class.md3-chip--success]="comfyReady()" [class.md3-chip--warning]="!comfyReady()">
-          {{ inventory()?.baseUrl || machine.comfyui.baseUrl }}
+          {{ comfyReady() ? (inventory()?.nodeCount || 0) + ' node types' : 'Unavailable' }}
         </span>
-        <p class="md3-body-small">
-          {{ comfyReady() ? (inventory()?.nodeCount || 0) + ' registered node types detected' : (inventory()?.error || 'Start the local ComfyUI service') }}
-        </p>
       </article>
-
       <article class="gate-card md3-card md3-card--filled md3-pad-5">
-        <p class="md3-label">Layer workflow</p>
+        <p class="md3-label">Semantic workflow</p>
         <h2 class="md3-title-large">{{ workflowReady() ? 'Ready' : 'Setup required' }}</h2>
         <span class="md3-chip" [class.md3-chip--success]="workflowReady()" [class.md3-chip--warning]="!workflowReady()">
-          {{ workflowReady() ? 'API graph configured' : 'No production graph configured' }}
+          {{ workflowReady() ? 'SAM3 lane available' : 'Production graph missing' }}
         </span>
-        <p class="md3-body-small">{{ machine.comfyui.layerWorkflowPath || 'Built-in Shot 3 SAM3 water workflow' }}</p>
       </article>
     </section>
   }
-
-  <section class="focus-card md3-container md3-card md3-card--elevated md3-pad-8">
-    <div class="focus-copy md3-stack md3-stack--tight">
-      <p class="md3-label">Current benchmark · Reel 1 · Shot 3</p>
-      <h2 class="md3-headline-large">Enki physical benchmark</h2>
-      <p class="md3-body-large">
-        The first production extraction is intentionally water. It is visually forgiving, materially important, and lets us prove registration, transparency, and GPU-assisted separation before risking Enki's face.
-      </p>
-      <div class="md3-cluster">
-        <span class="md3-chip md3-chip--primary">First target · shot03-water-v1</span>
-        <span class="md3-chip">Human approval required</span>
-        <span class="md3-chip">No automatic promotion</span>
-      </div>
-    </div>
-
-    <aside class="next-action md3-surface md3-surface--high md3-pad-5">
-      <p class="md3-label">Next safe action</p>
-      <h3 class="md3-title-medium">{{ layerPipelineReady() ? 'Preflight the water layer' : 'Complete readiness gates' }}</h3>
-      <p class="md3-body-medium">{{ nextStep() }}</p>
-      @if (!layerPipelineReady()) {
-        <span class="md3-chip md3-chip--warning">GPU generation remains disabled</span>
-      } @else {
-        <span class="md3-chip md3-chip--success">Ready for zero-generation preflight</span>
-      }
-    </aside>
-  </section>
-
-  <section class="md3-container md3-section">
-    <div class="md3-section-header">
-      <div>
-        <p class="md3-label">Shot material plan</p>
-        <h2 class="md3-headline-medium">Animation-ready layers</h2>
-      </div>
-      <span class="md3-body-small">AI proposes · rules constrain · human directs</span>
-    </div>
-
-    <div class="layer-grid md3-grid md3-grid--3">
-      @for (layer of shotThreeLayers; track layer.id) {
-        <article class="material-card md3-card md3-card--filled md3-pad-5" [class.material-card--first]="layer.recommendedFirst">
-          <div class="md3-cluster md3-cluster--between">
-            <span class="md3-chip" [class.md3-chip--primary]="layer.recommendedFirst">
-              {{ layer.recommendedFirst ? 'Generate first' : (layer.required ? 'Required' : 'Optional') }}
-            </span>
-            <span class="md3-body-small">{{ layer.material }}</span>
-          </div>
-          <h3 class="md3-title-large">{{ layer.label }}</h3>
-          <code>{{ layer.id }}</code>
-          <p class="md3-body-medium">{{ layer.role }}</p>
-        </article>
-      }
-    </div>
-  </section>
 
   @if (inventory(); as inv) {
     <section class="inventory-card md3-container md3-card md3-pad-6">
       <div class="md3-section-header">
         <div>
-          <p class="md3-label">ComfyUI host inventory</p>
-          <h2 class="md3-headline-medium">Detected layer-production capability</h2>
+          <p class="md3-label">Local visual-AI host</p>
+          <h2 class="md3-headline-medium">ComfyUI capability inventory</h2>
         </div>
         <span class="md3-chip" [class.md3-chip--success]="inv.online" [class.md3-chip--warning]="!inv.online">
           {{ inv.online ? 'Live inventory' : 'ComfyUI offline' }}
@@ -140,26 +365,20 @@
       </div>
 
       <div class="family-grid md3-grid md3-grid--auto">
-        <article class="md3-stat md3-card md3-card--filled"><strong>{{ familyCount(inv.families.segmentation) }}</strong><span>segmentation nodes</span></article>
+        <article class="md3-stat md3-card md3-card--filled"><strong>{{ familyCount(inv.families.segmentation) }}</strong><span>segmentation</span></article>
         <article class="md3-stat md3-card md3-card--filled"><strong>{{ familyCount(inv.families.matting) }}</strong><span>matting / alpha</span></article>
         <article class="md3-stat md3-card md3-card--filled"><strong>{{ familyCount(inv.families.backgroundRemoval) }}</strong><span>background removal</span></article>
-        <article class="md3-stat md3-card md3-card--filled"><strong>{{ familyCount(inv.families.depth) }}</strong><span>depth nodes</span></article>
-        <article class="md3-stat md3-card md3-card--filled"><strong>{{ familyCount(inv.families.inpaint) }}</strong><span>inpaint nodes</span></article>
+        <article class="md3-stat md3-card md3-card--filled"><strong>{{ familyCount(inv.families.depth) }}</strong><span>depth</span></article>
+        <article class="md3-stat md3-card md3-card--filled"><strong>{{ familyCount(inv.families.inpaint) }}</strong><span>inpaint</span></article>
       </div>
 
       @if (resourcePreview().length) {
         <div class="resource-list md3-stack md3-stack--tight">
-          <p class="md3-label">Model/resource selections</p>
+          <p class="md3-label">Detected model/resource selections</p>
           @for (resource of resourcePreview(); track resource) {
             <code>{{ resource }}</code>
           }
         </div>
-      } @else if (!inv.online) {
-        <p class="md3-body-medium">
-          Start ComfyUI, then refresh this page. Reel Forge will inspect <code>/object_info</code> without queueing a prompt or consuming GPU generation time.
-        </p>
-      } @else {
-        <p class="md3-body-medium">No enum-backed model/resource selections were exposed by the detected layer nodes.</p>
       }
     </section>
   }
