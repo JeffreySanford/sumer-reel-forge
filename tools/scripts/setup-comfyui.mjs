@@ -1,4 +1,3 @@
-import 'dotenv/config';
 import { createHash } from 'node:crypto';
 import { createReadStream, createWriteStream } from 'node:fs';
 import {
@@ -11,9 +10,20 @@ import {
   writeFile,
 } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
+import { loadEnvFile } from 'node:process';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { runProcess } from '../renderer/process-runner.mjs';
+
+// Keep this bootstrap independent of workspace packages. ComfyUI setup must be
+// usable even when node_modules is missing or being repaired.
+try {
+  loadEnvFile();
+} catch (error) {
+  if (error?.code !== 'ENOENT') {
+    throw error;
+  }
+}
 
 const root = resolve('.');
 const installRoot = resolve(
@@ -51,15 +61,15 @@ const installModels =
 await verifyNvidiaDriver();
 await mkdir(installRoot, { recursive: true });
 
-if (!modelsOnly) {
+if (modelsOnly) {
+  await assertExistingRuntime();
+  await verifyCudaRuntime();
+} else {
   await ensureTool(uvCommand, ['--version'], 'uv');
   await ensureTool(gitCommand, ['--version'], 'Git');
   await ensureComfyRuntime();
   await ensurePythonRuntime();
   await installPythonDependencies();
-  await verifyCudaRuntime();
-} else {
-  await assertExistingRuntime();
   await verifyCudaRuntime();
 }
 
@@ -246,21 +256,24 @@ async function ensureManagedModel(model) {
     `  ↓ ${model.filename} · ${model.purpose} · ${model.source} · license ${model.license}`,
   );
   console.log(`    ${model.url}`);
-  await downloadFile(model.url, temporary);
 
-  const downloaded = await inspectModelFile(temporary, model);
-  if (!downloaded.valid) {
-    await rm(temporary, { force: true });
-    throw new Error(
-      `${model.filename} download failed integrity verification: ${downloaded.reason}.`,
+  try {
+    await downloadFile(model.url, temporary);
+    const downloaded = await inspectModelFile(temporary, model);
+    if (!downloaded.valid) {
+      throw new Error(
+        `${model.filename} download failed integrity verification: ${downloaded.reason}.`,
+      );
+    }
+    await rename(temporary, destination);
+    console.log(
+      `  ✓ ${model.filename} verified SHA-256 ${model.sha256.slice(0, 12)}… (${formatBytes(downloaded.sizeBytes)}).`,
     );
+    return modelState(model, destination, downloaded.sizeBytes);
+  } catch (error) {
+    await rm(temporary, { force: true });
+    throw error;
   }
-
-  await rename(temporary, destination);
-  console.log(
-    `  ✓ ${model.filename} verified SHA-256 ${model.sha256.slice(0, 12)}… (${formatBytes(downloaded.sizeBytes)}).`,
-  );
-  return modelState(model, destination, downloaded.sizeBytes);
 }
 
 async function inspectModelFile(path, model) {
