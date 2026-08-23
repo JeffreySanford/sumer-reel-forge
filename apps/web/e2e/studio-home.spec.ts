@@ -60,7 +60,6 @@ test('opens on the Studio home and navigates project to chapter', async ({ page 
   await expect(page.getByText('NVIDIA RTX Test', { exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Open Host System' })).toBeVisible();
 
-  // The old reel workspace must not be mounted behind the new application home.
   await expect(page.getByLabel('Chapter one reel outline')).toHaveCount(0);
 
   await page.getByRole('link', { name: /Open Blessings of Sumer/i }).click();
@@ -78,7 +77,9 @@ test('keeps the existing reel workspace as a focused routed view', async ({ page
   await page.goto('/reels/1/overview');
 
   await expect(page.getByLabel('Chapter one reel outline')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'The Voyage Begins' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'The Voyage Begins', level: 2 }),
+  ).toBeVisible();
   await expect(page.getByRole('link', { name: 'Studio Home' })).toBeVisible();
 
   await page.getByRole('link', { name: 'Studio Home' }).click();
