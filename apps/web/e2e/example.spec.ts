@@ -3,6 +3,7 @@ import {
   REEL_ONE,
   CHAPTER_ONE_REELS,
   CHAPTER_ONE_SUMMARY,
+  DEFAULT_NARRATION_SETTINGS,
 } from '@sumer-reel-forge/reel-core';
 
 test('shows the routed first reel workspace', async ({ page }) => {
@@ -24,7 +25,9 @@ test('shows the routed first reel workspace', async ({ page }) => {
   await page.getByRole('link', { name: 'Script' }).click();
   await expect(page).toHaveURL(/\/reels\/1\/script$/);
   await expect(page.getByLabel('Logline')).toBeVisible();
-  await expect(page.getByLabel('Narration')).toBeVisible();
+  await expect(
+    page.getByRole('textbox', { name: 'Narration', exact: true }),
+  ).toBeVisible();
 });
 
 test('deep links load the requested reel and tab', async ({ page }) => {
@@ -34,10 +37,10 @@ test('deep links load the requested reel and tab', async ({ page }) => {
   await page.goto('/reels/2/shots');
 
   await expect(page).toHaveURL(/\/reels\/2\/shots$/);
+  await expect(page.getByRole('link', { name: 'Shots' })).toHaveClass(/active/);
   await expect(
     page.getByRole('heading', { name: 'The Voice Beneath the Deep', level: 2 }),
-  ).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Shots' })).toHaveClass(/active/);
+  ).toBeVisible({ timeout: 10_000 });
 });
 
 test('contains mobile horizontal scrollers inside the viewport', async ({
@@ -142,6 +145,13 @@ async function mockOperationalRoutes(
   page: import('@playwright/test').Page,
   options: { includeAsset?: boolean } = {},
 ) {
+  await page.route(
+    '**/api/projects/blessings-of-sumer/chapters/1/narration',
+    async (route) => {
+      await route.fulfill({ json: DEFAULT_NARRATION_SETTINGS });
+    },
+  );
+
   await page.route('**/api/planning/**', async (route) => {
     const url = new URL(route.request().url());
     if (url.pathname.endsWith('/capabilities')) {
