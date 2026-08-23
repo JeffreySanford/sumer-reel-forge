@@ -12,7 +12,9 @@ const INPAINT_NODE_PATTERN =
 const MASK_OPERATION_NODE_PATTERN =
   /(^BatchMasksNode$|^CropMask$|^FeatherMask$|^GrowMask$|^ImageColorToMask$|^ImageCompositeMasked$|^ImageToMask$|^InvertMask$|^LatentCompositeMasked$|^LoadImageMask$|^MaskComposite$|^MaskPreview$|^MaskToImage$|^MediaPipeFaceMask$|^ResizeImageMaskNode$|^SetLatentNoiseMask$|^SolidMask$|^ThresholdMask$|^VAEEncodeForInpaint$|^ConditioningSetMask$)/i;
 const RESOURCE_INPUT_PATTERN =
-  /(model|ckpt|checkpoint|vae|lora|control|sam|ground|clip|unet|detector|segment|segm|background|removal|biref|depth)/i;
+  /(model|ckpt|checkpoint|vae|lora|control|ground|clip|unet|detector|segment|segm|background|removal|biref|depth)/i;
+const SAM_RESOURCE_INPUT_PATTERN =
+  /(^sam$|^sam_|_sam$|sam_model|sam_checkpoint|sam_ckpt)/i;
 
 export interface ComfyUiResourceChoice {
   nodeType: string;
@@ -58,7 +60,11 @@ export function summarizeComfyObjectInfo(objectInfo: unknown) {
     const inputs = { ...required, ...optional };
 
     for (const [inputName, rawDefinition] of Object.entries(inputs)) {
-      if (!RESOURCE_INPUT_PATTERN.test(inputName) || !Array.isArray(rawDefinition)) {
+      if (
+        (!RESOURCE_INPUT_PATTERN.test(inputName) &&
+          !SAM_RESOURCE_INPUT_PATTERN.test(inputName)) ||
+        !Array.isArray(rawDefinition)
+      ) {
         continue;
       }
       const allowedValues = Array.isArray(rawDefinition[0])
