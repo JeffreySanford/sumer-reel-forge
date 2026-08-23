@@ -13,6 +13,9 @@ const shotThreeScenePath = resolve(
 const shotFourScenePath = resolve(
   'tools/animation/scenes/reel-01-shot-04-nammu-benchmark.scene-v2.json',
 );
+const shotFiveScenePath = resolve(
+  'tools/animation/scenes/reel-01-shot-05-traveler-shrine-benchmark.scene-v2.json',
+);
 
 async function loadScene(scenePath = shotThreeScenePath): Promise<SceneV2> {
   return JSON.parse(await readFile(scenePath, 'utf8')) as SceneV2;
@@ -44,6 +47,17 @@ test('Shot 4 benchmark Scene V2 passes numinous policy', async () => {
   assert.equal(scene.shots[0]?.camera.preset, 'nearStatic');
   assert.equal(scene.shots[0]?.camera.scaleTo, 1.008);
   assert.equal(scene.shots[0]?.performance[0]?.preset, 'numinousDrift');
+});
+
+test('Shot 5 benchmark accepts source-grounded smokeDrift atmosphere', async () => {
+  const scene = await loadScene(shotFiveScenePath);
+  const result = validateSceneV2(scene);
+
+  assert.equal(result.valid, true, result.errors.join('\n'));
+  assert.equal(scene.shots[0]?.camera.preset, 'slowPush');
+  assert.equal(scene.shots[0]?.stillnessAnchor, 'shrine-structure');
+  assert.equal(scene.shots[0]?.atmosphere[0]?.preset, 'smokeDrift');
+  assert.equal(scene.shots[0]?.camera.scaleTo, 1.022);
 });
 
 test('Shot 4 benchmark rejects camera movement above 1 percent', async () => {
