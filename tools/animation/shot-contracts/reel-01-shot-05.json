@@ -22,8 +22,7 @@
     "activationPolicy": {
       "requiredLayerIds": [
         "shot05-shrine-base-v1",
-        "shot05-welcome-water-v1",
-        "shot05-smoke-v1"
+        "shot05-welcome-water-v1"
       ],
       "enableDeferredPerformanceWhenApproved": true
     },
@@ -113,7 +112,8 @@
         "review": {
           "status": "pending",
           "notes": [
-            "This is intentionally the first provisional Shot 5 lane. Establish a reusable smoke extraction/motion contract rather than forcing it through a water or generic foreground recipe."
+            "Optional/deferred after human review found the source-supported smoke extraction too sparse to contribute meaningful visible motion in the Shot 5 benchmark.",
+            "Keep the provisional smoke lane available for a future source-grounded benchmark; do not invent a procedural plume merely to satisfy activation."
           ]
         }
       },
