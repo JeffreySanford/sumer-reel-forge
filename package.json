@@ -45,7 +45,7 @@
     "renderer:preflight": "node tools/scripts/renderer-preflight.mjs",
     "renderer:lint": "eslint \"tools/**/*.mjs\"",
     "renderer:test": "node --test tools/renderer/*.test.mjs",
-    "scene-v2:test": "tsx --test tools/animation/src/scene-v2.test.ts tools/animation/src/water-handoff.test.ts",
+    "scene-v2:test": "tsx --test tools/animation/src/scene-v2.test.ts tools/animation/src/water-handoff.test.ts tools/animation/src/animation-asset-manifest.test.ts",
     "tts:chatterbox:setup": "node tools/scripts/setup-chatterbox.mjs",
     "tts:kokoro:setup": "node tools/scripts/setup-kokoro.mjs",
     "tts:kokoro:audition": "node tools/scripts/audition-kokoro.mjs",
