@@ -20,6 +20,24 @@
       ]
     },
     {
+      "id": "stable-architecture-preservation",
+      "match": { "role": "background", "material": "architectural-background", "hasAlpha": false },
+      "generator": {
+        "family": "source-preservation",
+        "executor": "tools/scripts/source-preservation-layer.mjs"
+      },
+      "qa": {
+        "family": "checksum-identity",
+        "executor": "tools/scripts/source-preservation-layer.mjs",
+        "humanReviewRequired": true
+      },
+      "notes": [
+        "Use when architecture or a shrine structure is the compositional stillness anchor.",
+        "Preserve the exact editorial plate; depth and motion come from registered overlays and camera composition rather than rebuilding the structure.",
+        "No synthesis, crop, resize, or pixel mutation is allowed in the preserved base."
+      ]
+    },
+    {
       "id": "semantic-water-overlay",
       "match": { "role": "water", "material": "water", "hasAlpha": true },
       "generator": {
