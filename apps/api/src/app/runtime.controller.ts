@@ -1,5 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { AnimationProductionStatusService } from './animation-production-status.service';
 import { ComfyUiInventoryService } from './comfyui-inventory.service';
 import { RuntimeCapabilitiesService } from './runtime-capabilities.service';
 
@@ -9,6 +10,7 @@ export class RuntimeController {
   constructor(
     private readonly runtimeCapabilities: RuntimeCapabilitiesService,
     private readonly comfyUiInventory: ComfyUiInventoryService,
+    private readonly animationProductionStatus: AnimationProductionStatusService,
   ) {}
 
   @Get('capabilities')
@@ -25,5 +27,14 @@ export class RuntimeController {
   })
   getComfyUiInventory() {
     return this.comfyUiInventory.getInventory();
+  }
+
+  @Get('animation-production')
+  @ApiOperation({
+    summary:
+      'Return manifest-backed animation production readiness, checksum verification, lane selection, and inherited style decisions.',
+  })
+  getAnimationProductionStatus() {
+    return this.animationProductionStatus.getStatus();
   }
 }
