@@ -209,6 +209,42 @@
       "value": "exact-editorial-source-copy",
       "rationale": "The deep-water base acts as the immutable visual anchor; environmental life is layered above it rather than synthesized into the base.",
       "source": { "type": "shot4-benchmark-plan", "shotId": "nammu-under-water" }
+    },
+    {
+      "id": "shot5-stable-documentary-camera",
+      "state": "provisional",
+      "scope": { "type": "shot", "shotId": "traveler-shrine-hospitality" },
+      "path": "camera.primaryPreset",
+      "value": "slowPush",
+      "rationale": "The Traveler Shrine should feel observed rather than staged: a restrained push creates depth while keeping the hospitality action practical and legible.",
+      "source": { "type": "creative-policy", "reference": "planning/reel-01-cinematic-direction-plan.md" }
+    },
+    {
+      "id": "shot5-shrine-structure-stillness-anchor",
+      "state": "provisional",
+      "scope": { "type": "shot", "shotId": "traveler-shrine-hospitality" },
+      "path": "composition.stillnessAnchor",
+      "value": "shrine-structure",
+      "rationale": "Architecture remains stable while water, smoke, cloth, and small human motion communicate lived hospitality around it.",
+      "source": { "type": "creative-policy", "reference": "planning/reel-01-cinematic-direction-plan.md" }
+    },
+    {
+      "id": "shot5-practical-hospitality-not-tableau",
+      "state": "provisional",
+      "scope": { "type": "shot", "shotId": "traveler-shrine-hospitality" },
+      "path": "composition.requiredRead",
+      "value": "lived-in-practical-hospitality",
+      "rationale": "Water basin, bread, shelter, lamps, smoke, cloth, and evidence of people should read as ordinary civic care rather than a sterile symbolic tableau.",
+      "source": { "type": "creative-policy", "reference": "planning/reel-01-cinematic-direction-plan.md" }
+    },
+    {
+      "id": "smoke-motion-provisional-material-rule",
+      "state": "provisional",
+      "scope": { "type": "material", "material": "smoke" },
+      "path": "motion.smoke.strategy",
+      "value": "low-opacity-irregular-drift",
+      "rationale": "Smoke should rise and drift with irregular density and restrained amplitude; the benchmark must establish a reusable extraction and motion lane before this becomes approved production knowledge.",
+      "source": { "type": "creative-policy", "reference": "planning/reel-01-cinematic-direction-plan.md" }
     }
   ]
 }
