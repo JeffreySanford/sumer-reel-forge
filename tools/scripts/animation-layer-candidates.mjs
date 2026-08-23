@@ -3,23 +3,31 @@ import {
   generateLayerCandidates,
   preflightLayerCandidates,
 } from '../renderer/comfyui-layer-candidates.mjs';
+import { checkWorkflowHostCompatibility } from '../renderer/comfyui-workflow-doctor.mjs';
 
 const command = process.argv[2] ?? 'preflight';
 const options = parseOptions(process.argv.slice(3));
 
 async function main() {
   const preflight = await preflightLayerCandidates(options);
-  printPreflight(preflight);
+  const compatibility = await checkWorkflowHostCompatibility({
+    workflowPath: preflight.workflowPath,
+    baseUrl: preflight.baseUrl,
+  });
+  printPreflight(preflight, compatibility);
+  const ready = preflight.ok && compatibility.ok;
 
   if (command === 'preflight') {
-    if (!preflight.ok) process.exitCode = 2;
+    if (!ready) process.exitCode = 2;
     return;
   }
   if (command !== 'generate') {
     throw new Error('Use preflight or generate.');
   }
-  if (!preflight.ok) {
-    throw new Error('Layer candidate generation blocked by failed preflight checks.');
+  if (!ready) {
+    throw new Error(
+      'Layer candidate generation blocked by failed preflight or host-workflow compatibility checks.',
+    );
   }
 
   console.log('');
@@ -59,7 +67,7 @@ function parseOptions(args) {
   return options;
 }
 
-function printPreflight(preflight) {
+function printPreflight(preflight, compatibility) {
   console.log('Animation layer candidate preflight');
   console.log(
     `Manifest: ${preflight.manifest.manifestId} / ${preflight.selected.length} selected candidate layer(s)`,
@@ -72,6 +80,22 @@ function printPreflight(preflight) {
   for (const check of preflight.checks) {
     console.log(`${check.ok ? '[ok]' : '[blocked]'} ${check.name}: ${check.detail}`);
   }
+
+  console.log(
+    `${compatibility.ok ? '[ok]' : '[blocked]'} Host workflow compatibility: ${compatibility.nodeCount} API node(s) / ${compatibility.nodeTypes.length} node type(s)`,
+  );
+  for (const nodeType of compatibility.missingNodeTypes) {
+    console.log(`  missing node type: ${nodeType}`);
+  }
+  for (const item of compatibility.unavailableSelections) {
+    console.log(
+      `  unavailable selection: node ${item.nodeId} ${item.nodeType}.${item.inputName} = ${item.configuredValue}`,
+    );
+  }
+  for (const error of compatibility.errors) {
+    console.log(`  ${error}`);
+  }
+
   console.log('');
   for (const { shot, layer, required } of preflight.selected) {
     console.log(
