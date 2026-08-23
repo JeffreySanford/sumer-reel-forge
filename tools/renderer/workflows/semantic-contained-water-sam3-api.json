@@ -19,7 +19,7 @@
   },
   "3": {
     "inputs": {
-      "text": "{{LAYER_PROMPT}}",
+      "text": "water surface inside the rectangular stone basin or pool at the bottom center of the image",
       "clip": [
         "2",
         1
@@ -27,7 +27,8 @@
     },
     "class_type": "CLIPTextEncode",
     "_meta": {
-      "title": "Contained-water semantic target"
+      "title": "Contained-water semantic target",
+      "production_policy": "{{LAYER_PROMPT}}"
     }
   },
   "4": {
