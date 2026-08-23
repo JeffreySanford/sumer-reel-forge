@@ -10,7 +10,7 @@ test('shows the routed first reel workspace', async ({ page }) => {
   await mockOperationalRoutes(page);
   await mockReelRoutes(page);
 
-  await page.goto('/');
+  await page.goto('/reels/1/overview');
 
   await expect(page).toHaveURL(/\/reels\/1\/overview$/);
   await expect(page.getByRole('heading', { name: 'Reel Forge' })).toBeVisible();

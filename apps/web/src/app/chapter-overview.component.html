@@ -1,0 +1,68 @@
+<main class="chapter-shell md3-page md3-theme-dark">
+  <app-studio-nav />
+
+  <section class="chapter-hero md3-container">
+    <div class="md3-breadcrumbs">
+      <a routerLink="/">Studio</a><span>/</span>
+      <a [routerLink]="['/projects', project.slug]">{{ project.title }}</a><span>/</span>
+      <strong>Chapter {{ chapter().number }}</strong>
+    </div>
+
+    <div class="hero-row">
+      <div>
+        <p class="md3-label">Chapter 0{{ chapter().number }}</p>
+        <h1 class="md3-display-medium">{{ chapter().title }}</h1>
+        <p class="lede md3-body-large">{{ chapter().description }}</p>
+      </div>
+      <div class="md3-chip" [class.md3-chip--success]="chapter().state === 'active'">
+        <span class="md3-status-dot"></span>{{ chapter().state === 'active' ? 'In production' : 'Upcoming' }}
+      </div>
+    </div>
+  </section>
+
+  @if (chapter().number === 1) {
+    <section class="chapter-content md3-container summary-row md3-card" aria-label="Chapter production summary">
+      <div class="md3-stat"><strong>{{ reels().length || 18 }}</strong><span>Reels</span></div>
+      <div class="md3-stat"><strong>{{ statusCounts().draft || 0 }}</strong><span>Draft</span></div>
+      <div class="md3-stat"><strong>{{ statusCounts().review || 0 }}</strong><span>In review</span></div>
+      <div class="md3-stat"><strong>{{ statusCounts().approved || 0 }}</strong><span>Approved</span></div>
+      <a class="md3-button md3-button--tonal" routerLink="/reels/1/overview">Continue Reel 1 →</a>
+    </section>
+
+    <section class="chapter-content md3-container md3-section reels-section" aria-labelledby="reels-title">
+      <header class="md3-section-header">
+        <div><p class="md3-label">Reel production</p><h2 id="reels-title" class="md3-headline-medium">Chapter 1 reel slate</h2></div>
+        <p class="md3-body-small">Open a reel to move into its focused production workspace.</p>
+      </header>
+
+      <div class="reel-grid md3-grid md3-grid--3">
+        @for (reel of reels(); track reel.episode) {
+          <a class="reel-card md3-card md3-card--interactive md3-pad-5" [routerLink]="['/reels', reel.episode, 'overview']">
+            <div class="reel-topline md3-cluster md3-cluster--between">
+              <span class="episode md3-label">REEL {{ reel.episode.toString().padStart(2, '0') }}</span>
+              <span class="md3-chip" [class.md3-chip--success]="reel.productionStatus === 'approved' || reel.productionStatus === 'published'" [class.md3-chip--warning]="reel.productionStatus === 'review' || reel.productionStatus === 'rendering'">{{ statusLabel(reel.productionStatus) }}</span>
+            </div>
+            <h3 class="md3-title-medium">{{ reel.title }}</h3>
+            <p class="hook md3-body-small">{{ reel.hook }}</p>
+            <div class="visual-core md3-surface md3-surface--high"><span class="md3-label">Visual core</span><p class="md3-body-small">{{ reel.visualCore }}</p></div>
+            <small class="md3-muted">{{ reel.sourceSection }}</small>
+          </a>
+        }
+      </div>
+    </section>
+  } @else {
+    <section class="chapter-content md3-container md3-section upcoming-panel md3-card md3-card--elevated md3-pad-8">
+      <div class="upcoming-number">0{{ chapter().number }}</div>
+      <p class="md3-label">Roadmap slot</p>
+      <h2 class="md3-headline-large">This chapter is visible in the Studio, but production has not started.</h2>
+      <p class="md3-body-medium">
+        When source ingestion begins, this view will own the chapter's reel slate, planning state,
+        production status, assets, and publication progression just as Chapter 1 does now.
+      </p>
+      <div class="upcoming-actions md3-cluster">
+        <a class="md3-button md3-button--tonal" [routerLink]="['/projects', project.slug]">Back to project</a>
+        <a class="md3-button md3-button--outlined" routerLink="/system">Check production host</a>
+      </div>
+    </section>
+  }
+</main>

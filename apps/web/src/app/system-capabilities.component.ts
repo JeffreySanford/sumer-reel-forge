@@ -1,6 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
+import { StudioNavComponent } from './studio-nav.component';
 import type {
   HostCapabilities,
   HostCapabilityStatus,
@@ -9,7 +10,7 @@ import type {
 @Component({
   selector: 'app-system-capabilities',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, StudioNavComponent],
   templateUrl: './system-capabilities.component.html',
   styleUrl: './system-capabilities.component.scss',
 })

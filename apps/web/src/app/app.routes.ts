@@ -1,4 +1,8 @@
 import { Route } from '@angular/router';
+import { App } from './app';
+import { ChapterOverviewComponent } from './chapter-overview.component';
+import { ProjectOverviewComponent } from './project-overview.component';
+import { StudioHomeComponent } from './studio-home.component';
 import { StudioRouteComponent } from './studio-route.component';
 import { SystemCapabilitiesComponent } from './system-capabilities.component';
 
@@ -6,7 +10,15 @@ export const appRoutes: Route[] = [
   {
     path: '',
     pathMatch: 'full',
-    redirectTo: 'reels/1/overview',
+    component: StudioHomeComponent,
+  },
+  {
+    path: 'projects/:projectSlug/chapters/:chapterNumber',
+    component: ChapterOverviewComponent,
+  },
+  {
+    path: 'projects/:projectSlug',
+    component: ProjectOverviewComponent,
   },
   {
     path: 'system',
@@ -14,6 +26,7 @@ export const appRoutes: Route[] = [
   },
   {
     path: 'reels/:episodeId',
+    component: App,
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'overview' },
       { path: 'overview', component: StudioRouteComponent },
@@ -27,5 +40,5 @@ export const appRoutes: Route[] = [
       { path: '**', redirectTo: 'overview' },
     ],
   },
-  { path: '**', redirectTo: 'reels/1/overview' },
+  { path: '**', redirectTo: '' },
 ];

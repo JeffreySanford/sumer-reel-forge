@@ -1,0 +1,68 @@
+:host { display: block; }
+
+.chapter-shell {
+  background:
+    radial-gradient(circle at 80% 10%, color-mix(in srgb, var(--md-sys-color-accent) 16%, transparent), transparent 27rem),
+    radial-gradient(circle at 16% 24%, color-mix(in srgb, var(--md-sys-color-primary) 11%, transparent), transparent 24rem),
+    var(--md-sys-color-background);
+}
+
+.chapter-hero { padding-block: 46px 48px; }
+.hero-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--md-sys-space-8);
+  margin-top: var(--md-sys-space-8);
+}
+.lede { max-width: 770px; margin-top: var(--md-sys-space-5); }
+
+.summary-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+  align-items: stretch;
+  overflow: hidden;
+}
+.summary-row > * + * { border-left: 1px solid var(--md-sys-color-outline-variant); }
+.summary-row > a { min-width: 180px; border-radius: 0; }
+
+.reels-section { padding-bottom: 90px; }
+.md3-section-header > p { max-width: 400px; margin: 0; text-align: right; }
+.reel-card { display: flex; min-height: 275px; flex-direction: column; }
+.reel-card h3 { margin-top: var(--md-sys-space-5); }
+.hook { margin-top: var(--md-sys-space-2); }
+.visual-core { margin-top: var(--md-sys-space-5); border-radius: var(--md-sys-shape-corner-medium); padding: var(--md-sys-space-3); }
+.visual-core p { margin: var(--md-sys-space-1) 0 0; }
+.reel-card > small { margin-top: auto; padding-top: var(--md-sys-space-4); }
+
+.upcoming-panel {
+  position: relative;
+  overflow: hidden;
+  margin-top: var(--md-sys-space-8);
+  margin-bottom: 90px;
+}
+.upcoming-number {
+  position: absolute;
+  top: 10px;
+  right: 35px;
+  color: color-mix(in srgb, var(--md-sys-color-accent) 16%, transparent);
+  font-size: 10rem;
+  font-weight: 950;
+  letter-spacing: -.1em;
+  line-height: 1;
+}
+.upcoming-panel h2,
+.upcoming-panel > p { position: relative; max-width: 720px; }
+.upcoming-actions { position: relative; margin-top: var(--md-sys-space-6); }
+
+@media (max-width: 900px) {
+  .summary-row { grid-template-columns: repeat(2, 1fr); }
+  .summary-row > a { min-height: 56px; grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--md-sys-color-outline-variant); }
+}
+
+@media (max-width: 680px) {
+  .hero-row { align-items: flex-start; flex-direction: column; }
+  .md3-section-header > p { text-align: left; }
+  .summary-row { grid-template-columns: 1fr 1fr; }
+  .upcoming-number { right: 14px; font-size: 7rem; }
+}

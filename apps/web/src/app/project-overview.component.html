@@ -1,0 +1,79 @@
+<main class="project-shell md3-page md3-theme-dark">
+  <app-studio-nav />
+
+  <section class="project-hero md3-container">
+    <div class="md3-breadcrumbs"><a routerLink="/">Studio</a><span>/</span><strong>{{ project.title }}</strong></div>
+    <div class="hero-grid">
+      <div>
+        <p class="md3-label">{{ project.kicker }}</p>
+        <h1 class="md3-display-large">{{ project.title }}</h1>
+        <p class="lede md3-body-large">{{ project.description }}</p>
+        <div class="hero-actions md3-cluster">
+          <a class="md3-button md3-button--filled" [routerLink]="['/projects', project.slug, 'chapters', 1]">Open Chapter 1</a>
+          <a class="md3-button md3-button--outlined" routerLink="/reels/1/overview">Continue Reel 1</a>
+        </div>
+      </div>
+      <aside class="project-summary md3-card md3-card--elevated" aria-label="Project production summary">
+        <div class="md3-stat"><strong>03</strong><span>Chapters</span></div>
+        <div class="md3-stat"><strong>{{ reels().length || 18 }}</strong><span>Reels in active chapter</span></div>
+        <div class="md3-stat"><strong>{{ statusCounts()['approved'] || 0 }}</strong><span>Approved reels</span></div>
+        <div class="md3-stat"><strong>01</strong><span>Benchmark in focus</span></div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="project-content md3-container md3-section--compact">
+    <header class="md3-section-header">
+      <div><p class="md3-label">Chapter roadmap</p><h2 class="md3-headline-medium">Production moves chapter by chapter</h2></div>
+      <p class="md3-body-small">Each chapter owns its reel list, direction, assets, and publication progression.</p>
+    </header>
+
+    <div class="chapters md3-grid md3-grid--3">
+      @for (chapter of project.chapters; track chapter.number) {
+        <article class="chapter md3-card md3-card--interactive md3-pad-6" [class.upcoming]="chapter.state === 'upcoming'">
+          <div class="chapter-topline md3-cluster md3-cluster--between">
+            <span class="number">0{{ chapter.number }}</span>
+            <span class="md3-chip" [class.md3-chip--success]="chapter.state === 'active'">{{ chapter.state === 'active' ? 'In production' : 'Upcoming' }}</span>
+          </div>
+          <h3 class="md3-title-large">{{ chapter.title }}</h3>
+          <p class="md3-body-small">{{ chapter.description }}</p>
+          @if (chapter.number === 1) {
+            <div class="chapter-metrics md3-cluster">
+              <span class="md3-chip"><strong>{{ reels().length || 18 }}</strong>&nbsp;reels</span>
+              <span class="md3-chip"><strong>{{ statusCounts()['draft'] || 0 }}</strong>&nbsp;draft</span>
+              <span class="md3-chip"><strong>{{ statusCounts()['review'] || 0 }}</strong>&nbsp;review</span>
+              <span class="md3-chip"><strong>{{ statusCounts()['approved'] || 0 }}</strong>&nbsp;approved</span>
+            </div>
+          } @else {
+            <div class="chapter-metrics"><span class="md3-chip">Awaiting production ingestion</span></div>
+          }
+          <a class="md3-link" [routerLink]="['/projects', project.slug, 'chapters', chapter.number]">
+            {{ chapter.number === 1 ? 'Open chapter' : 'View roadmap slot' }} →
+          </a>
+        </article>
+      }
+    </div>
+  </section>
+
+  <section class="project-content md3-container md3-section--compact focus-layout">
+    <article class="focus-panel md3-card md3-card--elevated md3-pad-6">
+      <p class="md3-label">Current production objective</p>
+      <h2 class="md3-headline-medium">Prove Reel 1 before scaling the style.</h2>
+      <p class="md3-body-medium">
+        The Voyage Begins is the visual laboratory for semantic animation layers, restrained cinematic motion,
+        local AI review, and repeatable Scene V2 production. Successful decisions become reusable rules.
+      </p>
+      <div class="focus-actions md3-cluster">
+        <a class="md3-button md3-button--tonal" routerLink="/reels/1/direction">Direction</a>
+        <a class="md3-button md3-button--tonal" routerLink="/reels/1/assets">Assets</a>
+        <a class="md3-button md3-button--tonal" routerLink="/reels/1/jobs">Render jobs</a>
+      </div>
+    </article>
+    <article class="system-panel md3-card md3-card--filled md3-pad-6">
+      <p class="md3-label">Studio infrastructure</p>
+      <h2 class="md3-headline-medium">The machine is part of the production plan.</h2>
+      <p class="md3-body-medium">Inspect CPU, GPU, CUDA, ComfyUI, Ollama, FFmpeg, NVENC, and the runtime projections Reel Forge derives for this host.</p>
+      <a class="md3-link" routerLink="/system">Open Host System →</a>
+    </article>
+  </section>
+</main>
