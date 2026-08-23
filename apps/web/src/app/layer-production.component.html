@@ -45,10 +45,10 @@
         <p class="md3-label">NVIDIA GPU</p>
         <h2 class="md3-title-large">{{ gpuReady() ? 'Ready' : 'Unavailable' }}</h2>
         <span class="md3-chip" [class.md3-chip--success]="gpuReady()" [class.md3-chip--error]="!gpuReady()">
-          {{ machine.gpu.devices[0]?.name || 'No NVIDIA device reported' }}
+          {{ gpuName() }}
         </span>
         <p class="md3-body-small">
-          {{ machine.gpu.devices[0]?.memoryTotalMb ? (machine.gpu.devices[0].memoryTotalMb / 1024).toFixed(1) + ' GB VRAM' : 'VRAM unknown' }}
+          {{ gpuVramLabel() }}
           · {{ machine.runtimePlan?.ai?.comfyVramMode || 'VRAM mode unknown' }}
         </p>
       </article>
@@ -70,7 +70,7 @@
         <span class="md3-chip" [class.md3-chip--success]="workflowReady()" [class.md3-chip--warning]="!workflowReady()">
           {{ workflowReady() ? 'API graph configured' : 'No production graph configured' }}
         </span>
-        <p class="md3-body-small">{{ machine.comfyui.layerWorkflowPath || 'COMFYUI_LAYER_WORKFLOW_PATH is not configured yet.' }}</p>
+        <p class="md3-body-small">{{ machine.comfyui.layerWorkflowPath || 'Built-in Shot 3 SAM3 water workflow' }}</p>
       </article>
     </section>
   }
