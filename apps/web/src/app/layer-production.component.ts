@@ -3,10 +3,15 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { StudioNavComponent } from './studio-nav.component';
-import type { ComfyUiInventory, ShotLayerTarget } from './layer-production.types';
+import type {
+  AnimationProductionLayerStatus,
+  AnimationProductionShotStatus,
+  AnimationProductionStatus,
+  ComfyUiInventory,
+} from './layer-production.types';
 import type { HostCapabilities } from './system-capabilities.types';
 
-const SHOT03_WATER_NODE_TYPES = [
+const SEMANTIC_LAYER_NODE_TYPES = [
   'LoadImage',
   'CheckpointLoaderSimple',
   'CLIPTextEncode',
@@ -14,7 +19,7 @@ const SHOT03_WATER_NODE_TYPES = [
   'JoinImageWithAlpha',
   'SaveImage',
 ] as const;
-const SHOT03_WATER_MODEL = 'sam3.1_multiplex_fp16.safetensors';
+const SAM3_MODEL = 'sam3.1_multiplex_fp16.safetensors';
 
 @Component({
   selector: 'app-layer-production',
@@ -28,60 +33,11 @@ export class LayerProductionComponent {
 
   protected readonly host = signal<HostCapabilities | null>(null);
   protected readonly inventory = signal<ComfyUiInventory | null>(null);
+  protected readonly production = signal<AnimationProductionStatus | null>(null);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
-
-  protected readonly shotThreeLayers: ShotLayerTarget[] = [
-    {
-      id: 'shot03-background-v1',
-      label: 'Background',
-      role: 'Stable scene plate behind all separated material.',
-      material: 'painted environment',
-      required: true,
-      status: 'planned',
-    },
-    {
-      id: 'shot03-water-v1',
-      label: 'Water',
-      role: 'Registered transparent water layer for current, shimmer, and parallax.',
-      material: 'fluid / reflective',
-      required: true,
-      recommendedFirst: true,
-      status: 'planned',
-    },
-    {
-      id: 'shot03-vessel-v1',
-      label: 'Vessel',
-      role: 'Rigid foreground structure with controlled physical motion.',
-      material: 'wood / rigid',
-      required: true,
-      status: 'planned',
-    },
-    {
-      id: 'shot03-enki-body-v1',
-      label: 'Enki body',
-      role: 'Character silhouette preserved without damaging facial detail.',
-      material: 'character / organic',
-      required: true,
-      status: 'planned',
-    },
-    {
-      id: 'shot03-rigging-v1',
-      label: 'Rigging / cloth',
-      role: 'Optional secondary motion for rope, sail, and cloth response.',
-      material: 'cloth / flexible',
-      required: false,
-      status: 'planned',
-    },
-    {
-      id: 'shot03-enki-eyes-v1',
-      label: 'Eyes',
-      role: 'Optional micro-expression isolation only if extraction remains painterly.',
-      material: 'character detail',
-      required: false,
-      status: 'planned',
-    },
-  ];
+  protected readonly selectedShotNumber = signal(3);
+  protected readonly selectedLayerId = signal<string | null>(null);
 
   protected readonly primaryGpu = computed(
     () => this.host()?.gpu.devices?.[0] ?? null,
@@ -101,18 +57,18 @@ export class LayerProductionComponent {
   protected readonly comfyReady = computed(
     () => Boolean(this.inventory()?.online),
   );
-  protected readonly builtInWaterWorkflowReady = computed(() => {
+  protected readonly builtInSemanticWorkflowReady = computed(() => {
     const inventory = this.inventory();
     if (!inventory?.online) return false;
 
-    const nodesReady = SHOT03_WATER_NODE_TYPES.every((nodeType) =>
+    const nodesReady = SEMANTIC_LAYER_NODE_TYPES.every((nodeType) =>
       inventory.nodeTypes.includes(nodeType),
     );
     const modelReady = inventory.resources.some(
       (resource) =>
         resource.nodeType === 'CheckpointLoaderSimple' &&
         resource.inputName === 'ckpt_name' &&
-        resource.values.includes(SHOT03_WATER_MODEL),
+        resource.values.includes(SAM3_MODEL),
     );
 
     return nodesReady && modelReady;
@@ -120,7 +76,7 @@ export class LayerProductionComponent {
   protected readonly workflowReady = computed(
     () =>
       Boolean(this.host()?.comfyui.layerWorkflowReady) ||
-      this.builtInWaterWorkflowReady(),
+      this.builtInSemanticWorkflowReady(),
   );
   protected readonly inventoryReady = computed(
     () => (this.inventory()?.nodeCount ?? 0) > 0,
@@ -132,21 +88,56 @@ export class LayerProductionComponent {
       this.inventoryReady() &&
       this.workflowReady(),
   );
+  protected readonly shots = computed(() => this.production()?.shots ?? []);
+  protected readonly selectedShot = computed<AnimationProductionShotStatus | null>(
+    () =>
+      this.shots().find(
+        (shot) => shot.sourceShotNumber === this.selectedShotNumber(),
+      ) ??
+      this.shots()[0] ??
+      null,
+  );
+  protected readonly selectedLayer = computed<AnimationProductionLayerStatus | null>(
+    () => {
+      const shot = this.selectedShot();
+      if (!shot) return null;
+      return (
+        shot.layers.find((layer) => layer.id === this.selectedLayerId()) ??
+        shot.layers.find((layer) => layer.required) ??
+        shot.layers[0] ??
+        null
+      );
+    },
+  );
+  protected readonly allKnownShotsReady = computed(() => {
+    const production = this.production();
+    return Boolean(
+      production &&
+        production.summary.shotCount > 0 &&
+        production.summary.layeredReadyCount === production.summary.shotCount,
+    );
+  });
 
   protected readonly nextStep = computed(() => {
+    if (!this.production()) {
+      return 'Load the animation production manifest before making production decisions.';
+    }
+    if (this.allKnownShotsReady()) {
+      return 'The current production benchmarks are layered-ready. Use the automated planner and lane registry for the next shot, while keeping human review as the final promotion gate.';
+    }
     if (!this.gpuReady()) {
-      return 'Restore NVIDIA GPU detection before attempting any layer generation.';
+      return 'Restore NVIDIA GPU detection before attempting new candidate generation.';
     }
     if (!this.comfyReady()) {
-      return 'Start ComfyUI on the configured local address, then refresh this inventory.';
+      return 'Start ComfyUI on the configured local address before generating unresolved layers.';
     }
     if (!this.inventoryReady()) {
-      return 'ComfyUI is reachable, but no node inventory was returned. Inspect the local ComfyUI installation.';
+      return 'ComfyUI is reachable, but no node inventory was returned. Inspect the local installation.';
     }
     if (!this.workflowReady()) {
-      return 'Use the detected node/model inventory to build and export the dedicated Shot 3 API-format layer workflow.';
+      return 'Restore the semantic layer workflow before generating unresolved production lanes.';
     }
-    return 'Run the zero-generation preflight for shot03-water-v1 before creating the first candidate.';
+    return 'Select the next unresolved shot and let the manifest-driven planner choose production lanes before generation.';
   });
 
   constructor() {
@@ -160,19 +151,43 @@ export class LayerProductionComponent {
     forkJoin({
       host: this.http.get<HostCapabilities>('/api/runtime/capabilities'),
       inventory: this.http.get<ComfyUiInventory>('/api/runtime/comfyui-inventory'),
+      production: this.http.get<AnimationProductionStatus>(
+        '/api/runtime/animation-production',
+      ),
     }).subscribe({
-      next: ({ host, inventory }) => {
+      next: ({ host, inventory, production }) => {
         this.host.set(host);
         this.inventory.set(inventory);
+        this.production.set(production);
+        if (
+          !production.shots.some(
+            (shot) => shot.sourceShotNumber === this.selectedShotNumber(),
+          )
+        ) {
+          this.selectedShotNumber.set(
+            production.shots[0]?.sourceShotNumber ?? this.selectedShotNumber(),
+          );
+        }
         this.loading.set(false);
       },
       error: (error) => {
         this.error.set(
-          error?.message ?? 'Layer production readiness could not be loaded.',
+          error?.message ?? 'Production cockpit status could not be loaded.',
         );
         this.loading.set(false);
       },
     });
+  }
+
+  protected selectShot(shot: AnimationProductionShotStatus): void {
+    this.selectedShotNumber.set(shot.sourceShotNumber);
+    this.selectedLayerId.set(
+      shot.layers.find((layer) => layer.required)?.id ?? shot.layers[0]?.id ?? null,
+    );
+  }
+
+  protected selectLayer(layer: AnimationProductionLayerStatus): void {
+    this.selectedLayerId.set(layer.id);
   }
 
   protected familyCount(values?: string[]): number {
@@ -182,11 +197,39 @@ export class LayerProductionComponent {
   protected resourcePreview(): string[] {
     return (
       this.inventory()?.resources
-        .slice(0, 8)
+        .slice(0, 6)
         .map(
           (resource) =>
             `${resource.nodeType}.${resource.inputName}: ${resource.values.slice(0, 3).join(', ')}`,
         ) ?? []
     );
+  }
+
+  protected shotTitle(shot: AnimationProductionShotStatus): string {
+    return shot.shotId
+      .split('-')
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
+  }
+
+  protected layerLabel(layer: AnimationProductionLayerStatus): string {
+    return layer.id
+      .replace(/^shot\d+-/, '')
+      .replace(/-v\d+$/, '')
+      .split('-')
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
+  }
+
+  protected shortChecksum(value: string | null): string {
+    if (!value) return 'not recorded';
+    const normalized = value.replace(/^sha256:/, '');
+    return `sha256:${normalized.slice(0, 12)}…`;
+  }
+
+  protected decisionValue(value: unknown): string {
+    if (typeof value === 'string') return value;
+    if (typeof value === 'boolean' || typeof value === 'number') return String(value);
+    return JSON.stringify(value);
   }
 }
