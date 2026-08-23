@@ -8,6 +8,8 @@
   "visualBible": "blessings-of-sumer-v1",
   "styleBible": "reel-01-animation-style-v1",
   "assetVersion": "editorial-v1-flat-benchmark",
+  "assetManifestPath": "blessings-of-sumer/chapter-01/reel-01/animation-v1/manifest.json",
+  "assetStrategy": "prefer-animation-manifest",
   "width": 1080,
   "height": 1920,
   "fps": 30,
