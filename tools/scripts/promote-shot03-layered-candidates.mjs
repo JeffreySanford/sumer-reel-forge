@@ -107,7 +107,11 @@ async function main() {
 
     const bytes = await readFile(candidatePath);
     const checksum = sha256(bytes);
-    if (record.candidateChecksum && record.candidateChecksum !== checksum) {
+    const recordedChecksum = normalizeSha256(
+      record.candidateChecksum,
+      `${layerId} layered preview candidateChecksum`,
+    );
+    if (recordedChecksum && recordedChecksum !== checksum) {
       throw new Error(`${layerId} checksum no longer matches the layered preview evidence.`);
     }
 
@@ -219,7 +223,7 @@ async function promote({
   for (const candidate of candidates) {
     const layer = shot.layers.find((item) => item.id === candidate.layerId);
     layer.state = 'approved';
-    layer.sha256 = candidate.checksum;
+    layer.sha256 = `sha256:${candidate.checksum}`;
     layer.review = {
       status: 'approved',
       notes: [
@@ -251,7 +255,7 @@ async function promote({
       sourceCandidatePath: candidate.candidatePath,
       upstreamQaPath: candidate.qaPath,
       qaType: candidate.qaType,
-      sha256: candidate.checksum,
+      sha256: `sha256:${candidate.checksum}`,
       targetPath: candidate.targetPath,
     })),
     policy: {
@@ -281,7 +285,7 @@ function printPlan({ previewDirectory, layeredQaPath, candidates, dimensions }) 
   console.log(`[ok] shared asset resolution: ${dimensions.width}x${dimensions.height}`);
   for (const candidate of candidates) {
     console.log(
-      `[ok] ${candidate.layerId}: ${candidate.qaType} PASS · ${candidate.checksum.slice(0, 12)}…`,
+      `[ok] ${candidate.layerId}: ${candidate.qaType} PASS · sha256:${candidate.checksum.slice(0, 12)}…`,
     );
     console.log(`     source: ${candidate.candidatePath}`);
     console.log(`     target: ${candidate.targetPath}`);
@@ -344,6 +348,18 @@ function assertQaEvidencePath(qaPath, candidateRunDirectory, layerId) {
 function resolveRequiredPath(value, label) {
   if (typeof value !== 'string' || !value) throw new Error(`Missing ${label}.`);
   return resolve(value);
+}
+
+function normalizeSha256(value, label) {
+  if (value === undefined || value === null || value === '') return undefined;
+  if (typeof value !== 'string') {
+    throw new Error(`${label} must be a string.`);
+  }
+  const normalized = value.startsWith('sha256:') ? value.slice('sha256:'.length) : value;
+  if (!/^[0-9a-f]{64}$/i.test(normalized)) {
+    throw new Error(`${label} is not a valid SHA-256 digest.`);
+  }
+  return normalized.toLowerCase();
 }
 
 function readPngDimensions(buffer, label) {
