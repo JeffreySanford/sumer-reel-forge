@@ -22,7 +22,9 @@ test('shows the routed first reel workspace', async ({ page }) => {
   await expect(page.getByText('8 cinematic beats')).toBeVisible();
 
   await page.getByRole('link', { name: 'Script' }).click();
-  await expect(page.getByText('Before Sumer...')).toBeVisible();
+  await expect(page).toHaveURL(/\/reels\/1\/script$/);
+  await expect(page.getByLabel('Logline')).toBeVisible();
+  await expect(page.getByLabel('Narration')).toBeVisible();
 });
 
 test('deep links load the requested reel and tab', async ({ page }) => {
@@ -180,6 +182,7 @@ async function mockOperationalRoutes(
           episodeId: 1,
           mode: 'storyboard',
           status: 'queued',
+          pipeline: 'editorial',
           createdAt: new Date(0).toISOString(),
           attemptCount: 0,
         },
@@ -194,6 +197,7 @@ async function mockOperationalRoutes(
               episodeId: 1,
               mode: 'storyboard',
               status: 'complete',
+              pipeline: 'editorial',
               createdAt: new Date(0).toISOString(),
               attemptCount: 1,
             },
