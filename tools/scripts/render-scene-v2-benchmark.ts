@@ -14,11 +14,19 @@ import {
   getLocalRenderProfile,
   remotionPerformanceArgs,
 } from '../animation/src/local-render-profile';
+import {
+  formatRemotionPhaseMetrics,
+  renderFromPreparedBundle,
+  type RemotionPhaseMetrics,
+} from '../animation/src/remotion-shared-render';
 
 async function main(): Promise<void> {
   const root = resolve('.');
   const config = loadRendererConfig();
   const renderProfile = getLocalRenderProfile();
+  const sharedBundle = process.env.REMOTION_SHARED_BUNDLE
+    ? resolve(process.env.REMOTION_SHARED_BUNDLE)
+    : undefined;
   const scenePath = resolve(
     process.argv[2] ??
       'tools/animation/scenes/reel-01-shot-03-benchmark.scene-v2.json',
@@ -52,28 +60,42 @@ async function main(): Promise<void> {
     `Assets: ${assetResolution.mode}${loaded.manifestPath ? ` via ${loaded.manifestPath}` : ''}`,
   );
   console.log(`Hardware: ${formatLocalRenderProfile(renderProfile)}`);
+  if (sharedBundle) console.log(`Shared Remotion bundle: ${sharedBundle}`);
   console.log(`Output: ${videoPath}`);
 
-  const startedAt = Date.now();
-  await run(
-    'pnpm',
-    [
-      'exec',
-      'remotion',
-      'render',
-      resolve('tools/animation/src/index.tsx'),
-      'SceneV2Benchmark',
-      videoPath,
-      `--props=${propsPath}`,
-      `--public-dir=${resolve('assets')}`,
-      '--codec=h264',
-      '--pixel-format=yuv420p',
-      ...remotionPerformanceArgs(renderProfile),
-      '--overwrite',
-    ],
-    root,
-  );
-  const renderDurationMs = Date.now() - startedAt;
+  let renderDurationMs: number;
+  let remotionMetrics: RemotionPhaseMetrics | null = null;
+  if (sharedBundle) {
+    remotionMetrics = await renderFromPreparedBundle({
+      serveUrl: sharedBundle,
+      compositionId: 'SceneV2Benchmark',
+      inputProps: { scene },
+      outputLocation: videoPath,
+      profile: renderProfile,
+    });
+    renderDurationMs = remotionMetrics.totalDurationMs;
+  } else {
+    const startedAt = Date.now();
+    await run(
+      'pnpm',
+      [
+        'exec',
+        'remotion',
+        'render',
+        resolve('tools/animation/src/index.tsx'),
+        'SceneV2Benchmark',
+        videoPath,
+        `--props=${propsPath}`,
+        `--public-dir=${resolve('assets')}`,
+        '--codec=h264',
+        '--pixel-format=yuv420p',
+        ...remotionPerformanceArgs(renderProfile),
+        '--overwrite',
+      ],
+      root,
+    );
+    renderDurationMs = Date.now() - startedAt;
+  }
 
   const reviewFrames: Array<{
     id: string;
@@ -163,6 +185,8 @@ async function main(): Promise<void> {
     sourceStartFrame: scene.shots[0]?.sourceStartFrame,
     renderProfile,
     renderDurationMs,
+    remotionMetrics,
+    sharedBundle,
     assetResolution: {
       mode: assetResolution.mode,
       manifestId: assetResolution.manifestId,
@@ -191,6 +215,9 @@ async function main(): Promise<void> {
 
   console.log(`Rendered benchmark: ${videoPath}`);
   console.log(`Render time: ${(renderDurationMs / 1000).toFixed(1)}s`);
+  if (remotionMetrics) {
+    console.log(`Remotion phases: ${formatRemotionPhaseMetrics(remotionMetrics)}`);
+  }
   console.log(`Review contact sheet: ${contactSheetPath}`);
   console.log(`Manifest: ${manifestPath}`);
 }
