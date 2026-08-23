@@ -54,6 +54,27 @@ test('Scene V2 cannot mutate story text', async () => {
 });
 
 test(
+  'Shot 3 benchmark renderer transpiles in CommonJS mode',
+  { timeout: 30_000 },
+  async () => {
+    const temporaryDirectory = await mkdtemp(join(tmpdir(), 'sumer-scene-v2-cjs-'));
+    const outputPath = join(temporaryDirectory, 'benchmark.cjs');
+
+    await runCommand('pnpm', [
+      'exec',
+      'esbuild',
+      resolve('tools/scripts/render-scene-v2-benchmark.ts'),
+      '--platform=node',
+      '--format=cjs',
+      `--outfile=${outputPath}`,
+      '--log-level=error',
+    ]);
+
+    await accessFile(outputPath);
+  },
+);
+
+test(
   'Remotion registers SceneV2Benchmark with the real Shot 3 props',
   { timeout: 60_000 },
   async () => {
@@ -75,6 +96,10 @@ test(
     assert.match(output, /(?:^|\s)SceneV2Benchmark(?:\s|$)/);
   },
 );
+
+async function accessFile(path: string): Promise<void> {
+  await readFile(path);
+}
 
 function runCommand(command: string, args: string[]): Promise<string> {
   return new Promise((resolvePromise, rejectPromise) => {
