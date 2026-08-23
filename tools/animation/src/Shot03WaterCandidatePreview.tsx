@@ -14,6 +14,55 @@ export interface Shot03WaterCandidatePreviewProps {
   showReviewGuides?: boolean;
 }
 
+interface WaterBand {
+  id: string;
+  clipPath: string;
+  phase: number;
+  direction: 1 | -1;
+  xAmplitude: number;
+  yAmplitude: number;
+  speed: number;
+}
+
+const WATER_BANDS: WaterBand[] = [
+  {
+    id: 'upper',
+    clipPath: 'inset(0 0 67% 0)',
+    phase: 0.2,
+    direction: 1,
+    xAmplitude: 5.5,
+    yAmplitude: 1.3,
+    speed: 0.72,
+  },
+  {
+    id: 'upper-mid',
+    clipPath: 'inset(29% 0 42% 0)',
+    phase: 1.1,
+    direction: -1,
+    xAmplitude: 7.2,
+    yAmplitude: 1.8,
+    speed: 0.56,
+  },
+  {
+    id: 'lower-mid',
+    clipPath: 'inset(55% 0 17% 0)',
+    phase: 2.0,
+    direction: 1,
+    xAmplitude: 8.6,
+    yAmplitude: 2.1,
+    speed: 0.43,
+  },
+  {
+    id: 'lower',
+    clipPath: 'inset(79% 0 0 0)',
+    phase: 2.8,
+    direction: -1,
+    xAmplitude: 6.8,
+    yAmplitude: 1.5,
+    speed: 0.61,
+  },
+];
+
 export function Shot03WaterCandidatePreview({
   sourceAsset,
   waterAsset,
@@ -29,43 +78,61 @@ export function Shot03WaterCandidatePreview({
 
   const seconds = frame / fps;
   const progress = frame / Math.max(1, durationInFrames - 1);
-  const driftX =
-    (Math.sin(seconds * 0.72) * 1.55 +
-      Math.sin(seconds * 0.27 + 0.8) * 0.65) *
+  const globalDriftX =
+    (Math.sin(seconds * 0.54) * 2.4 +
+      Math.sin(seconds * 0.21 + 0.8) * 1.2) *
     motionStrength;
-  const driftY =
-    (Math.cos(seconds * 0.48 + 0.3) * 0.72 +
-      Math.sin(seconds * 0.21) * 0.34) *
+  const globalDriftY =
+    (Math.cos(seconds * 0.41 + 0.3) * 1.05 +
+      Math.sin(seconds * 0.18) * 0.5) *
     motionStrength;
   const scale =
-    1 + Math.sin(seconds * 0.36 + 0.4) * 0.0015 * motionStrength;
+    1 + Math.sin(seconds * 0.34 + 0.4) * 0.0035 * motionStrength;
   const brightness =
-    1 + Math.sin(seconds * 0.57 + 0.9) * 0.012 * motionStrength;
-  const echoX = -driftX * 0.55;
-  const echoY = driftY * 0.35;
+    1 + Math.sin(seconds * 0.51 + 0.9) * 0.022 * motionStrength;
 
   return (
     <AbsoluteFill style={styles.root}>
       <Img src={staticFile(sourceAsset)} style={styles.artwork} />
 
-      <Img
-        src={staticFile(waterAsset)}
-        style={{
-          ...styles.water,
-          opacity: 0.92,
-          filter: `brightness(${brightness}) saturate(1.01)`,
-          transform: `translate3d(${driftX}px, ${driftY}px, 0) scale(${scale})`,
-        }}
-      />
+      {WATER_BANDS.map((band) => {
+        const localX =
+          Math.sin(seconds * band.speed + band.phase) *
+          band.xAmplitude *
+          band.direction *
+          motionStrength;
+        const localY =
+          Math.cos(seconds * (band.speed * 0.73) + band.phase) *
+          band.yAmplitude *
+          motionStrength;
+        const shear =
+          Math.sin(seconds * (band.speed * 0.47) + band.phase) *
+          0.22 *
+          motionStrength;
+
+        return (
+          <Img
+            key={band.id}
+            src={staticFile(waterAsset)}
+            style={{
+              ...styles.water,
+              clipPath: band.clipPath,
+              opacity: 0.985,
+              filter: `brightness(${brightness}) saturate(1.018)`,
+              transform: `translate3d(${globalDriftX + localX}px, ${globalDriftY + localY}px, 0) skewX(${shear}deg) scale(${scale})`,
+            }}
+          />
+        );
+      })}
 
       <Img
         src={staticFile(waterAsset)}
         style={{
           ...styles.water,
-          opacity: 0.07,
+          opacity: 0.1,
           mixBlendMode: 'screen',
-          filter: 'blur(0.35px) brightness(1.06)',
-          transform: `translate3d(${echoX}px, ${echoY}px, 0) scale(${1 + (scale - 1) * 0.5})`,
+          filter: 'blur(0.55px) brightness(1.08)',
+          transform: `translate3d(${-globalDriftX * 0.8}px, ${globalDriftY * 0.45}px, 0) scale(${1 + (scale - 1) * 0.75})`,
         }}
       />
 
@@ -73,8 +140,10 @@ export function Shot03WaterCandidatePreview({
 
       {showReviewGuides ? (
         <div style={styles.reviewGuide}>
-          <strong>shot03-water-v1 candidate</strong>
-          <span>{Math.round(progress * 100)}%</span>
+          <strong>shot03-water-v1 diagnostic motion</strong>
+          <span>
+            {Math.round(progress * 100)}% · strength {motionStrength.toFixed(1)}
+          </span>
         </div>
       ) : null}
     </AbsoluteFill>
