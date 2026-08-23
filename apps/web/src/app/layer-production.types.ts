@@ -100,3 +100,19 @@ export interface AnimationProductionStatus {
   };
   shots: AnimationProductionShotStatus[];
 }
+
+export interface AnimationBenchmarkEvidence {
+  sourceShotNumber: number;
+  available: boolean;
+  videoUrl: string | null;
+  contactSheetUrl: string | null;
+  videoPath: string | null;
+  contactSheetPath: string | null;
+  renderedAt: string | null;
+}
+
+export interface AnimationBenchmarkEvidenceStatus {
+  schemaVersion: number;
+  observedAt: string;
+  shots: AnimationBenchmarkEvidence[];
+}
