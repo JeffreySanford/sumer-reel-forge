@@ -1,12 +1,122 @@
 # Sumer Reel Forge
 
-An Nx workspace for turning _Blessings of Sumer_ chapters into short-form video reels.
+A local-first production studio for turning _Blessings of Sumer_ chapters into short-form cinematic reels.
+
+Sumer Reel Forge combines an Angular/NestJS production workspace with deterministic planning, local GPU visual processing, human-reviewed animation layers, Remotion composition, FFmpeg delivery, and persistent provenance. The production rule is simple:
+
+> **AI proposes. Rules constrain. Human directs.**
+
+Generated material never becomes production art automatically. Editorial sources remain immutable, candidate layers are validated outside `animation-v1`, and only explicitly approved candidates can be promoted into the production manifest.
+
+## What Works Today
+
+The current Reel 1 pipeline supports two complementary cinematic benchmark grammars:
+
+- **Shot 3 — Enki at the Helm:** physical motion, shared vessel/character inertia, restrained character micro-performance, material-aware water motion, masked background repair.
+- **Shot 4 — Nammu Under Water:** near-static composition, current/refraction motion, environmental coherence, numinous recognition and dissolution without treating Nammu as a conventional animated cutout.
+
+The production system now includes:
+
+- versioned editorial and animation asset manifests;
+- deterministic shot planning from manifest metadata;
+- a persistent Style Decision Library;
+- reusable production-lane selection by role/material/alpha semantics;
+- ComfyUI/SAM-based preservation-first semantic extraction;
+- checksum-identical source-preservation lanes;
+- structural QA for dimensions, alpha coverage, source-RGB preservation, and candidate provenance;
+- layered Remotion audition renders with review markers and contact sheets;
+- motion QA on assembled shots;
+- explicit human approval gates;
+- checksum-verified, atomic promotion into `animation-v1`;
+- Scene V2 production resolver validation after promotion.
+
+## Production Flow
+
+```txt
+approved editorial painting
+        ↓
+manifest-driven shot plan
+        ↓
+style-decision inheritance
+        ↓
+production-lane selection
+        ↓
+local ComfyUI / deterministic extraction
+        ↓
+candidate layers under tmp/
+        ↓
+structural QA + diagnostics
+        ↓
+layered Remotion audition
+        ↓
+motion QA + human cinematic review
+        ↓
+explicit promotion confirmation
+        ↓
+approved animation-v1 assets
+        ↓
+Scene V2 production render
+```
+
+The automation handles repeatable mechanics—lane selection, workflows, registration, checksums, diagnostics, provenance, QA reports, and promotion safety. Human review still owns semantic and cinematic judgment: whether a mask is meaningful, whether motion feels physical, whether a reveal is beautiful, and whether a shot is publishable.
+
+## Quick Benchmark Demo
+
+Start the complete local studio runtime:
+
+```sh
+pnpm start:all
+```
+
+Inspect the current animation asset state:
+
+```sh
+pnpm animation-assets:status:shot3
+pnpm animation-assets:status:shot4
+```
+
+Plan a shot from the manifest and inherited production knowledge:
+
+```sh
+node tools/scripts/plan-animation-shot.mjs --shot=3 --approved-only
+node tools/scripts/plan-animation-shot.mjs --shot=4
+```
+
+Run the Shot 4 candidate audition after its candidate layers have passed structural QA:
+
+```sh
+pnpm animation:shot4:candidate-preview -- --motion-strength=1 --review-guides
+pnpm animation:shot4:candidate-verify
+pnpm animation:shot4:promotion-plan
+```
+
+Promotion remains explicit and human-controlled:
+
+```sh
+pnpm animation:shot4:promote -- --confirm=APPROVE_SHOT_4
+```
+
+After promotion, prove the normal production resolver is consuming layered assets:
+
+```sh
+pnpm render:animation:shot3-benchmark
+pnpm render:animation:shot4-benchmark
+```
+
+The key production-render signal is:
+
+```txt
+Assets: layered via .../animation-v1/manifest.json
+```
 
 ## Projects
 
 - `web`: Angular storyboard/review dashboard.
 - `api`: NestJS API for reel metadata and render-job orchestration.
 - `reel-core`: shared TypeScript contracts and seed data.
+- `tools/animation`: Scene V2 compositions, motion presets, production asset resolution, and benchmark rendering.
+- `tools/renderer`: local visual-AI workflows, candidate generation, renderer configuration, and artifact utilities.
+- `tools/creative`: reusable creative-quality rules and the Style Decision Library.
 
 ## Local Development
 
@@ -42,24 +152,6 @@ PostgreSQL data remains in the named `postgres-data` Docker volume when `start:a
 
 ComfyUI is the GPU-backed visual AI engine used by Reel Forge for operations such as segmentation, masking, depth estimation, background reconstruction, inpainting, image editing, and candidate layer generation. Reel Forge remains the production orchestrator: Angular/NestJS decides what should be produced, ComfyUI performs the GPU visual processing, and generated candidates still require human approval before they can become `animation-v1` assets.
 
-The intended production flow is:
-
-```txt
-approved editorial painting
-        ↓
-Reel Forge layer-production plan
-        ↓
-ComfyUI workflow
-        ↓
-NVIDIA GPU / CUDA
-        ↓
-candidate masks, depth, transparent layers, reconstruction
-        ↓
-Reel Forge validation and human review
-        ↓
-approved animation-v1 material
-```
-
 ### One-time setup
 
 The managed setup currently targets NVIDIA CUDA workstations. Before running it, make sure `nvidia-smi`, Git, and `uv` are available on the command line.
@@ -70,36 +162,29 @@ Run once from the repository root:
 pnpm comfyui:setup
 ```
 
-The setup command now provisions the complete baseline visual-AI runtime needed for layer-production work:
+The setup command provisions the baseline visual-AI runtime needed for layer-production work:
 
 - verifies the NVIDIA driver first;
 - resolves the latest stable ComfyUI release rather than following unstable development commits;
 - installs ComfyUI under ignored `.cache/comfyui/ComfyUI`;
-- creates an isolated Python 3.13 environment under `.cache/comfyui/.venv`;
+- creates an isolated Python environment under `.cache/comfyui/.venv`;
 - installs NVIDIA-enabled PyTorch and the ComfyUI dependencies;
 - verifies that PyTorch can actually see the CUDA GPU;
 - downloads the curated Reel Forge vision models listed in `tools/comfyui/managed-models.json`;
 - verifies every managed model with its pinned SHA-256 before it is accepted;
 - writes an ignored `.cache/comfyui/managed-models-state.json` record of the verified local model state.
 
-The baseline managed models are intentionally small and purpose-specific rather than a general collection of generative checkpoints:
+The managed model set is intentionally purpose-specific rather than a general checkpoint collection. It includes semantic segmentation, foreground/background separation, and the project’s approved inpainting resources as defined in the tracked managed-model manifest.
 
-| Model | Purpose | ComfyUI location | Approx. size |
-| --- | --- | --- | ---: |
-| `sam3.1_multiplex_fp16.safetensors` | text/box/point-guided semantic segmentation for water, subjects, props, masks | `models/checkpoints/` | 1.75 GB |
-| `birefnet.safetensors` | foreground/background separation and clean alpha masks | `models/background_removal/` | 444 MB |
+Downloads are atomic. Files are streamed to a `.part` file, verified, and only then renamed into ComfyUI's model directory. An interrupted or corrupt download is rejected. Re-running setup hashes an existing managed file and reuses it when it still matches the pinned artifact.
 
-SAM 3.1 is distributed under its upstream `sam-license`; BiRefNet is MIT licensed. The source URLs, destination paths, and pinned hashes live in the tracked managed-model manifest so the installer is auditable and reproducible.
-
-Downloads are atomic. Files are streamed to a `.part` file, verified, and only then renamed into ComfyUI's model directory. An interrupted or corrupt download is rejected. Re-running setup hashes an existing managed file and reuses it when it still matches the pinned artifact; it does not download the same multi-gigabyte file again.
-
-For a machine like this one where the ComfyUI/Python runtime is already installed and only the curated models need to be added or reverified, use:
+For a machine where the ComfyUI/Python runtime is already installed and only the curated models need to be added or reverified, use:
 
 ```sh
 pnpm comfyui:models:setup
 ```
 
-The full setup remains intentionally non-destructive. Re-running it uses an existing checkout and virtual environment instead of silently upgrading the ComfyUI source tree. Normal `start:all` startup never installs or updates ComfyUI or downloads models.
+The full setup is intentionally non-destructive. Re-running it uses an existing checkout and virtual environment instead of silently upgrading the ComfyUI source tree. Normal `start:all` startup never installs or updates ComfyUI or downloads models.
 
 To provision only the runtime and deliberately skip the curated models:
 
@@ -152,11 +237,29 @@ GET http://localhost:3000/api/runtime/capabilities
 GET http://localhost:3000/api/runtime/comfyui-inventory
 ```
 
-The first production target is Reel 1 Shot 3 water, `shot03-water-v1`. The curated setup now supplies the SAM 3.1 and BiRefNet model prerequisites. The dedicated `COMFYUI_LAYER_WORKFLOW_PATH` remains a separate production contract: the first API-format workflow must be authored and validated specifically for preservation-first Shot 3 extraction before candidate generation is enabled.
+### Production-lane execution
+
+The generic production-lane executor reads the animation manifest and lane registry rather than requiring a new wrapper for every layer:
+
+```sh
+node tools/scripts/run-animation-production-lane.mjs preflight --shot=4 --layer=shot04-surface-refraction-v1
+node tools/scripts/run-animation-production-lane.mjs generate  --shot=4 --layer=shot04-surface-refraction-v1
+node tools/scripts/run-animation-production-lane.mjs verify    --shot=4 --layer=shot04-surface-refraction-v1
+```
+
+For known lanes, the three steps can be collapsed into:
+
+```sh
+node tools/scripts/run-animation-production-lane.mjs run --shot=4 --layer=shot04-surface-refraction-v1
+```
+
+This still stops before promotion. Structural QA never substitutes for human semantic review, and motion is judged in the assembled benchmark.
 
 ### GPU memory note
 
 ComfyUI and Ollama can both reserve substantial VRAM. On a workstation GPU, keep ComfyUI generation concurrency conservative and avoid keeping an unnecessary large Ollama model resident during heavier image processing. `ollama ps` shows currently loaded models; a specific model can be released with `ollama stop <model>` when GPU memory needs to be freed for ComfyUI.
+
+## Renderer and Reel Delivery
 
 Validate and run the renderer after the API is running:
 
@@ -239,6 +342,9 @@ The deterministic `mock` adapter is the default. Set `RENDER_ADAPTER=local` to u
 
 - Studio documentation: `documentation/studio`
 - Blessings of Sumer documentation: `documentation/projects/blessings-of-sumer`
+- Animation tooling: `tools/animation`
+- Production-lane registry: `tools/animation/production-lanes-v1.json`
+- Style Decision Library: `tools/creative/style-decisions-v1.json`
 - Agile planning: `planning`
 - Initial database schema: `db/schema.sql`
 
