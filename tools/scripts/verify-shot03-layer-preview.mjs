@@ -22,6 +22,11 @@ const LAYERS = {
     previewRoot: resolve('tmp/animation-previews/shot03-vessel-preview'),
     previewCommand: 'pnpm comfyui:vessel:preview',
   },
+  enki: {
+    layerId: 'shot03-enki-body-v1',
+    previewRoot: resolve('tmp/animation-previews/shot03-enki-body-preview'),
+    previewCommand: 'pnpm comfyui:enki:preview',
+  },
 };
 
 const options = parseOptions(process.argv.slice(2).filter((arg) => arg !== '--'));
@@ -113,7 +118,7 @@ const report = {
     pixelChangeThreshold: options.pixelChangeThreshold,
     ignoreBottomPixels: options.ignoreBottomPixels,
     note:
-      'Motion is measured from decoded review-frame pixels above the review-guide region. Passing proves rendered pixels changed; human review still decides whether the motion is physically and artistically correct.',
+      'Motion is measured from decoded review-frame pixels above the review-guide region. Passing proves rendered pixels changed; human review still decides whether the motion is physically, artistically, and for character layers identity-correct.',
     comparisons,
   },
 };
@@ -277,7 +282,7 @@ function parseOptions(args) {
     else if (arg.startsWith('--ignore-bottom-pixels=')) options.ignoreBottomPixels = numberOption(arg, '--ignore-bottom-pixels=');
     else throw new Error(`Unknown option ${arg}`);
   }
-  if (!(options.layer in LAYERS)) throw new Error('--layer must be water or vessel.');
+  if (!(options.layer in LAYERS)) throw new Error('--layer must be water, vessel, or enki.');
   if (options.ignoreBottomPixels >= EXPECTED_HEIGHT) {
     throw new Error('--ignore-bottom-pixels must be less than the preview height.');
   }
