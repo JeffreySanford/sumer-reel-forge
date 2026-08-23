@@ -1,0 +1,271 @@
+{
+  "schemaVersion": 1,
+  "manifestId": "chapter-01-reel-01-animation-v1",
+  "projectSlug": "blessings-of-sumer",
+  "chapterNumber": 1,
+  "reelId": "resolve-from-studio",
+  "episodeNumber": 1,
+  "visualBible": "blessings-of-sumer-v1",
+  "assetVersion": "animation-v1",
+  "sourceEditorialVersion": "editorial-v1",
+  "shots": [
+    {
+      "shotId": "enki-at-the-helm",
+      "sourceShotNumber": 3,
+      "sourceFrame": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-03.png",
+      "status": "draft",
+      "fallback": {
+        "assetId": "shot03-editorial-v1-flat",
+        "assetPath": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-03.png"
+      },
+      "overscan": {
+        "leftPercent": 10,
+        "rightPercent": 10,
+        "topPercent": 8,
+        "bottomPercent": 8
+      },
+      "activationPolicy": {
+        "requiredLayerIds": [
+          "shot03-background-v1",
+          "shot03-water-v1",
+          "shot03-vessel-v1",
+          "shot03-enki-body-v1"
+        ],
+        "enableDeferredPerformanceWhenApproved": true
+      },
+      "layers": [
+        {
+          "id": "shot03-background-v1",
+          "path": "blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-03/background.png",
+          "role": "background",
+          "material": "atmosphere-distant",
+          "depthDefault": 0.12,
+          "anchor": "center",
+          "transform": { "x": 0, "y": 0, "scale": 1 },
+          "motionPresets": ["cinematicSlow"],
+          "state": "planned",
+          "hasAlpha": false,
+          "source": {
+            "type": "derived",
+            "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-03.png"
+          },
+          "review": { "status": "pending", "notes": [] }
+        },
+        {
+          "id": "shot03-water-v1",
+          "path": "blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-03/water.png",
+          "role": "water",
+          "material": "water",
+          "depthDefault": 0.28,
+          "anchor": "lower-center",
+          "transform": { "x": 0, "y": 0, "scale": 1 },
+          "motionPresets": ["waterPulse"],
+          "state": "planned",
+          "hasAlpha": true,
+          "source": {
+            "type": "derived",
+            "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-03.png"
+          },
+          "review": { "status": "pending", "notes": [] }
+        },
+        {
+          "id": "shot03-vessel-v1",
+          "path": "blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-03/vessel.png",
+          "role": "major-prop",
+          "material": "rigid-vessel",
+          "depthDefault": 0.46,
+          "anchor": "vessel-center-of-mass",
+          "transform": { "x": 0, "y": 0, "scale": 1 },
+          "motionPresets": ["heavyPhysical"],
+          "state": "planned",
+          "hasAlpha": true,
+          "source": {
+            "type": "derived",
+            "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-03.png"
+          },
+          "review": { "status": "pending", "notes": [] }
+        },
+        {
+          "id": "shot03-enki-body-v1",
+          "path": "blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-03/character/enki-body.png",
+          "role": "character",
+          "material": "cloth-heavy",
+          "depthDefault": 0.58,
+          "anchor": "enki-torso",
+          "transform": { "x": 0, "y": 0, "scale": 1 },
+          "motionPresets": ["breathing"],
+          "state": "planned",
+          "hasAlpha": true,
+          "source": {
+            "type": "derived",
+            "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-03.png"
+          },
+          "review": { "status": "pending", "notes": [] }
+        },
+        {
+          "id": "shot03-rigging-v1",
+          "path": "blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-03/foreground/rigging.png",
+          "role": "foreground-occluder",
+          "material": "reed",
+          "depthDefault": 0.78,
+          "anchor": "rigging-root",
+          "transform": { "x": 0, "y": 0, "scale": 1 },
+          "motionPresets": ["riggingTension"],
+          "state": "planned",
+          "hasAlpha": true,
+          "source": {
+            "type": "derived",
+            "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-03.png"
+          },
+          "review": { "status": "pending", "notes": ["Must not cross Enki's face or caption safe zone."] }
+        },
+        {
+          "id": "shot03-enki-eyes-v1",
+          "path": "blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-03/character/enki-eyes-closed.png",
+          "role": "character-state",
+          "material": "skin",
+          "depthDefault": 0.62,
+          "anchor": "enki-eyes",
+          "transform": { "x": 0, "y": 0, "scale": 1 },
+          "motionPresets": ["blinkOnce"],
+          "state": "planned",
+          "hasAlpha": true,
+          "source": {
+            "type": "reference-state",
+            "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-03.png"
+          },
+          "review": { "status": "pending", "notes": ["Identity and lighting must remain stable against the open-eye source."] }
+        }
+      ]
+    },
+    {
+      "shotId": "nammu-under-water",
+      "sourceShotNumber": 4,
+      "sourceFrame": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-04.png",
+      "status": "draft",
+      "fallback": {
+        "assetId": "shot04-editorial-v1-flat",
+        "assetPath": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-04.png"
+      },
+      "overscan": {
+        "leftPercent": 6,
+        "rightPercent": 6,
+        "topPercent": 6,
+        "bottomPercent": 6
+      },
+      "activationPolicy": {
+        "requiredLayerIds": [
+          "shot04-deep-water-v1",
+          "shot04-mid-current-v1",
+          "shot04-surface-refraction-v1",
+          "shot04-nammu-coherence-mask-v1"
+        ],
+        "enableDeferredPerformanceWhenApproved": false
+      },
+      "layers": [
+        {
+          "id": "shot04-deep-water-v1",
+          "path": "blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-04/deep-water.png",
+          "role": "background",
+          "material": "underwater-refraction",
+          "depthDefault": 0.08,
+          "anchor": "center",
+          "transform": { "x": 0, "y": 0, "scale": 1 },
+          "motionPresets": ["waterPulse"],
+          "state": "planned",
+          "hasAlpha": false,
+          "source": {
+            "type": "derived",
+            "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-04.png"
+          },
+          "review": { "status": "pending", "notes": [] }
+        },
+        {
+          "id": "shot04-mid-current-v1",
+          "path": "blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-04/mid-current.png",
+          "role": "water",
+          "material": "water",
+          "depthDefault": 0.34,
+          "anchor": "center",
+          "transform": { "x": 0, "y": 0, "scale": 1 },
+          "motionPresets": ["waterPulse", "numinousDrift"],
+          "state": "planned",
+          "hasAlpha": true,
+          "source": {
+            "type": "derived",
+            "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-04.png"
+          },
+          "review": { "status": "pending", "notes": [] }
+        },
+        {
+          "id": "shot04-surface-refraction-v1",
+          "path": "blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-04/surface-refraction.png",
+          "role": "reflection",
+          "material": "underwater-refraction",
+          "depthDefault": 0.48,
+          "anchor": "upper-center",
+          "transform": { "x": 0, "y": 0, "scale": 1 },
+          "motionPresets": ["waterPulse"],
+          "state": "planned",
+          "hasAlpha": true,
+          "source": {
+            "type": "derived",
+            "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-04.png"
+          },
+          "review": { "status": "pending", "notes": [] }
+        },
+        {
+          "id": "shot04-nammu-coherence-mask-v1",
+          "path": "blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-04/masks/nammu-coherence.png",
+          "role": "mask",
+          "material": "divine-light",
+          "depthDefault": 0.56,
+          "anchor": "nammu-coherence-region",
+          "transform": { "x": 0, "y": 0, "scale": 1 },
+          "motionPresets": ["numinousDrift"],
+          "state": "planned",
+          "hasAlpha": true,
+          "source": {
+            "type": "derived",
+            "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-04.png"
+          },
+          "review": { "status": "pending", "notes": ["Must read as environmental coherence, not a cutout character silhouette."] }
+        },
+        {
+          "id": "shot04-foreground-distortion-v1",
+          "path": "blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-04/foreground-distortion.png",
+          "role": "foreground-occluder",
+          "material": "underwater-refraction",
+          "depthDefault": 0.82,
+          "anchor": "center",
+          "transform": { "x": 0, "y": 0, "scale": 1 },
+          "motionPresets": ["numinousDrift"],
+          "state": "planned",
+          "hasAlpha": true,
+          "source": {
+            "type": "procedural",
+            "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-04.png"
+          },
+          "review": { "status": "pending", "notes": [] }
+        },
+        {
+          "id": "shot04-light-contour-v1",
+          "path": "blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-04/light/nammu-contour.png",
+          "role": "light",
+          "material": "divine-light",
+          "depthDefault": 0.64,
+          "anchor": "nammu-coherence-region",
+          "transform": { "x": 0, "y": 0, "scale": 1 },
+          "motionPresets": ["numinousDrift"],
+          "state": "planned",
+          "hasAlpha": true,
+          "source": {
+            "type": "procedural",
+            "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-04.png"
+          },
+          "review": { "status": "pending", "notes": ["No glowing eyes, hard aura, or fantasy particle halo."] }
+        }
+      ]
+    }
+  ]
+}
