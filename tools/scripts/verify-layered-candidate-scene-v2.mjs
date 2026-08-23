@@ -139,9 +139,10 @@ const metadataPass = metadataChecks.every((check) => check.pass);
 const motionPass = comparisons.every((comparison) => comparison.pass);
 const pass = metadataPass && motionPass;
 const humanContext = manifest.humanReview ?? {};
+const cameraMotion = inspectCameraMotion(manifest.scenePath, options.shotNumber);
 const report = {
   schemaVersion: 1,
-  verificationType: 'generic-scene-v2-layered-candidate-motion',
+  verificationType: 'generic-scene-v2-layered-candidate-aggregate-motion',
   generatedAt: new Date().toISOString(),
   sourceShotNumber: options.shotNumber,
   shotId: manifest.shotId ?? null,
@@ -161,14 +162,19 @@ const report = {
   },
   motion: {
     pass: motionPass,
+    scope: 'aggregate-scene-frame-difference',
+    materialLocalProof: false,
+    cameraMotionPresent: cameraMotion.present,
+    cameraMotion,
     minMeanAbsoluteDifference: options.minMeanDiff,
     minChangedPixelRatio: options.minChangedRatio,
     pixelChangeThreshold: options.pixelChangeThreshold,
     ignoreTopPixels: options.ignoreTopPixels,
     ignoreBottomPixels: options.ignoreBottomPixels,
     comparisons,
-    interpretation:
-      'Passing proves that adjacent Scene V2 review beats contain measurable visual change through the exact candidate audition. Human review still owns material realism, identity, composition, and publishability.',
+    interpretation: cameraMotion.present
+      ? 'Passing proves aggregate visual change between Scene V2 review beats, but camera motion contributes to the measurement. This result does not independently prove material-local motion. Human review and material-local QA remain required for material realism.'
+      : 'Passing proves aggregate visual change between Scene V2 review beats. This result still does not independently prove that each animated material contributes useful or realistic motion.',
   },
   humanReview: {
     required: true,
@@ -205,7 +211,12 @@ for (const comparison of comparisons) {
     `[${comparison.pass ? 'ok' : 'fail'}] ${comparison.label}: mean diff ${comparison.meanAbsoluteDifference.toFixed(4)}, changed pixels ${(comparison.changedPixelRatio * 100).toFixed(4)}%`,
   );
 }
-console.log(`Scene V2 candidate motion QA: ${motionPass ? 'PASS' : 'FAIL'}`);
+console.log(`Aggregate Scene V2 motion QA: ${motionPass ? 'PASS' : 'FAIL'}`);
+if (cameraMotion.present) {
+  console.log(
+    '[review] Camera motion contributes to aggregate frame differences; this check does NOT independently prove material-local motion.',
+  );
+}
 console.log(`Report: ${reportPath}`);
 console.log('Human semantic/cinematic review remains the final gate.');
 if (!pass) process.exitCode = 2;
@@ -283,6 +294,47 @@ function measureFrameDifference(
       meanAbsoluteDifference >= options.minMeanDiff &&
       changedPixelRatio >= options.minChangedRatio,
   };
+}
+
+function inspectCameraMotion(scenePath, shotNumber) {
+  if (typeof scenePath !== 'string' || !scenePath) {
+    return { present: false, available: false };
+  }
+  const path = resolve(scenePath);
+  if (!existsSync(path)) {
+    return { present: false, available: false, scenePath: path };
+  }
+  try {
+    const scene = JSON.parse(readFileSync(path, 'utf8'));
+    const shot = scene.shots?.find(
+      (item) => item.sourceShotNumber === shotNumber || item.id === manifest.shotId,
+    );
+    const camera = shot?.camera;
+    if (!camera) return { present: false, available: true, scenePath: path };
+    const scaleDelta = Math.abs(Number(camera.scaleTo ?? 1) - Number(camera.scaleFrom ?? 1));
+    const xDelta = Math.abs(Number(camera.xTo ?? 0) - Number(camera.xFrom ?? 0));
+    const yDelta = Math.abs(Number(camera.yTo ?? 0) - Number(camera.yFrom ?? 0));
+    const rotationDelta = Math.abs(
+      Number(camera.rotationTo ?? 0) - Number(camera.rotationFrom ?? 0),
+    );
+    return {
+      present: scaleDelta > 0.000001 || xDelta > 0.000001 || yDelta > 0.000001 || rotationDelta > 0.000001,
+      available: true,
+      scenePath: path,
+      preset: camera.preset ?? null,
+      scaleDelta,
+      xDelta,
+      yDelta,
+      rotationDelta,
+    };
+  } catch (error) {
+    return {
+      present: false,
+      available: false,
+      scenePath: path,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
 }
 
 function resolveReviewFrame(rawPath) {
