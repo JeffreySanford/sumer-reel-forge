@@ -4,10 +4,8 @@ import { CinematicMotionProof } from './CinematicMotionProof';
 import { CinematicStyleTest } from './CinematicStyleTest';
 import { FullReelAnimation } from './FullReelAnimation';
 import { ReelAnimation } from './ReelAnimation';
-import {
-  SceneV2Benchmark,
-  type SceneV2BenchmarkProps,
-} from './SceneV2Benchmark';
+import type { SceneV2BenchmarkProps } from './SceneV2Benchmark';
+import { SceneV2ResolvedBenchmark } from './SceneV2ResolvedBenchmark';
 import {
   SceneV2WaterHandoff,
   type SceneV2WaterHandoffProps,
@@ -54,7 +52,7 @@ function RemotionRoot() {
       />
       <Composition
         id="SceneV2Benchmark"
-        component={SceneV2Benchmark}
+        component={SceneV2ResolvedBenchmark}
         durationInFrames={210}
         fps={30}
         width={1080}

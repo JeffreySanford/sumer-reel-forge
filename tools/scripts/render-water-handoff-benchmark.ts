@@ -8,10 +8,7 @@ import {
   writeJson,
 } from '../renderer/artifact-utils.mjs';
 import { loadRendererConfig } from '../renderer/renderer-config.mjs';
-import {
-  assertSceneV2,
-  type SceneV2,
-} from '../animation/src/scene-v2';
+import { loadSceneV2ForRender } from '../animation/src/scene-v2-asset-loader';
 import type { WaterMaterialHandoffConfig } from '../animation/src/SceneV2WaterHandoff';
 
 interface WaterHandoffBenchmarkConfig {
@@ -47,14 +44,17 @@ async function main(): Promise<void> {
 
   const outgoingPath = resolve(benchmark.outgoingScenePath);
   const incomingPath = resolve(benchmark.incomingScenePath);
-  const outgoingScene = JSON.parse(
-    await readFile(outgoingPath, 'utf8'),
-  ) as SceneV2;
-  const incomingScene = JSON.parse(
-    await readFile(incomingPath, 'utf8'),
-  ) as SceneV2;
-  assertSceneV2(outgoingScene);
-  assertSceneV2(incomingScene);
+  const outgoingLoaded = await loadSceneV2ForRender(outgoingPath, resolve('assets'));
+  const incomingLoaded = await loadSceneV2ForRender(incomingPath, resolve('assets'));
+  const outgoingScene = outgoingLoaded.scene;
+  const incomingScene = incomingLoaded.scene;
+
+  for (const warning of outgoingLoaded.assetResolution.warnings) {
+    console.warn(`[animation-assets:outgoing] ${warning}`);
+  }
+  for (const warning of incomingLoaded.assetResolution.warnings) {
+    console.warn(`[animation-assets:incoming] ${warning}`);
+  }
 
   if (outgoingScene.fps !== incomingScene.fps) {
     throw new Error('Water handoff requires matching outgoing/incoming fps.');
@@ -105,8 +105,8 @@ async function main(): Promise<void> {
   });
 
   console.log(`Rendering ${benchmark.transitionId}...`);
-  console.log(`Outgoing: ${outgoingPath}`);
-  console.log(`Incoming: ${incomingPath}`);
+  console.log(`Outgoing: ${outgoingPath} [${outgoingLoaded.assetResolution.mode}]`);
+  console.log(`Incoming: ${incomingPath} [${incomingLoaded.assetResolution.mode}]`);
   console.log(`Output: ${videoPath}`);
 
   await run(
@@ -212,11 +212,15 @@ async function main(): Promise<void> {
       path: outgoingPath,
       sceneId: outgoingScene.sceneId,
       sourceShotNumber: outgoingScene.shots[0]?.sourceShotNumber,
+      assetResolution: outgoingLoaded.assetResolution,
+      assetManifestPath: outgoingLoaded.manifestPath,
     },
     incomingScene: {
       path: incomingPath,
       sceneId: incomingScene.sceneId,
       sourceShotNumber: incomingScene.shots[0]?.sourceShotNumber,
+      assetResolution: incomingLoaded.assetResolution,
+      assetManifestPath: incomingLoaded.manifestPath,
     },
     transition: benchmark.transition,
     output: {

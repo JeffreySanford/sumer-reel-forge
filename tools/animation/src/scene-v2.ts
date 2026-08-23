@@ -42,6 +42,7 @@ export interface SceneV2Layer {
     | 'atmosphere'
     | 'mask'
     | 'light'
+    | 'reflection'
     | 'caption-support';
   material: string;
   depth: number;
@@ -114,6 +115,8 @@ export interface SceneV2 {
   visualBible: string;
   styleBible: string;
   assetVersion: string;
+  assetManifestPath?: string;
+  assetStrategy?: 'scene-only' | 'prefer-animation-manifest';
   width: number;
   height: number;
   fps: number;
@@ -179,6 +182,20 @@ export function validateSceneV2(scene: SceneV2): SceneV2ValidationResult {
     errors.push('Scene V2 may not mutate story text.');
   }
   if (!scene.shots.length) errors.push('Scene V2 requires at least one shot.');
+  if (
+    scene.assetStrategy === 'prefer-animation-manifest' &&
+    !scene.assetManifestPath
+  ) {
+    errors.push('Scene V2 prefer-animation-manifest requires assetManifestPath.');
+  }
+  if (
+    scene.assetManifestPath &&
+    (scene.assetManifestPath.includes('..') ||
+      scene.assetManifestPath.startsWith('/') ||
+      scene.assetManifestPath.startsWith('\\'))
+  ) {
+    errors.push('Scene V2 assetManifestPath must be relative to the configured asset root.');
+  }
 
   for (const shot of scene.shots) {
     const endFrame = shot.startFrame + shot.durationFrames;

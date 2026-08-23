@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { spawn } from 'node:child_process';
-import { access, mkdir, readFile } from 'node:fs/promises';
+import { mkdir } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import {
   prepareOutputDirectory,
@@ -8,11 +8,7 @@ import {
   writeJson,
 } from '../renderer/artifact-utils.mjs';
 import { loadRendererConfig } from '../renderer/renderer-config.mjs';
-import {
-  assertSceneV2,
-  validateSceneV2,
-  type SceneV2,
-} from '../animation/src/scene-v2';
+import { loadSceneV2ForRender } from '../animation/src/scene-v2-asset-loader';
 
 async function main(): Promise<void> {
   const root = resolve('.');
@@ -21,18 +17,11 @@ async function main(): Promise<void> {
     process.argv[2] ??
       'tools/animation/scenes/reel-01-shot-03-benchmark.scene-v2.json',
   );
-  const scene = JSON.parse(await readFile(scenePath, 'utf8')) as SceneV2;
-  const validation = validateSceneV2(scene);
-  assertSceneV2(scene);
+  const loaded = await loadSceneV2ForRender(scenePath, resolve('assets'));
+  const { scene, assetResolution } = loaded;
 
-  for (const warning of validation.warnings) {
-    console.warn(`[scene-v2] ${warning}`);
-  }
-
-  for (const shot of scene.shots) {
-    for (const layer of shot.layers.filter((item) => item.required)) {
-      await access(resolve('assets', layer.assetPath));
-    }
+  for (const warning of assetResolution.warnings) {
+    console.warn(`[animation-assets] ${warning}`);
   }
 
   const sourceShotNumber = scene.shots[0]?.sourceShotNumber;
@@ -53,6 +42,9 @@ async function main(): Promise<void> {
 
   console.log(`Rendering ${scene.sceneId}...`);
   console.log(`Scene: ${scenePath}`);
+  console.log(
+    `Assets: ${assetResolution.mode}${loaded.manifestPath ? ` via ${loaded.manifestPath}` : ''}`,
+  );
   console.log(`Output: ${videoPath}`);
 
   await run(
@@ -159,6 +151,15 @@ async function main(): Promise<void> {
     sceneId: scene.sceneId,
     sourceShotNumber,
     sourceStartFrame: scene.shots[0]?.sourceStartFrame,
+    assetResolution: {
+      mode: assetResolution.mode,
+      manifestId: assetResolution.manifestId,
+      manifestPath: loaded.manifestPath,
+      layeredShotIds: assetResolution.layeredShotIds,
+      fallbackShotIds: assetResolution.fallbackShotIds,
+      unresolvedRequiredLayerIds: assetResolution.unresolvedRequiredLayerIds,
+      warnings: assetResolution.warnings,
+    },
     output: {
       path: videoPath,
       checksum: await sha256(videoPath),
@@ -172,7 +173,6 @@ async function main(): Promise<void> {
     contactSheet: reviewFrames.length
       ? { path: contactSheetPath, checksum: await sha256(contactSheetPath) }
       : undefined,
-    validation,
     reviewPolicy: scene.reviewPolicy,
     sourcePolicy: scene.sourcePolicy,
   });
