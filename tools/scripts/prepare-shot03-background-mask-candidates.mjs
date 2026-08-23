@@ -30,11 +30,13 @@ export function prepareBackgroundMaskCandidates(inputs) {
   }
 
   for (const item of decoded) {
-    item.mask = retainMeaningfulComponents(
+    const retained = retainMeaningfulComponents(
       item.alpha,
       dimensions.width,
       dimensions.height,
     );
+    item.mask = retained.mask;
+    item.retainedComponents = retained.retainedComponents;
   }
 
   let dilationPasses = 0;
@@ -68,12 +70,7 @@ export function prepareBackgroundMaskCandidates(inputs) {
     for (let pixel = 0; pixel < item.mask.length; pixel += 1) {
       rgba[pixel * 4 + 3] = item.mask[pixel] ? 255 : 0;
     }
-    encodeRgbaPng(
-      rgba,
-      dimensions.width,
-      dimensions.height,
-      outputPath,
-    );
+    encodeRgbaPng(rgba, dimensions.width, dimensions.height, outputPath);
 
     return {
       ...item.input,
@@ -256,8 +253,7 @@ function retainMeaningfulComponents(alpha, width, height) {
   for (const component of retained) {
     for (const index of component.members) mask[index] = 1;
   }
-  mask.retainedComponents = retained.length;
-  return mask;
+  return { mask, retainedComponents: retained.length };
 }
 
 function dilateMask(mask, width, height) {
@@ -358,7 +354,9 @@ function readPngDimensions(path) {
   );
   if (result.error) throw result.error;
   if (result.status !== 0) {
-    throw new Error(`ffprobe could not inspect ${path}: ${String(result.stderr ?? '').trim()}`);
+    throw new Error(
+      `ffprobe could not inspect ${path}: ${String(result.stderr ?? '').trim()}`,
+    );
   }
   const stream = JSON.parse(result.stdout)?.streams?.[0];
   const width = Number(stream?.width);
