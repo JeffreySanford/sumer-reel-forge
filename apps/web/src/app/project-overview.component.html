@@ -1,0 +1,79 @@
+<main class="project-shell">
+  <app-studio-nav />
+
+  <section class="project-hero">
+    <div class="breadcrumbs"><a routerLink="/">Studio</a><span>/</span><strong>{{ project.title }}</strong></div>
+    <div class="hero-grid">
+      <div>
+        <p class="eyebrow">{{ project.kicker }}</p>
+        <h1>{{ project.title }}</h1>
+        <p class="lede">{{ project.description }}</p>
+        <div class="hero-actions">
+          <a class="primary" [routerLink]="['/projects', project.slug, 'chapters', 1]">Open Chapter 1</a>
+          <a class="secondary" routerLink="/reels/1/overview">Continue Reel 1</a>
+        </div>
+      </div>
+      <aside class="project-summary" aria-label="Project production summary">
+        <div><strong>03</strong><span>Chapters</span></div>
+        <div><strong>{{ reels().length || 18 }}</strong><span>Reels in active chapter</span></div>
+        <div><strong>{{ statusCounts()['approved'] || 0 }}</strong><span>Approved reels</span></div>
+        <div><strong>01</strong><span>Benchmark in focus</span></div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="project-content">
+    <header class="section-heading">
+      <div><p class="eyebrow">Chapter roadmap</p><h2>Production moves chapter by chapter</h2></div>
+      <p>Each chapter owns its reel list, direction, assets, and publication progression.</p>
+    </header>
+
+    <div class="chapters">
+      @for (chapter of project.chapters; track chapter.number) {
+        <article class="chapter" [class.upcoming]="chapter.state === 'upcoming'">
+          <div class="chapter-topline">
+            <span class="number">0{{ chapter.number }}</span>
+            <span class="state">{{ chapter.state === 'active' ? 'In production' : 'Upcoming' }}</span>
+          </div>
+          <h3>{{ chapter.title }}</h3>
+          <p>{{ chapter.description }}</p>
+          @if (chapter.number === 1) {
+            <div class="chapter-metrics">
+              <span><strong>{{ reels().length || 18 }}</strong> reels</span>
+              <span><strong>{{ statusCounts()['draft'] || 0 }}</strong> draft</span>
+              <span><strong>{{ statusCounts()['review'] || 0 }}</strong> review</span>
+              <span><strong>{{ statusCounts()['approved'] || 0 }}</strong> approved</span>
+            </div>
+          } @else {
+            <div class="chapter-metrics muted"><span>Awaiting production ingestion</span></div>
+          }
+          <a [routerLink]="['/projects', project.slug, 'chapters', chapter.number]">
+            {{ chapter.number === 1 ? 'Open chapter' : 'View roadmap slot' }} →
+          </a>
+        </article>
+      }
+    </div>
+  </section>
+
+  <section class="project-content focus-layout">
+    <article class="focus-panel">
+      <p class="eyebrow">Current production objective</p>
+      <h2>Prove Reel 1 before scaling the style.</h2>
+      <p>
+        The Voyage Begins is the visual laboratory for semantic animation layers, restrained cinematic motion,
+        local AI review, and repeatable Scene V2 production. Successful decisions become reusable rules.
+      </p>
+      <div class="focus-actions">
+        <a routerLink="/reels/1/direction">Direction</a>
+        <a routerLink="/reels/1/assets">Assets</a>
+        <a routerLink="/reels/1/jobs">Render jobs</a>
+      </div>
+    </article>
+    <article class="system-panel">
+      <p class="eyebrow">Studio infrastructure</p>
+      <h2>The machine is part of the production plan.</h2>
+      <p>Inspect CPU, GPU, CUDA, ComfyUI, Ollama, FFmpeg, NVENC, and the runtime projections Reel Forge derives for this host.</p>
+      <a routerLink="/system">Open Host System →</a>
+    </article>
+  </section>
+</main>
