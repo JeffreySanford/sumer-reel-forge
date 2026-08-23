@@ -10,6 +10,7 @@ import {
   SceneV2Benchmark,
   type SceneV2BenchmarkProps,
 } from './SceneV2Benchmark';
+import { ContainedWaterMaterialLayer } from './ContainedWaterMaterialLayer';
 import {
   assertSceneV2,
   cinematicSlow,
@@ -127,6 +128,21 @@ function AnimatedLayer({
   progress: number;
   fps: number;
 }) {
+  if (
+    layer.role === 'water' &&
+    layer.anchor.includes('water-basin') &&
+    layer.motionPresets.includes('waterPulse')
+  ) {
+    return (
+      <ContainedWaterMaterialLayer
+        layer={layer}
+        frame={frame}
+        progress={progress}
+        fps={fps}
+      />
+    );
+  }
+
   if (layer.motionPresets.includes('smokeDrift')) {
     return (
       <SmokeMaterialLayer
