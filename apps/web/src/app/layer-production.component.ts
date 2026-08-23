@@ -4,6 +4,8 @@ import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { StudioNavComponent } from './studio-nav.component';
 import type {
+  AnimationBenchmarkEvidence,
+  AnimationBenchmarkEvidenceStatus,
   AnimationProductionLayerStatus,
   AnimationProductionShotStatus,
   AnimationProductionStatus,
@@ -34,6 +36,8 @@ export class LayerProductionComponent {
   protected readonly host = signal<HostCapabilities | null>(null);
   protected readonly inventory = signal<ComfyUiInventory | null>(null);
   protected readonly production = signal<AnimationProductionStatus | null>(null);
+  protected readonly benchmarkEvidence =
+    signal<AnimationBenchmarkEvidenceStatus | null>(null);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly selectedShotNumber = signal(3);
@@ -102,6 +106,17 @@ export class LayerProductionComponent {
       );
     },
   );
+  protected readonly selectedEvidence = computed<AnimationBenchmarkEvidence | null>(
+    () => {
+      const shot = this.selectedShot();
+      if (!shot) return null;
+      return (
+        this.benchmarkEvidence()?.shots.find(
+          (evidence) => evidence.sourceShotNumber === shot.sourceShotNumber,
+        ) ?? null
+      );
+    },
+  );
   protected readonly allKnownShotsReady = computed(() => {
     const production = this.production();
     return Boolean(
@@ -147,11 +162,15 @@ export class LayerProductionComponent {
       production: this.http.get<AnimationProductionStatus>(
         '/api/runtime/animation-production',
       ),
+      benchmarkEvidence: this.http.get<AnimationBenchmarkEvidenceStatus>(
+        '/api/runtime/animation-production-evidence',
+      ),
     }).subscribe({
-      next: ({ host, inventory, production }) => {
+      next: ({ host, inventory, production, benchmarkEvidence }) => {
         this.host.set(host);
         this.inventory.set(inventory);
         this.production.set(production);
+        this.benchmarkEvidence.set(benchmarkEvidence);
         if (
           !production.shots.some(
             (shot) => shot.sourceShotNumber === this.selectedShotNumber(),
