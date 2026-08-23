@@ -21,6 +21,17 @@
       "sha256": "9ab37426bf4de0567af6b5d21b16151357149139362e6e8992021b8ce356a154",
       "license": "MIT",
       "source": "Comfy-Org/BiRefNet"
+    },
+    {
+      "id": "sd15-inpainting",
+      "purpose": "conservative-background-inpainting",
+      "filename": "sd-v1-5-inpainting.safetensors",
+      "relativePath": "models/checkpoints/sd-v1-5-inpainting.safetensors",
+      "url": "https://huggingface.co/webui/stable-diffusion-inpainting/resolve/main/sd-v1-5-inpainting.safetensors",
+      "sha256": "0ec8f8585b104417a8c34a9fbcc1e922a70b8c15490ec4553087f01c8cf33673",
+      "sizeBytes": 4265380512,
+      "license": "creativeml-openrail-m",
+      "source": "stable-diffusion-v1-5/stable-diffusion-inpainting via safetensors mirror"
     }
   ]
 }
