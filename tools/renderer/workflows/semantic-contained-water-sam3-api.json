@@ -78,12 +78,24 @@
   },
   "6": {
     "inputs": {
+      "mask": [
+        "5",
+        0
+      ]
+    },
+    "class_type": "InvertMask",
+    "_meta": {
+      "title": "Convert SAM target mask to Comfy alpha-mask polarity"
+    }
+  },
+  "7": {
+    "inputs": {
       "image": [
         "1",
         0
       ],
       "alpha": [
-        "5",
+        "6",
         0
       ]
     },
@@ -92,11 +104,11 @@
       "title": "Preserve source RGB under localized water alpha"
     }
   },
-  "7": {
+  "8": {
     "inputs": {
       "filename_prefix": "{{OUTPUT_PREFIX}}",
       "images": [
-        "6",
+        "7",
         0
       ]
     },
