@@ -238,6 +238,42 @@
       "source": { "type": "creative-policy", "reference": "planning/reel-01-cinematic-direction-plan.md" }
     },
     {
+      "id": "shot5-contained-water-fixed-boundary",
+      "state": "approved",
+      "scope": { "type": "shot", "shotId": "traveler-shrine-hospitality" },
+      "path": "motion.containedWater.boundary",
+      "value": "fixed-basin-alpha-safe",
+      "rationale": "Human review approved water motion only when the basin boundary remains visually locked and animated material stays inside a slightly contracted safe mask.",
+      "source": { "type": "approved-benchmark", "shotId": "traveler-shrine-hospitality", "layerId": "shot05-welcome-water-v1" }
+    },
+    {
+      "id": "shot5-contained-water-readable-ripple-refraction",
+      "state": "approved",
+      "scope": { "type": "shot", "shotId": "traveler-shrine-hospitality" },
+      "path": "motion.containedWater.strategy",
+      "value": "broad-ripple-plus-refraction",
+      "rationale": "Micro-refraction alone read as static. Human review approved a broad, trackable ripple layered over fine internal refraction while preserving the source water texture.",
+      "source": { "type": "approved-benchmark", "shotId": "traveler-shrine-hospitality", "layerId": "shot05-welcome-water-v1" }
+    },
+    {
+      "id": "shot5-contained-water-no-diagonal-streaks",
+      "state": "approved",
+      "scope": { "type": "shot", "shotId": "traveler-shrine-hospitality" },
+      "path": "qa.containedWater.forbiddenArtifacts",
+      "value": ["diagonal-glint-bands", "highlight-bleed-above-basin", "translated-card-motion"],
+      "rationale": "Human review rejected diagonal repeating-gradient streaks above the basin and approved the cleaned render after those bands were removed.",
+      "source": { "type": "approved-benchmark", "shotId": "traveler-shrine-hospitality", "layerId": "shot05-welcome-water-v1" }
+    },
+    {
+      "id": "shot5-smoke-optional-without-source-evidence",
+      "state": "approved",
+      "scope": { "type": "shot", "shotId": "traveler-shrine-hospitality" },
+      "path": "layers.smoke.requirement",
+      "value": "optional-when-source-evidence-is-sparse",
+      "rationale": "Shot 5 smoke extraction passed structural QA at extremely sparse coverage but did not contribute meaningful visible motion. The benchmark must not invent or require smoke when the approved editorial source does not support it.",
+      "source": { "type": "human-review-decision", "shotId": "traveler-shrine-hospitality", "layerId": "shot05-smoke-v1" }
+    },
+    {
       "id": "smoke-motion-provisional-material-rule",
       "state": "provisional",
       "scope": { "type": "material", "material": "smoke" },
