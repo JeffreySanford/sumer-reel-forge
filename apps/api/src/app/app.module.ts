@@ -1,4 +1,5 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { AnimationProductionEvidenceService } from './animation-production-evidence.service';
 import { AnimationProductionStatusService } from './animation-production-status.service';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -24,6 +25,7 @@ import { RuntimeController } from './runtime.controller';
     RuntimeCapabilitiesService,
     ComfyUiInventoryService,
     AnimationProductionStatusService,
+    AnimationProductionEvidenceService,
     PrismaService,
     {
       provide: REEL_REPOSITORY,
