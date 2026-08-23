@@ -198,6 +198,7 @@ test('generation writes candidates under tmp-style output and never mutates the 
     fetchImpl,
     preflight: {
       ok: true,
+      root,
       manifest: MANIFEST,
       manifestPath,
       workflowPath,
