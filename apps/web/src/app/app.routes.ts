@@ -1,11 +1,16 @@
 import { Route } from '@angular/router';
 import { StudioRouteComponent } from './studio-route.component';
+import { SystemCapabilitiesComponent } from './system-capabilities.component';
 
 export const appRoutes: Route[] = [
   {
     path: '',
     pathMatch: 'full',
     redirectTo: 'reels/1/overview',
+  },
+  {
+    path: 'system',
+    component: SystemCapabilitiesComponent,
   },
   {
     path: 'reels/:episodeId',
