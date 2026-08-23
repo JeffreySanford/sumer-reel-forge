@@ -1,4 +1,4 @@
-import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
+import { access, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import {
   buildDecisionContext,
@@ -14,6 +14,7 @@ const DEFAULT_MANIFEST = resolve(
 );
 const DEFAULT_OUTPUT_ROOT = resolve('tmp/animation-plans');
 const SCENE_ROOT = resolve('tools/animation/scenes');
+const SHOT_CONTRACT_ROOT = resolve('tools/animation/shot-contracts');
 
 const options = parseOptions(process.argv.slice(2).filter((arg) => arg !== '--'));
 await main().catch((error) => {
@@ -24,8 +25,8 @@ await main().catch((error) => {
 async function main() {
   const manifestPath = resolve(options.manifest ?? DEFAULT_MANIFEST);
   const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
-  const shot = manifest.shots?.find((item) => item.sourceShotNumber === options.shotNumber);
-  if (!shot) throw new Error(`No animation manifest shot matches source shot ${options.shotNumber}.`);
+  const resolvedShot = await resolveShotForPlanning(manifest, options.shotNumber);
+  const shot = resolvedShot.shot;
 
   const library = await loadStyleDecisionLibrary(options.styleDecisions);
   const laneRegistry = await loadProductionLaneRegistry(options.productionLanes);
@@ -34,13 +35,23 @@ async function main() {
   const requiredLayers = (shot.layers ?? []).filter((layer) => required.has(layer.id));
   if (!requiredLayers.length) throw new Error(`Shot ${shot.shotId} has no required activation layers.`);
 
-  const shotContext = buildDecisionContext({ manifest, shot, layer: undefined });
+  const planningManifest = {
+    ...manifest,
+    shots: resolvedShot.source === 'manifest'
+      ? manifest.shots
+      : [...(manifest.shots ?? []), shot],
+  };
+  const shotContext = buildDecisionContext({
+    manifest: planningManifest,
+    shot,
+    layer: undefined,
+  });
   const shotDecisions = resolveStyleDecisions(library, shotContext, {
     includeProvisional: options.includeProvisional,
   });
 
   const layerPlans = requiredLayers.map((layer) => {
-    const context = buildDecisionContext({ manifest, shot, layer });
+    const context = buildDecisionContext({ manifest: planningManifest, shot, layer });
     const decisions = resolveStyleDecisions(library, context, {
       includeProvisional: options.includeProvisional,
     });
@@ -78,6 +89,8 @@ async function main() {
     generatedAt: new Date().toISOString(),
     manifestId: manifest.manifestId,
     manifestPath,
+    shotContractSource: resolvedShot.source,
+    shotContractPath: resolvedShot.contractPath ?? null,
     styleDecisionLibraryId: library.libraryId,
     productionLaneRegistryId: laneRegistry.registryId,
     inheritanceMode: options.includeProvisional ? 'approved-plus-provisional' : 'approved-only',
@@ -137,6 +150,10 @@ async function main() {
 function printPlan(plan, outputPath) {
   console.log(`Animation production plan — Shot ${plan.shot.sourceShotNumber} / ${plan.shot.shotId}`);
   console.log(`Inheritance: ${plan.inheritanceMode}`);
+  if (plan.shotContractSource === 'draft-contract') {
+    console.log(`[note] draft shot contract: ${plan.shotContractPath}`);
+    console.log('[ok] canonical animation-v1 manifest remains unchanged by planning');
+  }
   if (plan.benchmark) {
     console.log(`[ok] benchmark scene: ${plan.benchmark.sceneId}`);
     console.log(`[ok] stillness anchor: ${plan.benchmark.stillnessAnchor ?? 'none'}`);
@@ -160,8 +177,45 @@ function printPlan(plan, outputPath) {
   console.log(
     `Plan readiness: ${plan.readiness.resolvedProductionLanes}/${plan.readiness.requiredLayers} required lanes resolved`,
   );
+  if (plan.readiness.unresolvedLayerIds.length) {
+    console.log(`[review] genuinely new production problems: ${plan.readiness.unresolvedLayerIds.join(', ')}`);
+  }
   console.log(`Plan: ${outputPath}`);
   console.log('No source asset, candidate, animation-v1 asset, or manifest was modified.');
+}
+
+async function resolveShotForPlanning(manifest, shotNumber) {
+  const manifestShot = manifest.shots?.find(
+    (item) => item.sourceShotNumber === shotNumber,
+  );
+  if (manifestShot) {
+    return { shot: manifestShot, source: 'manifest', contractPath: null };
+  }
+
+  const contractPath = join(
+    SHOT_CONTRACT_ROOT,
+    `reel-01-shot-${String(shotNumber).padStart(2, '0')}.json`,
+  );
+  if (!(await exists(contractPath))) {
+    throw new Error(
+      `No animation manifest shot or draft shot contract matches source shot ${shotNumber}.`,
+    );
+  }
+  const contract = JSON.parse(await readFile(contractPath, 'utf8'));
+  const shot = contract.shot;
+  if (!shot || shot.sourceShotNumber !== shotNumber) {
+    throw new Error(`Draft shot contract ${contractPath} does not define Shot ${shotNumber}.`);
+  }
+  if (
+    contract.projectSlug !== manifest.projectSlug ||
+    contract.chapterNumber !== manifest.chapterNumber ||
+    contract.episodeNumber !== manifest.episodeNumber
+  ) {
+    throw new Error(
+      `Draft shot contract ${contractPath} does not match manifest project/chapter/episode identity.`,
+    );
+  }
+  return { shot, source: 'draft-contract', contractPath };
 }
 
 async function findBenchmarkScene(shot) {
@@ -186,6 +240,15 @@ async function findBenchmarkScene(shot) {
     }
   }
   return undefined;
+}
+
+async function exists(path) {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function parseOptions(args) {
