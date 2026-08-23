@@ -1,0 +1,68 @@
+<main class="chapter-shell">
+  <app-studio-nav />
+
+  <section class="chapter-hero">
+    <div class="breadcrumbs">
+      <a routerLink="/">Studio</a><span>/</span>
+      <a [routerLink]="['/projects', project.slug]">{{ project.title }}</a><span>/</span>
+      <strong>Chapter {{ chapter().number }}</strong>
+    </div>
+
+    <div class="hero-row">
+      <div>
+        <p class="eyebrow">Chapter 0{{ chapter().number }}</p>
+        <h1>{{ chapter().title }}</h1>
+        <p class="lede">{{ chapter().description }}</p>
+      </div>
+      <div class="chapter-badge" [class.upcoming]="chapter().state === 'upcoming'">
+        <span></span>{{ chapter().state === 'active' ? 'In production' : 'Upcoming' }}
+      </div>
+    </div>
+  </section>
+
+  @if (chapter().number === 1) {
+    <section class="chapter-content summary-row" aria-label="Chapter production summary">
+      <div><strong>{{ reels().length || 18 }}</strong><span>Reels</span></div>
+      <div><strong>{{ statusCounts().draft || 0 }}</strong><span>Draft</span></div>
+      <div><strong>{{ statusCounts().review || 0 }}</strong><span>In review</span></div>
+      <div><strong>{{ statusCounts().approved || 0 }}</strong><span>Approved</span></div>
+      <a routerLink="/reels/1/overview">Continue Reel 1 →</a>
+    </section>
+
+    <section class="chapter-content reels-section" aria-labelledby="reels-title">
+      <header class="section-heading">
+        <div><p class="eyebrow">Reel production</p><h2 id="reels-title">Chapter 1 reel slate</h2></div>
+        <p>Open a reel to move into its focused production workspace.</p>
+      </header>
+
+      <div class="reel-grid">
+        @for (reel of reels(); track reel.episode) {
+          <a class="reel-card" [routerLink]="['/reels', reel.episode, 'overview']">
+            <div class="reel-topline">
+              <span class="episode">REEL {{ reel.episode.toString().padStart(2, '0') }}</span>
+              <span class="status" [attr.data-status]="reel.productionStatus">{{ statusLabel(reel.productionStatus) }}</span>
+            </div>
+            <h3>{{ reel.title }}</h3>
+            <p class="hook">{{ reel.hook }}</p>
+            <div class="visual-core"><span>Visual core</span><p>{{ reel.visualCore }}</p></div>
+            <small>{{ reel.sourceSection }}</small>
+          </a>
+        }
+      </div>
+    </section>
+  } @else {
+    <section class="chapter-content upcoming-panel">
+      <div class="upcoming-number">0{{ chapter().number }}</div>
+      <p class="eyebrow">Roadmap slot</p>
+      <h2>This chapter is visible in the Studio, but production has not started.</h2>
+      <p>
+        When source ingestion begins, this view will own the chapter's reel slate, planning state,
+        production status, assets, and publication progression just as Chapter 1 does now.
+      </p>
+      <div class="upcoming-actions">
+        <a [routerLink]="['/projects', project.slug]">Back to project</a>
+        <a routerLink="/system">Check production host</a>
+      </div>
+    </section>
+  }
+</main>
