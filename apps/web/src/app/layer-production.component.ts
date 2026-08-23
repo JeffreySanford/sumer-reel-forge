@@ -64,7 +64,7 @@ export class LayerProductionComponent {
       status: 'planned',
     },
     {
-      id: 'shot03-eyes-v1',
+      id: 'shot03-enki-eyes-v1',
       label: 'Eyes',
       role: 'Optional micro-expression isolation only if extraction remains painterly.',
       material: 'character detail',
