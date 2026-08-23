@@ -15,6 +15,11 @@ import {
   getLocalRenderProfile,
   remotionPerformanceArgs,
 } from '../animation/src/local-render-profile';
+import {
+  formatRemotionPhaseMetrics,
+  renderFromPreparedBundle,
+  type RemotionPhaseMetrics,
+} from '../animation/src/remotion-shared-render';
 
 interface WaterHandoffBenchmarkConfig {
   schemaVersion: 1;
@@ -39,6 +44,9 @@ async function main(): Promise<void> {
   const root = resolve('.');
   const rendererConfig = loadRendererConfig();
   const renderProfile = getLocalRenderProfile();
+  const sharedBundle = process.env.REMOTION_SHARED_BUNDLE
+    ? resolve(process.env.REMOTION_SHARED_BUNDLE)
+    : undefined;
   const configPath = resolve(
     process.argv[2] ??
       'tools/animation/scenes/reel-01-shot-03-to-04-water-handoff.json',
@@ -104,38 +112,53 @@ async function main(): Promise<void> {
     'shot3-to-shot4-water-handoff-manifest.json',
   );
 
-  await writeJson(propsPath, {
+  const inputProps = {
     outgoingScene,
     incomingScene,
     transition: benchmark.transition,
-  });
+  };
+  await writeJson(propsPath, inputProps);
 
   console.log(`Rendering ${benchmark.transitionId}...`);
   console.log(`Outgoing: ${outgoingPath} [${outgoingLoaded.assetResolution.mode}]`);
   console.log(`Incoming: ${incomingPath} [${incomingLoaded.assetResolution.mode}]`);
   console.log(`Hardware: ${formatLocalRenderProfile(renderProfile)}`);
+  if (sharedBundle) console.log(`Shared Remotion bundle: ${sharedBundle}`);
   console.log(`Output: ${videoPath}`);
 
-  const startedAt = Date.now();
-  await run(
-    'pnpm',
-    [
-      'exec',
-      'remotion',
-      'render',
-      resolve('tools/animation/src/index.tsx'),
-      'SceneV2WaterHandoff',
-      videoPath,
-      `--props=${propsPath}`,
-      `--public-dir=${resolve('assets')}`,
-      '--codec=h264',
-      '--pixel-format=yuv420p',
-      ...remotionPerformanceArgs(renderProfile),
-      '--overwrite',
-    ],
-    root,
-  );
-  const renderDurationMs = Date.now() - startedAt;
+  let renderDurationMs: number;
+  let remotionMetrics: RemotionPhaseMetrics | null = null;
+  if (sharedBundle) {
+    remotionMetrics = await renderFromPreparedBundle({
+      serveUrl: sharedBundle,
+      compositionId: 'SceneV2WaterHandoff',
+      inputProps,
+      outputLocation: videoPath,
+      profile: renderProfile,
+    });
+    renderDurationMs = remotionMetrics.totalDurationMs;
+  } else {
+    const startedAt = Date.now();
+    await run(
+      'pnpm',
+      [
+        'exec',
+        'remotion',
+        'render',
+        resolve('tools/animation/src/index.tsx'),
+        'SceneV2WaterHandoff',
+        videoPath,
+        `--props=${propsPath}`,
+        `--public-dir=${resolve('assets')}`,
+        '--codec=h264',
+        '--pixel-format=yuv420p',
+        ...remotionPerformanceArgs(renderProfile),
+        '--overwrite',
+      ],
+      root,
+    );
+    renderDurationMs = Date.now() - startedAt;
+  }
 
   const reviewFrames: Array<{
     id: string;
@@ -220,6 +243,8 @@ async function main(): Promise<void> {
     configPath,
     renderProfile,
     renderDurationMs,
+    remotionMetrics,
+    sharedBundle,
     outgoingScene: {
       path: outgoingPath,
       sceneId: outgoingScene.sceneId,
@@ -253,6 +278,9 @@ async function main(): Promise<void> {
 
   console.log(`Rendered benchmark: ${videoPath}`);
   console.log(`Render time: ${(renderDurationMs / 1000).toFixed(1)}s`);
+  if (remotionMetrics) {
+    console.log(`Remotion phases: ${formatRemotionPhaseMetrics(remotionMetrics)}`);
+  }
   console.log(`Review contact sheet: ${contactSheetPath}`);
   console.log(`Manifest: ${manifestPath}`);
 }
