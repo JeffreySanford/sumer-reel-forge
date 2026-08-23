@@ -54,24 +54,66 @@ async function main(): Promise<void> {
 
   console.log('Reel 1 animation smoke');
   console.log(`Hardware: ${formatLocalRenderProfile(profile)}`);
-  console.log('Shot 3 and Shot 4 render in parallel to use more of the workstation.');
+  console.log(
+    profile.parallelRenders >= 2
+      ? 'Shot 3 and Shot 4 render in parallel using the detected workstation budget.'
+      : 'Shot 3 and Shot 4 render sequentially to protect the detected machine budget.',
+  );
   console.log(`Output: ${outputRoot}`);
   console.log('');
 
   const steps: StepResult[] = [];
-  steps.push(await runStep('Scene V2 policy + asset tests', 'pnpm', ['scene-v2:test'], root));
-  steps.push(await runStep('Animation asset readiness', 'pnpm', ['animation-assets:status'], root));
+  steps.push(
+    await runStep('Scene V2 policy + asset tests', 'pnpm', ['scene-v2:test'], root),
+  );
+  steps.push(
+    await runStep(
+      'Animation asset readiness',
+      'pnpm',
+      ['animation-assets:status'],
+      root,
+    ),
+  );
 
   const renderEnv = {
     ...process.env,
     ANIMATION_RENDER_CONCURRENCY: String(profile.concurrency),
+    ANIMATION_PARALLEL_RENDERS: String(profile.parallelRenders),
+    ANIMATION_OLLAMA_REVIEW_CONCURRENCY: String(
+      profile.ollamaReviewConcurrency,
+    ),
     ANIMATION_HARDWARE_ACCELERATION: profile.hardwareAcceleration,
     ...(profile.gl ? { ANIMATION_REMOTION_GL: profile.gl } : {}),
   };
 
-  const parallelStartedAt = Date.now();
-  const [shot3Step, shot4Step] = await Promise.all([
-    runStep(
+  const shotPairStartedAt = Date.now();
+  let shot3Step: StepResult;
+  let shot4Step: StepResult;
+  if (profile.parallelRenders >= 2) {
+    [shot3Step, shot4Step] = await Promise.all([
+      runStep(
+        'Shot 3 benchmark',
+        'pnpm',
+        ['render:animation:shot3-benchmark'],
+        root,
+        {
+          ...renderEnv,
+          SCENE_V2_BENCHMARK_OUTPUT_DIRECTORY: shot3Directory,
+        },
+      ),
+      runStep(
+        'Shot 4 benchmark',
+        'pnpm',
+        ['render:animation:shot4-benchmark'],
+        root,
+        {
+          ...renderEnv,
+          SCENE_V2_BENCHMARK_OUTPUT_DIRECTORY: shot4Directory,
+        },
+      ),
+    ]);
+  } else {
+    shot3Step = await runStep(
       'Shot 3 benchmark',
       'pnpm',
       ['render:animation:shot3-benchmark'],
@@ -80,8 +122,8 @@ async function main(): Promise<void> {
         ...renderEnv,
         SCENE_V2_BENCHMARK_OUTPUT_DIRECTORY: shot3Directory,
       },
-    ),
-    runStep(
+    );
+    shot4Step = await runStep(
       'Shot 4 benchmark',
       'pnpm',
       ['render:animation:shot4-benchmark'],
@@ -90,10 +132,10 @@ async function main(): Promise<void> {
         ...renderEnv,
         SCENE_V2_BENCHMARK_OUTPUT_DIRECTORY: shot4Directory,
       },
-    ),
-  ]);
+    );
+  }
   steps.push(shot3Step, shot4Step);
-  const parallelRenderWallMs = Date.now() - parallelStartedAt;
+  const shotPairWallMs = Date.now() - shotPairStartedAt;
 
   const shot3ContactSheet = join(
     shot3Directory,
@@ -106,40 +148,57 @@ async function main(): Promise<void> {
 
   const aiEnabled = process.env.ANIMATION_SMOKE_AI_REVIEW !== '0';
   const requireOllama = process.env.ANIMATION_SMOKE_REQUIRE_OLLAMA === '1';
-  const handoffPromise = runStep(
-    'Shot 3 → 4 water handoff',
-    'pnpm',
-    ['render:animation:shot3-to-4-handoff'],
-    root,
-    {
-      ...renderEnv,
-      WATER_HANDOFF_BENCHMARK_OUTPUT_DIRECTORY: handoffDirectory,
-    },
-  );
-  const initialAiPromise = aiEnabled
-    ? Promise.all([
+  const runInitialAiReviews = async (): Promise<AiReviewResult[]> => {
+    if (!aiEnabled) {
+      return [
+        { label: 'shot3', model: '', status: 'skipped' },
+        { label: 'shot4', model: '', status: 'skipped' },
+      ];
+    }
+    const tasks = [
+      () =>
         reviewContactSheet(
           'shot3',
           shot3ContactSheet,
           join(aiDirectory, 'shot3-review.json'),
           requireOllama,
         ),
+      () =>
         reviewContactSheet(
           'shot4',
           shot4ContactSheet,
           join(aiDirectory, 'shot4-review.json'),
           requireOllama,
         ),
-      ])
-    : Promise.resolve<AiReviewResult[]>([
-        { label: 'shot3', model: '', status: 'skipped' },
-        { label: 'shot4', model: '', status: 'skipped' },
-      ]);
+    ];
+    return runWithConcurrency(tasks, profile.ollamaReviewConcurrency);
+  };
 
-  const [handoffStep, initialAiReviews] = await Promise.all([
-    handoffPromise,
-    initialAiPromise,
-  ]);
+  const runHandoff = () =>
+    runStep(
+      'Shot 3 → 4 water handoff',
+      'pnpm',
+      ['render:animation:shot3-to-4-handoff'],
+      root,
+      {
+        ...renderEnv,
+        WATER_HANDOFF_BENCHMARK_OUTPUT_DIRECTORY: handoffDirectory,
+      },
+    );
+
+  let handoffStep: StepResult;
+  let initialAiReviews: AiReviewResult[];
+  const overlapHandoffAndAi =
+    profile.parallelRenders >= 2 || profile.ollamaReviewConcurrency >= 2;
+  if (overlapHandoffAndAi) {
+    [handoffStep, initialAiReviews] = await Promise.all([
+      runHandoff(),
+      runInitialAiReviews(),
+    ]);
+  } else {
+    handoffStep = await runHandoff();
+    initialAiReviews = await runInitialAiReviews();
+  }
   steps.push(handoffStep);
 
   const handoffContactSheet = join(
@@ -196,7 +255,9 @@ async function main(): Promise<void> {
     generatedAt: new Date().toISOString(),
     outputRoot,
     renderProfile: profile,
-    parallelRenderWallMs,
+    shotPairMode: profile.parallelRenders >= 2 ? 'parallel' : 'sequential',
+    shotPairWallMs,
+    parallelRenderWallMs: shotPairWallMs,
     steps,
     probes,
     aiReviews,
@@ -207,7 +268,9 @@ async function main(): Promise<void> {
 
   console.log('');
   console.log('PASS — Reel 1 animation smoke completed.');
-  console.log(`Parallel Shot 3 + 4 wall time: ${(parallelRenderWallMs / 1000).toFixed(1)}s`);
+  console.log(
+    `${profile.parallelRenders >= 2 ? 'Parallel' : 'Sequential'} Shot 3 + 4 wall time: ${(shotPairWallMs / 1000).toFixed(1)}s`,
+  );
   for (const probe of probes) {
     console.log(
       `${probe.label}: ${probe.width}x${probe.height} @ ${probe.fps.toFixed(2)}fps, ${probe.durationSeconds.toFixed(2)}s`,
@@ -219,6 +282,25 @@ async function main(): Promise<void> {
     );
   }
   console.log(`Summary: ${summaryPath}`);
+}
+
+async function runWithConcurrency<T>(
+  tasks: Array<() => Promise<T>>,
+  concurrency: number,
+): Promise<T[]> {
+  const results = new Array<T>(tasks.length);
+  let nextIndex = 0;
+  const workerCount = Math.max(1, Math.min(concurrency, tasks.length));
+  const workers = Array.from({ length: workerCount }, async () => {
+    while (true) {
+      const index = nextIndex;
+      nextIndex += 1;
+      if (index >= tasks.length) return;
+      results[index] = await tasks[index]();
+    }
+  });
+  await Promise.all(workers);
+  return results;
 }
 
 async function runStep(
@@ -307,17 +389,21 @@ async function probeVideo(
   cwd: string,
 ): Promise<ProbeResult> {
   await assertNonEmptyFile(path);
-  const output = await capture(ffprobeCommand, [
-    '-v',
-    'error',
-    '-select_streams',
-    'v:0',
-    '-show_entries',
-    'stream=width,height,r_frame_rate,pix_fmt:format=duration',
-    '-of',
-    'json',
-    path,
-  ], cwd);
+  const output = await capture(
+    ffprobeCommand,
+    [
+      '-v',
+      'error',
+      '-select_streams',
+      'v:0',
+      '-show_entries',
+      'stream=width,height,r_frame_rate,pix_fmt:format=duration',
+      '-of',
+      'json',
+      path,
+    ],
+    cwd,
+  );
   const parsed = JSON.parse(output) as {
     streams?: Array<{
       width?: number;
