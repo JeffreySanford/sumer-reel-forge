@@ -64,7 +64,11 @@ for (let pixel = 0; pixel < PIXELS; pixel += 1) {
       Math.abs(source[offset + 1] - candidate[offset + 1]) +
       Math.abs(source[offset + 2] - candidate[offset + 2])) /
     3;
-  const inside = mask[pixel] >= 128;
+
+  // The final composite uses the grayscale removal mask as alpha. Any non-zero
+  // mask value is therefore part of the permitted repair region, including
+  // anti-aliased silhouette edges. Pixels with mask=0 must remain editorial-v1.
+  const inside = mask[pixel] > 0;
   if (inside) {
     insideCount += 1;
     insideDiffSum += difference;
@@ -109,7 +113,7 @@ const contactSheetPath = join(runDirectory, 'background-review-contact-sheet.png
 createContactSheet(sourcePath, maskPath, candidatePath, contactSheetPath);
 
 const report = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   verificationType: 'background-reconstruction-preservation',
   generatedAt: new Date().toISOString(),
   layerId: LAYER_ID,
@@ -117,6 +121,7 @@ const report = {
   candidatePath,
   sourcePath,
   maskPath,
+  crop: metadata.backgroundInputs?.crop ?? null,
   pass,
   thresholds: {
     pixelChangeThreshold: options.pixelChangeThreshold,
@@ -139,13 +144,18 @@ const report = {
   checks,
   contactSheetPath,
   interpretation:
-    'PASS proves the full-canvas candidate changed the intended removal region while preserving the editorial image outside that mask. It does not replace human review of whether the reconstructed river/background is visually plausible.',
+    'PASS proves the candidate changed the validated removal region while preserving editorial-v1 wherever the blend mask is zero. It does not replace human review of whether the reconstructed river/background is visually plausible.',
 };
 const reportPath = join(runDirectory, 'background-qa.json');
 writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
 
 console.log('Shot 3 background reconstruction verification');
 console.log(`Candidate: ${candidatePath}`);
+if (report.crop) {
+  console.log(
+    `Working crop: ${report.crop.width}x${report.crop.height} @ (${report.crop.x}, ${report.crop.y})`,
+  );
+}
 for (const check of checks) {
   console.log(`[${check.pass ? 'ok' : 'fail'}] ${check.id}: ${check.detail}`);
 }
@@ -183,7 +193,9 @@ function decodeFrame(path, pixelFormat, expectedBytes) {
   );
   if (result.error) throw result.error;
   if (result.status !== 0) {
-    throw new Error(`ffmpeg could not decode ${path}: ${String(result.stderr ?? '').trim()}`);
+    throw new Error(
+      `ffmpeg could not decode ${path}: ${String(result.stderr ?? '').trim()}`,
+    );
   }
   if (!Buffer.isBuffer(result.stdout) || result.stdout.length !== expectedBytes) {
     throw new Error(
@@ -194,9 +206,8 @@ function decodeFrame(path, pixelFormat, expectedBytes) {
 }
 
 function createContactSheet(sourcePath, maskPath, candidatePath, outputPath) {
-  const ffmpeg = process.env.FFMPEG_COMMAND ?? 'ffmpeg';
   const result = spawnSync(
-    ffmpeg,
+    process.env.FFMPEG_COMMAND ?? 'ffmpeg',
     [
       '-y',
       '-hide_banner',
@@ -226,7 +237,9 @@ function createContactSheet(sourcePath, maskPath, candidatePath, outputPath) {
   );
   if (result.error) throw result.error;
   if (result.status !== 0) {
-    throw new Error(`ffmpeg could not create background contact sheet: ${String(result.stderr ?? '').trim()}`);
+    throw new Error(
+      `ffmpeg could not create background contact sheet: ${String(result.stderr ?? '').trim()}`,
+    );
   }
 }
 
@@ -245,7 +258,9 @@ function newestBackgroundCandidateDirectory() {
       return directory;
     }
   }
-  throw new Error('No Shot 3 background candidate found. Run pnpm comfyui:background:generate first.');
+  throw new Error(
+    'No Shot 3 background candidate found. Run pnpm comfyui:background:generate first.',
+  );
 }
 
 function resolveCandidatePath(rawPath, runDirectory) {
@@ -298,11 +313,17 @@ function parseOptions(args) {
     } else if (arg.startsWith('--max-outside-mean-diff=')) {
       options.maxOutsideMeanDiff = numberOption(arg, '--max-outside-mean-diff=');
     } else if (arg.startsWith('--max-outside-changed-ratio=')) {
-      options.maxOutsideChangedRatio = numberOption(arg, '--max-outside-changed-ratio=');
+      options.maxOutsideChangedRatio = numberOption(
+        arg,
+        '--max-outside-changed-ratio=',
+      );
     } else if (arg.startsWith('--min-inside-mean-diff=')) {
       options.minInsideMeanDiff = numberOption(arg, '--min-inside-mean-diff=');
     } else if (arg.startsWith('--min-inside-changed-ratio=')) {
-      options.minInsideChangedRatio = numberOption(arg, '--min-inside-changed-ratio=');
+      options.minInsideChangedRatio = numberOption(
+        arg,
+        '--min-inside-changed-ratio=',
+      );
     } else {
       throw new Error(`Unknown option ${arg}`);
     }
