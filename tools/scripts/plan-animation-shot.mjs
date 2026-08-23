@@ -37,9 +37,10 @@ async function main() {
 
   const planningManifest = {
     ...manifest,
-    shots: resolvedShot.source === 'manifest'
-      ? manifest.shots
-      : [...(manifest.shots ?? []), shot],
+    shots:
+      resolvedShot.source === 'manifest'
+        ? manifest.shots
+        : [...(manifest.shots ?? []), shot],
   };
   const shotContext = buildDecisionContext({
     manifest: planningManifest,
@@ -68,12 +69,14 @@ async function main() {
       productionLane: lane
         ? {
             id: lane.id,
+            state: lane.state ?? 'approved',
             generator: lane.generator,
             qa: lane.qa,
             notes: lane.notes ?? [],
           }
         : {
             id: 'UNRESOLVED',
+            state: 'unresolved',
             generator: null,
             qa: null,
             notes: ['No production-lane recipe matches this layer yet. Human pipeline design is required.'],
@@ -83,6 +86,9 @@ async function main() {
   });
 
   const unresolved = layerPlans.filter((layer) => layer.productionLane.id === 'UNRESOLVED');
+  const provisional = layerPlans.filter(
+    (layer) => layer.productionLane.state === 'provisional',
+  );
   const plan = {
     schemaVersion: 1,
     type: 'animation-shot-production-plan',
@@ -132,13 +138,19 @@ async function main() {
       requiredLayers: layerPlans.length,
       resolvedProductionLanes: layerPlans.length - unresolved.length,
       unresolvedLayerIds: unresolved.map((layer) => layer.layerId),
+      provisionalLaneIds: provisional.map((layer) => layer.productionLane.id),
+      provisionalLayerIds: provisional.map((layer) => layer.layerId),
       deterministicPlanReady: unresolved.length === 0,
+      benchmarkValidationRequired: provisional.length > 0,
     },
   };
 
   const outputPath = resolve(
     options.output ??
-      join(DEFAULT_OUTPUT_ROOT, `shot-${String(options.shotNumber).padStart(2, '0')}-production-plan.json`),
+      join(
+        DEFAULT_OUTPUT_ROOT,
+        `shot-${String(options.shotNumber).padStart(2, '0')}-production-plan.json`,
+      ),
   );
   await mkdir(dirname(outputPath), { recursive: true });
   await writeFile(outputPath, `${JSON.stringify(plan, null, 2)}\n`, 'utf8');
@@ -148,7 +160,9 @@ async function main() {
 }
 
 function printPlan(plan, outputPath) {
-  console.log(`Animation production plan — Shot ${plan.shot.sourceShotNumber} / ${plan.shot.shotId}`);
+  console.log(
+    `Animation production plan — Shot ${plan.shot.sourceShotNumber} / ${plan.shot.shotId}`,
+  );
   console.log(`Inheritance: ${plan.inheritanceMode}`);
   if (plan.shotContractSource === 'draft-contract') {
     console.log(`[note] draft shot contract: ${plan.shotContractPath}`);
@@ -164,9 +178,11 @@ function printPlan(plan, outputPath) {
   console.log('');
   for (const layer of plan.layers) {
     const ok = layer.productionLane.id !== 'UNRESOLVED';
+    const maturity =
+      layer.productionLane.state === 'provisional' ? ' · PROVISIONAL' : '';
     console.log(`${ok ? '[ok]' : '[blocked]'} ${layer.layerId}`);
     console.log(`     ${layer.role} / ${layer.material} / alpha=${layer.hasAlpha}`);
-    console.log(`     lane: ${layer.productionLane.id}`);
+    console.log(`     lane: ${layer.productionLane.id}${maturity}`);
     if (layer.productionLane.generator) {
       console.log(`     generator: ${layer.productionLane.generator.family}`);
       console.log(`     QA: ${layer.productionLane.qa.family}`);
@@ -178,7 +194,14 @@ function printPlan(plan, outputPath) {
     `Plan readiness: ${plan.readiness.resolvedProductionLanes}/${plan.readiness.requiredLayers} required lanes resolved`,
   );
   if (plan.readiness.unresolvedLayerIds.length) {
-    console.log(`[review] genuinely new production problems: ${plan.readiness.unresolvedLayerIds.join(', ')}`);
+    console.log(
+      `[review] genuinely new production problems: ${plan.readiness.unresolvedLayerIds.join(', ')}`,
+    );
+  }
+  if (plan.readiness.provisionalLayerIds.length) {
+    console.log(
+      `[review] newly designed provisional lanes require benchmark validation: ${plan.readiness.provisionalLayerIds.join(', ')}`,
+    );
   }
   console.log(`Plan: ${outputPath}`);
   console.log('No source asset, candidate, animation-v1 asset, or manifest was modified.');
