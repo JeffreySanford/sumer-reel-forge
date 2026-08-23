@@ -3,6 +3,11 @@ import { spawn, spawnSync } from 'node:child_process';
 import net from 'node:net';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  applyHardwareProfileEnvironment,
+  collectAndPersistHardwareProfile,
+  formatHardwareProfile,
+} from '../runtime/hardware-profile.mjs';
 
 const scriptPath = fileURLToPath(import.meta.url);
 const root = dirname(dirname(dirname(scriptPath)));
@@ -34,6 +39,24 @@ function runPnpm(args) {
     stdio: 'inherit',
     windowsHide: true,
   });
+}
+
+async function prepareHardwareProfile() {
+  console.log('Profiling local hardware...');
+  try {
+    const { profile, outputPath } = await collectAndPersistHardwareProfile({
+      root,
+      env: process.env,
+    });
+    applyHardwareProfileEnvironment(profile, process.env, outputPath);
+    console.log(formatHardwareProfile(profile, outputPath));
+    console.log('');
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn(
+      `Hardware profiling failed (${message}). Continuing with existing runtime defaults.`,
+    );
+  }
 }
 
 function preparePrismaClient() {
@@ -103,6 +126,7 @@ function stopAll(exitCode) {
 }
 
 async function main() {
+  await prepareHardwareProfile();
   preparePrismaClient();
 
   coreProcess = spawnNode(coreScript);
