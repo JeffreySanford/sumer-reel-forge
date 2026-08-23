@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { access, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
-import { basename, dirname, join, resolve } from 'node:path';
+import { basename, join, resolve } from 'node:path';
 import {
   loadProductionLaneRegistry,
   resolveLayerProductionLane,
