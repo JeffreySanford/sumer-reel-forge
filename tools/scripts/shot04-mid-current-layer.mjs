@@ -6,26 +6,28 @@ if (!['preflight', 'generate'].includes(command)) {
   throw new Error('Use preflight or generate.');
 }
 
-const forwarded = process.argv.slice(3).filter((arg) => arg !== '--');
-const script = resolve('tools/scripts/animation-layer-candidates.mjs');
-const workflow = resolve(
+const workflowPath = resolve(
   process.env.COMFYUI_SHOT04_MID_CURRENT_WORKFLOW_PATH ??
     'tools/renderer/workflows/shot04-mid-current-sam3-api.json',
 );
+const layerScript = resolve('tools/scripts/animation-layer-candidates.mjs');
+const forwarded = process.argv.slice(3).filter((arg) => arg !== '--');
 
 const result = spawnSync(
   process.execPath,
   [
-    script,
+    layerScript,
     command,
     '--shot=4',
     '--layer=shot04-mid-current-v1',
-    `--workflow=${workflow}`,
     ...forwarded,
   ],
   {
     cwd: process.cwd(),
-    env: process.env,
+    env: {
+      ...process.env,
+      COMFYUI_LAYER_WORKFLOW_PATH: workflowPath,
+    },
     stdio: 'inherit',
     windowsHide: true,
   },
