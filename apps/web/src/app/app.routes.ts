@@ -1,6 +1,7 @@
 import { Route } from '@angular/router';
 import { App } from './app';
 import { ChapterOverviewComponent } from './chapter-overview.component';
+import { LayerProductionComponent } from './layer-production.component';
 import { ProjectOverviewComponent } from './project-overview.component';
 import { StudioHomeComponent } from './studio-home.component';
 import { StudioRouteComponent } from './studio-route.component';
@@ -19,6 +20,10 @@ export const appRoutes: Route[] = [
   {
     path: 'projects/:projectSlug',
     component: ProjectOverviewComponent,
+  },
+  {
+    path: 'production/layers',
+    component: LayerProductionComponent,
   },
   {
     path: 'system',
