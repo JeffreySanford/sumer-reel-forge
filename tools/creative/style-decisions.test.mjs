@@ -160,6 +160,26 @@ test('Shot 5 shrine base reuses exact preservation mechanics for stable architec
   assert.equal(lane?.qa?.family, 'checksum-identity');
 });
 
+test('Shot 5 contained water uses localized two-stage SAM3 and stays provisional', () => {
+  const layer = {
+    id: 'shot05-welcome-water-v1',
+    role: 'water',
+    material: 'water',
+    hasAlpha: true,
+  };
+
+  const lane = resolveLayerProductionLane(lanes, layer);
+  assert.equal(lane?.id, 'semantic-contained-water-overlay');
+  assert.equal(lane?.state, 'provisional');
+  assert.equal(lane?.generator?.family, 'sam3-semantic-overlay');
+  assert.equal(
+    lane?.generator?.workflowPath,
+    'tools/renderer/workflows/semantic-contained-water-sam3-api.json',
+  );
+  assert.equal(lane?.qa?.alphaCoverage?.minimum, 0.001);
+  assert.equal(lane?.qa?.humanReviewRequired, true);
+});
+
 test('Shot 5 smoke is executable but remains explicitly provisional until benchmark approval', () => {
   const shot = {
     shotId: 'traveler-shrine-hospitality',
