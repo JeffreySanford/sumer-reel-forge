@@ -1,0 +1,108 @@
+{
+  "1": {
+    "inputs": {
+      "image": "{{SOURCE_IMAGE}}"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Approved editorial source"
+    }
+  },
+  "2": {
+    "inputs": {
+      "ckpt_name": "sam3.1_multiplex_fp16.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "SAM 3.1 Multiplex FP16"
+    }
+  },
+  "3": {
+    "inputs": {
+      "text": "{{LAYER_PROMPT}}",
+      "clip": [
+        "2",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Contained-water semantic target"
+    }
+  },
+  "4": {
+    "inputs": {
+      "model": [
+        "2",
+        0
+      ],
+      "image": [
+        "1",
+        0
+      ],
+      "conditioning": [
+        "3",
+        0
+      ],
+      "threshold": 0.2,
+      "refine_iterations": 2,
+      "individual_masks": false
+    },
+    "class_type": "SAM3_Detect",
+    "_meta": {
+      "title": "Stage 1: detect contained-water region"
+    }
+  },
+  "5": {
+    "inputs": {
+      "model": [
+        "2",
+        0
+      ],
+      "image": [
+        "1",
+        0
+      ],
+      "bboxes": [
+        "4",
+        1
+      ],
+      "threshold": 0.5,
+      "refine_iterations": 3,
+      "individual_masks": false
+    },
+    "class_type": "SAM3_Detect",
+    "_meta": {
+      "title": "Stage 2: box-guided contained-water segmentation"
+    }
+  },
+  "6": {
+    "inputs": {
+      "image": [
+        "1",
+        0
+      ],
+      "alpha": [
+        "5",
+        0
+      ]
+    },
+    "class_type": "JoinImageWithAlpha",
+    "_meta": {
+      "title": "Preserve source RGB under localized water alpha"
+    }
+  },
+  "7": {
+    "inputs": {
+      "filename_prefix": "{{OUTPUT_PREFIX}}",
+      "images": [
+        "6",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save registered contained-water overlay"
+    }
+  }
+}
