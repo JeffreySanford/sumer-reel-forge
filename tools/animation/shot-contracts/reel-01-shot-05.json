@@ -1,0 +1,144 @@
+{
+  "schemaVersion": 1,
+  "type": "animation-shot-contract",
+  "projectSlug": "blessings-of-sumer",
+  "chapterNumber": 1,
+  "episodeNumber": 1,
+  "shot": {
+    "shotId": "traveler-shrine-hospitality",
+    "sourceShotNumber": 5,
+    "sourceFrame": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-05.png",
+    "status": "draft",
+    "fallback": {
+      "assetId": "shot05-editorial-v1-flat",
+      "assetPath": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-05.png"
+    },
+    "overscan": {
+      "leftPercent": 6,
+      "rightPercent": 6,
+      "topPercent": 6,
+      "bottomPercent": 6
+    },
+    "activationPolicy": {
+      "requiredLayerIds": [
+        "shot05-shrine-base-v1",
+        "shot05-welcome-water-v1",
+        "shot05-foreground-textile-v1",
+        "shot05-smoke-v1"
+      ],
+      "enableDeferredPerformanceWhenApproved": true
+    },
+    "layers": [
+      {
+        "id": "shot05-shrine-base-v1",
+        "path": "blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-05/shrine-base.png",
+        "role": "background",
+        "material": "architectural-background",
+        "depthDefault": 0.1,
+        "anchor": "center",
+        "transform": { "x": 0, "y": 0, "scale": 1 },
+        "motionPresets": ["cinematicSlow"],
+        "state": "planned",
+        "hasAlpha": false,
+        "source": {
+          "type": "derived",
+          "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-05.png"
+        },
+        "review": {
+          "status": "pending",
+          "notes": [
+            "The shrine structure is the stillness anchor; the base should preserve the approved editorial plate exactly."
+          ]
+        }
+      },
+      {
+        "id": "shot05-welcome-water-v1",
+        "path": "blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-05/welcome-water.png",
+        "role": "water",
+        "material": "water",
+        "depthDefault": 0.34,
+        "anchor": "water-basin",
+        "transform": { "x": 0, "y": 0, "scale": 1 },
+        "motionPresets": ["waterPulse"],
+        "state": "planned",
+        "hasAlpha": true,
+        "source": {
+          "type": "derived",
+          "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-05.png"
+        },
+        "review": {
+          "status": "pending",
+          "notes": [
+            "Isolate only source-supported basin/spring water. Keep water practical and physical, not numinous."
+          ]
+        }
+      },
+      {
+        "id": "shot05-foreground-textile-v1",
+        "path": "blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-05/foreground/textile.png",
+        "role": "foreground-occluder",
+        "material": "cloth-light",
+        "depthDefault": 0.8,
+        "anchor": "foreground-textile",
+        "transform": { "x": 0, "y": 0, "scale": 1 },
+        "motionPresets": ["clothLag"],
+        "state": "planned",
+        "hasAlpha": true,
+        "source": {
+          "type": "derived",
+          "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-05.png"
+        },
+        "review": {
+          "status": "pending",
+          "notes": [
+            "Foreground cloth creates depth without obscuring the water/bread/welcome eye target or caption safe zone."
+          ]
+        }
+      },
+      {
+        "id": "shot05-smoke-v1",
+        "path": "blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-05/atmosphere/smoke.png",
+        "role": "atmosphere",
+        "material": "smoke",
+        "depthDefault": 0.66,
+        "anchor": "hearth-smoke",
+        "transform": { "x": 0, "y": 0, "scale": 1 },
+        "motionPresets": ["smokeDrift"],
+        "state": "planned",
+        "hasAlpha": true,
+        "source": {
+          "type": "derived",
+          "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-05.png"
+        },
+        "review": {
+          "status": "pending",
+          "notes": [
+            "This is intentionally the first unresolved Shot 5 lane. Establish a reusable smoke extraction/motion contract rather than forcing it through a water or generic foreground recipe."
+          ]
+        }
+      },
+      {
+        "id": "shot05-welcome-action-v1",
+        "path": "blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-05/character/welcome-action.png",
+        "role": "character",
+        "material": "cloth-light",
+        "depthDefault": 0.56,
+        "anchor": "welcome-action",
+        "transform": { "x": 0, "y": 0, "scale": 1 },
+        "motionPresets": [],
+        "state": "planned",
+        "hasAlpha": true,
+        "source": {
+          "type": "derived",
+          "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-05.png"
+        },
+        "review": {
+          "status": "pending",
+          "notes": [
+            "Optional for the first benchmark. Keep human motion subordinate to practical hospitality and preserve faces/hands exactly."
+          ]
+        }
+      }
+    ]
+  }
+}
