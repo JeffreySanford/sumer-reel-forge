@@ -21,9 +21,13 @@ export class SystemCapabilitiesComponent {
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly readyProjectionCount = computed(
-    () => this.capabilities()?.projections.filter((item) => item.status === 'ready').length ?? 0,
+    () =>
+      this.capabilities()?.projections.filter((item) => item.status === 'ready')
+        .length ?? 0,
   );
-  protected readonly gpu = computed(() => this.capabilities()?.gpu.devices?.[0]);
+  protected readonly gpu = computed(
+    () => this.capabilities()?.gpu.devices?.[0],
+  );
 
   constructor() {
     this.refresh();
@@ -39,14 +43,26 @@ export class SystemCapabilitiesComponent {
       },
       error: (error) => {
         this.error.set(
-          error?.message ?? 'Host capabilities could not be loaded from the local API.',
+          error?.message ??
+            'Host capabilities could not be loaded from the local API.',
         );
         this.loading.set(false);
       },
     });
   }
 
-  protected statusLabel(status: HostCapabilityStatus): string {
+  protected statusLabel(
+    status: HostCapabilityStatus,
+    capabilityId?: string,
+  ): string {
+    if (
+      status === 'limited' &&
+      (capabilityId === 'animation-layer-generation' ||
+        capabilityId === 'comfyui-layer-workflow')
+    ) {
+      return 'Setup required';
+    }
+
     switch (status) {
       case 'ready':
         return 'Ready';

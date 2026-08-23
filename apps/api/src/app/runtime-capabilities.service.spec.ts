@@ -16,21 +16,30 @@ describe('runtime capability projections', () => {
     { id: 'nvenc', label: 'NVENC', status: 'ready' as const, detail: '' },
   ];
 
-  it('projects workstation-class local production capabilities', () => {
-    const projections = buildRuntimeProjections(
-      {
-        ollama: { models: ['qwen3:8b', 'qwen3-vl:4b-instruct'] },
-        runtimePlan: {
-          remotion: { parallelRenders: 2, concurrencyPerRender: 8 },
-          ai: {
-            ollamaReviewConcurrency: 2,
-            comfyConcurrency: 1,
-            comfyVramMode: 'normalvram',
-          },
+  const workstationProfile = {
+    gpu: {
+      nvidiaSmiAvailable: true,
+      devices: [
+        {
+          vendor: 'NVIDIA',
+          name: 'NVIDIA GeForce RTX 3080',
+          memoryTotalMb: 10240,
         },
+      ],
+    },
+    ollama: { models: ['qwen3:8b', 'qwen3-vl:4b-instruct'] },
+    runtimePlan: {
+      remotion: { parallelRenders: 2, concurrencyPerRender: 8 },
+      ai: {
+        ollamaReviewConcurrency: 2,
+        comfyConcurrency: 1,
+        comfyVramMode: 'normalvram',
       },
-      software,
-    );
+    },
+  };
+
+  it('projects workstation-class local production capabilities', () => {
+    const projections = buildRuntimeProjections(workstationProfile, software);
 
     expect(
       projections.find((item) => item.id === 'scene-v2-rendering')?.status,
@@ -42,6 +51,14 @@ describe('runtime capability projections', () => {
       projections.find((item) => item.id === 'vision-review')?.summary,
     ).toContain('qwen3-vl:4b-instruct');
     expect(
+      projections.find((item) => item.id === 'nvidia-gpu-acceleration')
+        ?.status,
+    ).toBe('ready');
+    expect(
+      projections.find((item) => item.id === 'nvidia-gpu-acceleration')
+        ?.summary,
+    ).toContain('10.0 GB VRAM');
+    expect(
       projections.find((item) => item.id === 'animation-layer-generation')
         ?.status,
     ).toBe('ready');
@@ -50,15 +67,9 @@ describe('runtime capability projections', () => {
     ).toBe('ready');
   });
 
-  it('does not claim GPU layer generation when ComfyUI is unavailable', () => {
+  it('reports pipeline setup required rather than GPU unavailable when ComfyUI is offline', () => {
     const projections = buildRuntimeProjections(
-      {
-        ollama: { models: [] },
-        runtimePlan: {
-          remotion: { parallelRenders: 1, concurrencyPerRender: 2 },
-          ai: { comfyConcurrency: 1, comfyVramMode: 'lowvram' },
-        },
-      },
+      workstationProfile,
       software.map((item) =>
         item.id === 'comfyui'
           ? { ...item, status: 'unavailable' as const }
@@ -67,34 +78,57 @@ describe('runtime capability projections', () => {
     );
 
     expect(
-      projections.find((item) => item.id === 'animation-layer-generation')
+      projections.find((item) => item.id === 'nvidia-gpu-acceleration')
         ?.status,
-    ).toBe('unavailable');
-    expect(
-      projections.find((item) => item.id === 'parallel-benchmarks')?.status,
-    ).toBe('limited');
+    ).toBe('ready');
+    const pipeline = projections.find(
+      (item) => item.id === 'animation-layer-generation',
+    );
+    expect(pipeline?.status).toBe('limited');
+    expect(pipeline?.summary).toContain('ComfyUI is offline');
   });
 
-  it('does not claim GPU layer generation without the dedicated workflow', () => {
+  it('reports setup required when the dedicated workflow is not configured', () => {
     const projections = buildRuntimeProjections(
-      {
-        ollama: { models: [] },
-        runtimePlan: {
-          remotion: { parallelRenders: 2, concurrencyPerRender: 8 },
-          ai: { comfyConcurrency: 1, comfyVramMode: 'normalvram' },
-        },
-      },
+      workstationProfile,
       software.map((item) =>
         item.id === 'comfyui-layer-workflow'
+          ? { ...item, status: 'limited' as const }
+          : item,
+      ),
+    );
+
+    const pipeline = projections.find(
+      (item) => item.id === 'animation-layer-generation',
+    );
+    expect(pipeline?.status).toBe('limited');
+    expect(pipeline?.summary).toContain('workflow still needs to be configured');
+    expect(
+      projections.find((item) => item.id === 'nvidia-gpu-acceleration')
+        ?.status,
+    ).toBe('ready');
+  });
+
+  it('only reports GPU acceleration unavailable when NVIDIA CUDA detection fails', () => {
+    const projections = buildRuntimeProjections(
+      {
+        ...workstationProfile,
+        gpu: { nvidiaSmiAvailable: false, devices: [] },
+      },
+      software.map((item) =>
+        item.id === 'cuda'
           ? { ...item, status: 'unavailable' as const }
           : item,
       ),
     );
 
-    const projection = projections.find(
-      (item) => item.id === 'animation-layer-generation',
-    );
-    expect(projection?.status).toBe('unavailable');
-    expect(projection?.summary).toContain('dedicated animation-layer workflow');
+    expect(
+      projections.find((item) => item.id === 'nvidia-gpu-acceleration')
+        ?.status,
+    ).toBe('unavailable');
+    expect(
+      projections.find((item) => item.id === 'animation-layer-generation')
+        ?.status,
+    ).toBe('unavailable');
   });
 });

@@ -1,6 +1,7 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { ComfyUiInventoryService } from './comfyui-inventory.service';
 import { DeterministicPlanningProvider } from './planning/deterministic-planning.provider';
 import { OllamaPlanningProvider } from './planning/ollama-planning.provider';
 import { PlanningController } from './planning/planning.controller';
@@ -20,6 +21,7 @@ import { RuntimeController } from './runtime.controller';
     DeterministicPlanningProvider,
     OllamaPlanningProvider,
     RuntimeCapabilitiesService,
+    ComfyUiInventoryService,
     PrismaService,
     {
       provide: REEL_REPOSITORY,

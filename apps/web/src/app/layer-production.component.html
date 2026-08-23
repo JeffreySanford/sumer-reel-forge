@@ -1,0 +1,166 @@
+<main class="layer-shell md3-page md3-theme-dark">
+  <app-studio-nav />
+
+  <header class="layer-header md3-container md3-stack md3-stack--tight">
+    <div class="md3-breadcrumbs">
+      <a routerLink="/">Studio</a>
+      <span aria-hidden="true">/</span>
+      <span>Layer Production</span>
+    </div>
+    <div class="layer-title-row">
+      <div>
+        <p class="md3-label">Animation-v1 preparation</p>
+        <h1 class="md3-display-medium">Layer Production</h1>
+        <p class="md3-body-large layer-lede">
+          Turn an approved painting into animation-ready material without degrading the painting that made the shot worth keeping.
+        </p>
+      </div>
+      <div class="md3-cluster">
+        <a class="md3-button md3-button--outlined" routerLink="/system">Host System</a>
+        <button class="md3-button md3-button--filled" type="button" (click)="refresh()" [disabled]="loading()">
+          {{ loading() ? 'Refreshing…' : 'Refresh inventory' }}
+        </button>
+      </div>
+    </div>
+  </header>
+
+  @if (error()) {
+    <section class="md3-container md3-card md3-pad-6" role="alert">
+      <p class="md3-label">Readiness unavailable</p>
+      <h2 class="md3-headline-medium">The local production inventory could not be loaded.</h2>
+      <p class="md3-body-medium">{{ error() }}</p>
+    </section>
+  }
+
+  @if (host(); as machine) {
+    <section class="gate-grid md3-container md3-grid md3-grid--4" aria-label="Layer production gates">
+      <article class="gate-card md3-card md3-card--filled md3-pad-5">
+        <p class="md3-label">Source artwork</p>
+        <h2 class="md3-title-large">Approved</h2>
+        <span class="md3-chip md3-chip--success">editorial-v1 locked</span>
+        <p class="md3-body-small">Generation may create candidates, but the approved painting remains immutable.</p>
+      </article>
+
+      <article class="gate-card md3-card md3-card--filled md3-pad-5">
+        <p class="md3-label">NVIDIA GPU</p>
+        <h2 class="md3-title-large">{{ gpuReady() ? 'Ready' : 'Unavailable' }}</h2>
+        <span class="md3-chip" [class.md3-chip--success]="gpuReady()" [class.md3-chip--error]="!gpuReady()">
+          {{ machine.gpu.devices?.[0]?.name || 'No NVIDIA device reported' }}
+        </span>
+        <p class="md3-body-small">
+          {{ machine.gpu.devices?.[0]?.memoryTotalMb ? ((machine.gpu.devices?.[0]?.memoryTotalMb || 0) / 1024).toFixed(1) + ' GB VRAM' : 'VRAM unknown' }}
+          · {{ machine.runtimePlan?.ai?.comfyVramMode || 'VRAM mode unknown' }}
+        </p>
+      </article>
+
+      <article class="gate-card md3-card md3-card--filled md3-pad-5">
+        <p class="md3-label">ComfyUI</p>
+        <h2 class="md3-title-large">{{ comfyReady() ? 'Online' : 'Offline' }}</h2>
+        <span class="md3-chip" [class.md3-chip--success]="comfyReady()" [class.md3-chip--warning]="!comfyReady()">
+          {{ inventory()?.baseUrl || machine.comfyui.baseUrl }}
+        </span>
+        <p class="md3-body-small">
+          {{ comfyReady() ? (inventory()?.nodeCount || 0) + ' registered node types detected' : (inventory()?.error || 'Start the local ComfyUI service') }}
+        </p>
+      </article>
+
+      <article class="gate-card md3-card md3-card--filled md3-pad-5">
+        <p class="md3-label">Layer workflow</p>
+        <h2 class="md3-title-large">{{ workflowReady() ? 'Ready' : 'Setup required' }}</h2>
+        <span class="md3-chip" [class.md3-chip--success]="workflowReady()" [class.md3-chip--warning]="!workflowReady()">
+          {{ workflowReady() ? 'API graph configured' : 'No production graph configured' }}
+        </span>
+        <p class="md3-body-small">{{ machine.comfyui.layerWorkflowPath || 'COMFYUI_LAYER_WORKFLOW_PATH is not configured yet.' }}</p>
+      </article>
+    </section>
+  }
+
+  <section class="focus-card md3-container md3-card md3-card--elevated md3-pad-8">
+    <div class="focus-copy md3-stack md3-stack--tight">
+      <p class="md3-label">Current benchmark · Reel 1 · Shot 3</p>
+      <h2 class="md3-headline-large">Enki physical benchmark</h2>
+      <p class="md3-body-large">
+        The first production extraction is intentionally water. It is visually forgiving, materially important, and lets us prove registration, transparency, and GPU-assisted separation before risking Enki's face.
+      </p>
+      <div class="md3-cluster">
+        <span class="md3-chip md3-chip--primary">First target · shot03-water-v1</span>
+        <span class="md3-chip">Human approval required</span>
+        <span class="md3-chip">No automatic promotion</span>
+      </div>
+    </div>
+
+    <aside class="next-action md3-surface md3-surface--high md3-pad-5">
+      <p class="md3-label">Next safe action</p>
+      <h3 class="md3-title-medium">{{ layerPipelineReady() ? 'Preflight the water layer' : 'Complete readiness gates' }}</h3>
+      <p class="md3-body-medium">{{ nextStep() }}</p>
+      @if (!layerPipelineReady()) {
+        <span class="md3-chip md3-chip--warning">GPU generation remains disabled</span>
+      } @else {
+        <span class="md3-chip md3-chip--success">Ready for zero-generation preflight</span>
+      }
+    </aside>
+  </section>
+
+  <section class="md3-container md3-section">
+    <div class="md3-section-header">
+      <div>
+        <p class="md3-label">Shot material plan</p>
+        <h2 class="md3-headline-medium">Animation-ready layers</h2>
+      </div>
+      <span class="md3-body-small">AI proposes · rules constrain · human directs</span>
+    </div>
+
+    <div class="layer-grid md3-grid md3-grid--3">
+      @for (layer of shotThreeLayers; track layer.id) {
+        <article class="material-card md3-card md3-card--filled md3-pad-5" [class.material-card--first]="layer.recommendedFirst">
+          <div class="md3-cluster md3-cluster--between">
+            <span class="md3-chip" [class.md3-chip--primary]="layer.recommendedFirst">
+              {{ layer.recommendedFirst ? 'Generate first' : (layer.required ? 'Required' : 'Optional') }}
+            </span>
+            <span class="md3-body-small">{{ layer.material }}</span>
+          </div>
+          <h3 class="md3-title-large">{{ layer.label }}</h3>
+          <code>{{ layer.id }}</code>
+          <p class="md3-body-medium">{{ layer.role }}</p>
+        </article>
+      }
+    </div>
+  </section>
+
+  @if (inventory(); as inv) {
+    <section class="inventory-card md3-container md3-card md3-pad-6">
+      <div class="md3-section-header">
+        <div>
+          <p class="md3-label">ComfyUI host inventory</p>
+          <h2 class="md3-headline-medium">Detected layer-production capability</h2>
+        </div>
+        <span class="md3-chip" [class.md3-chip--success]="inv.online" [class.md3-chip--warning]="!inv.online">
+          {{ inv.online ? 'Live inventory' : 'ComfyUI offline' }}
+        </span>
+      </div>
+
+      <div class="family-grid md3-grid md3-grid--auto">
+        <article class="md3-stat md3-card md3-card--filled"><strong>{{ familyCount(inv.families.segmentation) }}</strong><span>segmentation nodes</span></article>
+        <article class="md3-stat md3-card md3-card--filled"><strong>{{ familyCount(inv.families.matting) }}</strong><span>matting / alpha</span></article>
+        <article class="md3-stat md3-card md3-card--filled"><strong>{{ familyCount(inv.families.backgroundRemoval) }}</strong><span>background removal</span></article>
+        <article class="md3-stat md3-card md3-card--filled"><strong>{{ familyCount(inv.families.depth) }}</strong><span>depth nodes</span></article>
+        <article class="md3-stat md3-card md3-card--filled"><strong>{{ familyCount(inv.families.inpaint) }}</strong><span>inpaint nodes</span></article>
+      </div>
+
+      @if (resourcePreview().length) {
+        <div class="resource-list md3-stack md3-stack--tight">
+          <p class="md3-label">Model/resource selections</p>
+          @for (resource of resourcePreview(); track resource) {
+            <code>{{ resource }}</code>
+          }
+        </div>
+      } @else if (!inv.online) {
+        <p class="md3-body-medium">
+          Start ComfyUI, then refresh this page. Reel Forge will inspect <code>/object_info</code> without queueing a prompt or consuming GPU generation time.
+        </p>
+      } @else {
+        <p class="md3-body-medium">No enum-backed model/resource selections were exposed by the detected layer nodes.</p>
+      }
+    </section>
+  }
+</main>

@@ -18,6 +18,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
       <div class="md3-nav-pill">
         <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
         <a routerLink="/projects/blessings-of-sumer" routerLinkActive="active">Projects</a>
+        <a routerLink="/production/layers" routerLinkActive="active">Layers</a>
         <a routerLink="/system" routerLinkActive="active">Host System</a>
       </div>
     </nav>
@@ -31,8 +32,8 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
       .brand-copy { display: grid; gap: 2px; }
       .brand-copy strong { font-size: .94rem; line-height: 1.1; }
       .brand-copy small { font-size: .68rem; }
-      @media (max-width: 700px) { .studio-nav { align-items: flex-start; } .brand-copy small { display: none; } }
-      @media (max-width: 500px) { .brand-copy { display: none; } }
+      @media (max-width: 760px) { .studio-nav { align-items: flex-start; } .brand-copy small { display: none; } .md3-nav-pill { flex-wrap: wrap; justify-content: flex-end; } }
+      @media (max-width: 540px) { .brand-copy { display: none; } }
     `,
   ],
 })
