@@ -33,7 +33,20 @@ Model output is never treated as human approval.
 
 ## Recommended Local Configuration
 
-PowerShell example:
+The normal local `pnpm start:all` entrypoint now applies these defaults before any managed service starts:
+
+```text
+PLANNING_PROVIDER=ollama
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_TEXT_MODEL=qwen3:8b
+OLLAMA_VISION_MODEL=qwen3-vl:4b-instruct
+PLANNING_TIMEOUT_MS=120000
+OLLAMA_KEEP_ALIVE=10m
+```
+
+They are defaults only. An explicit shell variable or `.env` value remains authoritative, so model benchmarking or deterministic-only startup does not require editing the startup script.
+
+PowerShell override example:
 
 ```powershell
 $env:PLANNING_PROVIDER="ollama"
@@ -44,7 +57,7 @@ $env:PLANNING_TIMEOUT_MS="120000"
 $env:OLLAMA_KEEP_ALIVE="10m"
 ```
 
-Git Bash example:
+Git Bash override example:
 
 ```bash
 export PLANNING_PROVIDER=ollama
@@ -59,22 +72,22 @@ These shell variables do not modify the Windows PATH.
 
 ## Normal Local Startup
 
-With `PLANNING_PROVIDER=ollama`, the normal command is now:
+The normal command is:
 
 ```bash
 pnpm start:all
 ```
 
-`start:all` automatically performs the equivalent of:
+The outer managed startup applies the local Ollama defaults above, then the core startup automatically performs the equivalent of:
 
 ```bash
 pnpm planning:ollama:check
 pnpm planning:ollama:warm
 ```
 
-before starting the Docker infrastructure, Nest API, and Angular Studio. This provides fail-fast local runtime validation and preloads the configured text planner.
+before starting the Docker infrastructure, Nest API, and Angular Studio. This provides fail-fast local runtime validation and preloads the configured text planner while also making the configured vision model available to shot review commands.
 
-When `PLANNING_PROVIDER=deterministic`, the Ollama check and warm-up are skipped so deterministic development and CI do not depend on a local model runtime.
+To deliberately run without Ollama planning, set `PLANNING_PROVIDER=deterministic` in the shell or `.env`. The Ollama check and warm-up are then skipped so deterministic development and CI remain independent from the local model runtime.
 
 The standalone commands remain useful for diagnostics:
 
