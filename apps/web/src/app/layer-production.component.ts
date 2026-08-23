@@ -6,6 +6,16 @@ import { StudioNavComponent } from './studio-nav.component';
 import type { ComfyUiInventory, ShotLayerTarget } from './layer-production.types';
 import type { HostCapabilities } from './system-capabilities.types';
 
+const SHOT03_WATER_NODE_TYPES = [
+  'LoadImage',
+  'CheckpointLoaderSimple',
+  'CLIPTextEncode',
+  'SAM3_Detect',
+  'JoinImageWithAlpha',
+  'SaveImage',
+] as const;
+const SHOT03_WATER_MODEL = 'sam3.1_multiplex_fp16.safetensors';
+
 @Component({
   selector: 'app-layer-production',
   standalone: true,
@@ -91,8 +101,26 @@ export class LayerProductionComponent {
   protected readonly comfyReady = computed(
     () => Boolean(this.inventory()?.online),
   );
+  protected readonly builtInWaterWorkflowReady = computed(() => {
+    const inventory = this.inventory();
+    if (!inventory?.online) return false;
+
+    const nodesReady = SHOT03_WATER_NODE_TYPES.every((nodeType) =>
+      inventory.nodeTypes.includes(nodeType),
+    );
+    const modelReady = inventory.resources.some(
+      (resource) =>
+        resource.nodeType === 'CheckpointLoaderSimple' &&
+        resource.inputName === 'ckpt_name' &&
+        resource.values.includes(SHOT03_WATER_MODEL),
+    );
+
+    return nodesReady && modelReady;
+  });
   protected readonly workflowReady = computed(
-    () => Boolean(this.host()?.comfyui.layerWorkflowReady),
+    () =>
+      Boolean(this.host()?.comfyui.layerWorkflowReady) ||
+      this.builtInWaterWorkflowReady(),
   );
   protected readonly inventoryReady = computed(
     () => (this.inventory()?.nodeCount ?? 0) > 0,
