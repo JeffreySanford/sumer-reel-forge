@@ -17,7 +17,7 @@
     "comfyui:setup": "node tools/scripts/setup-comfyui.mjs",
     "comfyui:water:preflight": "node tools/scripts/shot03-water-layer.mjs preflight",
     "comfyui:water:generate": "node tools/scripts/shot03-water-layer.mjs generate",
-    "comfyui:water:preview": "tsx tools/scripts/render-shot03-water-candidate-preview.ts",
+    "comfyui:water:preview": "node tools/scripts/run-shot03-water-candidate-preview.mjs",
     "creative:test": "node --test tools/creative/creative-quality.test.mjs",
     "db:generate": "prisma generate",
     "db:deploy": "prisma migrate deploy",
