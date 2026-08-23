@@ -36,6 +36,7 @@
     "render:animation:motion-proof": "node tools/scripts/render-animation-proof.mjs --scene tools/animation/scenes/cinematic-motion-proof.scene.json --composition CinematicMotionProof --prefix cinematic-motion-proof --manifest cinematic-motion-proof-manifest.json",
     "render:animation:motion-review": "node tools/scripts/render-animation-style-review.mjs --scene tools/animation/scenes/cinematic-motion-proof.scene.json --composition CinematicMotionProof --prefix cinematic-motion-proof --reviewType cinematic-animation-motion-proof --title \"Cinematic Animation Motion Proof Review\" --frames 3,9,15 --outputDirectory tmp/renders/animation-motion-review",
     "render:animation:shot3-benchmark": "tsx tools/scripts/render-scene-v2-benchmark.ts",
+    "render:animation:shot4-benchmark": "tsx tools/scripts/render-scene-v2-benchmark.ts tools/animation/scenes/reel-01-shot-04-nammu-benchmark.scene-v2.json",
     "render:animation:full-reel1": "node tools/scripts/render-animation-proof.mjs --scene tools/animation/scenes/reel-01-full-animation.scene.json --composition FullReelAnimation --prefix reel-animation-v1 --manifest animation-reel1-manifest.json --adapter animation --narration-adapter chatterbox",
     "render:animation:reel1": "node tools/scripts/render-animation-reel1.mjs",
     "render:final:reel1": "node tools/scripts/render-editorial-reel1.mjs --final",

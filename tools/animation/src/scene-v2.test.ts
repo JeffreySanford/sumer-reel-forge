@@ -5,16 +5,16 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
 import * as ts from 'typescript';
-import {
-  validateSceneV2,
-  type SceneV2,
-} from './scene-v2';
+import { validateSceneV2, type SceneV2 } from './scene-v2';
 
-const scenePath = resolve(
+const shotThreeScenePath = resolve(
   'tools/animation/scenes/reel-01-shot-03-benchmark.scene-v2.json',
 );
+const shotFourScenePath = resolve(
+  'tools/animation/scenes/reel-01-shot-04-nammu-benchmark.scene-v2.json',
+);
 
-async function loadScene(): Promise<SceneV2> {
+async function loadScene(scenePath = shotThreeScenePath): Promise<SceneV2> {
   return JSON.parse(await readFile(scenePath, 'utf8')) as SceneV2;
 }
 
@@ -36,6 +36,62 @@ test('Shot 3 benchmark rejects camera movement above 3 percent', async () => {
   assert.match(result.errors.join('\n'), /camera scale delta 4\.00% exceeds 3%/);
 });
 
+test('Shot 4 benchmark Scene V2 passes numinous policy', async () => {
+  const scene = await loadScene(shotFourScenePath);
+  const result = validateSceneV2(scene);
+
+  assert.equal(result.valid, true, result.errors.join('\n'));
+  assert.equal(scene.shots[0]?.camera.preset, 'nearStatic');
+  assert.equal(scene.shots[0]?.camera.scaleTo, 1.008);
+  assert.equal(scene.shots[0]?.performance[0]?.preset, 'numinousDrift');
+});
+
+test('Shot 4 benchmark rejects camera movement above 1 percent', async () => {
+  const scene = await loadScene(shotFourScenePath);
+  scene.shots[0]!.camera.scaleTo = 1.02;
+  const result = validateSceneV2(scene);
+
+  assert.equal(result.valid, false);
+  assert.match(result.errors.join('\n'), /camera scale delta 2\.00% exceeds 1%/);
+});
+
+test('Shot 4 benchmark rejects camera rotation', async () => {
+  const scene = await loadScene(shotFourScenePath);
+  scene.shots[0]!.camera.rotationTo = 0.1;
+  const result = validateSceneV2(scene);
+
+  assert.equal(result.valid, false);
+  assert.match(result.errors.join('\n'), /may not use camera rotation/);
+});
+
+test('Shot 4 benchmark requires environmental numinous drift', async () => {
+  const scene = await loadScene(shotFourScenePath);
+  scene.shots[0]!.performance = [];
+  const result = validateSceneV2(scene);
+
+  assert.equal(result.valid, false);
+  assert.match(result.errors.join('\n'), /requires enabled numinousDrift environmental coherence/);
+});
+
+test('Shot 4 benchmark rejects conventional character performance', async () => {
+  const scene = await loadScene(shotFourScenePath);
+  scene.shots[0]!.performance.push({
+    target: 'nammu-eyes',
+    preset: 'blinkOnce',
+    startProgress: 0.5,
+    endProgress: 0.54,
+    intensity: 1,
+    enabled: true,
+  });
+  const result = validateSceneV2(scene);
+
+  assert.equal(result.valid, false);
+  assert.match(
+    result.errors.join('\n'),
+    /may not animate Nammu with conventional character performance presets/,
+  );
+});
+
 test('Scene V2 cannot waive human approval', async () => {
   const scene = await loadScene();
   scene.reviewPolicy.humanApprovalRequired = false;
@@ -54,7 +110,7 @@ test('Scene V2 cannot mutate story text', async () => {
   assert.match(result.errors.join('\n'), /may not mutate story text/);
 });
 
-test('Shot 3 benchmark renderer contains no top-level await', async () => {
+test('Scene V2 benchmark renderer contains no top-level await', async () => {
   const scriptPath = resolve('tools/scripts/render-scene-v2-benchmark.ts');
   const source = await readFile(scriptPath, 'utf8');
   const sourceFile = ts.createSourceFile(
@@ -102,10 +158,10 @@ test('Shot 3 benchmark renderer contains no top-level await', async () => {
 });
 
 test(
-  'Remotion registers SceneV2Benchmark with the real Shot 3 props',
+  'Remotion registers SceneV2Benchmark with the real Shot 4 props',
   { timeout: 60_000 },
   async () => {
-    const scene = await loadScene();
+    const scene = await loadScene(shotFourScenePath);
     const temporaryDirectory = await mkdtemp(join(tmpdir(), 'sumer-scene-v2-'));
     const propsPath = join(temporaryDirectory, 'props.json');
     await writeFile(propsPath, `${JSON.stringify({ scene }, null, 2)}\n`, 'utf8');

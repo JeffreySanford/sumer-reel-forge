@@ -35,21 +35,20 @@ async function main(): Promise<void> {
     }
   }
 
+  const sourceShotNumber = scene.shots[0]?.sourceShotNumber;
+  if (!sourceShotNumber) {
+    throw new Error('Scene V2 benchmark requires a sourceShotNumber.');
+  }
+  const benchmarkStem = `shot${sourceShotNumber}-scene-v2-benchmark`;
   const outputDirectory = process.env.SCENE_V2_BENCHMARK_OUTPUT_DIRECTORY
     ? resolve(process.env.SCENE_V2_BENCHMARK_OUTPUT_DIRECTORY)
-    : await prepareOutputDirectory(config.outputRoot, 'shot3-scene-v2-benchmark');
+    : await prepareOutputDirectory(config.outputRoot, benchmarkStem);
   await mkdir(outputDirectory, { recursive: true });
 
   const propsPath = join(outputDirectory, 'scene-v2-props.json');
-  const videoPath = join(outputDirectory, 'shot3-scene-v2-benchmark.mp4');
-  const manifestPath = join(
-    outputDirectory,
-    'shot3-scene-v2-benchmark-manifest.json',
-  );
-  const contactSheetPath = join(
-    outputDirectory,
-    'shot3-scene-v2-contact-sheet.png',
-  );
+  const videoPath = join(outputDirectory, `${benchmarkStem}.mp4`);
+  const manifestPath = join(outputDirectory, `${benchmarkStem}-manifest.json`);
+  const contactSheetPath = join(outputDirectory, `${benchmarkStem}-contact-sheet.png`);
   await writeJson(propsPath, { scene });
 
   console.log(`Rendering ${scene.sceneId}...`);
@@ -158,7 +157,7 @@ async function main(): Promise<void> {
     composition: 'SceneV2Benchmark',
     scenePath,
     sceneId: scene.sceneId,
-    sourceShotNumber: scene.shots[0]?.sourceShotNumber,
+    sourceShotNumber,
     sourceStartFrame: scene.shots[0]?.sourceStartFrame,
     output: {
       path: videoPath,
