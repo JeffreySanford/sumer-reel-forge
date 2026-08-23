@@ -7,6 +7,10 @@ import { ReelAnimation } from './ReelAnimation';
 import type { SceneV2BenchmarkProps } from './SceneV2Benchmark';
 import { SceneV2ResolvedBenchmark } from './SceneV2ResolvedBenchmark';
 import {
+  Shot03WaterCandidatePreview,
+  type Shot03WaterCandidatePreviewProps,
+} from './Shot03WaterCandidatePreview';
+import {
   SceneV2WaterHandoff,
   type SceneV2WaterHandoffProps,
 } from './SceneV2WaterHandoff';
@@ -14,6 +18,7 @@ import { proofScene } from './scene-data';
 
 const emptySceneV2Props: SceneV2BenchmarkProps = {};
 const emptyWaterHandoffProps: SceneV2WaterHandoffProps = {};
+const emptyShot03WaterCandidatePreviewProps: Shot03WaterCandidatePreviewProps = {};
 
 function RemotionRoot() {
   return (
@@ -64,6 +69,15 @@ function RemotionRoot() {
           width: props.scene?.width ?? 1080,
           height: props.scene?.height ?? 1920,
         })}
+      />
+      <Composition
+        id="Shot03WaterCandidatePreview"
+        component={Shot03WaterCandidatePreview}
+        durationInFrames={150}
+        fps={30}
+        width={1080}
+        height={1920}
+        defaultProps={emptyShot03WaterCandidatePreviewProps}
       />
       <Composition
         id="SceneV2WaterHandoff"
