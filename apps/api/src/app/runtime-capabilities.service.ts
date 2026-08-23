@@ -22,6 +22,19 @@ interface Projection {
   recommendation?: string;
 }
 
+interface LiveNvidiaDevice {
+  vendor: 'NVIDIA';
+  index?: number;
+  name: string;
+  memoryTotalMb?: number;
+  driverVersion?: string;
+}
+
+interface LiveNvidiaInventory {
+  available: boolean;
+  devices: LiveNvidiaDevice[];
+}
+
 @Injectable()
 export class RuntimeCapabilitiesService {
   async getCapabilities() {
@@ -46,23 +59,28 @@ export class RuntimeCapabilitiesService {
         fileExists(layerWorkflowPath),
       ]);
 
-    const runtimePlan = startupProfile?.runtimePlan ?? null;
-    const software = buildSoftwareCapabilities({
-      packageJson,
-      startupProfile,
-      ollama,
-      comfyui,
-      layerWorkflowPath,
-      layerWorkflowReady,
-    });
-    const projectionProfile = {
+    const liveNvidia = detectLiveNvidia();
+    const gpu = effectiveGpu(startupProfile?.gpu, liveNvidia);
+    const runtimePlan = effectiveRuntimePlan(startupProfile?.runtimePlan, gpu);
+    const effectiveProfile = {
       ...startupProfile,
+      gpu,
+      runtimePlan,
       ollama: {
         ...(startupProfile?.ollama ?? {}),
         models: extractOllamaModels(ollama.payload),
       },
     };
-    const projections = buildRuntimeProjections(projectionProfile, software);
+    const software = buildSoftwareCapabilities({
+      packageJson,
+      startupProfile: effectiveProfile,
+      ollama,
+      comfyui,
+      layerWorkflowPath,
+      layerWorkflowReady,
+      liveNvidia,
+    });
+    const projections = buildRuntimeProjections(effectiveProfile, software);
 
     return {
       schemaVersion: 1,
@@ -79,10 +97,7 @@ export class RuntimeCapabilitiesService {
       cpu: startupProfile?.cpu ?? null,
       memory: startupProfile?.memory ?? null,
       disk: startupProfile?.disk ?? null,
-      gpu: startupProfile?.gpu ?? {
-        nvidiaSmiAvailable: false,
-        devices: [],
-      },
+      gpu,
       media: startupProfile?.media ?? null,
       ollama: {
         baseUrl: (process.env.OLLAMA_BASE_URL ?? 'http://localhost:11434').replace(
@@ -117,6 +132,7 @@ function buildSoftwareCapabilities({
   comfyui,
   layerWorkflowPath,
   layerWorkflowReady,
+  liveNvidia,
 }: {
   packageJson: any;
   startupProfile: any;
@@ -124,6 +140,7 @@ function buildSoftwareCapabilities({
   comfyui: ProbeResult;
   layerWorkflowPath?: string;
   layerWorkflowReady: boolean;
+  liveNvidia: LiveNvidiaInventory;
 }): SoftwareCapability[] {
   const deps = {
     ...(packageJson?.dependencies ?? {}),
@@ -139,6 +156,8 @@ function buildSoftwareCapabilities({
   const docker = commandVersion('docker', ['--version']);
   const pnpm = commandVersion('pnpm', ['--version']);
   const git = commandVersion('git', ['--version']);
+  const nvidiaReady =
+    Boolean(startupProfile?.gpu?.nvidiaSmiAvailable) || liveNvidia.available;
 
   return [
     {
@@ -227,23 +246,25 @@ function buildSoftwareCapabilities({
     {
       id: 'comfyui-layer-workflow',
       label: 'ComfyUI Layer Workflow',
-      status: layerWorkflowReady ? 'ready' : 'unavailable',
+      status: layerWorkflowReady
+        ? 'ready'
+        : layerWorkflowPath
+          ? 'unavailable'
+          : 'limited',
       detail: layerWorkflowReady
         ? `Candidate workflow available: ${layerWorkflowPath}`
         : layerWorkflowPath
-          ? `Layer workflow not found: ${layerWorkflowPath}`
-          : 'COMFYUI_LAYER_WORKFLOW_PATH is not configured',
+          ? `Configured layer workflow not found: ${layerWorkflowPath}`
+          : 'Setup required: COMFYUI_LAYER_WORKFLOW_PATH is not configured',
     },
     {
       id: 'cuda',
       label: 'NVIDIA / CUDA',
-      status: startupProfile?.gpu?.nvidiaSmiAvailable
-        ? 'ready'
-        : 'unavailable',
-      detail: startupProfile?.gpu?.nvidiaSmiAvailable
+      status: nvidiaReady ? 'ready' : 'unavailable',
+      detail: nvidiaReady
         ? startupProfile?.gpu?.cudaToolkit
           ? `NVIDIA driver detected; CUDA toolkit ${startupProfile.gpu.cudaToolkit}`
-          : 'NVIDIA driver detected; CUDA-capable workloads available through driver/runtime'
+          : 'NVIDIA driver detected; CUDA-capable workloads are available through the driver/runtime'
         : 'NVIDIA CUDA capability not detected',
     },
     {
@@ -284,6 +305,10 @@ export function buildRuntimeProjections(
   const comfyConcurrency = Number(plan?.ai?.comfyConcurrency ?? 1);
   const vramMode = plan?.ai?.comfyVramMode ?? 'unknown';
   const layerWorkflowReady = status('comfyui-layer-workflow') === 'ready';
+  const comfyReady = status('comfyui') === 'ready';
+  const cudaReady = status('cuda') === 'ready';
+  const gpu = Array.isArray(profile?.gpu?.devices) ? profile.gpu.devices[0] : undefined;
+  const gpuVramGb = Number(gpu?.memoryTotalMb ?? 0) / 1024;
 
   return [
     {
@@ -332,31 +357,41 @@ export function buildRuntimeProjections(
       basis: ['Ollama', 'Vision model', 'VRAM-derived review concurrency'],
     },
     {
+      id: 'nvidia-gpu-acceleration',
+      title: 'NVIDIA GPU acceleration',
+      status: cudaReady ? 'ready' : 'unavailable',
+      summary: cudaReady
+        ? `${gpu?.name ?? 'NVIDIA GPU'} is available for CUDA workloads${gpuVramGb > 0 ? ` with ${gpuVramGb.toFixed(1)} GB VRAM` : ''}.`
+        : 'No CUDA-capable NVIDIA runtime was detected by the startup profile or live nvidia-smi probe.',
+      basis: ['nvidia-smi', 'GPU/VRAM', 'NVIDIA driver'],
+      recommendation: cudaReady
+        ? 'Prefer GPU-backed ComfyUI inference and keep generation concurrency conservative for available VRAM.'
+        : 'Verify the NVIDIA driver and nvidia-smi before enabling GPU generation.',
+    },
+    {
       id: 'animation-layer-generation',
-      title: 'GPU animation-layer generation',
-      status:
-        status('comfyui') === 'ready' &&
-        status('cuda') === 'ready' &&
-        layerWorkflowReady
+      title: 'Animation-layer pipeline',
+      status: !cudaReady
+        ? 'unavailable'
+        : comfyReady && layerWorkflowReady
           ? 'ready'
-          : status('comfyui') === 'ready' && layerWorkflowReady
-            ? 'limited'
-            : 'unavailable',
-      summary:
-        status('comfyui') !== 'ready'
-          ? 'ComfyUI is not currently reachable, so layered asset generation is not yet available.'
+          : 'limited',
+      summary: !cudaReady
+        ? 'The animation-layer pipeline cannot use GPU acceleration because an NVIDIA CUDA runtime was not detected.'
+        : !comfyReady
+          ? 'GPU acceleration is ready, but ComfyUI is offline or unreachable.'
           : !layerWorkflowReady
-            ? 'ComfyUI is reachable, but the dedicated animation-layer workflow is not configured.'
-            : `ComfyUI is reachable; plan ${comfyConcurrency} generation job(s) at a time in ${vramMode} mode.`,
+            ? 'GPU acceleration and ComfyUI are ready; the dedicated animation-layer workflow still needs to be configured.'
+            : `GPU acceleration and ComfyUI are ready; plan ${comfyConcurrency} generation job(s) at a time in ${vramMode} mode.`,
       basis: [
+        'NVIDIA GPU acceleration',
         'ComfyUI reachability',
         'Dedicated layer workflow',
-        'GPU/VRAM',
-        'CUDA capability',
       ],
-      recommendation:
-        status('comfyui') !== 'ready'
-          ? 'Start/configure ComfyUI, then refresh this view before generating animation-v1 candidates.'
+      recommendation: !cudaReady
+        ? 'Restore NVIDIA/CUDA detection before attempting candidate generation.'
+        : !comfyReady
+          ? 'Start ComfyUI and confirm its API is reachable, then refresh this view.'
           : !layerWorkflowReady
             ? 'Export a ComfyUI API-format layer workflow and set COMFYUI_LAYER_WORKFLOW_PATH.'
             : 'Generate candidate masks/layers only; keep human approval mandatory before animation-v1 activation.',
@@ -418,7 +453,7 @@ async function probeJsonEndpoint(url: string): Promise<ProbeResult> {
   } catch (error) {
     return {
       ok: false,
-      error: error instanceof Error ? error.message : String(error),
+      error: describeFetchFailure(error, url),
     };
   }
 }
@@ -459,6 +494,67 @@ function commandVersion(
   return { ok: true, version: firstLine };
 }
 
+function detectLiveNvidia(): LiveNvidiaInventory {
+  const result = spawnSync(
+    'nvidia-smi',
+    [
+      '--query-gpu=index,name,memory.total,driver_version',
+      '--format=csv,noheader,nounits',
+    ],
+    {
+      encoding: 'utf8',
+      windowsHide: true,
+      timeout: 1800,
+      shell: process.platform === 'win32',
+    },
+  );
+  if (result.error || result.status !== 0) {
+    return { available: false, devices: [] };
+  }
+
+  const devices = String(result.stdout ?? '')
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line): LiveNvidiaDevice => {
+      const [index, name, memoryTotalMb, driverVersion] = line
+        .split(',')
+        .map((part) => part.trim());
+      return {
+        vendor: 'NVIDIA',
+        index: Number.isFinite(Number(index)) ? Number(index) : undefined,
+        name: name || 'NVIDIA GPU',
+        memoryTotalMb: Number(memoryTotalMb) || undefined,
+        driverVersion: driverVersion || undefined,
+      };
+    });
+
+  return { available: true, devices };
+}
+
+function effectiveGpu(startupGpu: any, liveNvidia: LiveNvidiaInventory) {
+  const startupDevices = Array.isArray(startupGpu?.devices)
+    ? startupGpu.devices
+    : [];
+  return {
+    ...(startupGpu ?? {}),
+    nvidiaSmiAvailable:
+      Boolean(startupGpu?.nvidiaSmiAvailable) || liveNvidia.available,
+    devices: startupDevices.length ? startupDevices : liveNvidia.devices,
+  };
+}
+
+function effectiveRuntimePlan(runtimePlan: any, gpu: any) {
+  if (!runtimePlan) return runtimePlan ?? null;
+  return {
+    ...runtimePlan,
+    ai: {
+      ...(runtimePlan.ai ?? {}),
+      nvidiaCudaAvailable: Boolean(gpu?.nvidiaSmiAvailable),
+    },
+  };
+}
+
 function extractOllamaModels(payload: any): string[] {
   if (!Array.isArray(payload?.models)) return [];
   return payload.models
@@ -473,4 +569,12 @@ function summarizeComfySystem(payload: any): string {
   );
   if (gpu?.name) return `Online on ${gpu.name}`;
   return 'ComfyUI API is reachable';
+}
+
+function describeFetchFailure(error: unknown, url: string): string {
+  if (!(error instanceof Error)) return `Could not reach ${url}`;
+  const cause = (error as Error & { cause?: { code?: string; message?: string } })
+    .cause;
+  const detail = cause?.code ?? cause?.message ?? error.message;
+  return `Could not reach ${url}: ${detail}`;
 }
