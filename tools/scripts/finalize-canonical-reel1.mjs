@@ -3,11 +3,20 @@ import { existsSync } from 'node:fs';
 import { mkdir, readFile } from 'node:fs/promises';
 import { basename, join, resolve } from 'node:path';
 import {
+  CANONICAL_REEL1_NARRATION_CUES,
+  REEL_DURATION_SECONDS,
+  assertCanonicalNarrationPlan,
+  paceTempoForTarget,
+} from '../renderer/canonical-reel1-audio-plan.mjs';
+import {
   sha256,
   writeJson,
   writeText,
 } from '../renderer/artifact-utils.mjs';
-import { probeDurationSeconds } from '../renderer/ffmpeg-adapter.mjs';
+import {
+  createEditorialAmbience,
+  probeDurationSeconds,
+} from '../renderer/ffmpeg-adapter.mjs';
 import { loadRendererConfig } from '../renderer/renderer-config.mjs';
 
 loadLocalEnvFile();
@@ -22,10 +31,9 @@ const sourceScenePath = resolve(
 );
 const sourceScene = JSON.parse(await readFile(sourceScenePath, 'utf8'));
 const visualPath = join(outputDirectory, 'reel-animation-v1-visual.mp4');
-const narrationTextPath = join(outputDirectory, 'narration-01.txt');
-const narrationPath = join(outputDirectory, 'narration-01.wav');
-const timingsPath = join(outputDirectory, 'narration-01.timings.json');
+const narrationCueDirectory = join(outputDirectory, 'narration-cues');
 const narrationMixPath = join(outputDirectory, 'narration-mix.wav');
+const ambiencePath = join(outputDirectory, 'ambience-bed.wav');
 const outputPath = join(outputDirectory, 'reel-animation-v1.mp4');
 const manifestPath = join(outputDirectory, 'animation-reel1-manifest.json');
 
@@ -36,8 +44,8 @@ if (!sourceScene.narration?.trim()) {
   throw new Error('Reel 1 production narration is missing from the source scene record.');
 }
 
-await mkdir(outputDirectory, { recursive: true });
-await writeText(narrationTextPath, `${sourceScene.narration}\n`);
+const narrationPlan = assertCanonicalNarrationPlan(sourceScene.narration);
+await mkdir(narrationCueDirectory, { recursive: true });
 
 const controls = {
   exaggeration: 0.5,
@@ -48,41 +56,123 @@ const referenceArguments = config.chatterboxReferenceAudio
   ? ['--reference-audio', config.chatterboxReferenceAudio]
   : [];
 
-console.log('Generating canonical Reel 1 Chatterbox narration...');
-await runProcess(
-  config.chatterboxCommand,
-  chatterboxArgs([
-    config.chatterboxScript,
-    '--text-file',
-    narrationTextPath,
-    '--output-file',
-    narrationPath,
-    '--timings-file',
-    timingsPath,
-    '--model-directory',
-    config.chatterboxModelDirectory,
-    '--device',
-    config.chatterboxDevice,
-    '--exaggeration',
-    String(controls.exaggeration),
-    '--cfg-weight',
-    String(controls.cfgWeight),
-    '--temperature',
-    String(controls.temperature),
-    ...referenceArguments,
-  ]),
-  {
-    cwd: resolve('.'),
-    env: {
-      PYTHONWARNINGS: 'ignore::UserWarning,ignore::FutureWarning',
-      TRANSFORMERS_VERBOSITY: 'error',
-    },
-  },
+console.log(
+  `Generating ${narrationPlan.cueCount} shot-aligned Chatterbox narration cues...`,
 );
+const renderedCues = [];
+for (const cue of CANONICAL_REEL1_NARRATION_CUES) {
+  const cueId = String(cue.index).padStart(2, '0');
+  const textPath = join(narrationCueDirectory, `cue-${cueId}.txt`);
+  const rawPath = join(narrationCueDirectory, `cue-${cueId}-raw.wav`);
+  const timingsPath = join(
+    narrationCueDirectory,
+    `cue-${cueId}-timings.json`,
+  );
+  const pacedPath = join(narrationCueDirectory, `cue-${cueId}.wav`);
 
-const narrationDurationSeconds = await probeDurationSeconds({
-  command: config.ffprobeCommand,
-  inputPath: narrationPath,
+  await writeText(textPath, `${cue.text}\n`);
+  await runProcess(
+    config.chatterboxCommand,
+    chatterboxArgs([
+      config.chatterboxScript,
+      '--text-file',
+      textPath,
+      '--output-file',
+      rawPath,
+      '--timings-file',
+      timingsPath,
+      '--model-directory',
+      config.chatterboxModelDirectory,
+      '--device',
+      config.chatterboxDevice,
+      '--exaggeration',
+      String(controls.exaggeration),
+      '--cfg-weight',
+      String(controls.cfgWeight),
+      '--temperature',
+      String(controls.temperature),
+      '--seed',
+      String(20260820 + cue.index - 1),
+      ...referenceArguments,
+    ]),
+    {
+      cwd: resolve('.'),
+      env: {
+        PYTHONWARNINGS: 'ignore::UserWarning,ignore::FutureWarning',
+        TRANSFORMERS_VERBOSITY: 'error',
+      },
+    },
+  );
+
+  const naturalDurationSeconds = await mediaDuration(rawPath);
+  const paceTempo = paceTempoForTarget(
+    naturalDurationSeconds,
+    cue.targetDurationSeconds,
+  );
+  await runProcess(
+    config.ffmpegCommand,
+    [
+      '-y',
+      '-hide_banner',
+      '-loglevel',
+      'error',
+      '-i',
+      rawPath,
+      '-filter:a',
+      `atempo=${paceTempo.toFixed(5)},aresample=48000,aformat=channel_layouts=stereo`,
+      '-c:a',
+      'pcm_s16le',
+      pacedPath,
+    ],
+    { cwd: outputDirectory },
+  );
+
+  const durationSeconds = await mediaDuration(pacedPath);
+  const endSeconds = cue.startSeconds + durationSeconds;
+  const nextCue = CANONICAL_REEL1_NARRATION_CUES[cue.index];
+  const latestEndSeconds = nextCue
+    ? nextCue.startSeconds - 0.1
+    : narrationPlan.titleHoldStartSeconds;
+  if (endSeconds > latestEndSeconds + 0.05) {
+    throw new Error(
+      `Narration cue ${cue.index} ends at ${endSeconds.toFixed(2)}s, past its ${latestEndSeconds.toFixed(2)}s window. Refusing to clip or hurry canonical narration.`,
+    );
+  }
+
+  const rawTimings = JSON.parse(await readFile(timingsPath, 'utf8'));
+  const timings = (Array.isArray(rawTimings) ? rawTimings : [rawTimings]).map(
+    (timing) => ({
+      ...timing,
+      cueAudioPositionSeconds:
+        Number(timing.audioPositionSeconds ?? 0) / paceTempo,
+      reelAudioPositionSeconds:
+        cue.startSeconds + Number(timing.audioPositionSeconds ?? 0) / paceTempo,
+    }),
+  );
+
+  renderedCues.push({
+    ...cue,
+    textPath,
+    rawPath,
+    timingsPath,
+    pacedPath,
+    naturalDurationSeconds,
+    paceTempo,
+    durationSeconds,
+    endSeconds,
+    timings,
+  });
+  console.log(
+    `Cue ${cueId}: ${cue.startSeconds.toFixed(1)}-${endSeconds.toFixed(1)}s, natural ${naturalDurationSeconds.toFixed(2)}s, tempo ${paceTempo.toFixed(3)}x`,
+  );
+}
+
+await buildNarrationMix(renderedCues);
+console.log('Generating continuous canonical Reel 1 ambience bed...');
+await createEditorialAmbience({
+  command: config.ffmpegCommand,
+  durationSeconds: REEL_DURATION_SECONDS,
+  outputPath: ambiencePath,
   outputDirectory,
   timeoutMs: config.processTimeoutMs,
   log: async (_stream, level, message) => {
@@ -101,33 +191,20 @@ await runProcess(
     '-loglevel',
     'error',
     '-i',
-    narrationPath,
-    '-filter_complex',
-    '[0:a]aresample=48000,aformat=channel_layouts=stereo,apad=whole_dur=60,atrim=0:60[mix]',
-    '-map',
-    '[mix]',
-    '-c:a',
-    'pcm_s16le',
-    narrationMixPath,
-  ],
-  { cwd: outputDirectory },
-);
-
-await runProcess(
-  config.ffmpegCommand,
-  [
-    '-y',
-    '-hide_banner',
-    '-loglevel',
-    'error',
-    '-i',
     visualPath,
     '-i',
     narrationMixPath,
+    '-i',
+    ambiencePath,
+    '-filter_complex',
+    '[1:a]aresample=48000,aformat=channel_layouts=stereo[narration];' +
+      '[2:a]aresample=48000,aformat=channel_layouts=stereo,volume=0.85[ambience];' +
+      '[narration][ambience]amix=inputs=2:weights=1 1:normalize=0,' +
+      'loudnorm=I=-16:TP=-1.5:LRA=10,aresample=48000[audio]',
     '-map',
     '0:v:0',
     '-map',
-    '1:a:0',
+    '[audio]',
     '-c:v',
     'copy',
     '-c:a',
@@ -135,7 +212,7 @@ await runProcess(
     '-b:a',
     '192k',
     '-t',
-    '60',
+    String(REEL_DURATION_SECONDS),
     '-movflags',
     '+faststart',
     outputPath,
@@ -143,22 +220,19 @@ await runProcess(
   { cwd: outputDirectory },
 );
 
-const finalDurationSeconds = await probeDurationSeconds({
-  command: config.ffprobeCommand,
-  inputPath: outputPath,
-  outputDirectory,
-  timeoutMs: config.processTimeoutMs,
-  log: async () => {},
-});
-if (Math.abs(finalDurationSeconds - 60) > 0.05) {
+const finalDurationSeconds = await mediaDuration(outputPath);
+if (Math.abs(finalDurationSeconds - REEL_DURATION_SECONDS) > 0.05) {
   throw new Error(
-    `Canonical Reel 1 final media must be 60 seconds; measured ${finalDurationSeconds.toFixed(3)}s.`,
+    `Canonical Reel 1 final media must be ${REEL_DURATION_SECONDS} seconds; measured ${finalDurationSeconds.toFixed(3)}s.`,
   );
 }
 
-const timings = JSON.parse(await readFile(timingsPath, 'utf8'));
+const spokenDurationSeconds = renderedCues.reduce(
+  (total, cue) => total + cue.durationSeconds,
+  0,
+);
 await writeJson(manifestPath, {
-  schemaVersion: 2,
+  schemaVersion: 3,
   generatedAt: new Date().toISOString(),
   adapter: 'animation',
   engine: 'remotion-scene-v2',
@@ -178,31 +252,48 @@ await writeJson(manifestPath, {
   },
   narration: {
     adapter: 'chatterbox',
-    timingAdapter: 'estimated-word-timing',
+    timingAdapter: 'shot-aligned-cue-timing',
     voice: 'chatterbox-narrator',
     model: 'ResembleAI/chatterbox',
     stylePreset: 'mythic',
     referenceAudio: Boolean(config.chatterboxReferenceAudio),
     ...controls,
-    clipCount: 1,
-    durationSeconds: narrationDurationSeconds,
+    clipCount: renderedCues.length,
+    durationSeconds: REEL_DURATION_SECONDS,
+    spokenDurationSeconds,
+    targetNarrationEndSeconds: narrationPlan.targetNarrationEndSeconds,
+    titleHoldStartSeconds: narrationPlan.titleHoldStartSeconds,
     mixPath: narrationMixPath,
     checksum: await sha256(narrationMixPath),
-    clips: [
-      {
-        index: 1,
-        text: sourceScene.narration,
-        startFrame: 0,
-        endFrame: 1799,
-        startSeconds: 0,
-        endSeconds: 60,
-        durationSeconds: narrationDurationSeconds,
-        audioPath: narrationPath,
-        timingsPath,
-        checksum: await sha256(narrationPath),
-        timings: Array.isArray(timings) ? timings : [timings],
-      },
-    ],
+    clips: await Promise.all(
+      renderedCues.map(async (cue) => ({
+        index: cue.index,
+        text: cue.text,
+        startFrame: Math.round(cue.startSeconds * 30),
+        endFrame: Math.max(
+          Math.round((cue.startSeconds + cue.durationSeconds) * 30) - 1,
+          Math.round(cue.startSeconds * 30),
+        ),
+        startSeconds: cue.startSeconds,
+        endSeconds: cue.endSeconds,
+        targetDurationSeconds: cue.targetDurationSeconds,
+        naturalDurationSeconds: cue.naturalDurationSeconds,
+        paceTempo: cue.paceTempo,
+        durationSeconds: cue.durationSeconds,
+        audioPath: cue.pacedPath,
+        rawAudioPath: cue.rawPath,
+        timingsPath: cue.timingsPath,
+        checksum: await sha256(cue.pacedPath),
+        timings: cue.timings,
+      })),
+    ),
+  },
+  ambience: {
+    adapter: 'procedural-editorial-bed',
+    role: 'continuous-water-drum-lyre-bed',
+    durationSeconds: REEL_DURATION_SECONDS,
+    path: ambiencePath,
+    checksum: await sha256(ambiencePath),
   },
   sourcePolicy: {
     storyMutationAllowed: false,
@@ -215,7 +306,51 @@ await writeJson(manifestPath, {
 
 console.log(`Canonical Reel 1 completed: ${outputPath}`);
 console.log(`Narration mix: ${narrationMixPath}`);
+console.log(`Ambience bed: ${ambiencePath}`);
 console.log(`Manifest: ${manifestPath}`);
+
+async function buildNarrationMix(cues) {
+  const args = ['-y', '-hide_banner', '-loglevel', 'error'];
+  for (const cue of cues) {
+    args.push('-i', cue.pacedPath);
+  }
+  const filters = cues.map((cue, index) => {
+    const delayMs = Math.round(cue.startSeconds * 1000);
+    return `[${index}:a]adelay=${delayMs}:all=1[cue${index}]`;
+  });
+  filters.push(
+    `${cues.map((_, index) => `[cue${index}]`).join('')}amix=inputs=${cues.length}:normalize=0,` +
+      `apad=whole_dur=${REEL_DURATION_SECONDS},atrim=0:${REEL_DURATION_SECONDS},` +
+      'loudnorm=I=-17:TP=-2:LRA=9,aresample=48000,' +
+      'aformat=channel_layouts=stereo[mix]',
+  );
+  args.push(
+    '-filter_complex',
+    filters.join(';'),
+    '-map',
+    '[mix]',
+    '-c:a',
+    'pcm_s16le',
+    narrationMixPath,
+  );
+  await runProcess(config.ffmpegCommand, args, { cwd: outputDirectory });
+}
+
+async function mediaDuration(inputPath) {
+  return probeDurationSeconds({
+    command: config.ffprobeCommand,
+    inputPath,
+    outputDirectory,
+    timeoutMs: config.processTimeoutMs,
+    log: async (_stream, level, message) => {
+      const normalized = String(message).trim();
+      if (!normalized) return;
+      const method =
+        level === 'error' ? 'error' : level === 'warn' ? 'warn' : 'log';
+      console[method](normalized);
+    },
+  });
+}
 
 function loadLocalEnvFile() {
   const envPath = resolve('.env');
