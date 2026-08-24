@@ -859,7 +859,7 @@
       "shotId": "dilmun-reveal",
       "sourceShotNumber": 7,
       "sourceFrame": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-07.png",
-      "status": "draft",
+      "status": "approved",
       "fallback": {
         "assetId": "shot07-editorial-v1-flat",
         "assetPath": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-07.png"
@@ -890,19 +890,25 @@
             "scale": 1
           },
           "motionPresets": [],
-          "state": "planned",
+          "state": "approved",
           "hasAlpha": false,
           "source": {
             "type": "derived",
             "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-07.png"
           },
           "review": {
-            "status": "pending",
+            "status": "approved",
             "notes": [
               "Preserve the approved Dilmun geography, horizon, light direction, and composition. The reveal should come primarily from camera movement and atmosphere, not a regenerated fantasy landscape.",
-              "This required base may be an exact-source preservation candidate if no layer removal is needed."
+              "This required base may be an exact-source preservation candidate if no layer removal is needed.",
+              "Human-approved from full reviewed-shot gate 2026-08-24T20-38-15-640Z at 2026-08-24T20:42:44.893Z.",
+              "Full shot review: D:\\repos\\sumer-reel-forge\\tmp\\animation-previews\\shot07-layered-preview\\2026-08-24T20-38-15-640Z\\shot-review.json",
+              "Containment QA PASS: D:\\repos\\sumer-reel-forge\\tmp\\animation-previews\\shot07-layered-preview\\2026-08-24T20-38-15-640Z\\contained-material-boundary-qa.json",
+              "AI advisory status at approval: PASS_ADVISORY (raw PASS_ADVISORY).",
+              "exact-source-preservation-qa PASS: D:\\repos\\sumer-reel-forge\\tmp\\animation-assets\\candidates\\chapter-01-reel-01-animation-v1\\2026-08-24T20-38-14-563Z\\shot07-dilmun-base-v1-preservation-qa.json"
             ]
-          }
+          },
+          "sha256": "sha256:0dc2360247740a7f6cc3a5d8b013957b1a84b9ec49433f9b85c5266a26e9614a"
         },
         {
           "id": "shot07-foreground-reeds-v1",
