@@ -11,11 +11,13 @@ process.env.OLLAMA_KEEP_ALIVE ??= '10m';
 
 // Keep normal planning latency independent from the heavier visual review path.
 // The existing review implementation reads PLANNING_TIMEOUT_MS for its Ollama
-// request, so the wrapper scopes that value to a vision-specific default.
-process.env.PLANNING_TIMEOUT_MS =
-  process.env.OLLAMA_VISION_TIMEOUT_MS ??
-  process.env.PLANNING_TIMEOUT_MS ??
-  '300000';
+// request, so the wrapper deliberately scopes that child value to the dedicated
+// vision timeout instead of inheriting the normal text-planning timeout.
+const visionTimeoutMs = positiveInteger(
+  process.env.OLLAMA_VISION_TIMEOUT_MS,
+  300000,
+);
+process.env.PLANNING_TIMEOUT_MS = String(visionTimeoutMs);
 
 const args = process.argv.slice(2).filter((arg) => arg !== '--');
 const skipAi = args.includes('--skip-ai');
@@ -46,7 +48,7 @@ process.exitCode = exitCode;
 
 async function warmVisionModel() {
   console.log(
-    `[review-runtime] Warming ${model} for vision review (load timeout ${Math.round(loadTimeoutMs / 1000)}s)...`,
+    `[review-runtime] Warming ${model} for vision review (load timeout ${Math.round(loadTimeoutMs / 1000)}s, review timeout ${Math.round(visionTimeoutMs / 1000)}s)...`,
   );
   const startedAt = Date.now();
 
