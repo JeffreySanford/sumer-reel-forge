@@ -32,8 +32,34 @@ if (missingPackages.length > 0) {
   process.exit(1);
 }
 
+const startupEntrypoints = [
+  'tools/scripts/start-local.mjs',
+  'tools/scripts/start-all.mjs',
+];
+const invalidStartupImports = [];
+for (const path of startupEntrypoints) {
+  const source = await readFile(resolve(root, path), 'utf8');
+  if (/['"]dotenv\/config['"]/.test(source)) {
+    invalidStartupImports.push(path);
+  }
+}
+
+if (invalidStartupImports.length > 0) {
+  console.error('Workspace startup bootstrap consistency check failed.');
+  console.error(
+    'Startup entrypoints must use Node native .env loading so they can run before workspace dependency repair:',
+  );
+  for (const path of invalidStartupImports) {
+    console.error(`  - ${path}`);
+  }
+  process.exit(1);
+}
+
 console.log(
   `Workspace dependency consistency OK: ${configuredPlugins.length} Nx plugins resolve to explicitly declared packages.`,
+);
+console.log(
+  `Workspace startup bootstrap consistency OK: ${startupEntrypoints.length} entrypoints are dependency-free for .env loading.`,
 );
 
 function packageRootFromSpecifier(specifier) {
