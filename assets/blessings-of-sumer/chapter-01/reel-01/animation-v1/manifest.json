@@ -944,7 +944,7 @@
       "shotId": "boat-approaches-land-title",
       "sourceShotNumber": 8,
       "sourceFrame": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-08.png",
-      "status": "draft",
+      "status": "approved",
       "fallback": {
         "assetId": "shot08-editorial-v1-flat",
         "assetPath": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-08.png"
@@ -978,19 +978,25 @@
           "motionPresets": [
             "cinematicSlow"
           ],
-          "state": "planned",
+          "state": "approved",
           "hasAlpha": false,
           "source": {
             "type": "painted-repair",
             "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-08.png"
           },
           "review": {
-            "status": "pending",
+            "status": "approved",
             "notes": [
               "Preserve the approved landfall, lighting, and shoreline exactly. If the boat is extracted for motion, repair only its footprint in this base to prevent duplicate-boat ghosting.",
-              "Do not repaint the wider scene merely to increase motion."
+              "Do not repaint the wider scene merely to increase motion.",
+              "Human-approved from full reviewed-shot gate 2026-08-24T20-51-53-706Z at 2026-08-24T20:54:54.878Z.",
+              "Full shot review: D:\\repos\\sumer-reel-forge\\tmp\\animation-previews\\shot08-layered-preview\\2026-08-24T20-51-53-706Z\\shot-review.json",
+              "Containment QA PASS: D:\\repos\\sumer-reel-forge\\tmp\\animation-previews\\shot08-layered-preview\\2026-08-24T20-51-53-706Z\\contained-material-boundary-qa.json",
+              "AI advisory status at approval: PASS_ADVISORY (raw PASS_ADVISORY).",
+              "verified-overlay-background-repair-preservation PASS: D:\\repos\\sumer-reel-forge\\tmp\\animation-assets\\candidates\\chapter-01-reel-01-animation-v1\\2026-08-24T20-51-48-672Z\\shot08-landfall-base-v1-background-qa.json"
             ]
-          }
+          },
+          "sha256": "sha256:aed7abede12f3d7555fe74e9d41116865eec3807f10e83358d681041fbbd7cea"
         },
         {
           "id": "shot08-boat-v1",
@@ -1007,19 +1013,26 @@
           "motionPresets": [
             "boatBob"
           ],
-          "state": "planned",
+          "state": "approved",
           "hasAlpha": true,
           "source": {
             "type": "derived",
             "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-08.png"
           },
           "review": {
-            "status": "pending",
+            "status": "approved",
             "notes": [
               "Keep boat motion physical and restrained. The vessel approaches land; it should not skid, float independently of the water plane, or change silhouette.",
-              "Identity, rigging, hull geometry, and lighting must remain source-faithful."
+              "Identity, rigging, hull geometry, and lighting must remain source-faithful.",
+              "Human-approved from full reviewed-shot gate 2026-08-24T20-51-53-706Z at 2026-08-24T20:54:54.878Z.",
+              "Full shot review: D:\\repos\\sumer-reel-forge\\tmp\\animation-previews\\shot08-layered-preview\\2026-08-24T20-51-53-706Z\\shot-review.json",
+              "Containment QA PASS: D:\\repos\\sumer-reel-forge\\tmp\\animation-previews\\shot08-layered-preview\\2026-08-24T20-51-53-706Z\\contained-material-boundary-qa.json",
+              "AI advisory status at approval: PASS_ADVISORY (raw PASS_ADVISORY).",
+              "semantic-overlay-structure-qa PASS: D:\\repos\\sumer-reel-forge\\tmp\\animation-assets\\candidates\\chapter-01-reel-01-animation-v1\\2026-08-24T20-44-16-368Z\\shot08-boat-v1-structure-qa.json",
+              "Coverage advisory at approval: SPARSE_REVIEW_REQUIRED."
             ]
-          }
+          },
+          "sha256": "sha256:7d767658d7bb5b6bf836d4bae18b48733165d4c1db38112723f873fc764abc93"
         },
         {
           "id": "shot08-foreground-reeds-v1",
