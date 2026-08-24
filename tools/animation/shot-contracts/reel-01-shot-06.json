@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "type": "animation-shot-contract",
+  "projectSlug": "blessings-of-sumer",
+  "chapterNumber": 1,
+  "episodeNumber": 1,
+  "shot": {
+    "shotId": "water-bread-truth-justice-freedom",
+    "sourceShotNumber": 6,
+    "sourceFrame": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-06.png",
+    "status": "draft",
+    "fallback": {
+      "assetId": "shot06-editorial-v1-flat",
+      "assetPath": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-06.png"
+    },
+    "overscan": {
+      "leftPercent": 6,
+      "rightPercent": 6,
+      "topPercent": 6,
+      "bottomPercent": 6
+    },
+    "activationPolicy": {
+      "requiredLayerIds": [
+        "shot06-values-base-v1",
+        "shot06-practical-symbols-v1"
+      ],
+      "enableDeferredPerformanceWhenApproved": false
+    },
+    "layers": [
+      {
+        "id": "shot06-values-base-v1",
+        "path": "blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-06/values-base.png",
+        "role": "background",
+        "material": "architectural-background",
+        "depthDefault": 0.12,
+        "anchor": "center",
+        "transform": { "x": 0, "y": 0, "scale": 1 },
+        "motionPresets": ["cinematicSlow"],
+        "state": "planned",
+        "hasAlpha": false,
+        "source": {
+          "type": "painted-repair",
+          "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-06.png"
+        },
+        "review": {
+          "status": "pending",
+          "notes": [
+            "Preserve the approved editorial composition and lighting. If the practical-symbol layer is extracted, repair its footprint in the base so the moving overlay never duplicates source objects.",
+            "Do not redesign or replace the editorial image merely to create more parallax."
+          ]
+        }
+      },
+      {
+        "id": "shot06-practical-symbols-v1",
+        "path": "blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-06/practical-symbols.png",
+        "role": "major-prop",
+        "material": "rigid-vessel",
+        "depthDefault": 0.54,
+        "anchor": "water-bread-tablet-symbols",
+        "transform": { "x": 0, "y": 0, "scale": 1 },
+        "motionPresets": ["heavyPhysical"],
+        "state": "planned",
+        "hasAlpha": true,
+        "source": {
+          "type": "derived",
+          "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-06.png"
+        },
+        "review": {
+          "status": "pending",
+          "notes": [
+            "Keep water, bread, truth, justice, and freedom grounded in the source-supported practical/symbolic cluster rather than turning the shot into a floating icon carousel.",
+            "Motion should be restrained parallax only; the ideas are carried by composition and narration, not by flashy object animation."
+          ]
+        }
+      },
+      {
+        "id": "shot06-water-reflection-v1",
+        "path": "blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-06/water-reflection.png",
+        "role": "reflection",
+        "material": "water",
+        "depthDefault": 0.38,
+        "anchor": "source-water-region",
+        "transform": { "x": 0, "y": 0, "scale": 1 },
+        "motionPresets": ["waterPulse"],
+        "state": "planned",
+        "hasAlpha": true,
+        "source": {
+          "type": "derived",
+          "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-06.png"
+        },
+        "review": {
+          "status": "pending",
+          "notes": [
+            "Optional. Use only when the editorial frame contains a clean, source-supported water/reflection region that can move without requiring invented geometry."
+          ]
+        }
+      }
+    ]
+  }
+}
