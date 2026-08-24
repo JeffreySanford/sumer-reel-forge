@@ -39,23 +39,48 @@ test('animation adapter routes production Reel 1 through canonical Scene V2 inst
   assert.doesNotMatch(source, /render-animation-proof\.mjs/);
 });
 
-test('canonical Reel 1 assembly requires all eight approved layered Scene V2 shots and exactly 1800 frames', async () => {
+test('canonical Reel 1 preserves eight approved shot timings plus one explicit 30-frame Shot 5 to 6 handoff', async () => {
   const source = await text('tools/scripts/render-canonical-reel1-scene-v2.ts');
+  const compositionSource = await text('tools/animation/src/CanonicalReel1.tsx');
   assert.match(source, /assetResolution\.mode !== 'layered'/);
-  assert.match(source, /startFrame !== 1800/);
+  assert.match(source, /approvedAnimationFrames \+ handoffHoldFrames !== REEL_DURATION_FRAMES/);
+  assert.match(source, /afterShotNumber:\s*5/);
+  assert.match(source, /durationFrames:\s*30/);
   assert.match(source, /'CanonicalReel1'/);
   assert.match(source, /approved-animation-v1-canonical-assets/);
+  assert.match(compositionSource, /<Freeze frame=\{approvedDurationFrames - 1\}>/);
+  assert.match(compositionSource, /Only the explicit 30-frame Shot 5→6 handoff is allowed/);
 
-  let durationFrames = 0;
+  const scenes = [];
+  let approvedDurationFrames = 0;
   for (const [index, path] of scenePaths.entries()) {
     const scene = await json(path);
     assert.equal(scene.schemaVersion, 2);
     assert.equal(scene.shots.length, 1);
     assert.equal(scene.shots[0].sourceShotNumber, index + 1);
     assert.equal(scene.shots[0].startFrame, 0);
-    durationFrames += scene.shots[0].durationFrames;
+    assert.equal(typeof scene.shots[0].sourceStartFrame, 'number');
+    approvedDurationFrames += scene.shots[0].durationFrames;
+    scenes.push(scene);
   }
-  assert.equal(durationFrames, 1800);
+  assert.equal(approvedDurationFrames, 1770);
+
+  const holds = [];
+  for (const [index, scene] of scenes.entries()) {
+    const shot = scene.shots[0];
+    const nextStartFrame =
+      index + 1 < scenes.length
+        ? scenes[index + 1].shots[0].sourceStartFrame
+        : 1800;
+    const slotDurationFrames = nextStartFrame - shot.sourceStartFrame;
+    const holdFrames = slotDurationFrames - shot.durationFrames;
+    assert.ok(slotDurationFrames >= shot.durationFrames);
+    if (holdFrames > 0) {
+      holds.push({ sourceShotNumber: shot.sourceShotNumber, holdFrames });
+    }
+  }
+  assert.deepEqual(holds, [{ sourceShotNumber: 5, holdFrames: 30 }]);
+  assert.equal(approvedDurationFrames + holds[0].holdFrames, 1800);
 });
 
 test('Remotion registers a dedicated canonical Reel 1 composition', async () => {
@@ -63,6 +88,7 @@ test('Remotion registers a dedicated canonical Reel 1 composition', async () => 
   const compositionSource = await text('tools/animation/src/CanonicalReel1.tsx');
   assert.match(indexSource, /id="CanonicalReel1"/);
   assert.match(indexSource, /component=\{CanonicalReel1\}/);
+  assert.match(indexSource, /emptyCanonicalReel1Props/);
   assert.match(compositionSource, /SceneV2ResolvedBenchmark/);
   assert.match(compositionSource, /THE VOYAGE BEGINS/);
   assert.match(compositionSource, /BLESSINGS OF SUMER/);
