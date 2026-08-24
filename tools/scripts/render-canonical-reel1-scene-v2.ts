@@ -163,7 +163,7 @@ async function verifyCanonicalManifest(manifestValue: AnimationAssetManifest) {
         throw new Error(`Required Shot ${shotNumber} layer ${layerId} is not canonically approved.`);
       }
       const path = resolve(ASSET_ROOT, layer.path);
-      const actual = `sha256:${await sha256(path)}`;
+      const actual = await sha256(path);
       if (layer.sha256) {
         if (normalizeChecksum(layer.sha256) !== normalizeChecksum(actual)) {
           throw new Error(
