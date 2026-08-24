@@ -735,7 +735,7 @@
       "shotId": "water-bread-truth-justice-freedom",
       "sourceShotNumber": 6,
       "sourceFrame": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-06.png",
-      "status": "draft",
+      "status": "approved",
       "fallback": {
         "assetId": "shot06-editorial-v1-flat",
         "assetPath": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-06.png"
@@ -761,21 +761,33 @@
           "material": "architectural-background",
           "depthDefault": 0.12,
           "anchor": "center",
-          "transform": { "x": 0, "y": 0, "scale": 1 },
-          "motionPresets": ["cinematicSlow"],
-          "state": "planned",
+          "transform": {
+            "x": 0,
+            "y": 0,
+            "scale": 1
+          },
+          "motionPresets": [
+            "cinematicSlow"
+          ],
+          "state": "approved",
           "hasAlpha": false,
           "source": {
             "type": "painted-repair",
             "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-06.png"
           },
           "review": {
-            "status": "pending",
+            "status": "approved",
             "notes": [
               "Preserve the approved editorial composition and lighting. If the practical-symbol layer is extracted, repair its footprint in the base so the moving overlay never duplicates source objects.",
-              "Do not redesign or replace the editorial image merely to create more parallax."
+              "Do not redesign or replace the editorial image merely to create more parallax.",
+              "Human-approved from full reviewed-shot gate 2026-08-24T20-24-08-155Z at 2026-08-24T20:38:01.226Z.",
+              "Full shot review: D:\\repos\\sumer-reel-forge\\tmp\\animation-previews\\shot06-layered-preview\\2026-08-24T20-24-08-155Z\\shot-review.json",
+              "Containment QA PASS: D:\\repos\\sumer-reel-forge\\tmp\\animation-previews\\shot06-layered-preview\\2026-08-24T20-24-08-155Z\\contained-material-boundary-qa.json",
+              "AI advisory status at approval: PASS_ADVISORY (raw PASS_ADVISORY).",
+              "verified-overlay-background-repair-preservation PASS: D:\\repos\\sumer-reel-forge\\tmp\\animation-assets\\candidates\\chapter-01-reel-01-animation-v1\\2026-08-24T20-18-26-829Z\\shot06-values-base-v1-background-qa.json"
             ]
-          }
+          },
+          "sha256": "sha256:19c08840aefd141e137110e264af81ee5ead46fb03cf5b14716ba4d4f272c439"
         },
         {
           "id": "shot06-practical-symbols-v1",
@@ -784,21 +796,34 @@
           "material": "rigid-vessel",
           "depthDefault": 0.54,
           "anchor": "water-bread-tablet-symbols",
-          "transform": { "x": 0, "y": 0, "scale": 1 },
-          "motionPresets": ["heavyPhysical"],
-          "state": "planned",
+          "transform": {
+            "x": 0,
+            "y": 0,
+            "scale": 1
+          },
+          "motionPresets": [
+            "heavyPhysical"
+          ],
+          "state": "approved",
           "hasAlpha": true,
           "source": {
             "type": "derived",
             "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-06.png"
           },
           "review": {
-            "status": "pending",
+            "status": "approved",
             "notes": [
               "Keep water, bread, truth, justice, and freedom grounded in the source-supported practical/symbolic cluster rather than turning the shot into a floating icon carousel.",
-              "Motion should be restrained parallax only; the ideas are carried by composition and narration, not by flashy object animation."
+              "Motion should be restrained parallax only; the ideas are carried by composition and narration, not by flashy object animation.",
+              "Human-approved from full reviewed-shot gate 2026-08-24T20-24-08-155Z at 2026-08-24T20:38:01.226Z.",
+              "Full shot review: D:\\repos\\sumer-reel-forge\\tmp\\animation-previews\\shot06-layered-preview\\2026-08-24T20-24-08-155Z\\shot-review.json",
+              "Containment QA PASS: D:\\repos\\sumer-reel-forge\\tmp\\animation-previews\\shot06-layered-preview\\2026-08-24T20-24-08-155Z\\contained-material-boundary-qa.json",
+              "AI advisory status at approval: PASS_ADVISORY (raw PASS_ADVISORY).",
+              "semantic-overlay-structure-qa PASS: D:\\repos\\sumer-reel-forge\\tmp\\animation-assets\\candidates\\chapter-01-reel-01-animation-v1\\2026-08-24T20-12-47-653Z\\shot06-practical-symbols-v1-structure-qa.json",
+              "Coverage advisory at approval: WITHIN_PREFERRED_RANGE."
             ]
-          }
+          },
+          "sha256": "sha256:f9c2d539a8a09a4cb03ba22b70b4a6d716134881daf91b6d0cdf055bcbf02622"
         },
         {
           "id": "shot06-water-reflection-v1",
@@ -807,8 +832,14 @@
           "material": "water",
           "depthDefault": 0.38,
           "anchor": "source-water-region",
-          "transform": { "x": 0, "y": 0, "scale": 1 },
-          "motionPresets": ["waterPulse"],
+          "transform": {
+            "x": 0,
+            "y": 0,
+            "scale": 1
+          },
+          "motionPresets": [
+            "waterPulse"
+          ],
           "state": "planned",
           "hasAlpha": true,
           "source": {
@@ -853,7 +884,11 @@
           "material": "atmosphere-distant",
           "depthDefault": 0.16,
           "anchor": "dilmun-horizon",
-          "transform": { "x": 0, "y": 0, "scale": 1 },
+          "transform": {
+            "x": 0,
+            "y": 0,
+            "scale": 1
+          },
           "motionPresets": [],
           "state": "planned",
           "hasAlpha": false,
@@ -876,8 +911,14 @@
           "material": "reed",
           "depthDefault": 0.82,
           "anchor": "lower-foreground",
-          "transform": { "x": 0, "y": 0, "scale": 1 },
-          "motionPresets": ["clothLag"],
+          "transform": {
+            "x": 0,
+            "y": 0,
+            "scale": 1
+          },
+          "motionPresets": [
+            "clothLag"
+          ],
           "state": "planned",
           "hasAlpha": true,
           "source": {
@@ -923,8 +964,14 @@
           "material": "architectural-background",
           "depthDefault": 0.12,
           "anchor": "shoreline-horizon",
-          "transform": { "x": 0, "y": 0, "scale": 1 },
-          "motionPresets": ["cinematicSlow"],
+          "transform": {
+            "x": 0,
+            "y": 0,
+            "scale": 1
+          },
+          "motionPresets": [
+            "cinematicSlow"
+          ],
           "state": "planned",
           "hasAlpha": false,
           "source": {
@@ -946,8 +993,14 @@
           "material": "rigid-vessel",
           "depthDefault": 0.52,
           "anchor": "boat-center-of-mass",
-          "transform": { "x": 0, "y": 0, "scale": 1 },
-          "motionPresets": ["boatBob"],
+          "transform": {
+            "x": 0,
+            "y": 0,
+            "scale": 1
+          },
+          "motionPresets": [
+            "boatBob"
+          ],
           "state": "planned",
           "hasAlpha": true,
           "source": {
@@ -969,8 +1022,14 @@
           "material": "reed",
           "depthDefault": 0.84,
           "anchor": "lower-foreground",
-          "transform": { "x": 0, "y": 0, "scale": 1 },
-          "motionPresets": ["clothLag"],
+          "transform": {
+            "x": 0,
+            "y": 0,
+            "scale": 1
+          },
+          "motionPresets": [
+            "clothLag"
+          ],
           "state": "planned",
           "hasAlpha": true,
           "source": {
