@@ -285,6 +285,14 @@ export function buildLayerPrompt(shot, layer) {
     atmosphere:
       'Extract only source-visible atmospheric material such as smoke or haze. Preserve its irregular soft boundaries and partial transparency; do not select architecture, people, fire, sky, or unrelated background regions.',
   };
+  const paintedRepair =
+    layer.source?.type === 'painted-repair'
+      ? 'This is a painted-repair base plate, not a scene regeneration. Preserve every source-supported region outside the exact footprint of content being isolated into separate animation layers. Remove and inpaint only those extracted footprints, using immediately surrounding source material. Do not simplify, restyle, or regenerate the wider background.'
+      : '';
+  const roleInstruction = paintedRepair
+    ? 'Create a full-canvas repaired base plate. Keep all unrelated source pixels and scene structure intact; only the separately animated object footprint may be removed and conservatively repaired.'
+    : roleInstructions[layer.role] ??
+      'Extract only the requested layer and keep unrelated pixels transparent.';
   const special =
     layer.role === 'water' && layer.anchor === 'water-basin'
       ? 'This is small contained practical water at the traveler shrine. Select the complete visible water surface inside the basin or spring vessel, including dim, shadowed, and reflected portions that are physically contiguous with that water. Do not select only bright highlights. Exclude the basin rim and container material, pottery, hands, bread, floor, clothing, architecture, sky, and unrelated reflections.'
@@ -295,11 +303,20 @@ export function buildLayerPrompt(shot, layer) {
           : layer.id.includes('enki')
             ? 'Enki identity is an immutable anchor: mature Mesopotamian man, existing face/hair/beard/robe/belt must remain exactly consistent with the supplied painting.'
             : '';
+  const contractGuidance = Array.isArray(layer.review?.notes)
+    ? layer.review.notes
+        .map((note) => String(note).trim())
+        .filter(Boolean)
+        .join(' ')
+    : '';
   return [
     `Target layer: ${layer.id}. Role: ${layer.role}. Material: ${layer.material}.`,
-    roleInstructions[layer.role] ??
-      'Extract only the requested layer and keep unrelated pixels transparent.',
+    roleInstruction,
+    paintedRepair,
     special,
+    contractGuidance
+      ? `Layer-specific contract guidance: ${contractGuidance}`
+      : '',
     preserve,
     fullCanvas,
   ]
