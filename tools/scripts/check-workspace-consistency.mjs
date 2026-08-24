@@ -68,6 +68,8 @@ const reviewEntrypoints = [
 const renderEntrypoints = [
   'tools/scripts/render-animation-reel1.mjs',
   'tools/scripts/render-animation-proof.mjs',
+  'tools/scripts/render-canonical-reel1-scene-v2.ts',
+  'tools/scripts/finalize-canonical-reel1.mjs',
 ];
 
 const invalidStartupImports = await findDotenvBootstrapImports(startupEntrypoints);
