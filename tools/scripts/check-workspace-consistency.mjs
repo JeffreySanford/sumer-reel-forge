@@ -54,20 +54,31 @@ const startupEntrypoints = [
   'tools/scripts/start-all.mjs',
   'tools/scripts/renderer-worker.mjs',
 ];
-const invalidStartupImports = [];
-for (const path of startupEntrypoints) {
-  const source = await readFile(resolve(root, path), 'utf8');
-  if (/['"]dotenv\/config['"]/.test(source)) {
-    invalidStartupImports.push(path);
-  }
-}
+const reviewEntrypoints = [
+  'tools/scripts/review-animation-shot.mjs',
+  'tools/scripts/verify-layered-candidate-scene-v2.mjs',
+  'tools/scripts/verify-material-local-motion.mjs',
+];
 
+const invalidStartupImports = await findDotenvBootstrapImports(startupEntrypoints);
 if (invalidStartupImports.length > 0) {
   console.error('Workspace startup bootstrap consistency check failed.');
   console.error(
     'Managed runtime entrypoints must use Node native .env loading so they remain independent of undeclared bootstrap packages:',
   );
   for (const path of invalidStartupImports) {
+    console.error(`  - ${path}`);
+  }
+  process.exit(1);
+}
+
+const invalidReviewImports = await findDotenvBootstrapImports(reviewEntrypoints);
+if (invalidReviewImports.length > 0) {
+  console.error('Workspace animation review runtime consistency check failed.');
+  console.error(
+    'Shot-review orchestration and deterministic QA entrypoints must not depend on undeclared dotenv/config bootstrap imports:',
+  );
+  for (const path of invalidReviewImports) {
     console.error(`  - ${path}`);
   }
   process.exit(1);
@@ -82,6 +93,20 @@ console.log(
 console.log(
   `Workspace startup bootstrap consistency OK: ${startupEntrypoints.length} managed entrypoints are dependency-free for .env loading.`,
 );
+console.log(
+  `Workspace animation review consistency OK: ${reviewEntrypoints.length} review entrypoints are dependency-free for .env loading.`,
+);
+
+async function findDotenvBootstrapImports(paths) {
+  const invalid = [];
+  for (const path of paths) {
+    const source = await readFile(resolve(root, path), 'utf8');
+    if (/['"]dotenv\/config['"]/.test(source)) {
+      invalid.push(path);
+    }
+  }
+  return invalid;
+}
 
 function packageRootFromSpecifier(specifier) {
   const parts = specifier.split('/');
