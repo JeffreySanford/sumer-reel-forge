@@ -1,8 +1,18 @@
 import React from 'react';
-import { AbsoluteFill, interpolate, useCurrentFrame } from 'remotion';
+import {
+  AbsoluteFill,
+  Freeze,
+  Sequence,
+  interpolate,
+  useCurrentFrame,
+} from 'remotion';
 import { REEL_ONE } from '../../../libs/reel-core/src/lib/reel-core';
-import type { SceneV2BenchmarkProps } from './SceneV2Benchmark';
 import { SceneV2ResolvedBenchmark } from './SceneV2ResolvedBenchmark';
+import type { SceneV2 } from './scene-v2';
+
+export interface CanonicalReel1Props {
+  scenes?: SceneV2[];
+}
 
 const captions = REEL_ONE.onScreenText.map((caption, index) => ({
   ...caption,
@@ -15,16 +25,76 @@ const captions = REEL_ONE.onScreenText.map((caption, index) => ({
     1,
 }));
 
-export function CanonicalReel1(props: SceneV2BenchmarkProps) {
+export function CanonicalReel1({ scenes = [] }: CanonicalReel1Props) {
   const frame = useCurrentFrame();
+  const timeline = buildTimeline(scenes);
 
   return (
     <AbsoluteFill style={styles.root}>
-      <SceneV2ResolvedBenchmark {...props} showReviewGuides={false} />
+      {timeline.map(({ scene, startFrame, approvedDurationFrames, holdFrames }) => (
+        <React.Fragment key={scene.sceneId}>
+          <Sequence from={startFrame} durationInFrames={approvedDurationFrames}>
+            <SceneV2ResolvedBenchmark scene={scene} showReviewGuides={false} />
+          </Sequence>
+          {holdFrames > 0 ? (
+            <Sequence
+              from={startFrame + approvedDurationFrames}
+              durationInFrames={holdFrames}
+            >
+              <Freeze frame={approvedDurationFrames - 1}>
+                <SceneV2ResolvedBenchmark scene={scene} showReviewGuides={false} />
+              </Freeze>
+            </Sequence>
+          ) : null}
+        </React.Fragment>
+      ))}
       <Caption frame={frame} />
       <EndTitle frame={frame} />
     </AbsoluteFill>
   );
+}
+
+function buildTimeline(scenes: SceneV2[]) {
+  if (scenes.length !== 8) {
+    throw new Error(`Canonical Reel 1 requires 8 resolved Scene V2 shots; received ${scenes.length}.`);
+  }
+
+  return scenes.map((scene, index) => {
+    if (scene.shots.length !== 1) {
+      throw new Error(`${scene.sceneId} must contain exactly one canonical shot.`);
+    }
+    const shot = scene.shots[0];
+    if (shot.sourceStartFrame === undefined) {
+      throw new Error(`${scene.sceneId} is missing sourceStartFrame provenance.`);
+    }
+    const nextStartFrame =
+      index + 1 < scenes.length
+        ? scenes[index + 1].shots[0]?.sourceStartFrame
+        : REEL_ONE.targetDurationSeconds * scene.fps;
+    if (nextStartFrame === undefined) {
+      throw new Error(`${scenes[index + 1]?.sceneId ?? 'next scene'} is missing sourceStartFrame provenance.`);
+    }
+    const slotDurationFrames = nextStartFrame - shot.sourceStartFrame;
+    const holdFrames = slotDurationFrames - shot.durationFrames;
+    if (slotDurationFrames <= 0 || holdFrames < 0) {
+      throw new Error(
+        `${scene.sceneId} approved duration ${shot.durationFrames} does not fit source timeline slot ${slotDurationFrames}.`,
+      );
+    }
+    if (holdFrames > 0 && !(shot.sourceShotNumber === 5 && holdFrames === 30)) {
+      throw new Error(
+        `${scene.sceneId} introduces an unapproved ${holdFrames}-frame timeline hold. Only the explicit 30-frame Shot 5→6 handoff is allowed.`,
+      );
+    }
+
+    return {
+      scene,
+      startFrame: shot.sourceStartFrame,
+      approvedDurationFrames: shot.durationFrames,
+      slotDurationFrames,
+      holdFrames,
+    };
+  });
 }
 
 function Caption({ frame }: { frame: number }) {
