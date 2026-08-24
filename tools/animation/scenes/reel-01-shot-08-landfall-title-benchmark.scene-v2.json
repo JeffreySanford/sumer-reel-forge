@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 2,
+  "sceneId": "chapter-01-reel-01-shot-08-landfall-title-benchmark-v1",
+  "projectSlug": "blessings-of-sumer",
+  "chapterNumber": 1,
+  "reelId": "resolve-from-studio",
+  "episodeNumber": 1,
+  "visualBible": "blessings-of-sumer-v1",
+  "styleBible": "reel-01-animation-style-v1",
+  "assetVersion": "editorial-v1-flat-benchmark",
+  "assetManifestPath": "blessings-of-sumer/chapter-01/reel-01/animation-v1/manifest.json",
+  "assetStrategy": "prefer-animation-manifest",
+  "width": 1080,
+  "height": 1920,
+  "fps": 30,
+  "durationFrames": 210,
+  "shots": [
+    {
+      "id": "boat-approaches-land-title",
+      "sourceShotNumber": 8,
+      "sourceStartFrame": 1590,
+      "startFrame": 0,
+      "durationFrames": 210,
+      "emotionalPurpose": "Resolve the voyage physically before the title resolves it thematically: the boat reaches land, motion settles, and the final statement can arrive without competing spectacle.",
+      "eyeTarget": "boat-and-shoreline",
+      "stillnessAnchor": "shoreline-landfall",
+      "camera": {
+        "preset": "slowPush",
+        "scaleFrom": 1,
+        "scaleTo": 1.018,
+        "xFrom": 0,
+        "xTo": -2,
+        "yFrom": 0,
+        "yTo": -3,
+        "rotationFrom": 0,
+        "rotationTo": 0,
+        "easing": "cinematicSlow",
+        "settleFromProgress": 0.82
+      },
+      "layers": [
+        {
+          "id": "shot08-editorial-base",
+          "assetId": "shot08-editorial-v1-flat",
+          "assetPath": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-08.png",
+          "role": "background",
+          "material": "flattened-editorial-landfall-art",
+          "depth": 0.5,
+          "anchor": "shoreline-horizon",
+          "transform": {
+            "x": 0,
+            "y": 0,
+            "scale": 1
+          },
+          "motionPresets": [],
+          "required": true
+        }
+      ],
+      "performance": [
+        {
+          "target": "boat",
+          "preset": "boatBob",
+          "startProgress": 0,
+          "endProgress": 0.78,
+          "intensity": 0.1,
+          "enabled": false,
+          "deferredUntilAssetId": "shot08-boat-v1"
+        }
+      ],
+      "atmosphere": [],
+      "lighting": [
+        {
+          "id": "landfall-settle-light",
+          "preset": "cinematicSlow",
+          "intensityFrom": 0.03,
+          "intensityTo": 0.045
+        }
+      ],
+      "captionPolicy": {
+        "safeZone": "lower-middle",
+        "avoidTargets": ["boat-and-shoreline", "final-title-safe-region"],
+        "motion": "stable",
+        "maxLines": 2
+      },
+      "transitionIn": "shot-07-to-08-shoreline-continuity",
+      "transitionOut": "reel-end-title-fade"
+    }
+  ],
+  "transitions": [],
+  "reviewMarkers": [
+    { "id": "landfall-opening", "progress": 0 },
+    { "id": "approach", "progress": 0.25 },
+    { "id": "shoreline-near", "progress": 0.5 },
+    { "id": "motion-settle", "progress": 0.78 },
+    { "id": "title-hold", "progress": 1 }
+  ],
+  "reviewPolicy": {
+    "scorecard": "reel-01-animation-review-v1",
+    "humanApprovalRequired": true,
+    "minimumCategory": 4,
+    "publishabilityMinimum": 5,
+    "hardFailsBlockApproval": true
+  },
+  "sourcePolicy": {
+    "storyMutationAllowed": false,
+    "narrationSource": "reel-production-record",
+    "captionSource": "reel-production-record",
+    "visualSource": "versioned-animation-asset-manifest"
+  }
+}
