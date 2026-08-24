@@ -126,6 +126,58 @@ test('painted-repair prompts preserve the wider source and carry contract-specif
   assert.match(prompt, /Layer-specific contract guidance/i);
 });
 
+test('layer candidate CLI avoids undeclared dotenv and accepts explicit workflow selection', async () => {
+  const source = await readFile(
+    'tools/scripts/animation-layer-candidates.mjs',
+    'utf8',
+  );
+
+  assert.doesNotMatch(source, /dotenv\/config/);
+  assert.match(source, /--workflow=/);
+  assert.match(
+    source,
+    /process\.env\.COMFYUI_LAYER_WORKFLOW_PATH = options\.workflowPath/,
+  );
+});
+
+test('finish-shot commands keep extraction and preservation lanes explicit', async () => {
+  const packageJson = JSON.parse(await readFile('package.json', 'utf8'));
+  const scripts = packageJson.scripts ?? {};
+
+  assert.match(
+    scripts['animation:shot6:layers:preflight'] ?? '',
+    /--layer=shot06-practical-symbols-v1/,
+  );
+  assert.match(
+    scripts['animation:shot6:layers:preflight'] ?? '',
+    /semantic-overlay-sam3-api\.json/,
+  );
+  assert.match(
+    scripts['animation:shot6:symbols:verify'] ?? '',
+    /verify-semantic-overlay-candidate\.mjs/,
+  );
+  assert.match(
+    scripts['animation:shot7:layers:generate'] ?? '',
+    /source-preservation-layer\.mjs generate/,
+  );
+  assert.match(
+    scripts['animation:shot7:layers:verify'] ?? '',
+    /source-preservation-layer\.mjs verify/,
+  );
+  assert.match(
+    scripts['animation:shot8:layers:preflight'] ?? '',
+    /--layer=shot08-boat-v1/,
+  );
+  assert.match(
+    scripts['animation:shot8:layers:preflight'] ?? '',
+    /semantic-overlay-sam3-api\.json/,
+  );
+  assert.match(
+    scripts['animation:shot8:boat:verify'] ?? '',
+    /verify-semantic-overlay-candidate\.mjs/,
+  );
+});
+
 test('replaces layer workflow tokens recursively', () => {
   const workflow = {
     a: '{{SOURCE_IMAGE}}',
