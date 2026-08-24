@@ -37,7 +37,9 @@ test('contained water fades broad bright crests before the final review beat whi
 test('contained-water settle policy removes the terminal bright crest without freezing refraction', async () => {
   const policy = await loadPolicy();
 
-  assert.equal(policy.containedWaterRefractionSettle(0.9), 5 / 6);
+  assert.ok(
+    Math.abs(policy.containedWaterRefractionSettle(0.9) - 5 / 6) < 1e-9,
+  );
   assert.equal(policy.containedWaterTerminalRippleFade(0.9), 1);
   assert.ok(
     policy.containedWaterReadableRippleSettle(0.95) > 0,
