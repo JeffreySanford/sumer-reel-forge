@@ -83,7 +83,7 @@ if (deterministicExit === 1) {
       console.log('PHASE 3 STATE: AI SKIPPED');
     } else {
       console.log('');
-      console.log('[review-runtime] Phase 3/4 · source-aware delta vision review');
+      console.log('[review-runtime] Phase 3/4 · evidence-aware source delta vision review');
       if (model) {
         await warmVisionModel().catch((error) => {
           console.warn(
@@ -96,7 +96,7 @@ if (deterministicExit === 1) {
       if (previewArg) deltaArgs.push(previewArg);
       if (requireAi) deltaArgs.push('--require-ai');
       deltaExit = await runNode(
-        'tools/scripts/review-animation-shot-delta-vision.mjs',
+        'tools/scripts/review-animation-shot-delta-vision-evidence.mjs',
         deltaArgs,
         { suppressTerminalState: true },
       );
@@ -120,7 +120,7 @@ if (deterministicExit === 1) {
       if (previewArg) reconciliationArgs.push(previewArg);
       if (requireAi) reconciliationArgs.push('--require-ai');
       const reconciliationExit = await runNode(
-        'tools/scripts/reconcile-animation-review.mjs',
+        'tools/scripts/reconcile-animation-review-evidence.mjs',
         reconciliationArgs,
       );
       process.exitCode = deltaExit === 3 ? 3 : reconciliationExit;
