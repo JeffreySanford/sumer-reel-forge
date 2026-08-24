@@ -55,6 +55,7 @@ const startupEntrypoints = [
   'tools/scripts/renderer-worker.mjs',
 ];
 const reviewEntrypoints = [
+  'tools/scripts/review-animation-shot-runtime.mjs',
   'tools/scripts/review-animation-shot.mjs',
   'tools/scripts/verify-layered-candidate-scene-v2.mjs',
   'tools/scripts/verify-material-local-motion.mjs',
