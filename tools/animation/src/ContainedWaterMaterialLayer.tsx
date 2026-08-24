@@ -1,5 +1,9 @@
 import React from 'react';
 import { Img, staticFile } from 'remotion';
+import {
+  containedWaterReadableRippleSettle,
+  containedWaterRefractionSettle,
+} from './contained-water-motion';
 import type { SceneV2Layer } from './scene-v2';
 
 export function ContainedWaterMaterialLayer({
@@ -15,18 +19,13 @@ export function ContainedWaterMaterialLayer({
 }) {
   const phase = frame / fps;
   const source = staticFile(layer.assetPath);
-  const refractionSettle =
-    progress > 0.88
-      ? Math.max(0.55, 1 - (progress - 0.88) / 0.12)
-      : 1;
+  const refractionSettle = containedWaterRefractionSettle(progress);
 
   // The broad readable crest is a perceptual accent, not the material motion
   // itself. Fade that accent completely during the terminal settle so the last
   // review beat cannot collapse a clipped ellipse into a bright diagonal band
   // against the basin rim. Source-pixel refraction remains alive underneath.
-  const terminalRippleFade =
-    progress > 0.9 ? Math.max(0, 1 - (progress - 0.9) / 0.1) : 1;
-  const readableRippleSettle = refractionSettle * terminalRippleFade;
+  const readableRippleSettle = containedWaterReadableRippleSettle(progress);
 
   const filterA = `${safeSvgId(layer.id)}-water-refraction-a`;
   const filterB = `${safeSvgId(layer.id)}-water-refraction-b`;
