@@ -7,33 +7,37 @@ export async function renderAnimationPipeline(context) {
   await log(
     'system',
     'info',
-    'Animation adapter is rendering the complete Remotion Reel 1 animation draft.',
+    'Animation adapter is rendering the approved canonical Scene V2 Reel 1 animation.',
   );
+
+  const renderEnvironment = {
+    ANIMATION_PROOF_OUTPUT_DIRECTORY: outputDirectory,
+    RENDER_OUTPUT_ROOT: config.outputRoot,
+  };
 
   await runProcess(
     process.execPath,
     [
-      resolve('tools/scripts/render-animation-proof.mjs'),
-      '--scene',
-      'tools/animation/scenes/reel-01-full-animation.scene.json',
-      '--composition',
-      'FullReelAnimation',
-      '--prefix',
-      'reel-animation-v1',
-      '--manifest',
-      'animation-reel1-manifest.json',
-      '--adapter',
-      'animation',
-      '--narration-adapter',
-      'chatterbox',
+      '--import',
+      'tsx',
+      resolve('tools/scripts/render-canonical-reel1-scene-v2.ts'),
     ],
     {
       cwd: resolve('.'),
       timeoutMs: config.jobTimeoutMs,
-      env: {
-        ANIMATION_PROOF_OUTPUT_DIRECTORY: outputDirectory,
-        RENDER_OUTPUT_ROOT: config.outputRoot,
-      },
+      env: renderEnvironment,
+      onStdout: (message) => log('stdout', 'info', message),
+      onStderr: (message) => log('stderr', 'warn', message),
+    },
+  );
+
+  await runProcess(
+    process.execPath,
+    [resolve('tools/scripts/finalize-canonical-reel1.mjs')],
+    {
+      cwd: resolve('.'),
+      timeoutMs: config.jobTimeoutMs,
+      env: renderEnvironment,
       onStdout: (message) => log('stdout', 'info', message),
       onStderr: (message) => log('stderr', 'warn', message),
     },
@@ -46,15 +50,21 @@ export async function renderAnimationPipeline(context) {
   );
   const narrationMixPath = join(outputDirectory, 'narration-mix.wav');
   const manifestPath = join(outputDirectory, 'animation-reel1-manifest.json');
+  const canonicalScenePath = join(
+    outputDirectory,
+    'canonical-reel1-scene-v2.json',
+  );
 
   await Promise.all([
     access(videoPath),
     access(visualOnlyVideoPath),
     access(narrationMixPath),
     access(manifestPath),
+    access(canonicalScenePath),
   ]);
 
   const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
+  const canonicalScene = JSON.parse(await readFile(canonicalScenePath, 'utf8'));
   const output = manifest.output ?? {};
   const narration = manifest.narration ?? {};
 
@@ -64,8 +74,7 @@ export async function renderAnimationPipeline(context) {
       path: videoPath,
       metadata: {
         adapter: 'animation',
-        engine: manifest.engine ?? 'remotion',
-        engineVersion: manifest.engineVersion,
+        engine: manifest.engine ?? 'remotion-scene-v2',
         width: output.width,
         height: output.height,
         frameRate: output.fps,
@@ -74,9 +83,11 @@ export async function renderAnimationPipeline(context) {
         audioSynchronized: true,
         narrationAdapter: narration.adapter,
         narrationVoice: narration.voice,
-        sceneId: manifest.scene?.sceneId,
-        visualBible: manifest.scene?.visualBible,
+        sceneId: canonicalScene.sceneId,
+        visualBible: canonicalScene.visualBible,
+        assetVersion: canonicalScene.assetVersion,
         sourcePolicy: manifest.sourcePolicy,
+        canonicalSceneV2: true,
         completeReelDraft: true,
       },
     },
@@ -84,11 +95,9 @@ export async function renderAnimationPipeline(context) {
       assetType: 'audio',
       path: narrationMixPath,
       metadata: {
-        adapter: narration.adapter ?? 'windows-sapi',
+        adapter: narration.adapter ?? 'chatterbox',
         role: 'timed-animation-narration-mix',
         voice: narration.voice,
-        requestedVoice: narration.requestedVoice,
-        rate: narration.rate,
         clipCount: narration.clipCount,
         durationSeconds: output.durationSeconds,
       },
@@ -100,7 +109,7 @@ export async function renderAnimationPipeline(context) {
         role: 'animation-reel1-manifest',
         adapter: 'animation',
         engine: manifest.engine,
-        sceneId: manifest.scene?.sceneId,
+        sceneId: canonicalScene.sceneId,
       },
     },
     {
@@ -110,6 +119,17 @@ export async function renderAnimationPipeline(context) {
         role: 'visual-only-animation-reel-video',
         adapter: 'animation',
         engine: manifest.engine,
+        sceneId: canonicalScene.sceneId,
+      },
+    },
+    {
+      assetType: 'other',
+      path: canonicalScenePath,
+      metadata: {
+        role: 'canonical-scene-v2-reel-evidence',
+        adapter: 'animation',
+        sceneId: canonicalScene.sceneId,
+        shotCount: canonicalScene.shots?.length ?? 0,
       },
     },
   ];
