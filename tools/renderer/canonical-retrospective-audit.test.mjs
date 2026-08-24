@@ -22,6 +22,7 @@ test('canonical approved audit renderer is syntactically valid and read-only by 
     [],
   );
   assert.match(source, /canonical-approved-checksum-qa/);
+  assert.match(source, /canonical-approved-editorial-source-qa/);
   assert.match(source, /priorHumanApprovalPreserved: true/);
   assert.match(source, /automaticDowngradeAllowed: false/);
   assert.match(source, /animationV1Modified: false/);
@@ -49,4 +50,28 @@ test('canonical staging verifies approval, dimensions, and checksum provenance',
   assert.match(source, /layer\.review\?\.status !== 'approved'/);
   assert.match(source, /normalizeChecksum\(layer\.sha256\) !== normalizeChecksum\(checksum\)/);
   assert.match(source, /expected editorial registration/);
+});
+
+test('legacy source-backed layers are narrowly scoped and do not waive derived-layer checksums', async () => {
+  const manifestSource = await readFile(
+    resolve('tools/animation/src/animation-asset-manifest.ts'),
+    'utf8',
+  );
+  const stagingSource = await readFile(
+    resolve('tools/scripts/render-approved-shot-audit-preview.ts'),
+    'utf8',
+  );
+
+  assert.match(manifestSource, /isExactEditorialSourceLayer/);
+  assert.match(manifestSource, /layer\.path === shot\.sourceFrame/);
+  assert.match(manifestSource, /layer\.source\.from === shot\.sourceFrame/);
+  assert.match(manifestSource, /layer\.material === 'flattened-editorial-art'/);
+  assert.match(manifestSource, /layer\.motionPresets\.length === 0/);
+  assert.match(
+    manifestSource,
+    /requires SHA-256 provenance unless it is an exact immutable editorial source reference/,
+  );
+  assert.match(stagingSource, /!layer\.sha256 && !exactEditorialSource/);
+  assert.match(stagingSource, /provenanceMode/);
+  assert.match(stagingSource, /actualChecksum: checksum/);
 });
