@@ -52,6 +52,7 @@ if (missingToolingPackages.length > 0) {
 const startupEntrypoints = [
   'tools/scripts/start-local.mjs',
   'tools/scripts/start-all.mjs',
+  'tools/scripts/renderer-worker.mjs',
 ];
 const invalidStartupImports = [];
 for (const path of startupEntrypoints) {
@@ -64,7 +65,7 @@ for (const path of startupEntrypoints) {
 if (invalidStartupImports.length > 0) {
   console.error('Workspace startup bootstrap consistency check failed.');
   console.error(
-    'Startup entrypoints must use Node native .env loading so they can run before workspace dependency repair:',
+    'Managed runtime entrypoints must use Node native .env loading so they remain independent of undeclared bootstrap packages:',
   );
   for (const path of invalidStartupImports) {
     console.error(`  - ${path}`);
@@ -79,7 +80,7 @@ console.log(
   `Workspace tooling dependency consistency OK: ${requiredToolingPackages.length} root tooling package is explicitly declared.`,
 );
 console.log(
-  `Workspace startup bootstrap consistency OK: ${startupEntrypoints.length} entrypoints are dependency-free for .env loading.`,
+  `Workspace startup bootstrap consistency OK: ${startupEntrypoints.length} managed entrypoints are dependency-free for .env loading.`,
 );
 
 function packageRootFromSpecifier(specifier) {
