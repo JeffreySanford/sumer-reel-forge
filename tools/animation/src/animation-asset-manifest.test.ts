@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import test from 'node:test';
 import {
+  isExactEditorialSourceLayer,
   resolveSceneV2Assets,
   validateAnimationAssetManifest,
   type AnimationAssetManifest,
@@ -13,6 +14,12 @@ import type { SceneV2 } from './scene-v2';
 
 const manifestPath = resolve(
   'assets/blessings-of-sumer/chapter-01/reel-01/animation-v1/manifest.json',
+);
+const shotOneScenePath = resolve(
+  'tools/animation/scenes/reel-01-shot-01-black-water-benchmark.scene-v2.json',
+);
+const shotTwoScenePath = resolve(
+  'tools/animation/scenes/reel-01-shot-02-stag-coastline-benchmark.scene-v2.json',
 );
 const shotThreeScenePath = resolve(
   'tools/animation/scenes/reel-01-shot-03-benchmark.scene-v2.json',
@@ -55,9 +62,15 @@ test('current animation-v1 manifest is valid with approved benchmark shots', asy
   const result = validateAnimationAssetManifest(manifest);
 
   assert.equal(result.valid, true, result.errors.join('\n'));
-  assert.ok(manifest.shots.length >= 2);
+  assert.ok(manifest.shots.length >= 5);
 
-  for (const shotId of ['enki-at-the-helm', 'nammu-under-water']) {
+  for (const shotId of [
+    'black-water-before-dawn',
+    'stag-of-the-absu-coastline',
+    'enki-at-the-helm',
+    'nammu-under-water',
+    'traveler-shrine-hospitality',
+  ]) {
     const shot = requireShot(manifest, shotId);
     assert.equal(shot.status, 'approved');
     for (const requiredId of shot.activationPolicy.requiredLayerIds) {
@@ -66,6 +79,59 @@ test('current animation-v1 manifest is valid with approved benchmark shots', asy
       assert.equal(layer.state, 'approved');
       assert.equal(layer.review.status, 'approved');
     }
+  }
+});
+
+test('legacy Shots 1 and 2 use exact immutable editorial source-backed activation', async () => {
+  const manifest = await loadManifest();
+
+  for (const shotId of ['black-water-before-dawn', 'stag-of-the-absu-coastline']) {
+    const shot = requireShot(manifest, shotId);
+    const requiredId = shot.activationPolicy.requiredLayerIds[0]!;
+    const layer = shot.layers.find((candidate) => candidate.id === requiredId);
+    assert.ok(layer);
+    assert.equal(isExactEditorialSourceLayer(shot, layer), true);
+    assert.equal(layer.sha256, undefined);
+    assert.equal(layer.path, shot.sourceFrame);
+    assert.equal(layer.source.from, shot.sourceFrame);
+    assert.deepEqual(layer.motionPresets, []);
+  }
+});
+
+test('unchecksummed legacy layers lose the exemption if they stop being exact editorial references', async () => {
+  const manifest = await loadManifest();
+  const shot = requireShot(manifest, 'black-water-before-dawn');
+  const requiredId = shot.activationPolicy.requiredLayerIds[0]!;
+  const layer = shot.layers.find((candidate) => candidate.id === requiredId);
+  assert.ok(layer);
+  layer.source.type = 'derived';
+
+  const result = validateAnimationAssetManifest(manifest);
+  assert.equal(result.valid, false);
+  assert.match(
+    result.errors.join('\n'),
+    /requires SHA-256 provenance unless it is an exact immutable editorial source reference/,
+  );
+});
+
+test('render loader activates the source-backed Shot 1 and Shot 2 baselines', async () => {
+  for (const [scenePath, shotId, layerId] of [
+    [shotOneScenePath, 'black-water-before-dawn', 'shot01-editorial-source-v1'],
+    [shotTwoScenePath, 'stag-of-the-absu-coastline', 'shot02-editorial-source-v1'],
+  ] as const) {
+    const loaded = await loadSceneV2ForRender(scenePath, resolve('assets'));
+    assert.equal(loaded.assetResolution.mode, 'layered');
+    assert.deepEqual(loaded.assetResolution.layeredShotIds, [shotId]);
+    assert.equal(
+      loaded.scene.shots[0]?.layers.some((layer) => layer.assetId === layerId),
+      true,
+    );
+    assert.equal(
+      loaded.scene.shots[0]?.layers.some(
+        (layer) => layer.material === 'editorial-reference',
+      ),
+      true,
+    );
   }
 });
 

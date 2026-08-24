@@ -7,6 +7,12 @@ import test from 'node:test';
 import * as ts from 'typescript';
 import { validateSceneV2, type SceneV2 } from './scene-v2';
 
+const shotOneScenePath = resolve(
+  'tools/animation/scenes/reel-01-shot-01-black-water-benchmark.scene-v2.json',
+);
+const shotTwoScenePath = resolve(
+  'tools/animation/scenes/reel-01-shot-02-stag-coastline-benchmark.scene-v2.json',
+);
 const shotThreeScenePath = resolve(
   'tools/animation/scenes/reel-01-shot-03-benchmark.scene-v2.json',
 );
@@ -23,6 +29,41 @@ const shotFiveContractPath = resolve(
 async function loadScene(scenePath = shotThreeScenePath): Promise<SceneV2> {
   return JSON.parse(await readFile(scenePath, 'utf8')) as SceneV2;
 }
+
+test('Shot 1 retrofit preserves the editorial frame and uses camera-only opening motion', async () => {
+  const scene = await loadScene(shotOneScenePath);
+  const result = validateSceneV2(scene);
+  const shot = scene.shots[0]!;
+
+  assert.equal(result.valid, true, result.errors.join('\n'));
+  assert.equal(shot.id, 'black-water-before-dawn');
+  assert.equal(shot.durationFrames, 180);
+  assert.equal(shot.camera.preset, 'slowPush');
+  assert.equal(shot.camera.scaleTo, 1.018);
+  assert.deepEqual(shot.performance, []);
+  assert.deepEqual(shot.atmosphere, []);
+  assert.deepEqual(shot.lighting, []);
+  assert.deepEqual(shot.layers[0]?.motionPresets, []);
+  assert.match(shot.layers[0]?.assetPath ?? '', /editorial-v1\/shot-01\.png$/);
+});
+
+test('Shot 2 retrofit preserves the editorial frame and uses a restrained lateral pan', async () => {
+  const scene = await loadScene(shotTwoScenePath);
+  const result = validateSceneV2(scene);
+  const shot = scene.shots[0]!;
+
+  assert.equal(result.valid, true, result.errors.join('\n'));
+  assert.equal(shot.id, 'stag-of-the-absu-coastline');
+  assert.equal(shot.durationFrames, 210);
+  assert.equal(shot.camera.preset, 'lateralPan');
+  assert.equal(shot.camera.xFrom, -14);
+  assert.equal(shot.camera.xTo, 14);
+  assert.deepEqual(shot.performance, []);
+  assert.deepEqual(shot.atmosphere, []);
+  assert.deepEqual(shot.lighting, []);
+  assert.deepEqual(shot.layers[0]?.motionPresets, []);
+  assert.match(shot.layers[0]?.assetPath ?? '', /editorial-v1\/shot-02\.png$/);
+});
 
 test('Shot 3 benchmark Scene V2 passes deterministic policy', async () => {
   const scene = await loadScene();

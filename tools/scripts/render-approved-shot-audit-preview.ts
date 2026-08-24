@@ -8,6 +8,7 @@ import {
   relative,
   resolve,
 } from 'node:path';
+import { isExactEditorialSourceLayer } from '../animation/src/animation-asset-manifest';
 import { sha256, writeJson } from '../renderer/artifact-utils.mjs';
 import { loadRendererConfig } from '../renderer/renderer-config.mjs';
 import { loadSceneV2ForRender } from '../animation/src/scene-v2-asset-loader';
@@ -37,6 +38,7 @@ interface CanonicalEvidence {
   dimensions: { width: number; height: number };
   qaPath: string;
   qaType: string;
+  provenanceMode: 'manifest-sha256' | 'exact-editorial-source';
 }
 
 async function main(): Promise<void> {
@@ -96,6 +98,7 @@ async function main(): Promise<void> {
       continue;
     }
 
+    const exactEditorialSource = isExactEditorialSourceLayer(shot, layer);
     const canonicalPath = resolve(ASSET_ROOT, layer.path);
     assertInside(ASSET_ROOT, canonicalPath, `Canonical layer ${layer.id}`);
     const bytes = await readFile(canonicalPath);
@@ -122,8 +125,10 @@ async function main(): Promise<void> {
           `Required canonical layer ${layer.id} is not human-approved in the manifest.`,
         );
       }
-      if (!layer.sha256) {
-        throw new Error(`Required canonical layer ${layer.id} has no manifest checksum.`);
+      if (!layer.sha256 && !exactEditorialSource) {
+        throw new Error(
+          `Required canonical layer ${layer.id} has no manifest checksum and is not an exact immutable editorial source reference.`,
+        );
       }
     }
 
@@ -136,10 +141,16 @@ async function main(): Promise<void> {
     });
 
     if (requiredSet.has(layer.id)) {
+      const provenanceMode = exactEditorialSource
+        ? 'exact-editorial-source'
+        : 'manifest-sha256';
+      const qaType = exactEditorialSource
+        ? 'canonical-approved-editorial-source-qa'
+        : 'canonical-approved-checksum-qa';
       const qaPath = join(qaDirectory, `${safeName(layer.id)}.json`);
       await writeJson(qaPath, {
         schemaVersion: 1,
-        verificationType: 'canonical-approved-checksum-qa',
+        verificationType: qaType,
         generatedAt: new Date().toISOString(),
         sourceShotNumber: options.shotNumber,
         layerId: layer.id,
@@ -147,13 +158,16 @@ async function main(): Promise<void> {
         pass: true,
         state: layer.state,
         humanReviewStatus: layer.review?.status ?? null,
-        expectedChecksum: layer.sha256,
+        provenanceMode,
+        expectedChecksum: layer.sha256 ?? null,
         actualChecksum: checksum,
+        exactEditorialSourcePath: exactEditorialSource ? shot.sourceFrame : null,
         dimensions,
         readOnly: true,
         priorHumanApprovalPreserved: true,
-        interpretation:
-          'The retrospective audit stages the already-approved canonical asset only after verifying manifest approval, exact dimensions, and SHA-256 provenance. The canonical file is never mutated.',
+        interpretation: exactEditorialSource
+          ? 'This legacy retrofit points directly at the immutable editorial-v1 source frame. The audit verifies exact path identity, source identity, approval, dimensions, and computes the runtime SHA-256 without inventing a derivative asset or weakening checksum requirements for derived layers.'
+          : 'The retrospective audit stages the already-approved canonical asset only after verifying manifest approval, exact dimensions, and SHA-256 provenance. The canonical file is never mutated.',
       });
       evidenceById.set(layer.id, {
         layerId: layer.id,
@@ -161,7 +175,8 @@ async function main(): Promise<void> {
         checksum,
         dimensions,
         qaPath,
-        qaType: 'canonical-approved-checksum-qa',
+        qaType,
+        provenanceMode,
       });
     }
   }
@@ -229,7 +244,7 @@ async function main(): Promise<void> {
   for (const layerId of requiredIds) {
     const evidence = evidenceById.get(layerId)!;
     console.log(
-      `[ok] ${layerId}: manifest approval + checksum provenance PASS · ${evidence.checksum.slice(0, 20)}…`,
+      `[ok] ${layerId}: manifest approval + ${evidence.provenanceMode} provenance PASS · sha256:${evidence.checksum.slice(0, 12)}…`,
     );
   }
   console.log('');
