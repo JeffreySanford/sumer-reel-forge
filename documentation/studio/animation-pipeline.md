@@ -2,120 +2,312 @@
 
 ## Goal
 
-Move beyond still-image reels by adding a code-driven cinematic illustrated animation renderer that can produce real motion while preserving the current studio review, approval, audit, and render-job flow.
+Produce cinematic illustrated reels that visibly animate approved artwork while preserving the Studio's review, approval, audit, render-job, and provenance guarantees.
 
-## Quality Answer
+The pipeline must solve two problems at once:
 
-Remotion is high enough quality for this use case if we treat it as the composition/render engine, not as the whole animation discipline. It can render deterministic frame-accurate MP4 output from React components, SVG, CSS, Canvas, WebGL, image layers, audio, and captions. The final quality will depend more on art direction, layered assets, motion design, timing, and audio than on Remotion itself.
+1. keep character identity, composition, source lineage, and historical art direction stable;
+2. create enough independent physical and character motion that the result reads as animation rather than a still-image treatment.
 
-Remotion is a good fit for:
+## Engine Decision
 
-- Cinematic illustrated motion.
-- Layered parallax scenes.
-- Character pose swaps.
-- Eye, mouth, and expression states.
-- Camera moves, zooms, pans, and shakes.
-- Captions, titles, lower thirds, and overlays.
-- Programmatic batch rendering from studio data.
+Continue using Remotion as the frame-accurate composition/render engine.
 
-Remotion is not enough by itself for:
+Remotion has proven sufficient for deterministic 1080x1920 / 30 fps rendering, layered raster composition, camera transforms, material effects, audio synchronization, titles, and programmatic batch output. The Level 1 Reel 1 result confirms that the renderer itself is not the current bottleneck.
 
-- Complex hand-drawn acting.
-- Advanced skeletal rig authoring.
-- Painterly frame-by-frame animation.
-- Automated character performance without a rig or asset library.
+The next quality bottleneck is **motion representation and asset articulation**.
 
-## Recommended First Slice
+Remotion remains a good fit for:
 
-Build a 20-30 second proof of concept using one approved Reel 1 segment:
+- cinematic illustrated 2.5D motion;
+- layered parallax and depth occlusion;
+- explicit transform hierarchies;
+- pose/state overlays;
+- pivot-aware object and character motion;
+- material-specific procedural effects;
+- captions, titles, and deterministic final assembly;
+- programmatic rendering from Scene V2 data.
 
-- One visual-bible-consistent cinematic illustrated style frame.
-- Layered background, midground, character, prop, foreground, and atmosphere assets.
-- Simple character pose library: idle, gesture, glance, emphasis.
-- Mouth-shape swaps from narration timing.
-- Blink and eye-direction cycles.
-- Camera motion and parallax.
-- Atmospheric motion such as light rays, dust, water glints, cloth sway, and foreground reed sway.
-- Existing studio narration settings, with Chatterbox as the production voice path.
-- FFmpeg validation and generated-asset persistence through the current worker flow.
+Remotion is not expected to provide by itself:
 
-## Current Status
+- complex hand-drawn acting;
+- a full authoring-grade skeletal rig editor;
+- painterly frame-by-frame animation;
+- reliable autonomous character performance from a flattened image.
 
-The Remotion animation work now has three review loops:
+## Current Status - Level 1 Validated
 
-- Short technical proof: `ReelAnimation` with `tools/animation/scenes/reel-01-proof.scene.json`.
-- Style and motion proofs: `CinematicStyleTest` and `CinematicMotionProof` for art-direction and shot-language review.
-- Full Reel 1 draft: `FullReelAnimation` with `tools/animation/scenes/reel-01-full-animation.scene.json`.
+Reel 1 now has a complete canonical Scene V2 production path.
 
-Run:
+The production path:
+
+- resolves approved `animation-v1` assets;
+- requires human-approved canonical layers and checksum provenance;
+- assembles eight approved shots through `CanonicalReel1`;
+- preserves each shot's approved local timing;
+- inserts an explicit 30-frame Shot 5 -> Shot 6 handoff rather than stretching a reviewed shot;
+- renders 1800 frames / 60 seconds at 1080x1920, 30 fps;
+- finalizes with eight shot-aligned Chatterbox narration cues;
+- mixes a continuous ambience bed;
+- keeps the final three seconds available for the title/ambience landing;
+- keeps audio finalization separate so narration/mix revisions can reuse the rendered visual.
+
+Run the canonical path with:
 
 ```sh
-pnpm render:animation:proof
-pnpm render:animation:style-test
-pnpm render:animation:style-review
-pnpm render:animation:style-review:studio
-pnpm render:animation:motion-proof
-pnpm render:animation:motion-review
-pnpm render:animation:full-reel1
 pnpm render:animation:reel1
 ```
 
-The proof command renders `tmp/renders/animation-proof/reel-animation-proof.mp4`, validates duration with FFprobe when available, and writes `tmp/renders/animation-proof/animation-proof-manifest.json` with the scene data and SHA-256 checksum. This proof demonstrates real frame-to-frame animation using camera drift, parallax, water shimmer, water glints, light rays, atmospheric particles, boat bobbing, character gesture, breathing, cloth sway, eye blink, mouth-shape channels, and foreground sway.
+The important production composition is:
 
-The proof renderer can synthesize narration with Chatterbox, Kokoro, or Windows SAPI. Chatterbox is the intended production voice path for animation; SAPI remains only a fallback. The renderer places narration clips at the same frame windows used by the animation, mixes them into a WAV, and muxes that track into the final MP4 as AAC audio. The manifest records the narration adapter, voice/model metadata, clip timings, clip checksums, narration mix checksum, and final MP4 checksum.
+```txt
+CanonicalReel1
+```
 
-The full Reel 1 animation draft renders the complete 60-second sequence with Chatterbox narration by default. `pnpm render:animation:full-reel1` runs it directly, and `pnpm render:animation:reel1` queues a `draft-video` job, processes it with the animation adapter, persists the generated assets through the API, and validates the final MP4. The full-reel scene manifest records that no source/story text is changed and the composition reads existing `REEL_ONE` source data.
+The older `FullReelAnimation` composition remains a procedural/proof artifact and is not the canonical production Reel 1 visual path.
 
-The shorter style test uses the `CinematicStyleTest` Remotion composition and `tools/animation/scenes/cinematic-style-test.scene.json`. It is the preferred loop for art direction because it renders a 12-second clip with slower camera motion, profile character treatment, mural-style silhouettes, foreground occlusion, atmospheric dust, and light sweeps without waiting for the full worker proof.
+## Level 1 Creative Finding
 
-The style-review command wraps the style test with extracted stills, a contact sheet, a checksum manifest, and a Markdown review report. Use it when comparing art-direction iterations or recording review decisions.
+The canonical Reel 1 test proved the pipeline but exposed a creative limitation.
 
-The style-review studio command requires the API to be running. It creates a draft-video render job, persists the review video, contact sheet, sampled frames, manifests, and report through the generated-asset API, then marks the job complete for dashboard review.
+Most current Scene V2 motion is intentionally small:
 
-The second motion proof uses the `CinematicMotionProof` Remotion composition and `tools/animation/scenes/cinematic-motion-proof.scene.json`. It is an 18-second review clip split into river approach, profile close-up, and city reveal shots. Its purpose is to test stronger animation language before investing in final assets: shot-timed camera moves, multi-plane parallax, boat drift, profile breathing, blink, cloth sway, gesture arc, reed sway, temple reveal, light sweep, dust motes, and cut fades.
+- slow camera pushes;
+- layer-level translation/rotation/scale;
+- subtle water/refraction changes;
+- mist/smoke/atmosphere drift;
+- restrained rigid-prop bob;
+- limited breathing or state behavior where an asset exists.
 
-Use `pnpm render:animation:motion-review` to create its review bundle under `tmp/renders/animation-motion-review/`.
+This protected source fidelity, but the complete reel still reads primarily as approved still paintings with minor animation.
 
-## Proposed Tooling
+Therefore the current production baseline is called **Level 1**. It is accepted and reproducible, but it is not yet the publication motion language to scale to Reel 2.
 
-- Remotion for frame-accurate video composition and rendering.
-- React components for reusable scene, character, caption, and camera primitives.
-- Rhubarb Lip Sync for phoneme/mouth-cue extraction from narration audio.
-- Existing FFmpeg validation and manifest persistence.
-- Optional PixiJS later if sprite-heavy WebGL scenes outgrow SVG/CSS composition.
+## Level 2 - Living Shots
+
+Level 2 adds **source-preserving articulated 2.5D motion**.
+
+The goal is not to increase every animation amplitude. The goal is to create independently timed relationships among the camera, character, vessel/props, materials, foreground, atmosphere, and light.
+
+Level 2 should support, where justified by a benchmark:
+
+- parent/child transform groups;
+- explicit pivots or named articulation anchors;
+- separate translation, rotation, and scale channels;
+- bounded character micro-articulation;
+- breathing, posture/weight shift, gaze, and blink states;
+- arm/hand/prop relationships when clean source-derived layers exist;
+- rigid-body vessel pitch/roll/heave independent from camera motion;
+- secondary lag/inertia for rigging, cloth, hair, reeds, or similar materials;
+- multi-plane water/material motion;
+- contact response such as vessel -> water and vessel -> rigging;
+- foreground depth occlusion;
+- asymmetrical motion starts and settles;
+- optional bounded deformation masks where rigid transforms cannot produce natural motion.
+
+Level 2 should remain narrow and benchmark-driven. Do not build a general skeletal animation engine before a reviewed shot proves that a simpler articulation model is insufficient.
+
+## Level 2 Scene Architecture
+
+The current Scene V2 contract already provides:
+
+- camera transforms;
+- depth-ordered layers;
+- semantic roles/materials;
+- named anchors;
+- transform baselines;
+- motion presets;
+- performance intervals;
+- atmosphere and lighting channels;
+- review markers;
+- human-approval/source-policy fields.
+
+Level 2 should extend this contract minimally.
+
+Preferred additions, only as needed:
+
+```text
+Scene V2 shot
+  ├─ camera
+  ├─ transform groups
+  │    ├─ vessel root
+  │    │    ├─ rigging child + lag
+  │    │    └─ character root
+  │    │         ├─ torso/breath
+  │    │         ├─ head/gaze state
+  │    │         └─ arm/tiller articulation
+  ├─ water/contact layers
+  ├─ foreground occluders
+  ├─ atmosphere/light
+  └─ deterministic motion evidence
+```
+
+If parent/child transforms, pivots, lag, and bounded deformation can be added without breaking existing scenes, keep the major schema at V2 and treat the extension as backwards-compatible V2.x semantics. Introduce a new major scene schema only if the existing model becomes ambiguous or unsafe.
+
+## Primary Level 2 Benchmark - Shot 3
+
+Shot 3, Enki at the helm, is the primary benchmark because it exercises the most useful combination of problems:
+
+- character identity;
+- rigid vessel;
+- water;
+- rigging;
+- cloth;
+- foreground depth;
+- atmosphere/light;
+- restrained camera movement.
+
+The approved Level 2 Shot 3 should contain at least four independently timed non-camera motion channels, at least one genuine character-articulation channel, independent vessel motion, and at least one secondary-motion relationship with lag or inertia.
+
+Target motion relationships:
+
+- camera: slow intentional push/track and settle;
+- vessel: pitch/roll/heave independent from camera;
+- Enki: breathing plus one subtle posture or weight adjustment;
+- head/gaze/eyes: at most one meaningful shift/blink when source-supported;
+- arm/tiller: optional micro-action only if clean source-derived anatomy exists;
+- rigging: follows vessel with tension/lag rather than an unrelated loop;
+- cloth/hair: secondary response where source separation supports it;
+- water: near/far rates plus believable contact response;
+- foreground/atmosphere: independent depth motion;
+- reflected light: restrained material-linked response.
+
+The benchmark must be reviewed against the approved Level 1 Shot 3 as an A/B comparison.
+
+## Secondary Level 2 Benchmarks
+
+### Shot 4 - Nammu beneath the water
+
+Shot 4 proves that richer motion does not require puppet animation.
+
+Prefer:
+
+- layered current movement;
+- refraction/caustics;
+- suspended particles;
+- foreground water occlusion;
+- environmental coherence and dissolution;
+- source-supported cloth/hair/current response only when natural;
+- near-static or gently descending camera.
+
+Nammu remains a numinous environmental presence, not a conventional animated cutout.
+
+### Shot 8 - landfall
+
+Shot 8 proves rigid-object/environment contact:
+
+- distant boat movement;
+- water-contact response;
+- pitch/heave/settle distinct from the camera;
+- optional reeds/foreground response;
+- quiet physical settling before the title.
+
+Do not enlarge, repaint, or invent the distant boat merely to make animation easier.
 
 ## Asset Strategy
 
-Start with layered raster or SVG assets. Avoid full skeletal animation until the style and timing are proven.
+Preserve the current asset policy.
 
-Required asset types:
+Existing approved `animation-v1` remains the Level 1 canonical baseline. Level 2 may derive additional candidate layers from the approved source or approved Level 1 layers, but those candidates remain outside canonical production until review and promotion.
 
-- Background plates.
-- Foreground occluders.
-- Character body poses.
-- Head/eye/mouth overlays.
-- Prop overlays.
-- Atmosphere loops such as mist, water shimmer, dust, or light rays.
+Potential Shot 3 Level 2 derived assets include:
 
-## Acceptance Criteria
+- head/face state;
+- blink state;
+- forearm/hand/tiller articulation region;
+- cloth overlay;
+- foreground rigging;
+- vessel-contact water/wake/reflection mask;
+- near/far water regions;
+- light/reflection mask.
 
-- Rendered output is a true MP4 animation, not a still-image slideshow.
-- Output remains 1080x1920, 30 fps, and platform-safe.
-- Narration, ambience, captions, and visual motion stay synchronized.
-- The animation job is queued, claimed, logged, checksummed, and persisted through existing API endpoints.
-- The proof of concept can be reviewed in the existing studio dashboard.
-- A shorter style-test render exists for fast art-direction decisions before full-reel expansion.
-- A motion-proof review exists for evaluating shot-to-shot animation language before full-reel expansion.
-- A complete 60-second Reel 1 animation draft can render directly and through the studio worker.
-- No story/source text is altered as part of the animation infrastructure work.
+Do not create visual information simply because an animation controller would benefit from another layer.
+
+## Level 2 QA Model
+
+Level 1 demonstrated that aggregate changed-pixel ratios can be misleading: a camera move may change many pixels while the subject remains static.
+
+Level 2 deterministic evidence should therefore measure motion by channel and relationship.
+
+Useful checks include:
+
+- camera-compensated subject motion;
+- per-channel contribution over multiple review beats;
+- pivot/rotation/translation bounds;
+- deformation-mask containment;
+- alpha-edge spill;
+- parent/child transform consistency;
+- secondary-lag phase relative to its driver;
+- vessel/water or vessel/rigging contact continuity;
+- absence of one-frame pops/state flashes;
+- no clipping outside registered canvas bounds;
+- terminal settling without freezing materials that should remain alive.
+
+Do not make one benchmark's numeric thresholds global. Calibrate material/articulation gates only after reviewed good and bad candidates exist.
+
+## Human Quality Gate
+
+A technically valid Level 2 benchmark can still fail.
+
+At normal playback speed, a reviewer should immediately perceive a living animated scene rather than a still painting with a camera move.
+
+The review must also confirm:
+
+- identity remains stable;
+- motion is restrained rather than puppeted;
+- physical materials retain believable mass;
+- independent channels do not share an obvious synchronized loop;
+- secondary motion visibly follows its driver with plausible lag;
+- a paused frame still looks like approved artwork;
+- the emotional intent of the shot remains intact.
+
+The existing `planning/reel-01-animation-review-scorecard.md` remains the publication-quality review contract. Its slideshow/puppet hard-fail language is especially important for Level 2.
+
+## Audio Architecture
+
+The canonical visual and audio finalization are deliberately separable.
+
+The current finalizer:
+
+- generates eight Chatterbox cues;
+- places them across the full 60-second reel;
+- allows moderate cue pacing without clipping speech;
+- mixes a continuous ambience bed;
+- leaves a final title hold free of narration;
+- muxes audio onto the already-rendered canonical visual.
+
+This architecture should remain unchanged during Level 2 benchmark development. Shot-motion iteration should not force narration regeneration, and narration/mix iteration should not force 1800-frame visual rerenders.
+
+## Level 3 Boundary
+
+Selective generative image-to-video is a possible future tool, not the current production strategy.
+
+Evaluate it only after Level 2 benchmarks pass. Any Level 3 candidate must enter through the same provenance, candidate, deterministic review, human approval, and promotion boundaries. Identity drift, object mutation, temporal flicker, malformed anatomy, and invented historical detail are blockers, not acceptable side effects of richer motion.
 
 ## Risks
 
-- Art quality becomes the bottleneck if assets are not layered consistently.
-- Lip sync can look mechanical without a small set of expression and head-motion rules.
-- Remotion rendering may add Node/browser dependencies to CI and local setup.
-- Custom rigging can sprawl if we skip a narrow first character schema.
+- Fine articulation can expose seams or missing source information.
+- Excessive layer decomposition can reduce painterly cohesion.
+- Character articulation can become puppet-like if every joint is animated independently.
+- Secondary motion can look synthetic if all channels use simple periodic loops.
+- Contact animation can reveal inaccurate masks more quickly than static composition.
+- A generalized rigging framework can sprawl before the project proves what it actually needs.
+- More visible motion increases the importance of full-speed human review; still-frame QA alone becomes less representative.
+
+## Acceptance Criteria For Level 2
+
+- Shot 3 is human-approved as unmistakably animated and source-faithful.
+- Shot 4 proves numinous/environmental animation without conventional puppet behavior.
+- Shot 8 proves rigid-body/environment contact motion.
+- Scene data remains authoritative and reusable rather than moving behavior back into bespoke shot React code.
+- New derived layers preserve provenance and explicit promotion gates.
+- Deterministic QA separates camera contribution from subject/material contribution.
+- The complete 60-second Level 2 Reel 1 no longer reads primarily as a slideshow or Ken Burns treatment.
+- The approved Level 1 baseline remains reproducible.
+- Reel 2 animation remains gated until Reel 1 Level 2 passes human publication review.
 
 ## Decision
 
-Use Remotion as the studio animation composition/render engine. Keep the studio-specific animation layer narrow and data-driven rather than building a full custom animation engine from scratch.
+Keep Remotion and the existing canonical production architecture. Treat Level 1 as a successful source-safe production baseline, and make **Level 2 - Living Shots** the active motion-quality milestone.
+
+The next implementation target is not another full-reel render. It is a seven-second Shot 3 A/B benchmark that proves the pipeline can animate Enki, the Stag, water, rigging, and atmosphere as independently timed physical elements while preserving the approved art.
