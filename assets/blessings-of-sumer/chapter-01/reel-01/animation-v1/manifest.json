@@ -417,6 +417,206 @@
           }
         }
       ]
+    },
+    {
+      "shotId": "traveler-shrine-hospitality",
+      "sourceShotNumber": 5,
+      "sourceFrame": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-05.png",
+      "status": "approved",
+      "fallback": {
+        "assetId": "shot05-editorial-v1-flat",
+        "assetPath": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-05.png"
+      },
+      "overscan": {
+        "leftPercent": 6,
+        "rightPercent": 6,
+        "topPercent": 6,
+        "bottomPercent": 6
+      },
+      "activationPolicy": {
+        "requiredLayerIds": [
+          "shot05-shrine-base-v1",
+          "shot05-welcome-water-v1"
+        ],
+        "enableDeferredPerformanceWhenApproved": true
+      },
+      "layers": [
+        {
+          "id": "shot05-shrine-base-v1",
+          "path": "blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-05/shrine-base.png",
+          "role": "background",
+          "material": "architectural-background",
+          "depthDefault": 0.1,
+          "anchor": "center",
+          "transform": {
+            "x": 0,
+            "y": 0,
+            "scale": 1
+          },
+          "motionPresets": [
+            "cinematicSlow"
+          ],
+          "state": "approved",
+          "hasAlpha": false,
+          "source": {
+            "type": "derived",
+            "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-05.png"
+          },
+          "review": {
+            "status": "approved",
+            "notes": [
+              "The shrine structure is the stillness anchor; the base should preserve the approved editorial plate exactly.",
+              "Human-approved from full reviewed-shot gate 2026-08-24T16-01-49-474Z at 2026-08-24T16:19:32.430Z.",
+              "Full shot review: D:\\repos\\sumer-reel-forge\\tmp\\animation-previews\\shot05-layered-preview\\2026-08-24T16-01-49-474Z\\shot-review.json",
+              "Containment QA PASS: D:\\repos\\sumer-reel-forge\\tmp\\animation-previews\\shot05-layered-preview\\2026-08-24T16-01-49-474Z\\contained-material-boundary-qa.json",
+              "AI advisory status at approval: PASS_ADVISORY (raw PASS_ADVISORY).",
+              "exact-source-preservation-qa PASS: D:\\repos\\sumer-reel-forge\\tmp\\animation-assets\\candidates\\chapter-01-reel-01-animation-v1\\2026-08-23T21-28-37-042Z\\shot05-shrine-base-v1-preservation-qa.json",
+              "Human-approved from full reviewed-shot gate 2026-08-24T16-01-49-474Z at 2026-08-24T18:42:08.641Z.",
+              "Full shot review: D:\\repos\\sumer-reel-forge\\tmp\\animation-previews\\shot05-layered-preview\\2026-08-24T16-01-49-474Z\\shot-review.json",
+              "Containment QA PASS: D:\\repos\\sumer-reel-forge\\tmp\\animation-previews\\shot05-layered-preview\\2026-08-24T16-01-49-474Z\\contained-material-boundary-qa.json",
+              "AI advisory status at approval: PASS_ADVISORY (raw PASS_ADVISORY).",
+              "exact-source-preservation-qa PASS: D:\\repos\\sumer-reel-forge\\tmp\\animation-assets\\candidates\\chapter-01-reel-01-animation-v1\\2026-08-23T21-28-37-042Z\\shot05-shrine-base-v1-preservation-qa.json",
+              "Human-approved from full reviewed-shot gate 2026-08-24T16-01-49-474Z at 2026-08-24T18:42:30.850Z.",
+              "Full shot review: D:\\repos\\sumer-reel-forge\\tmp\\animation-previews\\shot05-layered-preview\\2026-08-24T16-01-49-474Z\\shot-review.json",
+              "Containment QA PASS: D:\\repos\\sumer-reel-forge\\tmp\\animation-previews\\shot05-layered-preview\\2026-08-24T16-01-49-474Z\\contained-material-boundary-qa.json",
+              "AI advisory status at approval: PASS_ADVISORY (raw PASS_ADVISORY).",
+              "exact-source-preservation-qa PASS: D:\\repos\\sumer-reel-forge\\tmp\\animation-assets\\candidates\\chapter-01-reel-01-animation-v1\\2026-08-23T21-28-37-042Z\\shot05-shrine-base-v1-preservation-qa.json"
+            ]
+          },
+          "sha256": "sha256:821b018de592a3296250f75c7d7c63eea4a5c652b923283e7b3aad9affe62fdd"
+        },
+        {
+          "id": "shot05-welcome-water-v1",
+          "path": "blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-05/welcome-water.png",
+          "role": "water",
+          "material": "water",
+          "depthDefault": 0.34,
+          "anchor": "water-basin",
+          "transform": {
+            "x": 0,
+            "y": 0,
+            "scale": 1
+          },
+          "motionPresets": [
+            "waterPulse"
+          ],
+          "state": "approved",
+          "hasAlpha": true,
+          "source": {
+            "type": "derived",
+            "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-05.png"
+          },
+          "review": {
+            "status": "approved",
+            "notes": [
+              "Isolate only source-supported basin/spring water. Keep water practical and physical, not numinous.",
+              "Human-approved from full reviewed-shot gate 2026-08-24T16-01-49-474Z at 2026-08-24T16:19:32.430Z.",
+              "Full shot review: D:\\repos\\sumer-reel-forge\\tmp\\animation-previews\\shot05-layered-preview\\2026-08-24T16-01-49-474Z\\shot-review.json",
+              "Containment QA PASS: D:\\repos\\sumer-reel-forge\\tmp\\animation-previews\\shot05-layered-preview\\2026-08-24T16-01-49-474Z\\contained-material-boundary-qa.json",
+              "AI advisory status at approval: PASS_ADVISORY (raw PASS_ADVISORY).",
+              "semantic-overlay-structure-qa PASS: D:\\repos\\sumer-reel-forge\\tmp\\animation-assets\\candidates\\chapter-01-reel-01-animation-v1\\2026-08-23T21-45-01-619Z\\shot05-welcome-water-v1-structure-qa.json",
+              "Coverage advisory at approval: WITHIN_PREFERRED_RANGE.",
+              "Human-approved from full reviewed-shot gate 2026-08-24T16-01-49-474Z at 2026-08-24T18:42:08.641Z.",
+              "Full shot review: D:\\repos\\sumer-reel-forge\\tmp\\animation-previews\\shot05-layered-preview\\2026-08-24T16-01-49-474Z\\shot-review.json",
+              "Containment QA PASS: D:\\repos\\sumer-reel-forge\\tmp\\animation-previews\\shot05-layered-preview\\2026-08-24T16-01-49-474Z\\contained-material-boundary-qa.json",
+              "AI advisory status at approval: PASS_ADVISORY (raw PASS_ADVISORY).",
+              "semantic-overlay-structure-qa PASS: D:\\repos\\sumer-reel-forge\\tmp\\animation-assets\\candidates\\chapter-01-reel-01-animation-v1\\2026-08-23T21-45-01-619Z\\shot05-welcome-water-v1-structure-qa.json",
+              "Coverage advisory at approval: WITHIN_PREFERRED_RANGE.",
+              "Human-approved from full reviewed-shot gate 2026-08-24T16-01-49-474Z at 2026-08-24T18:42:30.850Z.",
+              "Full shot review: D:\\repos\\sumer-reel-forge\\tmp\\animation-previews\\shot05-layered-preview\\2026-08-24T16-01-49-474Z\\shot-review.json",
+              "Containment QA PASS: D:\\repos\\sumer-reel-forge\\tmp\\animation-previews\\shot05-layered-preview\\2026-08-24T16-01-49-474Z\\contained-material-boundary-qa.json",
+              "AI advisory status at approval: PASS_ADVISORY (raw PASS_ADVISORY).",
+              "semantic-overlay-structure-qa PASS: D:\\repos\\sumer-reel-forge\\tmp\\animation-assets\\candidates\\chapter-01-reel-01-animation-v1\\2026-08-23T21-45-01-619Z\\shot05-welcome-water-v1-structure-qa.json",
+              "Coverage advisory at approval: WITHIN_PREFERRED_RANGE."
+            ]
+          },
+          "sha256": "sha256:8cf81606c7dbe1f8c59020973f5240df6ee378323ddd5c02897332956926452a"
+        },
+        {
+          "id": "shot05-foreground-textile-v1",
+          "path": "blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-05/foreground/textile.png",
+          "role": "foreground-occluder",
+          "material": "cloth-light",
+          "depthDefault": 0.8,
+          "anchor": "foreground-textile",
+          "transform": {
+            "x": 0,
+            "y": 0,
+            "scale": 1
+          },
+          "motionPresets": [
+            "clothLag"
+          ],
+          "state": "planned",
+          "hasAlpha": true,
+          "source": {
+            "type": "derived",
+            "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-05.png"
+          },
+          "review": {
+            "status": "pending",
+            "notes": [
+              "Optional/deferred for the first benchmark. Moving this textile over the unmodified editorial base would duplicate the original foreground edge; enable it only after a dependency-aware removal/repair path is available.",
+              "When enabled, foreground cloth creates depth without obscuring the water/bread/welcome eye target or caption safe zone."
+            ]
+          }
+        },
+        {
+          "id": "shot05-smoke-v1",
+          "path": "blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-05/atmosphere/smoke.png",
+          "role": "atmosphere",
+          "material": "smoke",
+          "depthDefault": 0.66,
+          "anchor": "hearth-smoke",
+          "transform": {
+            "x": 0,
+            "y": 0,
+            "scale": 1
+          },
+          "motionPresets": [
+            "smokeDrift"
+          ],
+          "state": "planned",
+          "hasAlpha": true,
+          "source": {
+            "type": "derived",
+            "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-05.png"
+          },
+          "review": {
+            "status": "pending",
+            "notes": [
+              "Optional/deferred after human review found the source-supported smoke extraction too sparse to contribute meaningful visible motion in the Shot 5 benchmark.",
+              "Keep the provisional smoke lane available for a future source-grounded benchmark; do not invent a procedural plume merely to satisfy activation."
+            ]
+          }
+        },
+        {
+          "id": "shot05-welcome-action-v1",
+          "path": "blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-05/character/welcome-action.png",
+          "role": "character",
+          "material": "cloth-light",
+          "depthDefault": 0.56,
+          "anchor": "welcome-action",
+          "transform": {
+            "x": 0,
+            "y": 0,
+            "scale": 1
+          },
+          "motionPresets": [],
+          "state": "planned",
+          "hasAlpha": true,
+          "source": {
+            "type": "derived",
+            "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-05.png"
+          },
+          "review": {
+            "status": "pending",
+            "notes": [
+              "Optional for the first benchmark. Keep human motion subordinate to practical hospitality and preserve faces/hands exactly."
+            ]
+          }
+        }
+      ]
     }
   ]
 }
