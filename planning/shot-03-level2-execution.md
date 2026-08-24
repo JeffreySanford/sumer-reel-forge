@@ -10,20 +10,44 @@ Current gate evidence:
 - distinct motion families: 4;
 - independent vessel motion: present;
 - visible character articulation beyond breathing: missing;
-- secondary lag/inertia: missing.
+- secondary lag/inertia: missing from the canonical approved asset set.
 
 The active gate must remain red until the canonical approved Shot 3 genuinely gains the missing motion classes. Do not lower the threshold or mark planned layers approved merely to satisfy the test.
+
+### 2026-08-24 rigging implementation checkpoint
+
+The first Level 2 rigging candidate was generated and structurally verified locally:
+
+- candidate dimensions: `941x1672`;
+- hard alpha coverage: `0.392%`;
+- source RGB under selected alpha: mean diff `0.0000`, changed `0.0000%`;
+- structure QA: `PASS`;
+- coverage advisory: `WITHIN_PREFERRED_RANGE`;
+- canonical manifest/assets remained unchanged;
+- candidate preview rendered successfully through the real Scene V2 renderer.
+
+The original `riggingTension` renderer was then found to be an independent oscillator rather than a true vessel-driven secondary response. That behavior is no longer acceptable for Level 2.
+
+A shared deterministic motion model now defines `heavyPhysical` as the vessel driver and makes `riggingTension` sample that same driver with a `0.24s` delay. The rigging response inherits vessel heave/roll and adds bounded lag/follow-through. A numerical causality regression verifies the shared driver, real delay, measurable secondary contribution, and restrained bounds.
+
+This implementation is **pending local test validation and human normal-speed motion review**. The rigging candidate is still unpromoted.
 
 ## First Level 2 slice — rigging
 
 Rigging is the first safe addition because `shot03-rigging-v1` is already declared as a planned source-derived foreground layer with `riggingTension`, and the production-lane registry already maps foreground alpha overlays to source-preserving SAM3 extraction plus structural QA.
 
-Run:
+Run the full production lane when a new asset candidate is needed:
 
 ```bash
 node tools/scripts/shot03-level2-rigging.mjs preflight &&
 node tools/scripts/shot03-level2-rigging.mjs generate &&
 node tools/scripts/shot03-level2-rigging.mjs verify &&
+node tools/scripts/shot03-level2-rigging.mjs preview
+```
+
+After renderer-only motion changes, reuse the latest QA-passed candidate and rerender only the audition:
+
+```bash
 node tools/scripts/shot03-level2-rigging.mjs preview
 ```
 
