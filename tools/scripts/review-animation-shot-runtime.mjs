@@ -9,10 +9,6 @@ process.env.OLLAMA_TEXT_MODEL ??= 'qwen3:8b';
 process.env.OLLAMA_BASE_URL ??= 'http://localhost:11434';
 process.env.OLLAMA_KEEP_ALIVE ??= '10m';
 
-// Keep normal planning latency independent from the heavier visual review path.
-// The existing review implementation reads PLANNING_TIMEOUT_MS for its Ollama
-// request, so the wrapper deliberately scopes that child value to the dedicated
-// vision timeout instead of inheriting the normal text-planning timeout.
 const visionTimeoutMs = positiveInteger(
   process.env.OLLAMA_VISION_TIMEOUT_MS,
   300000,
@@ -21,6 +17,11 @@ process.env.PLANNING_TIMEOUT_MS = String(visionTimeoutMs);
 
 const args = process.argv.slice(2).filter((arg) => arg !== '--');
 const skipAi = args.includes('--skip-ai');
+const requireAi = args.includes('--require-ai');
+const shotArg = args.find((arg) => arg.startsWith('--shot='));
+const previewArg = args.find((arg) => arg.startsWith('--preview-dir='));
+if (!shotArg) throw new Error('--shot=<number> is required.');
+
 const model = process.env.OLLAMA_VISION_MODEL;
 const baseUrl = (process.env.OLLAMA_BASE_URL ?? 'http://localhost:11434').replace(
   /\/$/,
@@ -32,23 +33,61 @@ const loadTimeoutMs = positiveInteger(
   180000,
 );
 
-if (!skipAi && model) {
-  await warmVisionModel().catch((error) => {
-    // The core review owns --require-ai semantics and will produce the canonical
-    // REVIEW_REQUIRED/exit-3 result if Ollama remains unavailable. Warm-up is a
-    // reliability optimization, not a separate approval gate.
-    console.warn(
-      `[review-runtime] Vision warm-up did not complete: ${errorMessage(error)}`,
-    );
-  });
-}
+console.log('[review-runtime] Phase 1/3 · deterministic scene + material review');
+const deterministicArgs = args.filter(
+  (arg) => arg !== '--require-ai' && arg !== '--skip-ai',
+);
+deterministicArgs.push('--skip-ai');
+const deterministicExit = await runNode(
+  'tools/scripts/review-animation-shot.mjs',
+  deterministicArgs,
+);
+if (deterministicExit === 1) {
+  process.exitCode = 1;
+} else {
+  console.log('');
+  console.log('[review-runtime] Phase 2/3 · contained-material boundary review');
+  const containmentArgs = [shotArg];
+  if (previewArg) containmentArgs.push(previewArg);
+  const containmentExit = await runNode(
+    'tools/scripts/verify-contained-material-boundary.mjs',
+    containmentArgs,
+  );
 
-const exitCode = await runReview();
-process.exitCode = exitCode;
+  if (deterministicExit !== 0 || containmentExit !== 0) {
+    console.log(
+      '[review-runtime] Deterministic review is not clean; delta vision critique is skipped until hard gates pass.',
+    );
+    process.exitCode = 2;
+  } else if (skipAi) {
+    console.log('');
+    console.log('[review-runtime] Phase 3/3 · delta vision review skipped by --skip-ai');
+    process.exitCode = 0;
+  } else {
+    console.log('');
+    console.log('[review-runtime] Phase 3/3 · source-aware delta vision review');
+    if (model) {
+      await warmVisionModel().catch((error) => {
+        console.warn(
+          `[review-runtime] Vision warm-up did not complete: ${errorMessage(error)}`,
+        );
+      });
+    }
+
+    const deltaArgs = [shotArg];
+    if (previewArg) deltaArgs.push(previewArg);
+    if (requireAi) deltaArgs.push('--require-ai');
+    const deltaExit = await runNode(
+      'tools/scripts/review-animation-shot-delta-vision.mjs',
+      deltaArgs,
+    );
+    process.exitCode = deltaExit;
+  }
+}
 
 async function warmVisionModel() {
   console.log(
-    `[review-runtime] Warming ${model} for vision review (load timeout ${Math.round(loadTimeoutMs / 1000)}s, review timeout ${Math.round(visionTimeoutMs / 1000)}s)...`,
+    `[review-runtime] Warming ${model} for delta vision review (load timeout ${Math.round(loadTimeoutMs / 1000)}s, review timeout ${Math.round(visionTimeoutMs / 1000)}s)...`,
   );
   const startedAt = Date.now();
 
@@ -74,11 +113,11 @@ async function warmVisionModel() {
   );
 }
 
-async function runReview() {
+async function runNode(scriptPath, scriptArgs) {
   return await new Promise((resolvePromise, rejectPromise) => {
     const child = spawn(
       process.execPath,
-      [resolve('tools/scripts/review-animation-shot.mjs'), ...args],
+      [resolve(scriptPath), ...scriptArgs],
       {
         cwd: resolve('.'),
         env: process.env,
@@ -90,7 +129,7 @@ async function runReview() {
     child.once('error', rejectPromise);
     child.once('exit', (code, signal) => {
       if (signal) {
-        console.error(`[review-runtime] Review exited with signal ${signal}.`);
+        console.error(`[review-runtime] ${scriptPath} exited with signal ${signal}.`);
         resolvePromise(1);
         return;
       }
