@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "type": "animation-shot-contract",
+  "projectSlug": "blessings-of-sumer",
+  "chapterNumber": 1,
+  "episodeNumber": 1,
+  "shot": {
+    "shotId": "boat-approaches-land-title",
+    "sourceShotNumber": 8,
+    "sourceFrame": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-08.png",
+    "status": "draft",
+    "fallback": {
+      "assetId": "shot08-editorial-v1-flat",
+      "assetPath": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-08.png"
+    },
+    "overscan": {
+      "leftPercent": 8,
+      "rightPercent": 8,
+      "topPercent": 6,
+      "bottomPercent": 8
+    },
+    "activationPolicy": {
+      "requiredLayerIds": [
+        "shot08-landfall-base-v1",
+        "shot08-boat-v1"
+      ],
+      "enableDeferredPerformanceWhenApproved": true
+    },
+    "layers": [
+      {
+        "id": "shot08-landfall-base-v1",
+        "path": "blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-08/landfall-base.png",
+        "role": "background",
+        "material": "architectural-background",
+        "depthDefault": 0.12,
+        "anchor": "shoreline-horizon",
+        "transform": { "x": 0, "y": 0, "scale": 1 },
+        "motionPresets": ["cinematicSlow"],
+        "state": "planned",
+        "hasAlpha": false,
+        "source": {
+          "type": "painted-repair",
+          "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-08.png"
+        },
+        "review": {
+          "status": "pending",
+          "notes": [
+            "Preserve the approved landfall, lighting, and shoreline exactly. If the boat is extracted for motion, repair only its footprint in this base to prevent duplicate-boat ghosting.",
+            "Do not repaint the wider scene merely to increase motion."
+          ]
+        }
+      },
+      {
+        "id": "shot08-boat-v1",
+        "path": "blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-08/boat.png",
+        "role": "major-prop",
+        "material": "rigid-vessel",
+        "depthDefault": 0.52,
+        "anchor": "boat-center-of-mass",
+        "transform": { "x": 0, "y": 0, "scale": 1 },
+        "motionPresets": ["boatBob"],
+        "state": "planned",
+        "hasAlpha": true,
+        "source": {
+          "type": "derived",
+          "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-08.png"
+        },
+        "review": {
+          "status": "pending",
+          "notes": [
+            "Keep boat motion physical and restrained. The vessel approaches land; it should not skid, float independently of the water plane, or change silhouette.",
+            "Identity, rigging, hull geometry, and lighting must remain source-faithful."
+          ]
+        }
+      },
+      {
+        "id": "shot08-foreground-reeds-v1",
+        "path": "blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-08/foreground/reeds.png",
+        "role": "foreground-occluder",
+        "material": "reed",
+        "depthDefault": 0.84,
+        "anchor": "lower-foreground",
+        "transform": { "x": 0, "y": 0, "scale": 1 },
+        "motionPresets": ["clothLag"],
+        "state": "planned",
+        "hasAlpha": true,
+        "source": {
+          "type": "derived",
+          "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-08.png"
+        },
+        "review": {
+          "status": "pending",
+          "notes": [
+            "Optional. Foreground motion may add depth only if it does not obscure the boat, shoreline, or final title-safe region."
+          ]
+        }
+      }
+    ],
+    "titlePolicy": {
+      "source": "reel-production-record",
+      "rasterizeIntoCandidateAssets": false,
+      "motion": "stable-fade",
+      "notes": [
+        "The final title is an editorial overlay, not generated image content. Keep it out of candidate PNGs so text remains deterministic, editable, and accessible."
+      ]
+    }
+  }
+}
