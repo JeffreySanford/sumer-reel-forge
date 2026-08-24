@@ -73,7 +73,7 @@ async function main() {
   const previewRoot = resolve(PREVIEW_BASE, `shot${shotLabel}-layered-preview`);
   const previewDirectory = options.previewDir
     ? resolve(options.previewDir)
-    : newestPreviewDirectory(previewRoot, options.shotNumber);
+    : newestCompletePreviewDirectory(previewRoot, options.shotNumber);
 
   const previewManifestPath = join(previewDirectory, 'preview-manifest.json');
   const propsPath = join(previewDirectory, 'scene-v2-candidate-props.json');
@@ -378,20 +378,55 @@ function measureDifference({
   };
 }
 
-function newestPreviewDirectory(root, shotNumber) {
+export function newestCompletePreviewDirectory(root, shotNumber) {
   if (!existsSync(root)) {
     throw new Error(
       `Shot ${shotNumber} preview root does not exist: ${root}. Run animation:shot:review or the candidate preview first.`,
     );
   }
+
   const directories = readdirSync(root, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .map((entry) => join(root, entry.name))
     .sort((a, b) => basename(b).localeCompare(basename(a)));
+
   if (!directories.length) {
     throw new Error(`No Shot ${shotNumber} previews found under ${root}.`);
   }
-  return directories[0];
+
+  const complete = directories.find((directory) =>
+    isCompletePreviewDirectory(directory, shotNumber),
+  );
+  if (complete) return complete;
+
+  throw new Error(
+    `No complete Shot ${shotNumber} preview found under ${root}. Checked ${directories.length} director${directories.length === 1 ? 'y' : 'ies'}; each complete preview requires preview-manifest.json, scene-v2-candidate-props.json, and public/. Run animation:shot:review or the candidate preview first.`,
+  );
+}
+
+export function isCompletePreviewDirectory(directory, shotNumber) {
+  const previewManifestPath = join(directory, 'preview-manifest.json');
+  const propsPath = join(directory, 'scene-v2-candidate-props.json');
+  const publicDirectory = join(directory, 'public');
+  if (
+    !existsSync(previewManifestPath) ||
+    !existsSync(propsPath) ||
+    !existsSync(publicDirectory)
+  ) {
+    return false;
+  }
+
+  try {
+    const previewManifest = JSON.parse(readFileSync(previewManifestPath, 'utf8'));
+    const props = JSON.parse(readFileSync(propsPath, 'utf8'));
+    return (
+      previewManifest.sourceShotNumber === shotNumber &&
+      Array.isArray(props.scene?.shots) &&
+      props.scene.shots.length > 0
+    );
+  } catch {
+    return false;
+  }
 }
 
 function safeName(value) {
