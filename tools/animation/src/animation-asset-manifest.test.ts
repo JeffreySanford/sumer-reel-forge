@@ -163,8 +163,20 @@ test('approved Shot 3 activation layers switch to layered mode and wake matching
   const manifest = await loadManifest();
   const scene = await loadScene();
   const shot = requireShot(manifest, 'enki-at-the-helm');
+  const approvedChecksums = new Map(
+    shot.layers
+      .filter((layer) => shot.activationPolicy.requiredLayerIds.includes(layer.id))
+      .map((layer) => [layer.id, layer.sha256] as const),
+  );
+
   setRequiredLayerState(shot, 'planned');
   setRequiredLayerState(shot, 'approved');
+  for (const layer of shot.layers) {
+    if (!shot.activationPolicy.requiredLayerIds.includes(layer.id)) continue;
+    const checksum = approvedChecksums.get(layer.id);
+    assert.ok(checksum, `Missing original checksum for ${layer.id}.`);
+    layer.sha256 = checksum;
+  }
 
   const resolution = resolveSceneV2Assets(scene, manifest);
   assert.equal(resolution.mode, 'layered');
