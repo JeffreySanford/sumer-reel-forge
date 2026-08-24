@@ -65,6 +65,10 @@ const reviewEntrypoints = [
   'tools/scripts/promote-reviewed-shot.mjs',
   'tools/scripts/audit-animation-reel.mjs',
 ];
+const renderEntrypoints = [
+  'tools/scripts/render-animation-reel1.mjs',
+  'tools/scripts/render-animation-proof.mjs',
+];
 
 const invalidStartupImports = await findDotenvBootstrapImports(startupEntrypoints);
 if (invalidStartupImports.length > 0) {
@@ -90,6 +94,18 @@ if (invalidReviewImports.length > 0) {
   process.exit(1);
 }
 
+const invalidRenderImports = await findDotenvBootstrapImports(renderEntrypoints);
+if (invalidRenderImports.length > 0) {
+  console.error('Workspace animation render runtime consistency check failed.');
+  console.error(
+    'Reel 1 render entrypoints must use Node native .env loading and must not depend on undeclared dotenv/config bootstrap imports:',
+  );
+  for (const path of invalidRenderImports) {
+    console.error(`  - ${path}`);
+  }
+  process.exit(1);
+}
+
 console.log(
   `Workspace dependency consistency OK: ${configuredPlugins.length} Nx plugins resolve to explicitly declared packages.`,
 );
@@ -101,6 +117,9 @@ console.log(
 );
 console.log(
   `Workspace animation review consistency OK: ${reviewEntrypoints.length} review/audit/promotion entrypoints are dependency-free for .env loading.`,
+);
+console.log(
+  `Workspace animation render consistency OK: ${renderEntrypoints.length} Reel 1 render entrypoints are dependency-free for .env loading.`,
 );
 
 async function findDotenvBootstrapImports(paths) {
