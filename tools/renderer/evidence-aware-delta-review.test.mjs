@@ -10,6 +10,7 @@ import {
 import { reconcileAiWithMotionState } from '../scripts/reconcile-animation-review-evidence.mjs';
 
 const materialQa = {
+  sourceShotNumber: 5,
   targets: [
     {
       layerId: 'shot05-welcome-water-v1',
@@ -66,6 +67,21 @@ test('terminal water motion state proves broad ripple is off while refraction re
   assert.equal(terminal.water.broadRippleWeight, 0);
   assert.equal(terminal.water.terminalRippleFade, 0);
   assert.equal(terminal.water.refractionWeight, 0.55);
+});
+
+test('Shot 5 contained-water runtime state is not projected onto older water benchmarks', () => {
+  const states = buildMaterialMotionStateEvidence({
+    ...materialQa,
+    sourceShotNumber: 3,
+    targets: [
+      {
+        ...materialQa.targets[0],
+        layerId: 'shot03-water-v1',
+      },
+    ],
+  });
+  assert.equal(states.length, 3);
+  assert.equal(states.some((state) => state.water), false);
 });
 
 test('literal repeating broad-ripple complaint at terminal frame becomes a low perceptual advisory', () => {
