@@ -13,7 +13,7 @@
     "animation:benchmark:reel1": "tsx tools/scripts/animation-benchmark-reel1.ts",
     "animation:smoke:reel1": "tsx tools/scripts/animation-smoke-reel1-shared.ts",
     "animation:smoke:reel1:core": "tsx tools/scripts/animation-smoke-reel1.ts",
-    "animation:shot:review": "node tools/scripts/review-animation-shot.mjs",
+    "animation:shot:review": "node tools/scripts/review-animation-shot-runtime.mjs",
     "animation:shot:material-qa": "node tools/scripts/verify-material-local-motion.mjs",
     "animation:shot:promotion-plan": "node tools/scripts/promote-layered-shot-candidates.mjs",
     "animation:shot:promote": "node tools/scripts/promote-layered-shot-candidates.mjs --apply",
