@@ -1,5 +1,5 @@
-import 'dotenv/config';
 import { spawn } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { mkdir, readFile } from 'node:fs/promises';
 import { basename, join, resolve } from 'node:path';
 import {
@@ -10,6 +10,8 @@ import {
 } from '../renderer/artifact-utils.mjs';
 import { probeDurationSeconds } from '../renderer/ffmpeg-adapter.mjs';
 import { loadRendererConfig } from '../renderer/renderer-config.mjs';
+
+loadLocalEnvFile();
 
 const config = loadRendererConfig();
 const options = parseArgs(process.argv.slice(2));
@@ -109,6 +111,20 @@ await writeJson(manifestPath, {
 
 console.log(`Rendered animation output: ${outputPath}`);
 console.log(`Wrote manifest: ${manifestPath}`);
+
+function loadLocalEnvFile() {
+  const envPath = resolve('.env');
+  if (!existsSync(envPath)) return;
+  if (typeof process.loadEnvFile !== 'function') {
+    throw new Error(
+      'Native .env loading requires Node 20.12 or newer. This workspace targets Node 22.',
+    );
+  }
+
+  const inheritedEnvironment = { ...process.env };
+  process.loadEnvFile(envPath);
+  Object.assign(process.env, inheritedEnvironment);
+}
 
 function parseArgs(args) {
   const parsed = {};
