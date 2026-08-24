@@ -92,6 +92,21 @@ export interface SceneV2AssetResolution {
   warnings: string[];
 }
 
+export function isExactEditorialSourceLayer(
+  shot: AnimationAssetManifestShot,
+  layer: AnimationAssetManifestLayer,
+): boolean {
+  return (
+    layer.source.type === 'reference-state' &&
+    Boolean(layer.path) &&
+    layer.path === shot.sourceFrame &&
+    layer.source.from === shot.sourceFrame &&
+    layer.material === 'flattened-editorial-art' &&
+    layer.hasAlpha === false &&
+    layer.motionPresets.length === 0
+  );
+}
+
 export function validateAnimationAssetManifest(
   manifest: AnimationAssetManifest,
 ): AnimationAssetManifestValidation {
@@ -117,8 +132,9 @@ export function validateAnimationAssetManifest(
       errors.push(`Shot ${shot.shotId} requires at least one activation layer.`);
     }
 
+    const requiredLayerIds = new Set(shot.activationPolicy.requiredLayerIds);
     const shotLayerIds = new Set(shot.layers.map((layer) => layer.id));
-    for (const requiredId of shot.activationPolicy.requiredLayerIds) {
+    for (const requiredId of requiredLayerIds) {
       if (!shotLayerIds.has(requiredId)) {
         errors.push(
           `Shot ${shot.shotId} activation requires missing layer ${requiredId}.`,
@@ -145,6 +161,15 @@ export function validateAnimationAssetManifest(
         if (!layer.path) errors.push(`Approved layer ${layer.id} requires a path.`);
         if (layer.review.status !== 'approved') {
           errors.push(`Approved layer ${layer.id} requires approved human review.`);
+        }
+        if (
+          requiredLayerIds.has(layer.id) &&
+          !layer.sha256 &&
+          !isExactEditorialSourceLayer(shot, layer)
+        ) {
+          errors.push(
+            `Approved required layer ${layer.id} requires SHA-256 provenance unless it is an exact immutable editorial source reference.`,
+          );
         }
       }
       if (layer.state === 'ready' && layer.review.status === 'approved') {
