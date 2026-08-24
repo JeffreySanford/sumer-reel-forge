@@ -9,6 +9,11 @@ const calibrationLibrary = {
       id: 'contained-water-shot05-v1',
       motionPreset: 'waterPulse',
       material: 'water',
+      appliesTo: {
+        scope: 'benchmark-exact',
+        sourceShotNumbers: [5],
+        layerIds: ['shot05-welcome-water-v1'],
+      },
       productionFloor: {
         minMeanDiff: 1.0,
         minChangedRatio: 0.05,
@@ -22,6 +27,7 @@ const calibrationLibrary = {
 function materialQa(comparisons, overrides = {}) {
   return {
     applicable: true,
+    sourceShotNumber: 5,
     thresholds: { pixelChangeThreshold: 2 },
     targets: [
       {
@@ -70,6 +76,7 @@ test('uncalibrated materials remain advisory instead of inheriting water thresho
   const result = evaluateMaterialCalibrations(
     {
       applicable: true,
+      sourceShotNumber: 8,
       thresholds: { pixelChangeThreshold: 2 },
       targets: [
         {
@@ -87,4 +94,62 @@ test('uncalibrated materials remain advisory instead of inheriting water thresho
   assert.equal(result.calibratedTargets.length, 0);
   assert.equal(result.uncalibratedTargets.length, 1);
   assert.equal(result.uncalibratedTargets[0].blocking, false);
+});
+
+test('Shot 5 contained-water floor does not leak into older water benchmarks', () => {
+  const result = evaluateMaterialCalibrations(
+    {
+      applicable: true,
+      sourceShotNumber: 3,
+      thresholds: { pixelChangeThreshold: 2 },
+      targets: [
+        {
+          layerId: 'shot03-water-v1',
+          material: 'water',
+          activePresets: ['waterPulse'],
+          comparisons: [weakBeat, weakBeat, weakBeat, weakBeat, weakBeat],
+        },
+        {
+          layerId: 'shot04-mid-current-v1',
+          material: 'water',
+          activePresets: ['waterPulse', 'numinousDrift'],
+          comparisons: [weakBeat, weakBeat, weakBeat, weakBeat, weakBeat],
+        },
+      ],
+    },
+    calibrationLibrary,
+  );
+
+  assert.equal(result.pass, true);
+  assert.equal(result.calibratedTargets.length, 0);
+  assert.equal(result.uncalibratedTargets.length, 2);
+  assert.equal(result.uncalibratedTargets.every((target) => target.blocking === false), true);
+});
+
+test('an unscoped calibration is ignored rather than becoming a global gate', () => {
+  const unsafeLibrary = {
+    schemaVersion: 1,
+    calibrations: [
+      {
+        id: 'unsafe-water-floor',
+        motionPreset: 'waterPulse',
+        material: 'water',
+        productionFloor: {
+          minMeanDiff: 1.0,
+          minChangedRatio: 0.05,
+          minPassingRatio: 0.6,
+          pixelChangeThreshold: 2,
+        },
+      },
+    ],
+  };
+
+  const result = evaluateMaterialCalibrations(
+    materialQa([weakBeat, weakBeat, weakBeat, weakBeat, weakBeat]),
+    unsafeLibrary,
+  );
+
+  assert.equal(result.pass, true);
+  assert.equal(result.calibratedTargets.length, 0);
+  assert.equal(result.uncalibratedTargets.length, 1);
 });
