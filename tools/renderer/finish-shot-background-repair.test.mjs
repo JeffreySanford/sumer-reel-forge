@@ -6,6 +6,9 @@ import test from 'node:test';
 
 const repairPath = resolve('tools/scripts/repair-background-from-overlay.mjs');
 const verifyPath = resolve('tools/scripts/verify-background-repair-candidate.mjs');
+const candidatePreviewPath = resolve(
+  'tools/scripts/render-layered-candidate-scene-v2.ts',
+);
 
 test('finish-shot background repair scripts are syntactically valid', () => {
   for (const path of [repairPath, verifyPath]) {
@@ -39,4 +42,27 @@ test('finish-shot repair QA checks outside preservation and inside reconstructio
   assert.match(source, /inside-reconstruction/);
   assert.match(source, /minMaskRatio: 0\.001/);
   assert.match(source, /Human review is still required before promotion/);
+});
+
+test('finish-shot layered candidate renderer has no undeclared dotenv dependency', async () => {
+  const source = await readFile(candidatePreviewPath, 'utf8');
+  assert.doesNotMatch(source, /dotenv\/config/);
+  assert.match(source, /resolveQaPassedCandidate/);
+  assert.match(source, /Audition the exact QA-passed required candidates/);
+});
+
+test('finish-shot package commands expose repair and candidate preview lanes', async () => {
+  const packageJson = JSON.parse(await readFile(resolve('package.json'), 'utf8'));
+  const scripts = packageJson.scripts ?? {};
+
+  assert.match(scripts['animation:shot6:background:generate'] ?? '', /shot=6/);
+  assert.match(scripts['animation:shot6:candidate-preview'] ?? '', /--shot=6/);
+  assert.match(scripts['animation:shot6:candidate-verify'] ?? '', /--shot=6/);
+
+  assert.match(scripts['animation:shot7:candidate-preview'] ?? '', /--shot=7/);
+  assert.match(scripts['animation:shot7:candidate-verify'] ?? '', /--shot=7/);
+
+  assert.match(scripts['animation:shot8:background:generate'] ?? '', /shot=8/);
+  assert.match(scripts['animation:shot8:candidate-preview'] ?? '', /--shot=8/);
+  assert.match(scripts['animation:shot8:candidate-verify'] ?? '', /--shot=8/);
 });
