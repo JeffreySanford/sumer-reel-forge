@@ -1,4 +1,3 @@
-import 'dotenv/config';
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, statSync } from 'node:fs';
 import net from 'node:net';
@@ -7,6 +6,9 @@ import { fileURLToPath } from 'node:url';
 
 const scriptPath = fileURLToPath(import.meta.url);
 const root = dirname(dirname(dirname(scriptPath)));
+
+loadLocalEnvFile();
+
 const pnpmCommand = 'pnpm';
 const dockerCommand = process.platform === 'win32' ? 'docker.exe' : 'docker';
 const infrastructureServices = ['postgres'];
@@ -19,6 +21,20 @@ const databasePort = Number(databaseUrl.port || 5432);
 const children = new Set();
 let stopping = false;
 let stdinRawModeEnabled = false;
+
+function loadLocalEnvFile() {
+  const envPath = join(root, '.env');
+  if (!existsSync(envPath)) return;
+  if (typeof process.loadEnvFile !== 'function') {
+    throw new Error(
+      'Native .env loading requires Node 20.12 or newer. This workspace targets Node 22.',
+    );
+  }
+
+  const inheritedEnvironment = { ...process.env };
+  process.loadEnvFile(envPath);
+  Object.assign(process.env, inheritedEnvironment);
+}
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
