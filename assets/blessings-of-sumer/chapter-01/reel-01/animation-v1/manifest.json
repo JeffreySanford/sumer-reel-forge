@@ -10,6 +10,108 @@
   "sourceEditorialVersion": "editorial-v1",
   "shots": [
     {
+      "shotId": "black-water-before-dawn",
+      "sourceShotNumber": 1,
+      "sourceFrame": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-01.png",
+      "status": "approved",
+      "fallback": {
+        "assetId": "shot01-editorial-v1-flat",
+        "assetPath": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-01.png"
+      },
+      "overscan": {
+        "leftPercent": 6,
+        "rightPercent": 6,
+        "topPercent": 6,
+        "bottomPercent": 6
+      },
+      "activationPolicy": {
+        "requiredLayerIds": [
+          "shot01-editorial-source-v1"
+        ],
+        "enableDeferredPerformanceWhenApproved": false
+      },
+      "layers": [
+        {
+          "id": "shot01-editorial-source-v1",
+          "path": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-01.png",
+          "role": "background",
+          "material": "flattened-editorial-art",
+          "depthDefault": 0.5,
+          "anchor": "center",
+          "transform": {
+            "x": 0,
+            "y": 0,
+            "scale": 1
+          },
+          "motionPresets": [],
+          "state": "approved",
+          "hasAlpha": false,
+          "source": {
+            "type": "reference-state",
+            "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-01.png"
+          },
+          "review": {
+            "status": "approved",
+            "notes": [
+              "Legacy editorial-v1 source-backed retrofit. No new derived imagery is introduced; the existing human-approved editorial source remains authoritative.",
+              "Modern retrospective audit is required before any new Shot 1 animation treatment replaces this conservative camera-only baseline."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "shotId": "stag-of-the-absu-coastline",
+      "sourceShotNumber": 2,
+      "sourceFrame": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-02.png",
+      "status": "approved",
+      "fallback": {
+        "assetId": "shot02-editorial-v1-flat",
+        "assetPath": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-02.png"
+      },
+      "overscan": {
+        "leftPercent": 8,
+        "rightPercent": 8,
+        "topPercent": 6,
+        "bottomPercent": 6
+      },
+      "activationPolicy": {
+        "requiredLayerIds": [
+          "shot02-editorial-source-v1"
+        ],
+        "enableDeferredPerformanceWhenApproved": false
+      },
+      "layers": [
+        {
+          "id": "shot02-editorial-source-v1",
+          "path": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-02.png",
+          "role": "background",
+          "material": "flattened-editorial-art",
+          "depthDefault": 0.5,
+          "anchor": "center",
+          "transform": {
+            "x": 0,
+            "y": 0,
+            "scale": 1
+          },
+          "motionPresets": [],
+          "state": "approved",
+          "hasAlpha": false,
+          "source": {
+            "type": "reference-state",
+            "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-02.png"
+          },
+          "review": {
+            "status": "approved",
+            "notes": [
+              "Legacy editorial-v1 source-backed retrofit. No new derived imagery is introduced; the existing human-approved editorial source remains authoritative.",
+              "Modern retrospective audit is required before any new Shot 2 layer extraction or material animation replaces this conservative camera-only baseline."
+            ]
+          }
+        }
+      ]
+    },
+    {
       "shotId": "enki-at-the-helm",
       "sourceShotNumber": 3,
       "sourceFrame": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-03.png",
