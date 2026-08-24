@@ -95,10 +95,8 @@ export function evaluateMaterialCalibrations(materialQa, calibrationLibrary) {
   const uncalibratedTargets = [];
 
   for (const target of materialQa.targets ?? []) {
-    const calibration = calibrations.find(
-      (entry) =>
-        entry.material === target.material &&
-        (target.activePresets ?? []).includes(entry.motionPreset),
+    const calibration = calibrations.find((entry) =>
+      calibrationAppliesToTarget(entry, target, materialQa),
     );
 
     if (!calibration) {
@@ -107,7 +105,8 @@ export function evaluateMaterialCalibrations(materialQa, calibrationLibrary) {
         material: target.material,
         activePresets: target.activePresets ?? [],
         blocking: false,
-        reason: 'No human-approved material QA calibration exists yet.',
+        reason:
+          'No human-approved material QA calibration applies to this shot/layer scope yet.',
       });
       continue;
     }
@@ -134,6 +133,7 @@ export function evaluateMaterialCalibrations(materialQa, calibrationLibrary) {
       material: target.material,
       activePresets: target.activePresets ?? [],
       calibrationId: calibration.id,
+      calibrationScope: calibration.appliesTo ?? null,
       benchmark: calibration.benchmark,
       productionFloor: floor,
       passingFrames,
@@ -150,6 +150,42 @@ export function evaluateMaterialCalibrations(materialQa, calibrationLibrary) {
     calibratedTargets,
     uncalibratedTargets,
   };
+}
+
+function calibrationAppliesToTarget(entry, target, materialQa) {
+  if (
+    entry?.material !== target?.material ||
+    !(target?.activePresets ?? []).includes(entry?.motionPreset)
+  ) {
+    return false;
+  }
+
+  const scope = entry?.appliesTo;
+  if (!scope || typeof scope !== 'object' || Array.isArray(scope)) return false;
+
+  const sourceShotNumbers = Array.isArray(scope.sourceShotNumbers)
+    ? scope.sourceShotNumbers.map(Number)
+    : [];
+  const layerIds = Array.isArray(scope.layerIds) ? scope.layerIds : [];
+  const shotIds = Array.isArray(scope.shotIds) ? scope.shotIds : [];
+  const roles = Array.isArray(scope.roles) ? scope.roles : [];
+  const hasExplicitConstraint =
+    sourceShotNumbers.length > 0 ||
+    layerIds.length > 0 ||
+    shotIds.length > 0 ||
+    roles.length > 0;
+
+  if (!hasExplicitConstraint) return false;
+  if (
+    sourceShotNumbers.length &&
+    !sourceShotNumbers.includes(Number(materialQa?.sourceShotNumber))
+  ) {
+    return false;
+  }
+  if (layerIds.length && !layerIds.includes(target.layerId)) return false;
+  if (shotIds.length && !shotIds.includes(target.shotId)) return false;
+  if (roles.length && !roles.includes(target.role)) return false;
+  return true;
 }
 
 async function main() {
