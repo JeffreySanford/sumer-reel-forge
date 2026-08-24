@@ -125,7 +125,7 @@ async function main(): Promise<void> {
         ...layer,
         path: stagedRelativePath,
         state: 'approved',
-        sha256: `sha256:${candidate.checksum}`,
+        sha256: candidate.checksum,
         review: {
           status: 'approved',
           notes: [
@@ -386,7 +386,7 @@ async function verifyCanonicalChecksum(layer: any, path: string): Promise<void> 
   if (!layer.sha256) {
     throw new Error(`Approved canonical layer ${layer.id} is missing SHA-256 provenance.`);
   }
-  const expected = String(layer.sha256).replace(/^sha256:/, '').toLowerCase();
+  const expected = String(layer.sha256).toLowerCase();
   const actual = (await sha256(path)).toLowerCase();
   if (actual !== expected) {
     throw new Error(
