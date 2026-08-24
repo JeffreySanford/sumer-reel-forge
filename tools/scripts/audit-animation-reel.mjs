@@ -23,6 +23,7 @@ if (!requestedShots.length) {
 
 console.log('Reel animation retrospective audit');
 console.log('Policy: read-only review. Existing human approvals are never downgraded or mutated.');
+console.log('Approved shots are restaged from current canonical animation-v1 assets before review.');
 console.log(`Shots: ${requestedShots.join(', ')}`);
 console.log('');
 
@@ -42,40 +43,89 @@ for (const shotNumber of requestedShots) {
   }
 
   console.log(`=== Shot ${shotNumber} · ${manifestShot.shotId} ===`);
+  const previewRoot = resolve(
+    PREVIEW_BASE,
+    `shot${String(shotNumber).padStart(2, '0')}-layered-preview`,
+  );
+
+  let previewDirectory = null;
+  let previewSource = null;
+
+  if (manifestShot.status === 'approved') {
+    console.log(
+      `[audit] Staging Shot ${shotNumber} from approved canonical assets with checksum provenance...`,
+    );
+    const stagingExit = await runProcess('pnpm', [
+      'exec',
+      'tsx',
+      'tools/scripts/render-approved-shot-audit-preview.ts',
+      `--shot=${shotNumber}`,
+    ]);
+    if (stagingExit !== 0) {
+      results.push({
+        sourceShotNumber: shotNumber,
+        shotId: manifestShot.shotId,
+        priorManifestStatus: manifestShot.status,
+        status: 'CANONICAL_STAGING_FAILED',
+        stagingExitCode: stagingExit,
+        priorApprovalPreserved: true,
+      });
+      console.log(
+        `[review] Shot ${shotNumber}: canonical read-only staging failed; prior approval remains unchanged.`,
+      );
+      console.log('');
+      continue;
+    }
+    try {
+      previewDirectory = newestCompletePreviewDirectory(previewRoot, shotNumber);
+      previewSource = 'canonical-approved';
+    } catch (error) {
+      results.push({
+        sourceShotNumber: shotNumber,
+        shotId: manifestShot.shotId,
+        priorManifestStatus: manifestShot.status,
+        status: 'CANONICAL_STAGING_INCOMPLETE',
+        reason: errorMessage(error),
+        priorApprovalPreserved: true,
+      });
+      console.log(
+        `[review] Shot ${shotNumber}: canonical staging produced no complete modern preview evidence.`,
+      );
+      console.log('');
+      continue;
+    }
+  } else {
+    try {
+      previewDirectory = newestCompletePreviewDirectory(previewRoot, shotNumber);
+      previewSource = 'existing-modern-preview';
+    } catch (error) {
+      results.push({
+        sourceShotNumber: shotNumber,
+        shotId: manifestShot.shotId,
+        priorManifestStatus: manifestShot.status,
+        status: 'SKIPPED_NO_MODERN_PREVIEW',
+        reason: errorMessage(error),
+        priorApprovalPreserved: true,
+      });
+      console.log(`[review] Shot ${shotNumber}: no compatible modern preview evidence.`);
+      console.log('');
+      continue;
+    }
+  }
+
   const args = [
     resolve('tools/scripts/review-animation-shot-runtime.mjs'),
     `--shot=${shotNumber}`,
+    `--preview-dir=${previewDirectory}`,
     '--skip-render',
   ];
   if (options.requireAi) args.push('--require-ai');
 
-  const exitCode = await runNode(args);
-  let review = null;
-  let previewDirectory = null;
-  try {
-    const previewRoot = resolve(
-      PREVIEW_BASE,
-      `shot${String(shotNumber).padStart(2, '0')}-layered-preview`,
-    );
-    previewDirectory = newestCompletePreviewDirectory(previewRoot, shotNumber);
-    const reviewPath = join(previewDirectory, 'shot-review.json');
-    if (existsSync(reviewPath)) {
-      review = JSON.parse(readFileSync(reviewPath, 'utf8'));
-    }
-  } catch (error) {
-    results.push({
-      sourceShotNumber: shotNumber,
-      shotId: manifestShot.shotId,
-      priorManifestStatus: manifestShot.status,
-      status: 'SKIPPED_NO_MODERN_PREVIEW',
-      exitCode,
-      reason: errorMessage(error),
-      priorApprovalPreserved: true,
-    });
-    console.log(`[review] Shot ${shotNumber}: no compatible modern preview evidence.`);
-    console.log('');
-    continue;
-  }
+  const exitCode = await runProcess(process.execPath, args);
+  const reviewPath = join(previewDirectory, 'shot-review.json');
+  const review = existsSync(reviewPath)
+    ? JSON.parse(readFileSync(reviewPath, 'utf8'))
+    : null;
 
   results.push({
     sourceShotNumber: shotNumber,
@@ -83,14 +133,15 @@ for (const shotNumber of requestedShots) {
     priorManifestStatus: manifestShot.status,
     exitCode,
     previewDirectory,
-    auditFinalState: review?.finalState ?? 'UNKNOWN',
+    previewSource,
+    auditFinalState: review?.finalState ?? (exitCode === 1 ? 'REVIEW_ERROR' : 'UNKNOWN'),
     deterministicPass: review?.deterministic?.pass ?? null,
     aiStatus: review?.ai?.status ?? null,
     aiRawStatus: review?.ai?.rawStatus ?? null,
     priorApprovalPreserved: true,
   });
   console.log(
-    `[audit] Shot ${shotNumber}: ${review?.finalState ?? 'UNKNOWN'} · deterministic ${review?.deterministic?.pass === true ? 'PASS' : 'REVIEW'} · AI ${review?.ai?.status ?? 'unknown'}`,
+    `[audit] Shot ${shotNumber}: ${review?.finalState ?? 'UNKNOWN'} · deterministic ${review?.deterministic?.pass === true ? 'PASS' : 'REVIEW'} · AI ${review?.ai?.status ?? 'unknown'} · source ${previewSource}`,
   );
   console.log('');
 }
@@ -99,7 +150,7 @@ mkdirSync(AUDIT_ROOT, { recursive: true });
 const stamp = new Date().toISOString().replace(/[:.]/g, '-');
 const reportPath = join(AUDIT_ROOT, `reel-01-retrospective-${stamp}.json`);
 const report = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   type: 'animation-reel-retrospective-audit',
   generatedAt: new Date().toISOString(),
   manifestPath: MANIFEST_PATH,
@@ -107,8 +158,12 @@ const report = {
   policy: {
     priorHumanApprovalPreserved: true,
     automaticPromotionAllowed: false,
+    automaticDowngradeAllowed: false,
     manifestMutationAllowed: false,
     regenerationAllowed: false,
+    approvedCanonicalRestagingAllowed: true,
+    canonicalRestagingMeaning:
+      'Approved files may be copied into tmp and rendered for current QA; the source animation-v1 files and approval records remain immutable.',
   },
   results,
 };
@@ -117,7 +172,7 @@ writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
 console.log('Audit summary');
 for (const result of results) {
   console.log(
-    `  Shot ${result.sourceShotNumber}: ${result.auditFinalState ?? result.status} · prior approval preserved`,
+    `  Shot ${result.sourceShotNumber}: ${result.auditFinalState ?? result.status} · prior approval preserved${result.previewSource ? ` · ${result.previewSource}` : ''}`,
   );
 }
 console.log(`Report: ${reportPath}`);
@@ -125,6 +180,8 @@ console.log(`Report: ${reportPath}`);
 if (
   results.some(
     (result) =>
+      result.status === 'CANONICAL_STAGING_FAILED' ||
+      result.status === 'CANONICAL_STAGING_INCOMPLETE' ||
       result.exitCode === 1 ||
       result.auditFinalState === 'DETERMINISTIC_FAIL',
   )
@@ -132,18 +189,19 @@ if (
   process.exitCode = 2;
 }
 
-async function runNode(args) {
+async function runProcess(command, args) {
   return await new Promise((resolvePromise, rejectPromise) => {
-    const child = spawn(process.execPath, args, {
+    const child = spawn(command, args, {
       cwd: resolve('.'),
       env: process.env,
+      shell: command === 'pnpm' && process.platform === 'win32',
       stdio: 'inherit',
       windowsHide: true,
     });
     child.once('error', rejectPromise);
     child.once('exit', (code, signal) => {
       if (signal) {
-        console.error(`[audit] Child review exited with signal ${signal}.`);
+        console.error(`[audit] Child process exited with signal ${signal}.`);
         resolvePromise(1);
         return;
       }
