@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 2,
+  "sceneId": "chapter-01-reel-01-shot-06-values-benchmark-v1",
+  "projectSlug": "blessings-of-sumer",
+  "chapterNumber": 1,
+  "reelId": "resolve-from-studio",
+  "episodeNumber": 1,
+  "visualBible": "blessings-of-sumer-v1",
+  "styleBible": "reel-01-animation-style-v1",
+  "assetVersion": "editorial-v1-flat-benchmark",
+  "assetManifestPath": "blessings-of-sumer/chapter-01/reel-01/animation-v1/manifest.json",
+  "assetStrategy": "prefer-animation-manifest",
+  "width": 1080,
+  "height": 1920,
+  "fps": 30,
+  "durationFrames": 240,
+  "shots": [
+    {
+      "id": "water-bread-truth-justice-freedom",
+      "sourceShotNumber": 6,
+      "sourceStartFrame": 1080,
+      "startFrame": 0,
+      "durationFrames": 240,
+      "emotionalPurpose": "Expand practical hospitality into civic purpose without becoming abstract spectacle: water and bread remain tangible while truth, justice, and freedom read through the source composition and narration.",
+      "eyeTarget": "water-bread-tablet-symbols",
+      "stillnessAnchor": "central-practical-symbol-cluster",
+      "camera": {
+        "preset": "slowPush",
+        "scaleFrom": 1,
+        "scaleTo": 1.018,
+        "xFrom": 0,
+        "xTo": -4,
+        "yFrom": 0,
+        "yTo": -5,
+        "rotationFrom": 0,
+        "rotationTo": 0,
+        "easing": "cinematicSlow",
+        "settleFromProgress": 0.9
+      },
+      "layers": [
+        {
+          "id": "shot06-editorial-base",
+          "assetId": "shot06-editorial-v1-flat",
+          "assetPath": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-06.png",
+          "role": "background",
+          "material": "flattened-editorial-symbolic-art",
+          "depth": 0.5,
+          "anchor": "center",
+          "transform": {
+            "x": 0,
+            "y": 0,
+            "scale": 1
+          },
+          "motionPresets": [],
+          "required": true
+        }
+      ],
+      "performance": [],
+      "atmosphere": [],
+      "lighting": [
+        {
+          "id": "values-warmth",
+          "preset": "cinematicSlow",
+          "intensityFrom": 0.025,
+          "intensityTo": 0.04
+        }
+      ],
+      "captionPolicy": {
+        "safeZone": "lower-middle",
+        "avoidTargets": ["water-bread-tablet-symbols"],
+        "motion": "stable",
+        "maxLines": 2
+      },
+      "transitionIn": "shot-05-to-06-practical-object-match",
+      "transitionOut": "shot-06-to-07-horizon-lift"
+    }
+  ],
+  "transitions": [],
+  "reviewMarkers": [
+    { "id": "practical-opening", "progress": 0 },
+    { "id": "water-bread", "progress": 0.25 },
+    { "id": "values-center", "progress": 0.5 },
+    { "id": "civic-purpose", "progress": 0.75 },
+    { "id": "horizon-handoff", "progress": 1 }
+  ],
+  "reviewPolicy": {
+    "scorecard": "reel-01-animation-review-v1",
+    "humanApprovalRequired": true,
+    "minimumCategory": 4,
+    "publishabilityMinimum": 5,
+    "hardFailsBlockApproval": true
+  },
+  "sourcePolicy": {
+    "storyMutationAllowed": false,
+    "narrationSource": "reel-production-record",
+    "captionSource": "reel-production-record",
+    "visualSource": "versioned-animation-asset-manifest"
+  }
+}
