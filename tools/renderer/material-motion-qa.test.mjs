@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import test from 'node:test';
 import {
   evaluateMaterialDifferential,
+  newestCompletePreviewDirectory,
   selectMaterialTargets,
 } from '../scripts/verify-material-local-motion.mjs';
 
@@ -85,4 +89,25 @@ test('material-local QA does not accept a single transient beat as meaningful mo
   assert.equal(result.requiredPassingFrames, 2);
   assert.equal(result.passingFrames, 1);
   assert.equal(result.pass, false);
+});
+
+test('material-local QA skips a newer incomplete preview and selects the newest complete preview', () => {
+  const root = mkdtempSync(join(tmpdir(), 'sumer-material-qa-preview-'));
+  const complete = join(root, '2026-08-23T23-02-30-429Z');
+  const incomplete = join(root, '2026-08-23T23-27-59-250Z');
+
+  mkdirSync(join(complete, 'public'), { recursive: true });
+  mkdirSync(incomplete, { recursive: true });
+  writeFileSync(
+    join(complete, 'preview-manifest.json'),
+    JSON.stringify({ sourceShotNumber: 5 }),
+    'utf8',
+  );
+  writeFileSync(
+    join(complete, 'scene-v2-candidate-props.json'),
+    JSON.stringify({ scene: { shots: [{ shotId: 'traveler-shrine-hospitality' }] } }),
+    'utf8',
+  );
+
+  assert.equal(newestCompletePreviewDirectory(root, 5), complete);
 });
