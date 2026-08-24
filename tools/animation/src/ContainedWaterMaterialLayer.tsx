@@ -15,10 +15,18 @@ export function ContainedWaterMaterialLayer({
 }) {
   const phase = frame / fps;
   const source = staticFile(layer.assetPath);
-  const settle =
+  const refractionSettle =
     progress > 0.88
       ? Math.max(0.55, 1 - (progress - 0.88) / 0.12)
       : 1;
+
+  // The broad readable crest is a perceptual accent, not the material motion
+  // itself. Fade that accent completely during the terminal settle so the last
+  // review beat cannot collapse a clipped ellipse into a bright diagonal band
+  // against the basin rim. Source-pixel refraction remains alive underneath.
+  const terminalRippleFade =
+    progress > 0.9 ? Math.max(0, 1 - (progress - 0.9) / 0.1) : 1;
+  const readableRippleSettle = refractionSettle * terminalRippleFade;
 
   const filterA = `${safeSvgId(layer.id)}-water-refraction-a`;
   const filterB = `${safeSvgId(layer.id)}-water-refraction-b`;
@@ -26,9 +34,9 @@ export function ContainedWaterMaterialLayer({
   // Fine material motion: actual source pixels refract inside the fixed basin mask.
   const displacementA =
     (20 + Math.sin(phase * 0.73 + 0.4) * 5 + Math.sin(phase * 0.29) * 2.5) *
-    settle;
+    refractionSettle;
   const displacementB =
-    (11 + Math.cos(phase * 0.51 + 1.2) * 3.5) * settle;
+    (11 + Math.cos(phase * 0.51 + 1.2) * 3.5) * refractionSettle;
 
   const frequencyAX = 0.0095 + Math.sin(phase * 0.31 + 0.2) * 0.0018;
   const frequencyAY = 0.021 + Math.cos(phase * 0.27 + 0.8) * 0.0028;
@@ -38,10 +46,10 @@ export function ContainedWaterMaterialLayer({
   const driftAX =
     (Math.sin(phase * 0.83 + 0.25) * 2.8 +
       Math.sin(phase * 0.34 + 1.4) * 1.2) *
-    settle;
-  const driftAY = Math.cos(phase * 0.57 + 0.6) * 1.4 * settle;
-  const driftBX = Math.cos(phase * 0.48 + 1.3) * 2.1 * settle;
-  const driftBY = Math.sin(phase * 0.39 + 0.4) * 1.1 * settle;
+    refractionSettle;
+  const driftAY = Math.cos(phase * 0.57 + 0.6) * 1.4 * refractionSettle;
+  const driftBX = Math.cos(phase * 0.48 + 1.3) * 2.1 * refractionSettle;
+  const driftBY = Math.sin(phase * 0.39 + 0.4) * 1.1 * refractionSettle;
 
   const maskStyle: React.CSSProperties = {
     position: 'absolute',
@@ -167,10 +175,11 @@ export function ContainedWaterMaterialLayer({
       </div>
 
       {/*
-        Readable low-frequency motion. The ripple envelope is deliberately
-        flatter and lower than the first benchmark pass. It remains inside a
-        slightly contracted basin-alpha mask, so no crest can bleed onto the
-        upper stone rim. The previous diagonal glint bands were removed.
+        Readable low-frequency motion. The ripple envelope remains inside a
+        slightly contracted basin-alpha mask and fades out completely during
+        the terminal settle. Fine refraction continues, so the water stays
+        alive without leaving a clipped bright crest at the final review beat.
+        The previous diagonal glint bands remain removed.
       */}
       <div
         style={safeRippleMaskStyle}
@@ -179,7 +188,7 @@ export function ContainedWaterMaterialLayer({
       >
         {rippleOrigins.map((offset, index) => {
           const cycle = positiveModulo(phase * 0.22 + offset, 1);
-          const envelope = Math.sin(Math.PI * cycle) * settle;
+          const envelope = Math.sin(Math.PI * cycle) * readableRippleSettle;
           const scaleX = 0.42 + cycle * 2.75;
           const scaleY = 0.34 + cycle * 1.38;
           const opacity = envelope * (index === 0 ? 0.5 : 0.4);
