@@ -2,244 +2,301 @@
 
 ## Objective
 
-Build a cinematic illustrated animation path that can produce publication-quality vertical reels while preserving the existing reviewed still-frame editorial pipeline, studio review flow, deterministic rendering, asset manifests, and human approval gates.
+Build a publication-quality cinematic illustrated animation path while preserving reviewed source art, deterministic rendering, asset manifests, auditability, and explicit human approval.
 
 ## Recommendation
 
-Continue using Remotion as the animation composition and render engine.
+Continue using Remotion as the animation composition/render engine.
 
-The renderer itself is no longer the primary risk. Sprint 005 proved that Remotion can render synchronized vertical animation through the current studio pipeline. The current quality bottleneck is the visual source and motion language: the full Reel 1 draft still relies too heavily on procedural SVG/vector scene construction and hard-coded shot behavior.
+The renderer is no longer the primary risk. Reel 1 now proves the complete canonical production path: approved `animation-v1` assets, Scene V2 resolution, an eight-shot `CanonicalReel1` composition, exact 60-second rendering, shot-aligned Chatterbox narration, continuous ambience, and persisted provenance.
 
-The next phase therefore prioritizes layered illustrated artwork, restrained motion design, data-driven scene composition, and explicit art-direction review rather than adding more animation engines or facial-animation features.
+The active quality problem is **how the artwork moves**.
 
-## Current Status
+The completed Level 1 reel still reads primarily as still paintings with restrained camera and material motion. The roadmap therefore moves from proving layered rendering to **Level 2 - Living Shots**: articulated, source-preserving 2.5D motion with independent physical relationships.
 
-The standalone Remotion proof is implemented under `tools/animation` and runs with `pnpm render:animation:proof`. It renders a 30-second 1080x1920 MP4, synthesizes timed narration clips, muxes AAC audio, validates duration with FFprobe when available, and writes a checksum-bearing manifest.
+## Current State
 
-Style and motion loops are implemented with:
+### Level 1 - complete
 
-- `pnpm render:animation:style-test`;
-- `pnpm render:animation:style-review`;
-- `pnpm render:animation:motion-proof`;
-- `pnpm render:animation:motion-review`.
+Level 1 now proves:
 
-The full Reel 1 animation draft is implemented with `FullReelAnimation` and `tools/animation/scenes/reel-01-full-animation.scene.json`. `pnpm render:animation:full-reel1` renders it directly, while `pnpm render:animation:reel1` queues a `draft-video` job through `RENDER_ADAPTER=animation`, persists generated assets through the API, and validates the persisted 60-second MP4.
+- immutable reviewed editorial sources;
+- promoted canonical `animation-v1` assets;
+- Scene V2 data-driven shot composition;
+- structural, material, containment, and provenance QA;
+- evidence-aware AI critique with deterministic reconciliation;
+- explicit human promotion;
+- canonical full-reel animation routing;
+- 1080x1920, 30 fps, 1800-frame / 60-second output;
+- preserved per-shot approved timing;
+- shot-aligned narration across the full reel;
+- continuous ambience and final title hold;
+- audio-only re-finalization without rerendering the 1800-frame visual.
 
-This proves the technical pipeline. It does not yet prove publication-quality art direction.
+Level 1 is the reproducible control/reference baseline.
+
+### Level 2 - active
+
+Level 2 must make the world visibly alive without losing source fidelity.
+
+Its core additions are:
+
+- explicit articulation pivots;
+- parent/child transform relationships;
+- character micro-performance;
+- rigid-object motion independent from camera motion;
+- secondary lag/inertia;
+- material/contact response;
+- multi-plane depth and occlusion;
+- motion evidence that identifies which subject/material channel actually moved.
+
+See `sprint-008-level-2-living-shots.md`.
 
 ## Quality Reframe
 
-Sprint 005 answered:
+Earlier milestones answered:
 
-> Can the studio render, synchronize, persist, and review a complete animated Reel 1?
+> Can the studio render, synchronize, persist, review, and safely promote cinematic animation assets?
 
 Yes.
 
-Sprint 006 must answer:
+Level 1 then answered:
 
-> Can Reel 1 establish a cinematic illustrated animation language strong enough to publish and repeat?
+> Can those approved assets be assembled into a canonical 60-second Reel 1 without bypassing provenance or human review?
 
-Use `planning/reel-01-animation-style-bible.md` as the quality contract and `planning/sprint-006-reel-one-animation-polish.md` as the implementation sequence.
+Yes.
+
+Level 2 must answer:
+
+> Can Reel 1 look unmistakably animated at normal speed while still preserving the approved illustrated world?
+
+That is now the publication-quality gate.
 
 ## Milestones
 
 ### Milestone 1 - Feasibility Spike - complete
 
-- [x] Add Remotion dependencies behind a focused project or tool target.
-- [x] Render a composition to MP4 locally.
-- [x] Validate output dimensions, codec, duration, and audio muxing.
-- [x] Document local setup and CI implications.
+- [x] Add Remotion tooling.
+- [x] Render local MP4 output.
+- [x] Validate dimensions, codec, duration, and audio muxing.
+- [x] Document local setup.
 
-### Milestone 2 - Technical Layered Animation Proof - complete
+### Milestone 2 - Procedural Motion Proof - complete
 
-- [x] Define an initial scene schema for layers, transforms, camera, and timing.
-- [x] Build reusable Remotion vertical-video compositions for technical evaluation.
-- [x] Demonstrate parallax, camera moves, blink states, atmosphere, water glints, cloth sway, and pose/gesture changes.
-- [x] Render short style and motion proofs.
-- [x] Expand to a complete 60-second Reel 1 animation draft with narration, captions, and shot data.
+- [x] Build short technical/style/motion compositions.
+- [x] Demonstrate camera, parallax, atmosphere, water, blink, breathing, cloth, and gesture concepts.
+- [x] Route an animation adapter through the worker.
+- [x] Render a full procedural Reel 1 draft.
 
-This milestone proves animation capability but still contains significant procedural SVG/vector art and hard-coded composition behavior.
+This proved capability, not production art.
 
-### Milestone 3 - Reel 1 Publication-Quality Benchmark - active
+### Milestone 3 - Source-Preserving Layered Production - complete
 
-- [x] Define the Reel 1 animation style bible.
-- [ ] Use Shot 3, Enki at the helm, as the primary 8-12 second benchmark.
-- [ ] Derive versioned layered animation assets from or consistent with approved Reel 1 editorial artwork.
-- [ ] Replace procedural SVG characters and scenery as the principal benchmark visual source.
-- [ ] Establish at least four convincing depth planes.
-- [ ] Use restrained breathing, blink, gaze/head movement, cloth response, boat motion, water movement, atmosphere, and light.
-- [ ] Use a motion budget rather than animating every available channel.
-- [ ] Add a fast benchmark review loop with sampled stills, contact sheet, and style-bible scoring.
-- [ ] Require no review category below 4 and publishability 5 before propagating the style.
+- [x] Define the animation asset-manifest contract.
+- [x] Produce and promote approved layered/source-backed Reel 1 assets.
+- [x] Use preservation-first extraction and background-repair lanes.
+- [x] Add structural and material QA.
+- [x] Add explicit human promotion.
+- [x] Prove Shot 3 and Shot 4 layered Scene V2 benchmark grammars.
+- [x] Extend the production process through Shots 5-8.
 
-### Milestone 4 - Data-Driven Scene Composition - active with Reel 1
+### Milestone 4 - Canonical Reel 1 Level 1 - complete
 
-The current scene JSON describes useful editorial timing and intent, but `FullReelAnimation` still reads significant hard-coded source data and scene behavior directly in React.
+- [x] Route production Reel 1 through the animation pipeline rather than editorial fallback.
+- [x] Add dedicated `CanonicalReel1` composition.
+- [x] Assemble all eight approved Scene V2 shots.
+- [x] Preserve 1770 approved animation frames plus the explicit 30-frame Shot 5 -> 6 handoff.
+- [x] Render exact 1800-frame / 60-second canonical visual output.
+- [x] Split narration into eight shot-aligned Chatterbox cues.
+- [x] Restore continuous ambience.
+- [x] Leave the final title hold free of narration.
+- [x] Keep audio finalization reusable without rerendering visuals.
 
-Target architecture:
+**Human finding:** technically successful, visually too close to still imagery with minor animation.
 
-```text
-Reel production data
-        |
-        v
-Scene builder
-        |
-        v
-Versioned scene JSON
-        |
-        v
-Generic Remotion composition + input props
-        |
-        v
-Rendered animation
-```
+See `sprint-006-retrospective.md` and `../documentation/projects/blessings-of-sumer/chapters/chapter-01-reel-01-animation-v1-review.md`.
 
-Tasks:
+### Milestone 5 - Level 2 Shot 3 Living Benchmark - active
 
-- [ ] Define concrete scene fields for camera transform, easing, layer depth, motion preset, masks, timing, and asset references.
-- [ ] Pass scene data into Remotion through input props or an equivalent single authoritative scene-data mechanism.
-- [ ] Eliminate duplicate hard-coded dimensions/timing where the scene can safely own them.
-- [ ] Keep narration/story content sourced from the reel production record.
-- [ ] Add asset validation and overscan checks.
-- [ ] Persist derived-layer provenance and checksums.
-- [ ] Ensure Reel 2 can eventually use the same generic composition instead of requiring `FullReel2Animation.tsx`.
+Use Shot 3, Enki at the helm, as the primary seven-second Level 2 benchmark.
 
-### Milestone 5 - Second Style Proof
+Required learning targets:
 
-After Shot 3 passes, prove the same style on a contrasting scene before animating the whole reel.
+- [ ] Audit current camera versus actual subject/material motion.
+- [ ] Identify only the extra sublayers/pivots needed for credible articulation.
+- [ ] Add minimal backwards-compatible transform hierarchy/pivot support.
+- [ ] Add secondary lag/inertia relationships.
+- [ ] Animate vessel motion independently from the camera.
+- [ ] Add source-faithful Enki character life: breathing plus restrained posture/head/gaze/blink behavior as supported by reviewed layers.
+- [ ] Add rigging/cloth secondary response when source separation permits it.
+- [ ] Add multi-scale water and vessel-contact motion.
+- [ ] Add deterministic camera-compensated motion evidence.
+- [ ] Render a direct Level 1 / Level 2 A/B review bundle.
+- [ ] Require the Level 2 candidate to be visibly preferred without sacrificing identity, composition, or material realism.
 
-Preferred candidates:
+Minimum benchmark motion read:
 
-- Shot 4, Nammu beneath the water, for supernatural motion, refraction, and stillness; or
-- Shot 7, Dilmun reveal, for environment scale, haze, depth, birds, and lighting.
+- at least four independently timed non-camera channels;
+- at least one genuine character-articulation channel;
+- independent rigid-vessel motion;
+- at least one secondary-motion relationship with lag or inertia.
 
-Acceptance:
+These are Shot 3 benchmark requirements, not global quotas for every shot.
 
-- [ ] Reuse the same motion primitives and scene schema.
-- [ ] Add only primitives justified by the new visual problem.
-- [ ] Preserve the same visual and motion grammar.
-- [ ] Pass the same review rubric.
+### Milestone 6 - Level 2 Contrasting Proofs
 
-### Milestone 6 - Complete Reel 1 Animation V1
+After Shot 3 passes:
 
-Only after the two benchmark scenes are approved:
+#### Shot 4 - Nammu
 
-- [ ] Create layered animation-v1 assets for all remaining Reel 1 shots.
-- [ ] Replace procedural proof visuals shot by shot.
-- [ ] Use motivated transitions rather than relying primarily on generic dissolves.
-- [ ] Preserve the cool-black-water to warm-Dilmun progression.
-- [ ] Render the complete 60-second animation-v1 candidate.
-- [ ] Review full-reel pacing, transitions, caption placement, narration, score, and motion continuity.
-- [ ] Keep publication as a human decision.
+- [ ] Reuse the same architecture for depth-separated currents, refraction, caustics, particulate motion, and environmental coherence.
+- [ ] Keep Nammu numinous rather than converting her into a conventional animated cutout.
+- [ ] Preserve near-static camera language.
 
-### Milestone 7 - Reusable Character Kit
+#### Shot 8 - Landfall
 
-Build only the level of character reuse demonstrated to be useful by Reel 1.
+- [ ] Prove distant rigid-vessel movement independent from camera.
+- [ ] Add water/contact response and physical settling.
+- [ ] Preserve the sparse distant boat rather than enlarging or inventing it.
+- [ ] Settle motion before the title landing.
 
-- [ ] Define pose, eye, head, cloth, and expression naming conventions.
-- [ ] Add layer validation.
-- [ ] Add one reusable Enki kit based on the approved visual style.
-- [ ] Keep the first kit deliberately small.
+### Milestone 7 - Complete Reel 1 Level 2
 
-Do not build a large skeletal rig system unless the Reel 1 benchmark demonstrates a concrete need.
+After Shot 3/4/8 pass:
 
-### Milestone 8 - Lip Sync - deferred
+- [ ] Upgrade Shot 5 hospitality/contained water.
+- [ ] Upgrade Shot 7 environmental reveal.
+- [ ] Upgrade Shot 2 coastline/vessel environment.
+- [ ] Upgrade Shot 6 while preserving its restrained practical-values grammar.
+- [ ] Upgrade Shot 1 only as much as the atmospheric opening needs.
+- [ ] Render the complete canonical Level 2 Reel 1.
+- [ ] Reuse the approved narration/ambience finalization path.
+- [ ] Review motion continuity, pacing, transitions, audio/image relationship, and title landing.
+- [ ] Require that the full reel no longer reads primarily as a slideshow/Ken Burns treatment.
+- [ ] Keep final publication as an explicit human decision.
 
-Rhubarb Lip Sync is no longer the immediate next milestone.
+### Milestone 8 - Reusable Articulation Kit
 
-Use lip sync only for visible on-camera speech where mouth cues materially improve the shot.
+Build only the reuse demonstrated useful by Level 2.
 
-For narrated Reel 1 passages, prefer:
+Potential conventions:
 
-- breathing;
-- blink;
-- gaze;
-- head movement;
-- posture;
-- cloth;
-- atmosphere;
-- camera language.
+- transform-group naming;
+- pivot/anchor metadata;
+- head/eye/state overlays;
+- arm/prop articulation regions;
+- cloth/rigging secondary-lag metadata;
+- contact masks;
+- character/prop relationship constraints.
 
-Future tasks when needed:
+Do not build a large general skeletal-rig authoring system unless the approved benchmarks demonstrate a concrete need.
 
-- [ ] Add Rhubarb as an optional local tool.
-- [ ] Generate mouth cues from direct-speech narration assets.
-- [ ] Map cue output to a small approved mouth-shape set.
-- [ ] Persist lip-sync metadata in the render manifest.
+### Milestone 9 - Selective Level 3 Generative Motion - deferred
 
-### Milestone 9 - Scale To Reel 2
+After Level 2 passes, selectively test image-to-video or other generative motion for problems that remain expensive in deterministic 2.5D, such as complex organic cloth, waves, crowds, or environmental motion.
 
-Do not begin Reel 2 animation production until Reel 1 animation quality is approved.
+Any Level 3 candidate must preserve the same gates:
+
+- source lineage;
+- candidate isolation;
+- deterministic evidence where measurable;
+- identity/object continuity review;
+- human approval;
+- explicit promotion.
+
+Identity drift, object mutation, malformed anatomy, temporal flicker, and invented historical detail are blockers.
+
+### Milestone 10 - Scale To Reel 2
+
+Do not begin Reel 2 animation production until Reel 1 Level 2 is approved.
 
 The architecture is ready to scale when a new reel can be produced mostly by supplying:
 
 - approved artwork;
-- layered assets;
+- layered/articulated assets;
 - scene data;
 - narration/caption timing;
-- motion presets;
+- motion relationships/presets;
 - review decisions;
 
-rather than writing a new custom animation composition.
+rather than writing a new bespoke composition.
 
 ## Asset Strategy
 
-Prefer layered raster artwork for characters and painterly scene elements, with SVG/CSS used where they are strongest: masks, typography, procedural particles, simple effects, and controlled overlays.
+Prefer source-derived layered raster artwork for characters and painterly scene elements. Use SVG/CSS/procedural code for masks, typography, particles, deterministic lighting effects, and controlled overlays where appropriate.
 
-Recommended asset types:
+Level 2 may add:
 
-- background plates;
-- distant environment planes;
-- water/terrain planes;
-- major prop or vessel layers;
-- character body/head layers;
-- minimal eye/blink states;
-- optional cloth/hair overlays;
+- character head/state overlays;
+- small articulation regions;
+- rigging/cloth overlays;
+- contact/wake/reflection masks;
+- near/far material regions;
 - foreground occluders;
-- atmosphere layers;
-- reflection/light masks.
+- light/reflection masks.
 
-All animation-specific derived assets should be versioned separately from approved `editorial-v1` source frames.
+Do not generate missing anatomy or costume details merely to make an articulation control possible.
 
 ## Motion Strategy
 
-Default 6-9 second shot budget:
+The old motion-budget principle remains useful, but Level 2 adds a relationship requirement.
 
-- one primary movement;
-- one restrained subject motion;
-- two environmental channels;
-- one lighting/atmosphere channel.
+Prefer:
 
-Preferred camera language:
+- one clear dominant visual action;
+- restrained character/subject motion;
+- independent rigid-body motion when a prop/vessel exists;
+- one or two material/environment channels;
+- one secondary lag/inertia relationship;
+- restrained light/atmosphere;
+- camera motion that is clearly separable from subject motion.
 
-- slow dolly;
-- restrained lateral track;
-- slow reveal;
-- foreground occlusion;
-- subtle boat-mounted drift;
-- gentle scale change.
+Avoid:
 
-Avoid constant movement, synchronized sine-wave motion across all elements, or theatrical character acting under third-person narration.
+- every layer moving because it can;
+- synchronized periodic motion across unrelated materials;
+- constant perpetual zooming;
+- puppet-like character acting;
+- increasing amplitudes globally instead of adding meaningful articulation/contact relationships.
 
-## Non-Goals During Reel 1 Polish
+## QA Strategy
+
+Level 2 adds one major rule to existing deterministic QA:
+
+> Pixel change is not enough; the system must know which motion channel contributed it.
+
+Add evidence for:
+
+- camera-compensated subject motion;
+- per-channel contribution over multiple beats;
+- pivot and rotation bounds;
+- deformation containment;
+- parent/child consistency;
+- secondary-lag relationship;
+- contact continuity;
+- alpha-edge safety;
+- one-frame pop prevention;
+- terminal settle behavior.
+
+Calibrate numeric thresholds only from reviewed good and bad candidates. Do not inherit one material's threshold as a global animation-quality gate.
+
+## Non-Goals During Level 2
 
 - No Reel 2 animation production.
 - No Chapter 2 animation expansion.
 - No full custom animation engine.
-- No large skeletal rigging system.
+- No generalized skeletal-rig authoring UI.
 - No mandatory lip sync.
-- No broad WebGL/PixiJS migration without a measured need.
-- No replacement of approved editorial source art merely to exercise animation code.
-- No story/source text edits as part of animation infrastructure work.
+- No broad WebGL/PixiJS migration without measured need.
+- No uncontrolled image-to-video production.
+- No replacement of approved source art merely to exercise animation code.
+- No source-story edits as part of animation infrastructure work.
 
-## Open Questions To Resolve Through Reel 1
+## Level 2 Exit Question
 
-- Which editorial frames can be successfully separated into layers and which need regenerated overscanned variants?
-- How many depth planes are enough before additional layers stop improving perceived quality?
-- Which character motions are actually necessary for Enki to feel alive without looking puppeted?
-- Should camera/motion presets be named semantic presets or expressed entirely as numeric scene data?
-- Which transition motifs can be reused without becoming repetitive?
-- Does the current caption treatment remain readable over richer moving imagery?
-- Is transparent PNG sufficient for the approved character style, or do a small number of vector masks improve edge control?
+The milestone is complete when a reviewer can watch the full Reel 1 at normal speed and answer **yes** to both questions:
 
-These should be answered experimentally through Reel 1 rather than prematurely generalized.
+1. Does this still look unmistakably like the approved Blessings of Sumer artwork?
+2. Does this now feel like a living animated film rather than still paintings with minor motion?
+
+Until both are true, Reel 1 remains the benchmark and Reel 2 remains gated.
