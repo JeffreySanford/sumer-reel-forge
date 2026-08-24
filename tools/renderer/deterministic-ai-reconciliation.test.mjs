@@ -116,3 +116,24 @@ test('literal containment classifier detects geometric escape language', () => {
     false,
   );
 });
+
+test('literal containment classifier recognizes standalone outside and beyond claims', () => {
+  assert.equal(
+    isLiteralContainmentClaim(
+      aiFinding({
+        description: 'Water is outside the basin boundary.',
+        evidence: 'The crest is visibly displaced.',
+      }),
+    ),
+    true,
+  );
+  assert.equal(
+    isLiteralContainmentClaim(
+      aiFinding({
+        description: 'The material appears beyond the basin edge.',
+        evidence: 'No other escape verb is used.',
+      }),
+    ),
+    true,
+  );
+});
