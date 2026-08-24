@@ -106,7 +106,7 @@ export function isLiteralContainmentClaim(finding) {
   const containmentTopic = /(boundary|basin|contain|spill|leak|bleed|rim|edge)/.test(
     text,
   );
-  const literalEscapeClaim = /(outside|beyond|cross(?:es|ed|ing)?\b|extend(?:s|ed|ing)?\s+(?:past|beyond|outside)|\bspill(?:s|ed|ing)?\b|\bleak(?:s|ed|ing)?\b|\bbleed(?:s|ed|ing)?\b)/.test(
+  const literalEscapeClaim = /(\boutside\b|\bbeyond\b|\bcross(?:es|ed|ing)?\b|extend(?:s|ed|ing)?\s+(?:past|beyond|outside)|\bspill(?:s|ed|ing)?\b|\bleak(?:s|ed|ing)?\b|\bbleed(?:s|ed|ing)?\b)/.test(
     text,
   );
   return containmentTopic && literalEscapeClaim;
