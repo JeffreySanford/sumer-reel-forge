@@ -1,5 +1,6 @@
 import React from 'react';
 import { Composition, registerRoot } from 'remotion';
+import { CanonicalReel1 } from './CanonicalReel1';
 import { CinematicMotionProof } from './CinematicMotionProof';
 import { CinematicStyleTest } from './CinematicStyleTest';
 import { FullReelAnimation } from './FullReelAnimation';
@@ -79,6 +80,21 @@ function RemotionRoot() {
         fps={30}
         width={1080}
         height={1920}
+      />
+      <Composition
+        id="CanonicalReel1"
+        component={CanonicalReel1}
+        durationInFrames={1800}
+        fps={30}
+        width={1080}
+        height={1920}
+        defaultProps={emptySceneV2Props}
+        calculateMetadata={({ props }) => ({
+          durationInFrames: props.scene?.durationFrames ?? 1800,
+          fps: props.scene?.fps ?? 30,
+          width: props.scene?.width ?? 1080,
+          height: props.scene?.height ?? 1920,
+        })}
       />
       <Composition
         id="SceneV2Benchmark"
