@@ -90,7 +90,7 @@ test('perceptual rim crowding is not erased by geometric containment proof', () 
   const finding = aiFinding({
     category: 'perceptual_edge_interference',
     description: 'The bright crest visually crowds the stone rim.',
-    evidence: 'The highlight feels too close to the rim but no crossing is asserted.',
+    evidence: 'The concern is highlight proximity to the rim, not measured geometry.',
   });
   const result = reconcileAiWithDeterministicEvidence({
     ai: aiReview(finding),
@@ -110,7 +110,7 @@ test('literal containment classifier detects geometric escape language', () => {
       aiFinding({
         category: 'composition',
         description: 'The overall shot feels staged.',
-        evidence: 'No boundary assertion.',
+        evidence: 'No geometric containment concern is asserted.',
       }),
     ),
     false,
