@@ -12,6 +12,10 @@ import {
 } from './SceneV2Benchmark';
 import { ContainedWaterMaterialLayer } from './ContainedWaterMaterialLayer';
 import {
+  heavyPhysicalDriver,
+  riggingTensionResponse,
+} from './level2-rigging-motion.mjs';
+import {
   assertSceneV2,
   cinematicSlow,
   clamp,
@@ -156,7 +160,6 @@ function AnimatedLayer({
   }
 
   const phase = frame / fps;
-  const settleWeight = progress > 0.8 ? 1 - (progress - 0.8) / 0.2 : 1;
   let x = layer.transform.x;
   let y = layer.transform.y;
   let scale = layer.transform.scale;
@@ -168,12 +171,22 @@ function AnimatedLayer({
     scale *= 1 + Math.sin(phase * 0.36 + layer.depth) * 0.0018;
   }
   if (layer.motionPresets.includes('heavyPhysical')) {
-    y += Math.sin(phase * 0.54 * Math.PI * 2) * 1.7 * settleWeight;
-    rotation += Math.sin((phase * 0.54 + 0.18) * Math.PI * 2) * 0.045 * settleWeight;
+    const vesselDriver = heavyPhysicalDriver({
+      phaseSeconds: phase,
+      progress,
+    });
+    y += vesselDriver.heaveY;
+    rotation += vesselDriver.rollDegrees;
   }
   if (layer.motionPresets.includes('riggingTension')) {
-    x += Math.sin(phase * 0.61 + 0.9) * 1.25;
-    rotation += Math.sin(phase * 0.43 + 0.4) * 0.085;
+    const vesselDrivenRigging = riggingTensionResponse({
+      phaseSeconds: phase,
+      progress,
+      durationSeconds: shot.durationFrames / fps,
+    });
+    x += vesselDrivenRigging.x;
+    y += vesselDrivenRigging.y;
+    rotation += vesselDrivenRigging.rotationDegrees;
   }
   if (layer.motionPresets.includes('clothLag')) {
     x += Math.sin(phase * 0.39 + 0.6) * 0.8;
