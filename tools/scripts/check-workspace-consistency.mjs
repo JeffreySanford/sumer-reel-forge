@@ -32,6 +32,23 @@ if (missingPackages.length > 0) {
   process.exit(1);
 }
 
+const requiredToolingPackages = ['@eslint/js'];
+const missingToolingPackages = requiredToolingPackages.filter(
+  (toolingPackage) => !declared.has(toolingPackage),
+);
+
+if (missingToolingPackages.length > 0) {
+  console.error('Workspace tooling dependency consistency check failed.');
+  console.error(
+    'Root tooling packages required by the Nx/ESLint project graph are missing from package.json:',
+  );
+  for (const toolingPackage of missingToolingPackages) {
+    console.error(`  - ${toolingPackage}`);
+  }
+  console.error('Declare each required tooling package explicitly before running Nx.');
+  process.exit(1);
+}
+
 const startupEntrypoints = [
   'tools/scripts/start-local.mjs',
   'tools/scripts/start-all.mjs',
@@ -57,6 +74,9 @@ if (invalidStartupImports.length > 0) {
 
 console.log(
   `Workspace dependency consistency OK: ${configuredPlugins.length} Nx plugins resolve to explicitly declared packages.`,
+);
+console.log(
+  `Workspace tooling dependency consistency OK: ${requiredToolingPackages.length} root tooling package is explicitly declared.`,
 );
 console.log(
   `Workspace startup bootstrap consistency OK: ${startupEntrypoints.length} entrypoints are dependency-free for .env loading.`,
