@@ -24,6 +24,16 @@ test('Shot 3 Level 2 audition stages approved canonical baseline plus explicit o
   assert.match(source, /Canonical animation-v1 assets and manifest were NOT modified/);
 });
 
+test('Shot 3 Level 2 audition preserves the repository sha256: checksum format exactly once', async () => {
+  const source = await text(previewPath);
+
+  assert.match(source, /sha256: candidate\.checksum/);
+  assert.match(source, /const expected = String\(layer\.sha256\)\.toLowerCase\(\)/);
+  assert.match(source, /const actual = \(await sha256\(path\)\)\.toLowerCase\(\)/);
+  assert.doesNotMatch(source, /`sha256:\$\{candidate\.checksum\}`/);
+  assert.doesNotMatch(source, /replace\(\/\^sha256:\//);
+});
+
 test('Shot 3 Level 2 rigging uses the source-preserving foreground extraction production lane', async () => {
   const [manifest, productionLanes, wrapper] = await Promise.all([
     text(manifestPath).then(JSON.parse),
