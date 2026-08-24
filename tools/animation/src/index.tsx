@@ -5,6 +5,10 @@ import { CinematicStyleTest } from './CinematicStyleTest';
 import { FullReelAnimation } from './FullReelAnimation';
 import { ReelAnimation } from './ReelAnimation';
 import type { SceneV2BenchmarkProps } from './SceneV2Benchmark';
+import {
+  SceneV2ContainedMaterialMask,
+  type SceneV2ContainedMaterialMaskProps,
+} from './SceneV2ContainedMaterialMask';
 import { SceneV2ResolvedBenchmark } from './SceneV2ResolvedBenchmark';
 import {
   Shot03EnkiBodyCandidatePreview,
@@ -33,6 +37,7 @@ import {
 import { proofScene } from './scene-data';
 
 const emptySceneV2Props: SceneV2BenchmarkProps = {};
+const emptyContainedMaterialMaskProps: SceneV2ContainedMaterialMaskProps = {};
 const emptyWaterHandoffProps: SceneV2WaterHandoffProps = {};
 const emptyShot03WaterCandidatePreviewProps: Shot03WaterCandidatePreviewProps = {};
 const emptyShot03VesselCandidatePreviewProps: Shot03VesselCandidatePreviewProps = {};
@@ -83,6 +88,21 @@ function RemotionRoot() {
         width={1080}
         height={1920}
         defaultProps={emptySceneV2Props}
+        calculateMetadata={({ props }) => ({
+          durationInFrames: props.scene?.durationFrames ?? 210,
+          fps: props.scene?.fps ?? 30,
+          width: props.scene?.width ?? 1080,
+          height: props.scene?.height ?? 1920,
+        })}
+      />
+      <Composition
+        id="SceneV2ContainedMaterialMask"
+        component={SceneV2ContainedMaterialMask}
+        durationInFrames={210}
+        fps={30}
+        width={1080}
+        height={1920}
+        defaultProps={emptyContainedMaterialMaskProps}
         calculateMetadata={({ props }) => ({
           durationInFrames: props.scene?.durationFrames ?? 210,
           fps: props.scene?.fps ?? 30,
