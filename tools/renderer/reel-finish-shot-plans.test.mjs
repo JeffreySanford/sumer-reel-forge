@@ -7,6 +7,9 @@ const scenePath = (shot, slug) =>
   resolve(`tools/animation/scenes/reel-01-shot-${shot}-${slug}-benchmark.scene-v2.json`);
 const contractPath = (shot) =>
   resolve(`tools/animation/shot-contracts/reel-01-shot-${shot}.json`);
+const manifestPath = resolve(
+  'assets/blessings-of-sumer/chapter-01/reel-01/animation-v1/manifest.json',
+);
 
 async function readJson(path) {
   return JSON.parse(await readFile(path, 'utf8'));
@@ -78,4 +81,35 @@ test('Shot 8 defers boat motion until the isolated boat exists and keeps title t
   ]);
   assert.equal(contract.shot.titlePolicy.rasterizeIntoCandidateAssets, false);
   assert.equal(contract.shot.titlePolicy.motion, 'stable-fade');
+});
+
+test('Shots 6 through 8 are admitted to animation-v1 as draft planned work without fake assets or approval', async () => {
+  const manifest = await readJson(manifestPath);
+
+  for (const shotNumber of [6, 7, 8]) {
+    const label = String(shotNumber).padStart(2, '0');
+    const contract = await readJson(contractPath(label));
+    const manifestShot = manifest.shots.find(
+      (shot) => shot.sourceShotNumber === shotNumber,
+    );
+
+    assert.ok(manifestShot, `animation-v1 must include Shot ${shotNumber}.`);
+    assert.equal(manifestShot.status, 'draft');
+    assert.equal(manifestShot.shotId, contract.shot.shotId);
+    assert.equal(manifestShot.sourceFrame, contract.shot.sourceFrame);
+    assert.deepEqual(
+      manifestShot.activationPolicy.requiredLayerIds,
+      contract.shot.activationPolicy.requiredLayerIds,
+    );
+    assert.deepEqual(
+      manifestShot.layers.map((layer) => layer.id),
+      contract.shot.layers.map((layer) => layer.id),
+    );
+
+    for (const layer of manifestShot.layers) {
+      assert.equal(layer.state, 'planned');
+      assert.equal(layer.review?.status, 'pending');
+      assert.equal(layer.sha256, undefined);
+    }
+  }
 });
