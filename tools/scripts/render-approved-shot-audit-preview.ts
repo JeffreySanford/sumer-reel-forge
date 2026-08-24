@@ -138,6 +138,9 @@ async function main(): Promise<void> {
     auditLayers.push({
       ...layer,
       path: stagedRelativePath,
+      ...(exactEditorialSource && !layer.sha256
+        ? { sha256: `sha256:${checksum}` }
+        : {}),
     });
 
     if (requiredSet.has(layer.id)) {
