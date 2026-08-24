@@ -2,6 +2,13 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import test from 'node:test';
+import {
+  CANONICAL_REEL1_NARRATION_CUES,
+  FINAL_TITLE_HOLD_SECONDS,
+  REEL_DURATION_SECONDS,
+  assertCanonicalNarrationPlan,
+  paceTempoForTarget,
+} from './canonical-reel1-audio-plan.mjs';
 
 const scenePaths = [
   'tools/animation/scenes/reel-01-shot-01-black-water-benchmark.scene-v2.json',
@@ -88,6 +95,34 @@ test('canonical Reel 1 assembler is safe under tsx CommonJS transform and has no
   assert.match(source, /async function main\(\)/);
   assert.match(source, /main\(\)\.catch/);
   assert.doesNotMatch(source, /^await\s/m);
+});
+
+test('canonical Reel 1 audio plan preserves narration while pacing speech across the full reel', async () => {
+  const scene = await json(
+    'tools/animation/scenes/reel-01-full-animation.scene.json',
+  );
+  const plan = assertCanonicalNarrationPlan(scene.narration);
+  assert.equal(CANONICAL_REEL1_NARRATION_CUES.length, 8);
+  assert.equal(CANONICAL_REEL1_NARRATION_CUES[0].startSeconds, 0.7);
+  assert.equal(CANONICAL_REEL1_NARRATION_CUES.at(-1).startSeconds, 54);
+  assert.equal(plan.targetNarrationEndSeconds, 57);
+  assert.equal(plan.titleHoldStartSeconds, 57);
+  assert.equal(
+    REEL_DURATION_SECONDS - plan.titleHoldStartSeconds,
+    FINAL_TITLE_HOLD_SECONDS,
+  );
+  assert.equal(paceTempoForTarget(4, 7), 0.72);
+  assert.equal(paceTempoForTarget(6, 7), 6 / 7);
+  assert.equal(paceTempoForTarget(8, 7), 1);
+
+  const finalizerSource = await text(
+    'tools/scripts/finalize-canonical-reel1.mjs',
+  );
+  assert.match(finalizerSource, /createEditorialAmbience/);
+  assert.match(finalizerSource, /adelay=/);
+  assert.match(finalizerSource, /volume=0\.85/);
+  assert.match(finalizerSource, /storyMutationAllowed:\s*false/);
+  assert.match(finalizerSource, /Refusing to clip or hurry canonical narration/);
 });
 
 test('Remotion registers a dedicated canonical Reel 1 composition', async () => {
