@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "type": "animation-shot-contract",
+  "projectSlug": "blessings-of-sumer",
+  "chapterNumber": 1,
+  "episodeNumber": 1,
+  "shot": {
+    "shotId": "dilmun-reveal",
+    "sourceShotNumber": 7,
+    "sourceFrame": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-07.png",
+    "status": "draft",
+    "fallback": {
+      "assetId": "shot07-editorial-v1-flat",
+      "assetPath": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-07.png"
+    },
+    "overscan": {
+      "leftPercent": 8,
+      "rightPercent": 8,
+      "topPercent": 10,
+      "bottomPercent": 6
+    },
+    "activationPolicy": {
+      "requiredLayerIds": [
+        "shot07-dilmun-base-v1"
+      ],
+      "enableDeferredPerformanceWhenApproved": false
+    },
+    "layers": [
+      {
+        "id": "shot07-dilmun-base-v1",
+        "path": "blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-07/dilmun-base.png",
+        "role": "background",
+        "material": "atmosphere-distant",
+        "depthDefault": 0.16,
+        "anchor": "dilmun-horizon",
+        "transform": { "x": 0, "y": 0, "scale": 1 },
+        "motionPresets": [],
+        "state": "planned",
+        "hasAlpha": false,
+        "source": {
+          "type": "derived",
+          "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-07.png"
+        },
+        "review": {
+          "status": "pending",
+          "notes": [
+            "Preserve the approved Dilmun geography, horizon, light direction, and composition. The reveal should come primarily from camera movement and atmosphere, not a regenerated fantasy landscape.",
+            "This required base may be an exact-source preservation candidate if no layer removal is needed."
+          ]
+        }
+      },
+      {
+        "id": "shot07-foreground-reeds-v1",
+        "path": "blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-07/foreground/reeds.png",
+        "role": "foreground-occluder",
+        "material": "reed",
+        "depthDefault": 0.82,
+        "anchor": "lower-foreground",
+        "transform": { "x": 0, "y": 0, "scale": 1 },
+        "motionPresets": ["clothLag"],
+        "state": "planned",
+        "hasAlpha": true,
+        "source": {
+          "type": "derived",
+          "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-07.png"
+        },
+        "review": {
+          "status": "pending",
+          "notes": [
+            "Optional. Use only if the source contains a clean foreground plant/reed plane. Keep it subordinate to the upward Dilmun reveal and out of caption-safe areas."
+          ]
+        }
+      }
+    ]
+  }
+}
