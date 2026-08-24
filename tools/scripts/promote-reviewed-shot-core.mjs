@@ -16,6 +16,7 @@ import {
   relative,
   resolve,
 } from 'node:path';
+import { materialPromotionRejectionReason } from '../renderer/promotion-material-policy.mjs';
 
 const DEFAULT_MANIFEST_PATH = resolve(
   'assets/blessings-of-sumer/chapter-01/reel-01/animation-v1/manifest.json',
@@ -200,7 +201,6 @@ function assertReviewEvidence({ shot, preview, previewType, review, motion, mate
     throw new Error('Reviewed preview shot number does not match the manifest shot.');
   }
   if (motion.pass !== true) throw new Error('Aggregate Scene V2 motion QA has not passed.');
-  if (material.pass !== true) throw new Error('Material-local differential QA has not passed.');
   if (review.sourceShotNumber !== shot.sourceShotNumber) {
     throw new Error('shot-review.json does not match the requested shot.');
   }
@@ -210,8 +210,14 @@ function assertReviewEvidence({ shot, preview, previewType, review, motion, mate
   if (review.deterministic?.aggregateSceneMotion?.pass !== true) {
     throw new Error('Reviewed aggregate scene gate is not passing.');
   }
-  if (review.deterministic?.materialLocalMotion?.pass !== true) {
-    throw new Error('Reviewed calibrated material-local gate is not passing.');
+
+  const materialReason = materialPromotionRejectionReason({
+    shotNumber: shot.sourceShotNumber,
+    material,
+    review,
+  });
+  if (materialReason) {
+    throw new Error(`Material promotion evidence rejected: ${materialReason}.`);
   }
 
   const requiresContainment = (shot.layers ?? []).some(
