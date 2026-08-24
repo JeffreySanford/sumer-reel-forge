@@ -91,6 +91,41 @@ test('Nammu coherence prompt explicitly avoids a cutout supernatural character',
   assert.match(prompt, /glowing-eyed/i);
 });
 
+test('painted-repair prompts preserve the wider source and carry contract-specific repair guidance', () => {
+  const prompt = buildLayerPrompt(
+    {
+      ...SHOT,
+      shotId: 'boat-approaches-land-title',
+      sourceShotNumber: 8,
+    },
+    {
+      ...layer(
+        'shot08-landfall-base-v1',
+        'background',
+        'architectural-background',
+        false,
+      ),
+      source: {
+        type: 'painted-repair',
+        from: 'project/editorial-v1/shot-08.png',
+      },
+      review: {
+        status: 'pending',
+        notes: [
+          'If the boat is extracted for motion, repair only its footprint in this base to prevent duplicate-boat ghosting.',
+        ],
+      },
+    },
+  );
+
+  assert.match(prompt, /painted-repair base plate/i);
+  assert.match(prompt, /preserve every source-supported region/i);
+  assert.match(prompt, /only the separately animated object footprint/i);
+  assert.match(prompt, /repair only its footprint/i);
+  assert.match(prompt, /duplicate-boat ghosting/i);
+  assert.match(prompt, /Layer-specific contract guidance/i);
+});
+
 test('replaces layer workflow tokens recursively', () => {
   const workflow = {
     a: '{{SOURCE_IMAGE}}',
