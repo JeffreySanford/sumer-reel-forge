@@ -730,6 +730,261 @@
           }
         }
       ]
+    },
+    {
+      "shotId": "water-bread-truth-justice-freedom",
+      "sourceShotNumber": 6,
+      "sourceFrame": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-06.png",
+      "status": "draft",
+      "fallback": {
+        "assetId": "shot06-editorial-v1-flat",
+        "assetPath": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-06.png"
+      },
+      "overscan": {
+        "leftPercent": 6,
+        "rightPercent": 6,
+        "topPercent": 6,
+        "bottomPercent": 6
+      },
+      "activationPolicy": {
+        "requiredLayerIds": [
+          "shot06-values-base-v1",
+          "shot06-practical-symbols-v1"
+        ],
+        "enableDeferredPerformanceWhenApproved": false
+      },
+      "layers": [
+        {
+          "id": "shot06-values-base-v1",
+          "path": "blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-06/values-base.png",
+          "role": "background",
+          "material": "architectural-background",
+          "depthDefault": 0.12,
+          "anchor": "center",
+          "transform": { "x": 0, "y": 0, "scale": 1 },
+          "motionPresets": ["cinematicSlow"],
+          "state": "planned",
+          "hasAlpha": false,
+          "source": {
+            "type": "painted-repair",
+            "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-06.png"
+          },
+          "review": {
+            "status": "pending",
+            "notes": [
+              "Preserve the approved editorial composition and lighting. If the practical-symbol layer is extracted, repair its footprint in the base so the moving overlay never duplicates source objects.",
+              "Do not redesign or replace the editorial image merely to create more parallax."
+            ]
+          }
+        },
+        {
+          "id": "shot06-practical-symbols-v1",
+          "path": "blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-06/practical-symbols.png",
+          "role": "major-prop",
+          "material": "rigid-vessel",
+          "depthDefault": 0.54,
+          "anchor": "water-bread-tablet-symbols",
+          "transform": { "x": 0, "y": 0, "scale": 1 },
+          "motionPresets": ["heavyPhysical"],
+          "state": "planned",
+          "hasAlpha": true,
+          "source": {
+            "type": "derived",
+            "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-06.png"
+          },
+          "review": {
+            "status": "pending",
+            "notes": [
+              "Keep water, bread, truth, justice, and freedom grounded in the source-supported practical/symbolic cluster rather than turning the shot into a floating icon carousel.",
+              "Motion should be restrained parallax only; the ideas are carried by composition and narration, not by flashy object animation."
+            ]
+          }
+        },
+        {
+          "id": "shot06-water-reflection-v1",
+          "path": "blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-06/water-reflection.png",
+          "role": "reflection",
+          "material": "water",
+          "depthDefault": 0.38,
+          "anchor": "source-water-region",
+          "transform": { "x": 0, "y": 0, "scale": 1 },
+          "motionPresets": ["waterPulse"],
+          "state": "planned",
+          "hasAlpha": true,
+          "source": {
+            "type": "derived",
+            "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-06.png"
+          },
+          "review": {
+            "status": "pending",
+            "notes": [
+              "Optional. Use only when the editorial frame contains a clean, source-supported water/reflection region that can move without requiring invented geometry."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "shotId": "dilmun-reveal",
+      "sourceShotNumber": 7,
+      "sourceFrame": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-07.png",
+      "status": "draft",
+      "fallback": {
+        "assetId": "shot07-editorial-v1-flat",
+        "assetPath": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-07.png"
+      },
+      "overscan": {
+        "leftPercent": 8,
+        "rightPercent": 8,
+        "topPercent": 10,
+        "bottomPercent": 6
+      },
+      "activationPolicy": {
+        "requiredLayerIds": [
+          "shot07-dilmun-base-v1"
+        ],
+        "enableDeferredPerformanceWhenApproved": false
+      },
+      "layers": [
+        {
+          "id": "shot07-dilmun-base-v1",
+          "path": "blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-07/dilmun-base.png",
+          "role": "background",
+          "material": "atmosphere-distant",
+          "depthDefault": 0.16,
+          "anchor": "dilmun-horizon",
+          "transform": { "x": 0, "y": 0, "scale": 1 },
+          "motionPresets": [],
+          "state": "planned",
+          "hasAlpha": false,
+          "source": {
+            "type": "derived",
+            "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-07.png"
+          },
+          "review": {
+            "status": "pending",
+            "notes": [
+              "Preserve the approved Dilmun geography, horizon, light direction, and composition. The reveal should come primarily from camera movement and atmosphere, not a regenerated fantasy landscape.",
+              "This required base may be an exact-source preservation candidate if no layer removal is needed."
+            ]
+          }
+        },
+        {
+          "id": "shot07-foreground-reeds-v1",
+          "path": "blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-07/foreground/reeds.png",
+          "role": "foreground-occluder",
+          "material": "reed",
+          "depthDefault": 0.82,
+          "anchor": "lower-foreground",
+          "transform": { "x": 0, "y": 0, "scale": 1 },
+          "motionPresets": ["clothLag"],
+          "state": "planned",
+          "hasAlpha": true,
+          "source": {
+            "type": "derived",
+            "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-07.png"
+          },
+          "review": {
+            "status": "pending",
+            "notes": [
+              "Optional. Use only if the source contains a clean foreground plant/reed plane. Keep it subordinate to the upward Dilmun reveal and out of caption-safe areas."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "shotId": "boat-approaches-land-title",
+      "sourceShotNumber": 8,
+      "sourceFrame": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-08.png",
+      "status": "draft",
+      "fallback": {
+        "assetId": "shot08-editorial-v1-flat",
+        "assetPath": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-08.png"
+      },
+      "overscan": {
+        "leftPercent": 8,
+        "rightPercent": 8,
+        "topPercent": 6,
+        "bottomPercent": 8
+      },
+      "activationPolicy": {
+        "requiredLayerIds": [
+          "shot08-landfall-base-v1",
+          "shot08-boat-v1"
+        ],
+        "enableDeferredPerformanceWhenApproved": true
+      },
+      "layers": [
+        {
+          "id": "shot08-landfall-base-v1",
+          "path": "blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-08/landfall-base.png",
+          "role": "background",
+          "material": "architectural-background",
+          "depthDefault": 0.12,
+          "anchor": "shoreline-horizon",
+          "transform": { "x": 0, "y": 0, "scale": 1 },
+          "motionPresets": ["cinematicSlow"],
+          "state": "planned",
+          "hasAlpha": false,
+          "source": {
+            "type": "painted-repair",
+            "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-08.png"
+          },
+          "review": {
+            "status": "pending",
+            "notes": [
+              "Preserve the approved landfall, lighting, and shoreline exactly. If the boat is extracted for motion, repair only its footprint in this base to prevent duplicate-boat ghosting.",
+              "Do not repaint the wider scene merely to increase motion."
+            ]
+          }
+        },
+        {
+          "id": "shot08-boat-v1",
+          "path": "blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-08/boat.png",
+          "role": "major-prop",
+          "material": "rigid-vessel",
+          "depthDefault": 0.52,
+          "anchor": "boat-center-of-mass",
+          "transform": { "x": 0, "y": 0, "scale": 1 },
+          "motionPresets": ["boatBob"],
+          "state": "planned",
+          "hasAlpha": true,
+          "source": {
+            "type": "derived",
+            "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-08.png"
+          },
+          "review": {
+            "status": "pending",
+            "notes": [
+              "Keep boat motion physical and restrained. The vessel approaches land; it should not skid, float independently of the water plane, or change silhouette.",
+              "Identity, rigging, hull geometry, and lighting must remain source-faithful."
+            ]
+          }
+        },
+        {
+          "id": "shot08-foreground-reeds-v1",
+          "path": "blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-08/foreground/reeds.png",
+          "role": "foreground-occluder",
+          "material": "reed",
+          "depthDefault": 0.84,
+          "anchor": "lower-foreground",
+          "transform": { "x": 0, "y": 0, "scale": 1 },
+          "motionPresets": ["clothLag"],
+          "state": "planned",
+          "hasAlpha": true,
+          "source": {
+            "type": "derived",
+            "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-08.png"
+          },
+          "review": {
+            "status": "pending",
+            "notes": [
+              "Optional. Foreground motion may add depth only if it does not obscure the boat, shoreline, or final title-safe region."
+            ]
+          }
+        }
+      ]
     }
   ]
 }
