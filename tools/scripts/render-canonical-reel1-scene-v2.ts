@@ -6,7 +6,7 @@ import {
   type AnimationAssetManifest,
 } from '../animation/src/animation-asset-manifest';
 import { loadSceneV2ForRender } from '../animation/src/scene-v2-asset-loader';
-import { assertSceneV2, type SceneV2 } from '../animation/src/scene-v2';
+import type { SceneV2 } from '../animation/src/scene-v2';
 import {
   formatLocalRenderProfile,
   getLocalRenderProfile,
@@ -29,6 +29,11 @@ const SCENE_PATHS = [
   'tools/animation/scenes/reel-01-shot-07-dilmun-reveal-benchmark.scene-v2.json',
   'tools/animation/scenes/reel-01-shot-08-landfall-title-benchmark.scene-v2.json',
 ] as const;
+const REEL_DURATION_FRAMES = 1800;
+const EXPECTED_HANDOFF_HOLD = {
+  afterShotNumber: 5,
+  durationFrames: 30,
+};
 
 const outputDirectory = resolve(
   process.env.ANIMATION_PROOF_OUTPUT_DIRECTORY ??
@@ -41,7 +46,7 @@ const manifest = JSON.parse(
 ) as AnimationAssetManifest;
 await verifyCanonicalManifest(manifest);
 
-const loadedScenes = [];
+const loadedScenes: SceneV2[] = [];
 for (const [index, scenePath] of SCENE_PATHS.entries()) {
   const loaded = await loadSceneV2ForRender(resolve(scenePath), ASSET_ROOT);
   const expectedShotNumber = index + 1;
@@ -75,48 +80,64 @@ for (const scene of loadedScenes.slice(1)) {
   }
 }
 
-let startFrame = 0;
-const shots = loadedScenes.map((scene) => {
-  const shot = structuredClone(scene.shots[0]);
-  shot.startFrame = startFrame;
-  startFrame += shot.durationFrames;
-  return shot;
-});
-
-if (startFrame !== 1800) {
-  throw new Error(`Canonical Reel 1 must be exactly 1800 frames; resolved ${startFrame}.`);
+const timeline = buildCanonicalTimeline(loadedScenes);
+const approvedAnimationFrames = timeline.reduce(
+  (total, item) => total + item.approvedDurationFrames,
+  0,
+);
+const handoffHoldFrames = timeline.reduce(
+  (total, item) => total + item.holdFrames,
+  0,
+);
+if (approvedAnimationFrames + handoffHoldFrames !== REEL_DURATION_FRAMES) {
+  throw new Error(
+    `Canonical Reel 1 timeline must total ${REEL_DURATION_FRAMES} frames; approved=${approvedAnimationFrames}, handoff holds=${handoffHoldFrames}.`,
+  );
 }
-
-const combinedScene: SceneV2 = {
-  ...structuredClone(first),
-  sceneId: 'chapter-01-reel-01-canonical-scene-v2',
-  assetVersion: manifest.assetVersion,
-  assetStrategy: 'scene-only',
-  assetManifestPath: undefined,
-  durationFrames: startFrame,
-  shots,
-  transitions: [],
-  reviewMarkers: [],
-  sourcePolicy: {
-    ...first.sourcePolicy,
-    storyMutationAllowed: false,
-    visualSource: 'approved-animation-v1-canonical-assets',
-  },
-};
-assertSceneV2(combinedScene);
 
 const propsPath = join(outputDirectory, 'canonical-reel1-scene-v2-props.json');
 const sceneEvidencePath = join(outputDirectory, 'canonical-reel1-scene-v2.json');
 const visualPath = join(outputDirectory, 'reel-animation-v1-visual.mp4');
-await writeJson(propsPath, { scene: combinedScene, showReviewGuides: false });
-await writeJson(sceneEvidencePath, combinedScene);
+const canonicalEvidence = {
+  schemaVersion: 1,
+  type: 'canonical-reel1-scene-v2-assembly',
+  sceneId: 'chapter-01-reel-01-canonical-scene-v2',
+  projectSlug: first.projectSlug,
+  chapterNumber: first.chapterNumber,
+  episodeNumber: first.episodeNumber,
+  visualBible: first.visualBible,
+  styleBible: first.styleBible,
+  assetVersion: manifest.assetVersion,
+  width: first.width,
+  height: first.height,
+  fps: first.fps,
+  durationFrames: REEL_DURATION_FRAMES,
+  approvedAnimationFrames,
+  handoffHoldFrames,
+  shotCount: timeline.length,
+  shots: timeline,
+  sourcePolicy: {
+    storyMutationAllowed: false,
+    narrationSource: 'reel-production-record',
+    captionSource: 'reel-production-record',
+    visualSource: 'approved-animation-v1-canonical-assets',
+  },
+};
+await writeJson(propsPath, { scenes: loadedScenes });
+await writeJson(sceneEvidencePath, canonicalEvidence);
 
 const renderProfile = getLocalRenderProfile();
 console.log('Canonical Reel 1 Scene V2 assembly');
-console.log(`[ok] approved shots: ${shots.length}/8`);
-console.log(`[ok] duration: ${combinedScene.durationFrames} frames / ${combinedScene.durationFrames / combinedScene.fps}s`);
-console.log(`[ok] canvas: ${combinedScene.width}x${combinedScene.height} @ ${combinedScene.fps} fps`);
-console.log(`[ok] source: approved animation-v1 canonical assets`);
+console.log(`[ok] approved shots: ${timeline.length}/8`);
+console.log(
+  `[ok] approved animation: ${approvedAnimationFrames} frames / ${(approvedAnimationFrames / first.fps).toFixed(1)}s`,
+);
+console.log(
+  `[ok] Shot 5→6 handoff hold: ${handoffHoldFrames} frames / ${(handoffHoldFrames / first.fps).toFixed(1)}s`,
+);
+console.log(`[ok] duration: ${REEL_DURATION_FRAMES} frames / ${REEL_DURATION_FRAMES / first.fps}s`);
+console.log(`[ok] canvas: ${first.width}x${first.height} @ ${first.fps} fps`);
+console.log('[ok] source: approved animation-v1 canonical assets');
 console.log(`Hardware: ${formatLocalRenderProfile(renderProfile)}`);
 console.log(`Output: ${visualPath}`);
 
@@ -141,6 +162,52 @@ await run(
 
 console.log(`Rendered canonical Scene V2 Reel 1 visual: ${visualPath}`);
 console.log(`Scene evidence: ${sceneEvidencePath}`);
+
+function buildCanonicalTimeline(scenes: SceneV2[]) {
+  const timeline = scenes.map((scene, index) => {
+    const shot = scene.shots[0];
+    if (shot.sourceStartFrame === undefined) {
+      throw new Error(`Shot ${shot.sourceShotNumber} is missing sourceStartFrame provenance.`);
+    }
+    const nextStartFrame =
+      index + 1 < scenes.length
+        ? scenes[index + 1].shots[0]?.sourceStartFrame
+        : REEL_DURATION_FRAMES;
+    if (nextStartFrame === undefined) {
+      throw new Error(`Shot ${shot.sourceShotNumber + 1} is missing sourceStartFrame provenance.`);
+    }
+    const slotDurationFrames = nextStartFrame - shot.sourceStartFrame;
+    const holdFrames = slotDurationFrames - shot.durationFrames;
+    if (slotDurationFrames <= 0 || holdFrames < 0) {
+      throw new Error(
+        `Shot ${shot.sourceShotNumber} approved duration ${shot.durationFrames} does not fit source timeline slot ${slotDurationFrames}.`,
+      );
+    }
+    return {
+      sourceShotNumber: shot.sourceShotNumber,
+      shotId: shot.id,
+      sceneId: scene.sceneId,
+      sourceStartFrame: shot.sourceStartFrame,
+      approvedDurationFrames: shot.durationFrames,
+      slotDurationFrames,
+      holdFrames,
+      transitionOut: shot.transitionOut ?? null,
+    };
+  });
+
+  const holds = timeline.filter((item) => item.holdFrames > 0);
+  if (
+    holds.length !== 1 ||
+    holds[0].sourceShotNumber !== EXPECTED_HANDOFF_HOLD.afterShotNumber ||
+    holds[0].holdFrames !== EXPECTED_HANDOFF_HOLD.durationFrames
+  ) {
+    throw new Error(
+      `Canonical Reel 1 must preserve exactly one ${EXPECTED_HANDOFF_HOLD.durationFrames}-frame Shot ${EXPECTED_HANDOFF_HOLD.afterShotNumber}→${EXPECTED_HANDOFF_HOLD.afterShotNumber + 1} handoff hold; found ${holds.map((item) => `Shot ${item.sourceShotNumber}:${item.holdFrames}`).join(', ') || 'none'}.`,
+    );
+  }
+
+  return timeline;
+}
 
 async function verifyCanonicalManifest(manifestValue: AnimationAssetManifest) {
   if (manifestValue.shots.length < 8) {
