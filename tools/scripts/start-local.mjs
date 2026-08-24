@@ -105,15 +105,12 @@ async function prepareHardwareProfile() {
 function reconcileWorkspaceInstall() {
   const nodeModules = join(root, 'node_modules');
   const modulesManifest = join(nodeModules, '.modules.yaml');
-  const dotenvPackage = join(nodeModules, 'dotenv', 'package.json');
   const packageJson = join(root, 'package.json');
   const lockfile = join(root, 'pnpm-lock.yaml');
   const timestampToleranceMs = 2_000;
 
   const installMissing =
-    !existsSync(nodeModules) ||
-    !existsSync(modulesManifest) ||
-    !existsSync(dotenvPackage);
+    !existsSync(nodeModules) || !existsSync(modulesManifest);
   const installLooksStale =
     !installMissing &&
     (statSync(packageJson).mtimeMs - statSync(modulesManifest).mtimeMs >
