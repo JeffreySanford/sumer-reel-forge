@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { createInterface } from 'node:readline';
 
 loadLocalEnvFile();
 
@@ -33,7 +34,7 @@ const loadTimeoutMs = positiveInteger(
   180000,
 );
 
-console.log('[review-runtime] Phase 1/3 · deterministic scene + material review');
+console.log('[review-runtime] Phase 1/4 · deterministic scene + material review');
 const deterministicArgs = args.filter(
   (arg) => arg !== '--require-ai' && arg !== '--skip-ai',
 );
@@ -41,47 +42,89 @@ deterministicArgs.push('--skip-ai');
 const deterministicExit = await runNode(
   'tools/scripts/review-animation-shot.mjs',
   deterministicArgs,
+  { suppressTerminalState: true },
 );
+
 if (deterministicExit === 1) {
+  console.log('');
+  console.log('FINAL STATE: REVIEW ERROR');
   process.exitCode = 1;
 } else {
   console.log('');
-  console.log('[review-runtime] Phase 2/3 · contained-material boundary review');
+  console.log(
+    `PHASE 1 STATE: ${deterministicExit === 0 ? 'DETERMINISTIC PASS' : 'DETERMINISTIC FAIL'}`,
+  );
+
+  console.log('');
+  console.log('[review-runtime] Phase 2/4 · contained-material boundary review');
   const containmentArgs = [shotArg];
   if (previewArg) containmentArgs.push(previewArg);
   const containmentExit = await runNode(
     'tools/scripts/verify-contained-material-boundary.mjs',
     containmentArgs,
   );
+  console.log(
+    `PHASE 2 STATE: ${containmentExit === 0 ? 'CONTAINMENT PASS' : 'CONTAINMENT FAIL'}`,
+  );
 
   if (deterministicExit !== 0 || containmentExit !== 0) {
     console.log(
-      '[review-runtime] Deterministic review is not clean; delta vision critique is skipped until hard gates pass.',
+      '[review-runtime] Hard deterministic gates are not clean; delta vision critique is skipped.',
     );
+    console.log('');
+    console.log('FINAL STATE: DETERMINISTIC FAIL');
     process.exitCode = 2;
-  } else if (skipAi) {
-    console.log('');
-    console.log('[review-runtime] Phase 3/3 · delta vision review skipped by --skip-ai');
-    process.exitCode = 0;
   } else {
-    console.log('');
-    console.log('[review-runtime] Phase 3/3 · source-aware delta vision review');
-    if (model) {
-      await warmVisionModel().catch((error) => {
-        console.warn(
-          `[review-runtime] Vision warm-up did not complete: ${errorMessage(error)}`,
+    let deltaExit = 0;
+
+    if (skipAi) {
+      console.log('');
+      console.log('[review-runtime] Phase 3/4 · delta vision review skipped by --skip-ai');
+      console.log('PHASE 3 STATE: AI SKIPPED');
+    } else {
+      console.log('');
+      console.log('[review-runtime] Phase 3/4 · source-aware delta vision review');
+      if (model) {
+        await warmVisionModel().catch((error) => {
+          console.warn(
+            `[review-runtime] Vision warm-up did not complete: ${errorMessage(error)}`,
+          );
+        });
+      }
+
+      const deltaArgs = [shotArg];
+      if (previewArg) deltaArgs.push(previewArg);
+      if (requireAi) deltaArgs.push('--require-ai');
+      deltaExit = await runNode(
+        'tools/scripts/review-animation-shot-delta-vision.mjs',
+        deltaArgs,
+        { suppressTerminalState: true },
+      );
+      if (deltaExit === 1) {
+        console.log('');
+        console.log('FINAL STATE: REVIEW ERROR');
+        process.exitCode = 1;
+      } else {
+        console.log(
+          `PHASE 3 STATE: ${deltaExit === 3 ? 'AI UNAVAILABLE' : 'AI CRITIQUE COMPLETE'}`,
         );
-      });
+      }
     }
 
-    const deltaArgs = [shotArg];
-    if (previewArg) deltaArgs.push(previewArg);
-    if (requireAi) deltaArgs.push('--require-ai');
-    const deltaExit = await runNode(
-      'tools/scripts/review-animation-shot-delta-vision.mjs',
-      deltaArgs,
-    );
-    process.exitCode = deltaExit;
+    if (deltaExit !== 1) {
+      console.log('');
+      console.log(
+        '[review-runtime] Phase 4/4 · deterministic-evidence reconciliation + final state',
+      );
+      const reconciliationArgs = [shotArg];
+      if (previewArg) reconciliationArgs.push(previewArg);
+      if (requireAi) reconciliationArgs.push('--require-ai');
+      const reconciliationExit = await runNode(
+        'tools/scripts/reconcile-animation-review.mjs',
+        reconciliationArgs,
+      );
+      process.exitCode = deltaExit === 3 ? 3 : reconciliationExit;
+    }
   }
 }
 
@@ -113,7 +156,11 @@ async function warmVisionModel() {
   );
 }
 
-async function runNode(scriptPath, scriptArgs) {
+async function runNode(
+  scriptPath,
+  scriptArgs,
+  { suppressTerminalState = false } = {},
+) {
   return await new Promise((resolvePromise, rejectPromise) => {
     const child = spawn(
       process.execPath,
@@ -121,13 +168,29 @@ async function runNode(scriptPath, scriptArgs) {
       {
         cwd: resolve('.'),
         env: process.env,
-        stdio: 'inherit',
+        stdio: suppressTerminalState
+          ? ['inherit', 'pipe', 'inherit']
+          : 'inherit',
         windowsHide: true,
       },
     );
 
+    if (suppressTerminalState && child.stdout) {
+      const lines = createInterface({ input: child.stdout, crlfDelay: Infinity });
+      lines.on('line', (line) => {
+        if (line.startsWith('FINAL STATE:')) return;
+        if (
+          line ===
+          'No candidate was promoted and no human approval was recorded.'
+        ) {
+          return;
+        }
+        console.log(line);
+      });
+    }
+
     child.once('error', rejectPromise);
-    child.once('exit', (code, signal) => {
+    child.once('close', (code, signal) => {
       if (signal) {
         console.error(`[review-runtime] ${scriptPath} exited with signal ${signal}.`);
         resolvePromise(1);
