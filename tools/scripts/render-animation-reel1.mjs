@@ -12,28 +12,42 @@ const maxWorkerRuns = Number(process.env.ANIMATION_RENDER_MAX_WORKER_RUNS ?? 6);
 const existingJobId = process.env.ANIMATION_RENDER_JOB_ID;
 
 const job = existingJobId
-  ? { id: existingJobId }
+  ? await findJob(existingJobId)
   : await request('/render-jobs', {
       method: 'POST',
       body: {
         episodeId,
         mode: 'draft-video',
+        pipeline: 'animation',
         notes:
-          'Complete Remotion cinematic animation Reel 1 draft routed through the renderer worker.',
+          'Complete approved canonical Scene V2 Reel 1 animation routed through the renderer worker.',
       },
     });
+const jobId = existingJobId ?? job?.id;
+if (!jobId) {
+  throw new Error('Animation Reel 1 job creation did not return a job id.');
+}
+assertKnownJob(jobId, job);
+assertAnimationPipeline(jobId, job);
 console.log(
   existingJobId
-    ? `Using existing animation Reel 1 job ${job.id}.`
-    : `Queued animation Reel 1 job ${job.id}.`,
+    ? `Using existing animation Reel 1 job ${jobId}.`
+    : `Queued animation Reel 1 job ${jobId}.`,
 );
 
-await runWorkerUntilComplete(job.id);
+await runWorkerUntilComplete(jobId);
 
-const assets = await request(`/generated-assets?renderJobId=${job.id}`);
-const video = assets.find((asset) => asset.assetType === 'video');
+const assets = await request(`/generated-assets?renderJobId=${jobId}`);
+const video = assets.find(
+  (asset) =>
+    asset.assetType === 'video' &&
+    asset.metadata?.adapter === 'animation' &&
+    asset.metadata?.canonicalSceneV2 === true,
+);
 if (!video) {
-  throw new Error(`Animation job ${job.id} did not persist a video asset.`);
+  throw new Error(
+    `Animation job ${jobId} did not persist a canonical Scene V2 animation video asset.`,
+  );
 }
 
 const videoPath = fileURLToPath(video.uri);
@@ -113,49 +127,59 @@ function runWorker() {
   });
 }
 
-async function runWorkerUntilComplete(jobId) {
+async function runWorkerUntilComplete(targetJobId) {
   for (let attempt = 1; attempt <= maxWorkerRuns; attempt += 1) {
-    const before = await findJob(jobId);
-    assertKnownJob(jobId, before);
+    const before = await findJob(targetJobId);
+    assertKnownJob(targetJobId, before);
+    assertAnimationPipeline(targetJobId, before);
     if (before.status === 'complete') {
       return before;
     }
-    assertNotFailed(jobId, before);
+    assertNotFailed(targetJobId, before);
 
     console.log(
-      `Worker pass ${attempt}/${maxWorkerRuns}; target job ${jobId} is ${before.status}.`,
+      `Worker pass ${attempt}/${maxWorkerRuns}; target job ${targetJobId} is ${before.status}.`,
     );
     await runWorker();
 
-    const after = await findJob(jobId);
-    assertKnownJob(jobId, after);
+    const after = await findJob(targetJobId);
+    assertKnownJob(targetJobId, after);
+    assertAnimationPipeline(targetJobId, after);
     if (after.status === 'complete') {
       return after;
     }
-    assertNotFailed(jobId, after);
+    assertNotFailed(targetJobId, after);
   }
 
-  const last = await findJob(jobId);
+  const last = await findJob(targetJobId);
   throw new Error(
-    `Animation job ${jobId} ended in ${last?.status ?? 'unknown'} state after ${maxWorkerRuns} worker passes.`,
+    `Animation job ${targetJobId} ended in ${last?.status ?? 'unknown'} state after ${maxWorkerRuns} worker passes.`,
   );
 }
 
-async function findJob(jobId) {
+async function findJob(targetJobId) {
   const jobs = await request(`/render-jobs?episodeId=${episodeId}`);
-  return jobs.find((candidate) => candidate.id === jobId);
+  return jobs.find((candidate) => candidate.id === targetJobId);
 }
 
-function assertKnownJob(jobId, jobRecord) {
+function assertKnownJob(targetJobId, jobRecord) {
   if (!jobRecord) {
-    throw new Error(`Animation job ${jobId} was not found.`);
+    throw new Error(`Animation job ${targetJobId} was not found.`);
   }
 }
 
-function assertNotFailed(jobId, jobRecord) {
+function assertAnimationPipeline(targetJobId, jobRecord) {
+  if (jobRecord.pipeline !== 'animation') {
+    throw new Error(
+      `Animation job ${targetJobId} is routed to ${jobRecord.pipeline ?? 'unknown'}, not animation. Refusing to render or accept an editorial fallback.`,
+    );
+  }
+}
+
+function assertNotFailed(targetJobId, jobRecord) {
   if (jobRecord.status === 'failed') {
     throw new Error(
-      `Animation job ${jobId} failed: ${jobRecord.notes ?? 'no notes recorded'}`,
+      `Animation job ${targetJobId} failed: ${jobRecord.notes ?? 'no notes recorded'}`,
     );
   }
 }
