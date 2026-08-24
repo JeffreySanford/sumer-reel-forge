@@ -58,6 +58,7 @@ const reviewEntrypoints = [
   'tools/scripts/review-animation-shot-runtime.mjs',
   'tools/scripts/review-animation-shot.mjs',
   'tools/scripts/review-animation-shot-delta-vision.mjs',
+  'tools/scripts/reconcile-animation-review.mjs',
   'tools/scripts/verify-layered-candidate-scene-v2.mjs',
   'tools/scripts/verify-material-local-motion.mjs',
   'tools/scripts/verify-contained-material-boundary.mjs',
