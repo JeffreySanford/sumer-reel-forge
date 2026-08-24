@@ -57,8 +57,12 @@ const startupEntrypoints = [
 const reviewEntrypoints = [
   'tools/scripts/review-animation-shot-runtime.mjs',
   'tools/scripts/review-animation-shot.mjs',
+  'tools/scripts/review-animation-shot-delta-vision.mjs',
   'tools/scripts/verify-layered-candidate-scene-v2.mjs',
   'tools/scripts/verify-material-local-motion.mjs',
+  'tools/scripts/verify-contained-material-boundary.mjs',
+  'tools/scripts/promote-reviewed-shot.mjs',
+  'tools/scripts/audit-animation-reel.mjs',
 ];
 
 const invalidStartupImports = await findDotenvBootstrapImports(startupEntrypoints);
@@ -77,7 +81,7 @@ const invalidReviewImports = await findDotenvBootstrapImports(reviewEntrypoints)
 if (invalidReviewImports.length > 0) {
   console.error('Workspace animation review runtime consistency check failed.');
   console.error(
-    'Shot-review orchestration and deterministic QA entrypoints must not depend on undeclared dotenv/config bootstrap imports:',
+    'Modern review, audit, and promotion entrypoints must not depend on undeclared dotenv/config bootstrap imports:',
   );
   for (const path of invalidReviewImports) {
     console.error(`  - ${path}`);
@@ -95,7 +99,7 @@ console.log(
   `Workspace startup bootstrap consistency OK: ${startupEntrypoints.length} managed entrypoints are dependency-free for .env loading.`,
 );
 console.log(
-  `Workspace animation review consistency OK: ${reviewEntrypoints.length} review entrypoints are dependency-free for .env loading.`,
+  `Workspace animation review consistency OK: ${reviewEntrypoints.length} review/audit/promotion entrypoints are dependency-free for .env loading.`,
 );
 
 async function findDotenvBootstrapImports(paths) {
