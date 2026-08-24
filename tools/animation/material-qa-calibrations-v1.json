@@ -5,6 +5,11 @@
       "id": "contained-water-shot05-v1",
       "motionPreset": "waterPulse",
       "material": "water",
+      "appliesTo": {
+        "scope": "benchmark-exact",
+        "sourceShotNumbers": [5],
+        "layerIds": ["shot05-welcome-water-v1"]
+      },
       "benchmark": {
         "sourceShotNumber": 5,
         "layerId": "shot05-welcome-water-v1",
@@ -23,7 +28,7 @@
         "minPassingRatio": 0.6,
         "pixelChangeThreshold": 2
       },
-      "rationale": "Shot 5 contained water was explicitly accepted by human visual review and produced stable same-camera frozen-layer differentials at all five review beats. The production floor is intentionally conservative at roughly half the weakest approved visual contribution and requires a majority of review beats, leaving room for composition differences without allowing the former near-zero provisional floor to pass visually static water."
+      "rationale": "Shot 5 contained water was explicitly accepted by human visual review and produced stable same-camera frozen-layer differentials at all five review beats. The production floor is intentionally conservative at roughly half the weakest approved visual contribution and requires a majority of review beats. This v1 calibration is benchmark-exact: it must not be inherited by open-water, vessel-handoff, or numinous-underwater layers until those material classes have their own human-approved calibration evidence."
     }
   ]
 }
