@@ -1,4 +1,3 @@
-import 'dotenv/config';
 import {
   generateLayerCandidates,
   preflightLayerCandidates,
@@ -58,6 +57,8 @@ function parseOptions(args) {
       options.manifestPath = arg.slice('--manifest='.length);
     } else if (arg.startsWith('--asset-root=')) {
       options.assetRoot = arg.slice('--asset-root='.length);
+    } else if (arg.startsWith('--workflow=')) {
+      options.workflowPath = arg.slice('--workflow='.length);
     } else if (arg.startsWith('--output=')) {
       options.outputRoot = arg.slice('--output='.length);
     } else {
