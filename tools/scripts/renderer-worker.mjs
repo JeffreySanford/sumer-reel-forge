@@ -1,5 +1,5 @@
-import 'dotenv/config';
-import { join } from 'node:path';
+import { existsSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import {
   prepareOutputDirectory,
   sha256,
@@ -14,6 +14,8 @@ import { RendererApi } from '../renderer/renderer-api.mjs';
 import { loadRendererConfig } from '../renderer/renderer-config.mjs';
 import { boundedStatusNote } from '../renderer/status-utils.mjs';
 
+loadLocalEnvFile();
+
 const config = loadRendererConfig();
 const api = new RendererApi(config.apiBaseUrl, config.workerId);
 const runOnce = process.argv.includes('--once');
@@ -21,6 +23,20 @@ let stopping = false;
 
 process.on('SIGINT', requestStop);
 process.on('SIGTERM', requestStop);
+
+function loadLocalEnvFile() {
+  const envPath = resolve('.env');
+  if (!existsSync(envPath)) return;
+  if (typeof process.loadEnvFile !== 'function') {
+    throw new Error(
+      'Native .env loading requires Node 20.12 or newer. This workspace targets Node 22.',
+    );
+  }
+
+  const inheritedEnvironment = { ...process.env };
+  process.loadEnvFile(envPath);
+  Object.assign(process.env, inheritedEnvironment);
+}
 
 async function main() {
   console.log(
@@ -226,7 +242,7 @@ function requestStop() {
 }
 
 function delay(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise((resolvePromise) => setTimeout(resolvePromise, ms));
 }
 
 main().catch((error) => {
