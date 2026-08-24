@@ -1,4 +1,3 @@
-import 'dotenv/config';
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { basename, isAbsolute, join, relative, resolve } from 'node:path';
@@ -318,7 +317,11 @@ function inspectCameraMotion(scenePath, shotNumber) {
       Number(camera.rotationTo ?? 0) - Number(camera.rotationFrom ?? 0),
     );
     return {
-      present: scaleDelta > 0.000001 || xDelta > 0.000001 || yDelta > 0.000001 || rotationDelta > 0.000001,
+      present:
+        scaleDelta > 0.000001 ||
+        xDelta > 0.000001 ||
+        yDelta > 0.000001 ||
+        rotationDelta > 0.000001,
       available: true,
       scenePath: path,
       preset: camera.preset ?? null,
