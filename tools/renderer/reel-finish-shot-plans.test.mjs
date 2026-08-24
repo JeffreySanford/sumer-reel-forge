@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { access, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import test from 'node:test';
 
@@ -10,6 +10,7 @@ const contractPath = (shot) =>
 const manifestPath = resolve(
   'assets/blessings-of-sumer/chapter-01/reel-01/animation-v1/manifest.json',
 );
+const assetRoot = resolve('assets');
 
 async function readJson(path) {
   return JSON.parse(await readFile(path, 'utf8'));
@@ -83,7 +84,7 @@ test('Shot 8 defers boat motion until the isolated boat exists and keeps title t
   assert.equal(contract.shot.titlePolicy.motion, 'stable-fade');
 });
 
-test('Shots 6 through 8 are admitted to animation-v1 as draft planned work without fake assets or approval', async () => {
+test('Shots 6 through 8 are approved with real required assets while optional layers may remain planned', async () => {
   const manifest = await readJson(manifestPath);
 
   for (const shotNumber of [6, 7, 8]) {
@@ -94,7 +95,7 @@ test('Shots 6 through 8 are admitted to animation-v1 as draft planned work witho
     );
 
     assert.ok(manifestShot, `animation-v1 must include Shot ${shotNumber}.`);
-    assert.equal(manifestShot.status, 'draft');
+    assert.equal(manifestShot.status, 'approved');
     assert.equal(manifestShot.shotId, contract.shot.shotId);
     assert.equal(manifestShot.sourceFrame, contract.shot.sourceFrame);
     assert.deepEqual(
@@ -106,10 +107,36 @@ test('Shots 6 through 8 are admitted to animation-v1 as draft planned work witho
       contract.shot.layers.map((layer) => layer.id),
     );
 
+    const requiredIds = new Set(manifestShot.activationPolicy.requiredLayerIds);
     for (const layer of manifestShot.layers) {
-      assert.equal(layer.state, 'planned');
-      assert.equal(layer.review?.status, 'pending');
-      assert.equal(layer.sha256, undefined);
+      if (requiredIds.has(layer.id)) {
+        assert.equal(layer.state, 'approved', `${layer.id} must be approved.`);
+        assert.equal(
+          layer.review?.status,
+          'approved',
+          `${layer.id} must record approved human review.`,
+        );
+        assert.match(
+          layer.sha256 ?? '',
+          /^sha256:[0-9a-f]{64}$/,
+          `${layer.id} must record a real SHA-256.`,
+        );
+        await access(resolve(assetRoot, layer.path));
+        continue;
+      }
+
+      assert.ok(
+        ['planned', 'approved'].includes(layer.state),
+        `${layer.id} optional state must remain planned or approved.`,
+      );
+      if (layer.state === 'planned') {
+        assert.equal(layer.review?.status, 'pending');
+        assert.equal(layer.sha256, undefined);
+      } else {
+        assert.equal(layer.review?.status, 'approved');
+        assert.match(layer.sha256 ?? '', /^sha256:[0-9a-f]{64}$/);
+        await access(resolve(assetRoot, layer.path));
+      }
     }
   }
 });
