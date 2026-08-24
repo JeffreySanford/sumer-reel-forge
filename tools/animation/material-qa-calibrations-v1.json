@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "calibrations": [
+    {
+      "id": "contained-water-shot05-v1",
+      "motionPreset": "waterPulse",
+      "material": "water",
+      "benchmark": {
+        "sourceShotNumber": 5,
+        "layerId": "shot05-welcome-water-v1",
+        "humanReview": "approved",
+        "reviewBeats": 5,
+        "passingBeats": 5,
+        "minimumMeanAbsoluteDifference": 2.2422,
+        "maximumMeanAbsoluteDifference": 2.3012,
+        "minimumChangedPixelRatio": 0.102725,
+        "maximumChangedPixelRatio": 0.106294,
+        "pixelChangeThreshold": 2
+      },
+      "productionFloor": {
+        "minMeanDiff": 1.0,
+        "minChangedRatio": 0.05,
+        "minPassingRatio": 0.6,
+        "pixelChangeThreshold": 2
+      },
+      "rationale": "Shot 5 contained water was explicitly accepted by human visual review and produced stable same-camera frozen-layer differentials at all five review beats. The production floor is intentionally conservative at roughly half the weakest approved visual contribution and requires a majority of review beats, leaving room for composition differences without allowing the former near-zero provisional floor to pass visually static water."
+    }
+  ]
+}
