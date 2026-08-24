@@ -1,6 +1,9 @@
 import React from 'react';
 import { Composition, registerRoot } from 'remotion';
-import { CanonicalReel1 } from './CanonicalReel1';
+import {
+  CanonicalReel1,
+  type CanonicalReel1Props,
+} from './CanonicalReel1';
 import { CinematicMotionProof } from './CinematicMotionProof';
 import { CinematicStyleTest } from './CinematicStyleTest';
 import { FullReelAnimation } from './FullReelAnimation';
@@ -38,6 +41,7 @@ import {
 import { proofScene } from './scene-data';
 
 const emptySceneV2Props: SceneV2BenchmarkProps = {};
+const emptyCanonicalReel1Props: CanonicalReel1Props = { scenes: [] };
 const emptyContainedMaterialMaskProps: SceneV2ContainedMaterialMaskProps = {};
 const emptyWaterHandoffProps: SceneV2WaterHandoffProps = {};
 const emptyShot03WaterCandidatePreviewProps: Shot03WaterCandidatePreviewProps = {};
@@ -88,13 +92,7 @@ function RemotionRoot() {
         fps={30}
         width={1080}
         height={1920}
-        defaultProps={emptySceneV2Props}
-        calculateMetadata={({ props }) => ({
-          durationInFrames: props.scene?.durationFrames ?? 1800,
-          fps: props.scene?.fps ?? 30,
-          width: props.scene?.width ?? 1080,
-          height: props.scene?.height ?? 1920,
-        })}
+        defaultProps={emptyCanonicalReel1Props}
       />
       <Composition
         id="SceneV2Benchmark"
