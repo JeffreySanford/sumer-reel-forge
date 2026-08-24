@@ -83,6 +83,13 @@ test('canonical Reel 1 preserves eight approved shot timings plus one explicit 3
   assert.equal(approvedDurationFrames + holds[0].holdFrames, 1800);
 });
 
+test('canonical Reel 1 assembler is safe under tsx CommonJS transform and has no top-level await', async () => {
+  const source = await text('tools/scripts/render-canonical-reel1-scene-v2.ts');
+  assert.match(source, /async function main\(\)/);
+  assert.match(source, /main\(\)\.catch/);
+  assert.doesNotMatch(source, /^await\s/m);
+});
+
 test('Remotion registers a dedicated canonical Reel 1 composition', async () => {
   const indexSource = await text('tools/animation/src/index.tsx');
   const compositionSource = await text('tools/animation/src/CanonicalReel1.tsx');
