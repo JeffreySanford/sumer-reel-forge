@@ -18,6 +18,7 @@ export function containedWaterReadableRippleSettle(progress) {
 
 export function buildMaterialMotionStateEvidence(materialQa) {
   const states = [];
+  const sourceShotNumber = Number(materialQa?.sourceShotNumber);
   for (const target of materialQa?.targets ?? []) {
     for (const comparison of target.comparisons ?? []) {
       const progress = Number(comparison.progress);
@@ -34,6 +35,8 @@ export function buildMaterialMotionStateEvidence(materialQa) {
         differencePath: comparison.differencePath ?? null,
       };
       if (
+        sourceShotNumber === 5 &&
+        target.layerId === 'shot05-welcome-water-v1' &&
         target.material === 'water' &&
         Number.isFinite(progress)
       ) {
