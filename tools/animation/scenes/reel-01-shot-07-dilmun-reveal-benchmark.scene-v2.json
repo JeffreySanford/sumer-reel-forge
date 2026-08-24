@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 2,
+  "sceneId": "chapter-01-reel-01-shot-07-dilmun-reveal-benchmark-v1",
+  "projectSlug": "blessings-of-sumer",
+  "chapterNumber": 1,
+  "reelId": "resolve-from-studio",
+  "episodeNumber": 1,
+  "visualBible": "blessings-of-sumer-v1",
+  "styleBible": "reel-01-animation-style-v1",
+  "assetVersion": "editorial-v1-flat-benchmark",
+  "assetManifestPath": "blessings-of-sumer/chapter-01/reel-01/animation-v1/manifest.json",
+  "assetStrategy": "prefer-animation-manifest",
+  "width": 1080,
+  "height": 1920,
+  "fps": 30,
+  "durationFrames": 270,
+  "shots": [
+    {
+      "id": "dilmun-reveal",
+      "sourceShotNumber": 7,
+      "sourceStartFrame": 1320,
+      "startFrame": 0,
+      "durationFrames": 270,
+      "emotionalPurpose": "Let Dilmun arrive as a place rather than a fantasy effect: the horizon opens, the land becomes legible, and the voyage begins to feel purposeful and inevitable.",
+      "eyeTarget": "dilmun-horizon",
+      "stillnessAnchor": "dilmun-landform",
+      "camera": {
+        "preset": "riseReveal",
+        "scaleFrom": 1.006,
+        "scaleTo": 1.025,
+        "xFrom": 0,
+        "xTo": 0,
+        "yFrom": 18,
+        "yTo": -18,
+        "rotationFrom": 0,
+        "rotationTo": 0,
+        "easing": "cinematicSlow",
+        "settleFromProgress": 0.88
+      },
+      "layers": [
+        {
+          "id": "shot07-editorial-base",
+          "assetId": "shot07-editorial-v1-flat",
+          "assetPath": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-07.png",
+          "role": "background",
+          "material": "flattened-editorial-landscape-art",
+          "depth": 0.5,
+          "anchor": "dilmun-horizon",
+          "transform": {
+            "x": 0,
+            "y": 0,
+            "scale": 1
+          },
+          "motionPresets": [],
+          "required": true
+        }
+      ],
+      "performance": [],
+      "atmosphere": [
+        {
+          "id": "dilmun-haze",
+          "preset": "mistDrift",
+          "intensity": 0.08,
+          "depthRange": [0.12, 0.58]
+        }
+      ],
+      "lighting": [
+        {
+          "id": "horizon-reveal-light",
+          "preset": "cinematicSlow",
+          "intensityFrom": 0.02,
+          "intensityTo": 0.05
+        }
+      ],
+      "captionPolicy": {
+        "safeZone": "lower-middle",
+        "avoidTargets": ["dilmun-horizon", "foreground-reeds"],
+        "motion": "stable",
+        "maxLines": 2
+      },
+      "transitionIn": "shot-06-to-07-horizon-lift",
+      "transitionOut": "shot-07-to-08-shoreline-continuity"
+    }
+  ],
+  "transitions": [],
+  "reviewMarkers": [
+    { "id": "concealed-horizon", "progress": 0 },
+    { "id": "first-land", "progress": 0.25 },
+    { "id": "dilmun-readable", "progress": 0.5 },
+    { "id": "reveal-peak", "progress": 0.75 },
+    { "id": "shoreline-handoff", "progress": 1 }
+  ],
+  "reviewPolicy": {
+    "scorecard": "reel-01-animation-review-v1",
+    "humanApprovalRequired": true,
+    "minimumCategory": 4,
+    "publishabilityMinimum": 5,
+    "hardFailsBlockApproval": true
+  },
+  "sourcePolicy": {
+    "storyMutationAllowed": false,
+    "narrationSource": "reel-production-record",
+    "captionSource": "reel-production-record",
+    "visualSource": "versioned-animation-asset-manifest"
+  }
+}
