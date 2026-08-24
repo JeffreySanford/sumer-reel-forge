@@ -6,6 +6,9 @@ import { checkWorkflowHostCompatibility } from '../renderer/comfyui-workflow-doc
 
 const command = process.argv[2] ?? 'preflight';
 const options = parseOptions(process.argv.slice(3));
+if (options.workflowPath) {
+  process.env.COMFYUI_LAYER_WORKFLOW_PATH = options.workflowPath;
+}
 
 async function main() {
   const preflight = await preflightLayerCandidates(options);
