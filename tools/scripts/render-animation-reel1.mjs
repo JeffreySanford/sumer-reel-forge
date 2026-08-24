@@ -1,8 +1,10 @@
-import 'dotenv/config';
 import { spawn } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 import { runProcess } from '../renderer/process-runner.mjs';
+
+loadLocalEnvFile();
 
 const apiBaseUrl = process.env.API_BASE_URL ?? 'http://localhost:3000/api';
 const episodeId = 1;
@@ -72,6 +74,20 @@ console.log(
   `Animation Reel 1 completed with ${assets.length} persisted assets.`,
 );
 console.log(`Video: ${videoPath}`);
+
+function loadLocalEnvFile() {
+  const envPath = resolve('.env');
+  if (!existsSync(envPath)) return;
+  if (typeof process.loadEnvFile !== 'function') {
+    throw new Error(
+      'Native .env loading requires Node 20.12 or newer. This workspace targets Node 22.',
+    );
+  }
+
+  const inheritedEnvironment = { ...process.env };
+  process.loadEnvFile(envPath);
+  Object.assign(process.env, inheritedEnvironment);
+}
 
 function runWorker() {
   return new Promise((resolvePromise, reject) => {
