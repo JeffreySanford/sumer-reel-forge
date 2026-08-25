@@ -3,12 +3,9 @@ import { spawnSync } from 'node:child_process';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { basename, join, resolve } from 'node:path';
 import { checkWorkflowHostCompatibility } from '../renderer/comfyui-workflow-doctor.mjs';
-import {
-  analyzeGrayMask,
-  deriveEnkiUpperFaceRoi,
-  dilateEyeMaskWithinConstraints,
-} from '../animation/src/level2-character-state-localization.mjs';
+import { deriveEnkiUpperFaceRoi } from '../animation/src/level2-character-state-localization.mjs';
 import { analyzeEyeStateAsset } from '../animation/src/level2-eye-state-proof.mjs';
+import { expandTrustedEyeSeedMask } from '../animation/src/level2-trusted-eye-replacement-mask.mjs';
 
 const MANIFEST_PATH = resolve(
   'assets/blessings-of-sumer/chapter-01/reel-01/animation-v1/manifest.json',
@@ -32,13 +29,14 @@ const LAYER_ID = 'shot03-enki-eyes-v1';
 const BODY_ID = 'shot03-enki-body-v1';
 const MASK_THRESHOLD = 16;
 const TARGET_EYE_BAND_FILL = 0.015;
+const MAX_EYE_BAND_FILL = 0.03;
 const INPAINT_PADDING = 40;
 const CROP_ALIGNMENT = 8;
 
 const command = process.argv[2] ?? 'preflight';
 
 void main().catch((error) => {
-  console.error(error instanceof Error ? error.stack ?? error.message : String(error));
+  console.error(error instanceof Error ? (error.stack ?? error.message) : String(error));
   process.exitCode = 1;
 });
 
@@ -122,7 +120,6 @@ async function loadContext() {
 
   return {
     manifest,
-    manifestBytes,
     manifestChecksum: prefixedSha(manifestBytes),
     shot,
     layer,
@@ -132,7 +129,6 @@ async function loadContext() {
     currentStatePath,
     currentStateChecksum: prefixedSha(currentStateBytes),
     dimensions,
-    bodyRgba,
     currentStateRgba,
     roi,
     currentProof,
@@ -140,14 +136,6 @@ async function loadContext() {
 }
 
 async function runPreflight(context) {
-  const fileChecks = [
-    ['animation manifest', MANIFEST_PATH],
-    ['editorial source', context.editorialPath],
-    ['approved Enki body', context.bodyPath],
-    ['current approved eye state', context.currentStatePath],
-    ['blink inpaint workflow', INPAINT_WORKFLOW_PATH],
-  ].map(([name, path]) => ({ name, path, ok: true }));
-
   let comfyOk = false;
   let comfyDetail = '';
   try {
@@ -173,12 +161,7 @@ async function runPreflight(context) {
     context.currentProof.metrics.inEyeBandAlphaRatio >= 0.98;
 
   return {
-    ok:
-      fileChecks.every((check) => check.ok) &&
-      comfyOk &&
-      compatibility.ok &&
-      trustedSeedPass,
-    fileChecks,
+    ok: comfyOk && compatibility.ok && trustedSeedPass,
     comfyOk,
     comfyDetail,
     compatibility,
@@ -216,31 +199,30 @@ async function generateReplacementCandidate(context) {
   ]);
 
   const seedMask = alphaMaskFromRgba(context.currentStateRgba, context.dimensions);
-  const expandedMask = dilateEyeMaskWithinConstraints({
-    mask: seedMask,
-    bodyRgba: context.bodyRgba,
+  const expansion = expandTrustedEyeSeedMask({
+    seedMask,
     dimensions: context.dimensions,
     eyeBand: context.roi.eyeBand,
-    radius: 1,
-    minEyeBandFill: TARGET_EYE_BAND_FILL,
-    maxAdaptiveRadius: 3,
-    maxEyeComponents: 2,
+    threshold: MASK_THRESHOLD,
+    targetFillRatio: TARGET_EYE_BAND_FILL,
+    maxFillRatio: MAX_EYE_BAND_FILL,
+    minSeedInBandRatio: 0.98,
+    maxHorizontalRadius: 24,
+    maxVerticalRadius: 10,
   });
-  const maskAnalysis = analyzeGrayMask(expandedMask, context.dimensions);
-  const eyeBandArea =
-    (context.roi.eyeBand.maxX - context.roi.eyeBand.minX + 1) *
-    (context.roi.eyeBand.maxY - context.roi.eyeBand.minY + 1);
-  const expandedFill = maskAnalysis.selected / eyeBandArea;
-  if (expandedFill < 0.01) {
-    throw new Error(
-      `Expanded replacement mask is still too sparse: ${(expandedFill * 100).toFixed(3)}% of eye band.`,
-    );
-  }
+  const expandedMask = expansion.mask;
+  const expandedFill = expansion.metrics.fillRatio;
+  const maskBounds = alphaBounds(expandedMask, context.dimensions, MASK_THRESHOLD);
+  if (!maskBounds) throw new Error('Expanded replacement mask is empty.');
+
+  console.log(
+    `[ok] trusted eyelid mask expanded: ${(expandedFill * 100).toFixed(3)}% of eye band · radius ${expansion.metrics.usedHorizontalRadius}x${expansion.metrics.usedVerticalRadius}`,
+  );
 
   const maskPath = join(inputDirectory, 'replacement-eye-mask.png');
   writeGrayPng(expandedMask, context.dimensions, maskPath);
   const crop = paddedAlignedCrop(
-    maskAnalysis.bounds,
+    maskBounds,
     INPAINT_PADDING,
     context.dimensions.width,
     context.dimensions.height,
@@ -308,7 +290,7 @@ async function generateReplacementCandidate(context) {
   const candidateBytes = await readFile(candidatePath);
 
   const candidate = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     state: 'pending-human-review',
     replacementForLayerId: LAYER_ID,
     sourceShotNumber: SHOT_NUMBER,
@@ -325,6 +307,7 @@ async function generateReplacementCandidate(context) {
       inEyeBandAlphaRatio: context.currentProof.metrics.inEyeBandAlphaRatio,
       originalEyeBandFillRatio: context.currentProof.metrics.eyeBandFillRatio,
       expandedEyeBandFillRatio: expandedFill,
+      expansion: expansion.metrics,
     },
     inputs: {
       editorialPath: context.editorialPath,
@@ -344,28 +327,20 @@ async function generateReplacementCandidate(context) {
     shotDirectory,
     `${LAYER_ID}-replacement.candidate.json`,
   );
-  await writeFile(candidateReportPath, `${JSON.stringify(candidate, null, 2)}\n`, 'utf8');
-  await writeFile(
-    join(runDirectory, 'candidate-run.json'),
-    `${JSON.stringify(
-      {
-        schemaVersion: 1,
-        type: 'shot03-character-state-replacement-candidate',
-        generatedAt: candidate.generatedAt,
-        sourceManifestChecksum: context.manifestChecksum,
-        candidates: [candidate],
-        approvalPolicy: {
-          canonicalMutated: false,
-          automaticPromotionAllowed: false,
-          humanIdentityReviewRequired: true,
-          explicitReplacementPromotionRequired: true,
-        },
-      },
-      null,
-      2,
-    )}\n`,
-    'utf8',
-  );
+  await writeJson(candidateReportPath, candidate);
+  await writeJson(join(runDirectory, 'candidate-run.json'), {
+    schemaVersion: 2,
+    type: 'shot03-character-state-replacement-candidate',
+    generatedAt: candidate.generatedAt,
+    sourceManifestChecksum: context.manifestChecksum,
+    candidates: [candidate],
+    approvalPolicy: {
+      canonicalMutated: false,
+      automaticPromotionAllowed: false,
+      humanIdentityReviewRequired: true,
+      explicitReplacementPromotionRequired: true,
+    },
+  });
 
   return {
     runDirectory,
@@ -412,6 +387,23 @@ function alphaMaskFromRgba(rgba, dimensions) {
   return mask;
 }
 
+function alphaBounds(mask, dimensions, threshold) {
+  let minX = dimensions.width;
+  let minY = dimensions.height;
+  let maxX = -1;
+  let maxY = -1;
+  for (let y = 0; y < dimensions.height; y += 1) {
+    for (let x = 0; x < dimensions.width; x += 1) {
+      if (mask[y * dimensions.width + x] <= threshold) continue;
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x);
+      maxY = Math.max(maxY, y);
+    }
+  }
+  return maxX >= minX ? { minX, minY, maxX, maxY } : null;
+}
+
 function decodeRgba(path, dimensions) {
   const result = spawnSync(
     FFMPEG,
@@ -432,7 +424,9 @@ function decodeRgba(path, dimensions) {
     { encoding: null, maxBuffer: 32 * 1024 * 1024 },
   );
   if (result.error) throw result.error;
-  if (result.status !== 0) throw new Error(`Could not decode ${path}.`);
+  if (result.status !== 0) {
+    throw new Error(`Could not decode ${path}: ${String(result.stderr ?? '').trim()}`);
+  }
   const expected = dimensions.width * dimensions.height * 4;
   if (result.stdout.length !== expected) {
     throw new Error(`Decoded ${path} to ${result.stdout.length} bytes; expected ${expected}.`);
@@ -465,7 +459,9 @@ function writeGrayPng(mask, dimensions, outputPath) {
     { input: Buffer.from(mask), encoding: null, maxBuffer: 8 * 1024 * 1024 },
   );
   if (result.error) throw result.error;
-  if (result.status !== 0) throw new Error('Could not write replacement eye mask PNG.');
+  if (result.status !== 0) {
+    throw new Error(`Could not write replacement eye mask PNG: ${String(result.stderr ?? '')}`);
+  }
 }
 
 function paddedAlignedCrop(bounds, padding, width, height) {
@@ -584,8 +580,13 @@ async function runWorkflowForImage(workflow) {
     `${BASE_URL}/view?${new URLSearchParams(image)}`,
     { signal: AbortSignal.timeout(60_000) },
   );
-  if (!response.ok) throw new Error(`ComfyUI image download returned HTTP ${response.status}.`);
-  return { promptId: queued.prompt_id, bytes: Buffer.from(await response.arrayBuffer()) };
+  if (!response.ok) {
+    throw new Error(`ComfyUI image download returned HTTP ${response.status}.`);
+  }
+  return {
+    promptId: queued.prompt_id,
+    bytes: Buffer.from(await response.arrayBuffer()),
+  };
 }
 
 async function waitForImage(promptId) {
@@ -594,7 +595,9 @@ async function waitForImage(promptId) {
     const response = await fetch(`${BASE_URL}/history/${promptId}`, {
       signal: AbortSignal.timeout(20_000),
     });
-    if (!response.ok) throw new Error(`ComfyUI history returned HTTP ${response.status}.`);
+    if (!response.ok) {
+      throw new Error(`ComfyUI history returned HTTP ${response.status}.`);
+    }
     const history = await response.json();
     const entry = history[promptId];
     if (entry?.status?.status_str === 'error') {
@@ -622,10 +625,15 @@ function replaceTokens(value, replacements) {
       value,
     );
   }
-  if (Array.isArray(value)) return value.map((item) => replaceTokens(item, replacements));
+  if (Array.isArray(value)) {
+    return value.map((item) => replaceTokens(item, replacements));
+  }
   if (value && typeof value === 'object') {
     return Object.fromEntries(
-      Object.entries(value).map(([key, item]) => [key, replaceTokens(item, replacements)]),
+      Object.entries(value).map(([key, item]) => [
+        key,
+        replaceTokens(item, replacements),
+      ]),
     );
   }
   return value;
@@ -641,7 +649,10 @@ function readPngDimensions(bytes, label) {
   ) {
     throw new Error(`${label} is not a PNG.`);
   }
-  return { width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) };
+  return {
+    width: bytes.readUInt32BE(16),
+    height: bytes.readUInt32BE(20),
+  };
 }
 
 function assertSameDimensions(expected, actual, label) {
@@ -665,6 +676,10 @@ function prefixedSha(bytes) {
 
 function normalizeSha(value) {
   return String(value ?? '').replace(/^sha256:/i, '').toLowerCase();
+}
+
+async function writeJson(path, value) {
+  await writeFile(path, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
 }
 
 function runFfmpeg(args) {
