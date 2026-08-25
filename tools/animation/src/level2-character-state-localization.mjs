@@ -151,10 +151,22 @@ export function dilateEyeMaskWithinConstraints({
   ) {
     throw new Error('Eye-mask maxEyeComponents must be an integer from 1 through 4.');
   }
-  if (radius === 0) return new Uint8Array(mask);
+
+  // SAM frequently returns tiny paint-texture fragments around the true eyelid
+  // seed. Prune those fragments before any dilation so later growth cannot
+  // preserve noise that the validator will correctly reject as extra eyes.
+  const seedMask = retainStrongestEyeComponents({
+    mask,
+    dimensions,
+    eyeBand,
+    threshold,
+    maxComponents: maxEyeComponents,
+  });
+
+  if (radius === 0) return seedMask;
 
   let output = dilateAtRadius({
-    mask,
+    mask: seedMask,
     bodyRgba,
     dimensions,
     eyeBand,
@@ -163,14 +175,14 @@ export function dilateEyeMaskWithinConstraints({
   });
   let fill = eyeBandFillRatio(output, dimensions, eyeBand, threshold);
 
-  // First preserve the literal SAM shape and try only tiny isotropic growth.
+  // First preserve the pruned literal SAM shape and try only tiny isotropic growth.
   for (
     let adaptiveRadius = radius + 1;
     fill < minEyeBandFill && adaptiveRadius <= maxAdaptiveRadius;
     adaptiveRadius += 1
   ) {
     output = dilateAtRadius({
-      mask,
+      mask: seedMask,
       bodyRgba,
       dimensions,
       eyeBand,
@@ -183,12 +195,10 @@ export function dilateEyeMaskWithinConstraints({
   // Real painted eyes can be only a few semantic pixels even when the allowed
   // eye band is comparatively large. If SAM found a valid in-band seed but the
   // fixed 1-3px growth is still too sparse, turn at most the strongest one/two
-  // connected seed components into horizontally biased eyelid editing patches.
-  // The approved Enki alpha and deterministic eye band remain hard boundaries,
-  // and growth stops as soon as the existing minimum fill is reached.
+  // retained seed components into horizontally biased eyelid editing patches.
   if (fill < minEyeBandFill) {
     output = growCompactEyeSeedComponents({
-      seedMask: mask,
+      seedMask,
       baseMask: output,
       bodyRgba,
       dimensions,
@@ -200,6 +210,33 @@ export function dilateEyeMaskWithinConstraints({
   }
 
   return output;
+}
+
+export function retainStrongestEyeComponents({
+  mask,
+  dimensions,
+  eyeBand,
+  threshold = DEFAULT_THRESHOLD,
+  maxComponents = DEFAULT_MAX_EYE_COMPONENTS,
+}) {
+  const components = analyzeEyeSeedComponents(
+    mask,
+    dimensions,
+    eyeBand,
+    threshold,
+  ).slice(0, maxComponents);
+  if (!components.length) return new Uint8Array(mask.length);
+
+  const retained = new Uint8Array(mask.length);
+  for (const component of components) {
+    for (let y = component.bounds.minY; y <= component.bounds.maxY; y += 1) {
+      for (let x = component.bounds.minX; x <= component.bounds.maxX; x += 1) {
+        const pixel = y * dimensions.width + x;
+        if (mask[pixel] > threshold) retained[pixel] = mask[pixel];
+      }
+    }
+  }
+  return retained;
 }
 
 export function eyeBandFillRatio(
@@ -401,7 +438,7 @@ function dilateAtRadius({
   radius,
   threshold,
 }) {
-  const output = new Uint8Array(mask);
+  const output = new Uint8Array(mask.length);
   for (let y = eyeBand.minY; y <= eyeBand.maxY; y += 1) {
     for (let x = eyeBand.minX; x <= eyeBand.maxX; x += 1) {
       const pixel = y * dimensions.width + x;
