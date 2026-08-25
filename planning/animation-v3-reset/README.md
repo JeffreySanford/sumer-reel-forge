@@ -1,6 +1,6 @@
 # Animation V3 Reset — Planning Index
 
-Status: **planning only — no implementation begins until these contracts are accepted together**.
+Status: **architecture reset in planning/foundation phase**.
 
 This directory captures the architectural reset for Sumer Reel Forge after the Reel 1 Level 2 Shot 3 blink investigation demonstrated that the repository had begun re-implementing character-animation primitives one PNG state at a time.
 
@@ -55,8 +55,73 @@ The literary/mythological source layer is anchored to the Oxford **Electronic Te
    - unit, Storybook, visual, motion-proof, E2E and human-review strategy;
    - historical-source tests;
    - CI tiers;
-   - ten platform benchmark scenes;
+   - platform benchmark scenes;
    - phased implementation plan and migration rules.
+
+5. [`package-adoption-matrix.md`](./package-adoption-matrix.md)
+   - runtime ownership boundaries;
+   - exact-version and licensing policy;
+   - bounded dependency spikes;
+   - keep/constrain/reject gates for Rive, Pixi, Three/R3F, Rapier, Spine, Theatre and generative adapters.
+
+6. [`scene-v3-contract-design.md`](./scene-v3-contract-design.md)
+   - planned concrete Scene V3 TypeScript contracts;
+   - deterministic seed semantics;
+   - actor/performance/material/world separation;
+   - resolved-scene and render-receipt contracts;
+   - Scene V2 compatibility requirements.
+
+7. [`benchmark-specifications.md`](./benchmark-specifications.md)
+   - platform proof scenes derived from Chapters 1–3;
+   - exact subsystem ownership;
+   - controls/negative tests;
+   - Storybook states, rendered evidence and human acceptance criteria.
+
+8. [`animation-lab-storybook-contract.md`](./animation-lab-storybook-contract.md)
+   - dedicated React/Vite Animation Lab plan;
+   - exact-frame Storybook convention;
+   - debug/source overlays;
+   - interaction, visual and motion-proof integration.
+
+9. [`migration-release-strategy.md`](./migration-release-strategy.md)
+   - coexistence of V2 and V3;
+   - shot-by-shot migration;
+   - runtime/asset maturity states;
+   - rollback, package/schema upgrade and release-channel policy.
+
+10. [`performance-render-budget.md`](./performance-render-budget.md)
+   - workstation assumptions;
+   - preview/production profiles;
+   - Rive/Pixi/R3F/Rapier/crowd/CityKit budgets;
+   - render observability, cache and CI strategy.
+
+11. [`implementation-backlog.md`](./implementation-backlog.md)
+   - dependency-aware phase sequence from source registry through Reel 1/Chapter 2/Chapter 3 readiness;
+   - per-phase exit gates;
+   - stop conditions and PR-sizing guidance.
+
+## Current implementation status
+
+### Phase 0 — architecture/planning
+
+Substantially complete. Planning may continue to refine concrete decisions, but the ownership model is now defined well enough to guide foundation work.
+
+### Phase 1 — historical-source foundation
+
+In progress on `feat/historical-source-registry-v3`.
+
+Completed first slice:
+
+- `libs/historical-sources` created;
+- typed ETCSL/non-ETCSL/visual-evidence contracts;
+- initial Chapter 1–3 narrative bindings;
+- explicit fictional-bridge support;
+- unit tests;
+- local Nx test/build verified green (10/10 tests on 2026-08-25).
+
+Next planned Phase 1 slices are real museum/archaeological visual-evidence records, source validation/reporting, and read-only Studio/Storybook provenance surfaces.
+
+No animation runtime dependency is installed as part of Phase 1.
 
 ## External authorities and technology references
 
@@ -95,7 +160,10 @@ The literary/mythological source layer is anchored to the Oxford **Electronic Te
 10. **No engine may grade its own output as the only acceptance mechanism.**
 11. **Storybook states and rendered motion proofs are first-class animation tests.**
 12. **Human visual review remains mandatory for production promotion.**
+13. **Runtime versions and the exact rendered assets are evidence-bound.**
+14. **Historical-fiction revision is allowed; provenance must be reclassified rather than erased.**
+15. **Scene V2 remains a supported historical baseline until explicit migration.**
 
 ## Reset rule
 
-Do not resume broad Reel 1 Level 2 production until the foundation benchmarks in `testing-provenance-roadmap.md` are green. Existing Reel 1 Scene V2 work remains valid evidence and can later migrate through a Scene V2 → Scene V3 compatibility adapter.
+Do not resume broad Reel 1 Level 2 production until the foundation benchmarks in `benchmark-specifications.md` and `implementation-backlog.md` are green. Existing Reel 1 Scene V2 work remains valid evidence and can later migrate through a Scene V2 → Scene V3 compatibility adapter.
