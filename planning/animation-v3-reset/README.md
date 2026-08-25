@@ -66,14 +66,22 @@ The literary/mythological source layer is anchored to the Oxford **Electronic Te
 34. [`narrative-to-animation-production-planning.md`](./narrative-to-animation-production-planning.md) — story-first scene/shot planning, L1/L2/L3 selection, capability requests and test planning.
 35. [`historical-visual-research-workflow.md`](./historical-visual-research-workflow.md) — archaeology/museum research questions, evidence hierarchy, design synthesis, licensing and uncertainty handling.
 36. [`local-developer-environment.md`](./local-developer-environment.md) — Windows/Linux reproducibility, optional services, render profiles, path/hash policy, caches and future `doctor:v3` diagnostics.
+37. [`scene-v3-example-enki-helm.md`](./scene-v3-example-enki-helm.md) — worked authored Scene V3 example with ownership, proof states, tests and Level 3 extension path.
+38. [`resolved-scene-and-receipt-examples.md`](./resolved-scene-and-receipt-examples.md) — concrete resolved-scene, render, QA, semantic, human and promotion receipt examples.
+39. [`citykit-example-eridu.md`](./citykit-example-eridu.md) — worked CityKit example with development states, evidence confidence, seeded regions/paths and L2/L3 projections.
+40. [`studio-wireframe-component-contracts.md`](./studio-wireframe-component-contracts.md) — textual Studio wireframes and testable Angular component/Storybook/E2E contracts.
+41. [`id-naming-version-conventions.md`](./id-naming-version-conventions.md) — semantic ID grammar, revisions, contract versions, receipt/fixture naming and path rules.
+42. [`repository-storage-retention.md`](./repository-storage-retention.md) — Git/tmp/cache/evidence retention, cleanup, golden images, bakes, model and release artifact policy.
+43. [`capability-acceptance-scorecards.md`](./capability-acceptance-scorecards.md) — universal maturity scorecard spanning narrative need, determinism, unit/Storybook/E2E, proof, performance, provenance and human value.
+44. [`planning-definition-of-ready.md`](./planning-definition-of-ready.md) — implementation Definition of Ready/Done for capabilities, runtime spikes, phases, visual promotion and docs-only work.
 
 ## Current implementation status
 
 ### Phase 0 — architecture/planning
 
-Substantially complete and intentionally detailed. The architecture, runtime ownership, chapter capability demand, testing layers, local/CI verification model, risk model, accessibility, observability, dependency policy, persistence model, resilience model, asset lifecycle, promotion model, traceability, Studio workflow, runtime admission, historical research workflow and phase exits are now explicit enough to guide implementation without relying on chat history.
+**Exceptionally detailed and substantially complete.** The reset now includes both abstract contracts and worked examples: architecture, runtime ownership, chapter capability demand, local/CI testing, Storybook/E2E, risk, accessibility, observability, dependency policy, persistence, resilience, asset lifecycle, promotion, traceability, Studio UX, runtime admission, historical research, storage, naming, concrete Scene/City/receipt examples, acceptance scorecards and phase readiness rules.
 
-The planning level is intentionally deeper than a typical prototype because the platform must coordinate multiple animation runtimes while preserving historical-fiction provenance, deterministic rendering and reusable test evidence.
+Planning can still evolve when implementation produces evidence, but the first implementation phases should not need chat history to rediscover architecture or testing policy.
 
 ### Phase 1 — historical-source foundation
 
@@ -88,7 +96,7 @@ Completed first slice:
 - unit tests;
 - local Nx test/build verified green (10/10 tests on 2026-08-25).
 
-Next planned Phase 1 slices are now specified in `phase-1-provenance-studio-ux.md` and `historical-visual-research-workflow.md`:
+Next planned Phase 1 slices are specified in `phase-1-provenance-studio-ux.md` and `historical-visual-research-workflow.md`:
 
 - real museum/archaeological visual-evidence records;
 - source validation/reporting;
@@ -101,13 +109,13 @@ No animation runtime dependency is installed as part of Phase 1.
 
 ### Phase 2 — Scene V3 foundation
 
-Not started. `phase-2-implementation-blueprint.md`, `benchmark-fixture-data-contract.md`, and `local-developer-environment.md` now define the intended implementation down to libraries, public contracts, compiler stages, fixture families, local test gates, cross-platform reproducibility, Linux CI re-check and capability-sized PR sequence.
+Not started. `phase-2-implementation-blueprint.md`, `scene-v3-example-enki-helm.md`, `resolved-scene-and-receipt-examples.md`, `benchmark-fixture-data-contract.md`, `id-naming-version-conventions.md`, and `local-developer-environment.md` define the intended implementation down to public contracts, compiler stages, sample data, fixture families, local test gates, cross-platform reproducibility, Linux CI re-check and capability-sized PR sequence.
 
-Phase 2 is explicitly engine-independent: Rive/Pixi/Three/Rapier do not enter until the common contract/frame/runtime/scene foundation and Animation Lab exist.
+Phase 2 remains engine-independent: Rive/Pixi/Three/Rapier do not enter until the common contract/frame/runtime/scene foundation and Animation Lab exist.
 
 ### Runtime adoption
 
-Not started. Each runtime now has a bounded spike playbook. No package earns production status from a feature list; it must pass its manuscript-derived benchmark, local quality gates, Storybook/render proof, license/security review and human visual gate where applicable.
+Not started. Each runtime has a bounded spike playbook and now a common capability acceptance scorecard. No package earns production status from a feature list; it must pass its manuscript-derived benchmark, local quality gates, Storybook/render proof, negative fixtures, licensing/security review, performance budget and human visual gate where applicable.
 
 ## External authorities and technology references
 
@@ -164,6 +172,11 @@ Not started. Each runtime now has a bounded spike playbook. No package earns pro
 28. **Narrative-to-animation planning identifies target level and test obligations before implementation.**
 29. **Historical visual reconstruction records evidence class and uncertainty before assets become canonical.**
 30. **Canonical hashes and semantics must be portable across the supported Windows local / Linux CI boundary.**
+31. **Semantic IDs and content hashes are separate: IDs name meaning; hashes prove exact bytes.**
+32. **Ephemeral candidates/proofs/caches may be deleted without destroying canonical traceability.**
+33. **A reusable capability must satisfy its full acceptance scorecard, not only a visually successful demo.**
+34. **Worked examples must remain representable by the contracts as they become code; otherwise planning reopens before implementation is forced around a bad abstraction.**
+35. **Definition of Ready is explicit before implementation; Definition of Done includes all applicable local and GitHub quality layers.**
 
 ## Local-first quality rule
 
@@ -195,4 +208,4 @@ GPU-heavy rendered animation proofs and human review remain local/milestone evid
 
 ## Reset rule
 
-Do not resume broad Reel 1 Level 2 production until the foundation benchmarks in `benchmark-specifications.md`, `implementation-backlog.md`, and `phase-exit-checklists.md` are green. Existing Reel 1 Scene V2 work remains valid evidence and can later migrate through a Scene V2 → Scene V3 compatibility adapter.
+Do not resume broad Reel 1 Level 2 production until the foundation benchmarks in `benchmark-specifications.md`, `implementation-backlog.md`, `capability-acceptance-scorecards.md`, and `phase-exit-checklists.md` are green. Existing Reel 1 Scene V2 work remains valid evidence and can later migrate through a Scene V2 → Scene V3 compatibility adapter.
