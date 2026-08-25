@@ -4,6 +4,7 @@ import { access, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { checkWorkflowHostCompatibility } from '../renderer/comfyui-workflow-doctor.mjs';
 import {
+  analyzeEyeSeedComponents,
   analyzeGrayMask,
   constrainSamEyeMask,
   deriveEnkiUpperFaceRoi,
@@ -267,7 +268,7 @@ async function generateBlinkCandidate(context) {
   if (!localization.pass) {
     const reportPath = join(inputDirectory, 'eye-localization-blocked.json');
     await writeJson(reportPath, {
-      schemaVersion: 2,
+      schemaVersion: 3,
       type: 'shot03-eye-localization-preflight',
       generatedAt: new Date().toISOString(),
       layerId: LAYER_ID,
@@ -285,7 +286,7 @@ async function generateBlinkCandidate(context) {
       maskPath,
     });
     throw new Error(
-      `Eye localization failed deterministic safety checks: ${localization.reasons.join('; ')}. Eye-band fill ${(localization.eyeBandFillRatio * 100).toFixed(1)}%. Diagnostics: ${reportPath}`,
+      `Eye localization failed deterministic safety checks: ${localization.reasons.join('; ')}. Components ${localization.meaningfulComponentCount}, compact support ${(localization.compactSupportRatio * 100).toFixed(1)}%, eye-band fill ${(localization.eyeBandFillRatio * 100).toFixed(2)}%. Diagnostics: ${reportPath}`,
     );
   }
 
@@ -384,7 +385,7 @@ async function generateBlinkCandidate(context) {
   );
 
   const candidate = {
-    schemaVersion: 2,
+    schemaVersion: 3,
     state: 'pending-human-review',
     manifestId: context.manifest.manifestId,
     shotId: context.shot.shotId,
@@ -402,7 +403,7 @@ async function generateBlinkCandidate(context) {
     generatedAt: new Date().toISOString(),
     manifestMutated: false,
     automaticPromotionAllowed: false,
-    productionLane: 'localized-upper-face-character-state-inpaint',
+    productionLane: 'compact-component-character-state-inpaint',
     inputs: {
       identityAnchorPath: context.bodyPath,
       roi,
@@ -460,15 +461,13 @@ function validateEyeLocalization({
   const eyeBandFillRatio = eyeBandArea
     ? maskAnalysis.selected / eyeBandArea
     : 1;
+
   if (!maskAnalysis.selected) reasons.push('eye mask is empty after constraints');
   if (maskAnalysis.coverageRatio < 0.00003) {
     reasons.push('eye mask is trivially small after upper-face localization');
   }
   if (maskAnalysis.coverageRatio > 0.006) {
     reasons.push('eye mask remains too broad for a blink state');
-  }
-  if (eyeBandFillRatio < 0.01) {
-    reasons.push('eye mask occupies too little of the deterministic eye band');
   }
   if (eyeBandFillRatio > 0.55) {
     reasons.push('SAM still fills too much of the deterministic eye band');
@@ -484,6 +483,56 @@ function validateEyeLocalization({
     : 1;
   if (outsideEnkiRatio > 0.001) {
     reasons.push('constrained eye mask escapes approved Enki alpha');
+  }
+
+  const components = analyzeEyeSeedComponents(
+    mask,
+    dimensions,
+    roi.eyeBand,
+    MASK_THRESHOLD,
+  );
+  const meaningfulFloor = Math.max(
+    2,
+    Math.floor(Math.max(1, maskAnalysis.selected) * 0.05),
+  );
+  const meaningful = components.filter(
+    (component) => component.selected >= meaningfulFloor,
+  );
+  const compactSupport = meaningful.reduce(
+    (sum, component) => sum + component.selected,
+    0,
+  );
+  const compactSupportRatio = maskAnalysis.selected
+    ? compactSupport / maskAnalysis.selected
+    : 0;
+  if (!meaningful.length) {
+    reasons.push('eye mask has no meaningful compact component');
+  }
+  if (meaningful.length > 2) {
+    reasons.push('eye mask fragments into more than two meaningful components');
+  }
+  if (compactSupportRatio < 0.7) {
+    reasons.push('eye mask is too scattered outside its compact eye components');
+  }
+
+  const headWidth = Math.max(1, roi.headWidth);
+  const headHeight = Math.max(1, roi.headHeight);
+  for (const component of meaningful.slice(0, 2)) {
+    if (component.width / headWidth > 0.48) {
+      reasons.push('eye component is too wide relative to Enki head');
+      break;
+    }
+    if (component.height / headHeight > 0.18) {
+      reasons.push('eye component is too tall relative to Enki head');
+      break;
+    }
+  }
+  if (meaningful.length === 2) {
+    const verticalOffset =
+      Math.abs(meaningful[0].centerY - meaningful[1].centerY) / headHeight;
+    if (verticalOffset > 0.14) {
+      reasons.push('paired eye components are vertically inconsistent');
+    }
   }
 
   const bodyHeight = roi.bodyBounds.maxY - roi.bodyBounds.minY + 1;
@@ -505,7 +554,9 @@ function validateEyeLocalization({
   if (maskHeightVsBody > 0.12) {
     reasons.push('constrained eye mask is too tall relative to Enki');
   }
-  if (!constrained.samSelected) reasons.push('SAM returned no source-localized pixels');
+  if (!constrained.samSelected) {
+    reasons.push('SAM returned no source-localized pixels');
+  }
 
   return {
     pass: reasons.length === 0,
@@ -514,6 +565,10 @@ function validateEyeLocalization({
     outsideEnkiRatio,
     normalizedCenterYWithinBody,
     maskHeightVsBody,
+    componentCount: components.length,
+    meaningfulComponentCount: meaningful.length,
+    compactSupportRatio,
+    components: meaningful.slice(0, 2),
     samSelected: constrained.samSelected,
     outsideBodyRejected: constrained.outsideBodyRejected,
     outsideBandRejected: constrained.outsideBandRejected,
