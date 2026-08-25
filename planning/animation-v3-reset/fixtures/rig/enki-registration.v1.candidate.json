@@ -1,0 +1,70 @@
+{
+  "schemaCandidate": "rig-registration:v1",
+  "id": "registration:actor:enki:rig-prep:v1",
+  "actorId": "actor:enki",
+  "source": {
+    "assetId": "asset:enki:editorial-shot03:v1",
+    "logicalPath": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-03.png",
+    "sha256": null,
+    "width": null,
+    "height": null,
+    "status": "MEASURE_FROM_APPROVED_SOURCE"
+  },
+  "coordinateSpaces": ["SOURCE_PIXEL", "ASSET_LOCAL", "ACTOR_LOCAL"],
+  "actorLocalOrigin": {
+    "status": "TO_MEASURE",
+    "x": null,
+    "y": null
+  },
+  "requiredLandmarks": [
+    "landmark:enki:head-top",
+    "landmark:enki:chin",
+    "landmark:enki:eye-left-inner",
+    "landmark:enki:eye-left-outer",
+    "landmark:enki:eye-left-center",
+    "landmark:enki:eye-right-inner",
+    "landmark:enki:eye-right-outer",
+    "landmark:enki:eye-right-center",
+    "landmark:enki:nose-tip",
+    "landmark:enki:mouth-center",
+    "landmark:enki:beard-bottom",
+    "landmark:enki:shoulder-left",
+    "landmark:enki:shoulder-right",
+    "landmark:enki:torso-root",
+    "landmark:enki:hand-left-center",
+    "landmark:enki:hand-right-center"
+  ],
+  "requiredAnchors": [
+    "anchor:enki:hand-left",
+    "anchor:enki:hand-right",
+    "anchor:enki:gaze-origin",
+    "anchor:enki:head-center",
+    "anchor:enki:torso-root",
+    "anchor:enki:stance-root"
+  ],
+  "regions": [
+    {"id":"region:enki:head-base","derivation":"masked","sourceRect":null,"reviewerStatus":"draft"},
+    {"id":"region:enki:beard-hair","derivation":"masked","sourceRect":null,"reviewerStatus":"draft"},
+    {"id":"region:enki:eye-left","derivation":"masked","sourceRect":null,"reviewerStatus":"draft"},
+    {"id":"region:enki:eye-right","derivation":"masked","sourceRect":null,"reviewerStatus":"draft"},
+    {"id":"region:enki:torso-robe","derivation":"masked","sourceRect":null,"reviewerStatus":"draft"},
+    {"id":"region:enki:upper-arm-left","derivation":"masked","sourceRect":null,"reviewerStatus":"draft"},
+    {"id":"region:enki:forearm-left","derivation":"masked","sourceRect":null,"reviewerStatus":"draft"},
+    {"id":"region:enki:hand-left","derivation":"masked","sourceRect":null,"reviewerStatus":"draft"},
+    {"id":"region:enki:upper-arm-right","derivation":"masked","sourceRect":null,"reviewerStatus":"draft"},
+    {"id":"region:enki:forearm-right","derivation":"masked","sourceRect":null,"reviewerStatus":"draft"},
+    {"id":"region:enki:hand-right","derivation":"masked","sourceRect":null,"reviewerStatus":"draft"}
+  ],
+  "identityExclusionZones": [
+    "nose-bridge-and-tip",
+    "cheek-contour",
+    "beard-cheek-boundary",
+    "crown-silhouette",
+    "jaw-silhouette",
+    "major-facial-lighting-boundary"
+  ],
+  "planningNotes": [
+    "Null dimensions and coordinates are deliberate. Planning must not invent measurements before inspecting the approved source pixels.",
+    "This candidate becomes invalid executable registration data until all MEASURE/TO_MEASURE/null fields are resolved and reviewed."
+  ]
+}

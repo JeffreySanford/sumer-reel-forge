@@ -1,0 +1,54 @@
+{
+  "schemaCandidate": "visual-evidence-application:v1",
+  "evidenceId": "visual:bm:standard-of-ur:1928-1010-3:v1",
+  "applications": [
+    {
+      "id": "application:standard-ur:project-social-staging:v1",
+      "revision": 1,
+      "target": {
+        "kind": "project-visual-language",
+        "id": "visual-language:blessings-of-sumer:v1"
+      },
+      "usage": ["social-staging", "procession", "banquet"],
+      "relationship": "near-period-context",
+      "confidence": "high",
+      "inference": "Use the Standard of Ur as Early Dynastic contextual evidence for hierarchy, procession spacing, banquet composition, attendants, goods and livestock staging.",
+      "allowedClaims": [
+        "Early Dynastic elite/social scenes can inform project staging and hierarchy.",
+        "The object's materials and depicted goods can inform period-context visual vocabulary."
+      ],
+      "prohibitedClaims": [
+        "No depicted figure is identified as Enki, Enlil or another project divine actor.",
+        "The object does not reconstruct Eridu architecture.",
+        "Its modern name does not establish its ancient function."
+      ],
+      "sourceDateRelationship": "same-period",
+      "reviewerStatus": "draft"
+    },
+    {
+      "id": "application:standard-ur:enlil-costume-context:v1",
+      "revision": 1,
+      "target": {
+        "kind": "costume",
+        "id": "costume:enlil:council:v1"
+      },
+      "usage": ["costume", "jewelry"],
+      "relationship": "near-period-context",
+      "confidence": "medium",
+      "inference": "Use garment silhouette and status differentiation only as contextual design input for the future Enlil council costume.",
+      "allowedClaims": [
+        "Garment and status cues may inform a project design synthesis."
+      ],
+      "prohibitedClaims": [
+        "The large ruler figure is not identified as Enlil.",
+        "The resulting Enlil costume must not be labeled a direct reconstruction from this object."
+      ],
+      "sourceDateRelationship": "near-period",
+      "reviewerStatus": "draft"
+    }
+  ],
+  "planningNotes": [
+    "This is a contract candidate, not executable registry data yet.",
+    "The same canonical evidence identity intentionally supports multiple project applications with different confidence."
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "schemaCandidate": "scene-canonicalization-cases:v1",
+  "canonicalFormVersion": "scene-canonical-form:v1",
+  "hashAlgorithm": "sha256",
+  "cases": [
+    {
+      "id": "KEY_ORDER",
+      "description": "Object insertion order is non-semantic.",
+      "inputA": {"sceneId":"scene:test","revision":1,"seed":7},
+      "inputB": {"seed":7,"revision":1,"sceneId":"scene:test"},
+      "expected": "same-canonical-payload"
+    },
+    {
+      "id": "SET_ARRAY_ORDER",
+      "description": "A schema-declared set-like reference array sorts by semantic ID.",
+      "schemaHints": {"/sourceIds":"set-like:id"},
+      "inputA": {"sourceIds":[{"id":"source:b"},{"id":"source:a"}]},
+      "inputB": {"sourceIds":[{"id":"source:a"},{"id":"source:b"}]},
+      "expected": "same-canonical-payload"
+    },
+    {
+      "id": "AUTHORED_ARRAY_ORDER",
+      "description": "Authored keyframe ordering remains semantic.",
+      "schemaHints": {"/keyframes":"authored-order"},
+      "inputA": {"keyframes":[{"frame":0,"value":0},{"frame":10,"value":1}]},
+      "inputB": {"keyframes":[{"frame":10,"value":1},{"frame":0,"value":0}]},
+      "expected": "different-or-inputB-invalid"
+    },
+    {
+      "id": "WINDOWS_PATH_NORMALIZATION",
+      "description": "Logical repository paths normalize separators and never include drive roots.",
+      "inputA": {"logicalPath":"assets\\chapter-01\\shot-03.png"},
+      "inputB": {"logicalPath":"assets/chapter-01/shot-03.png"},
+      "expected": "same-canonical-payload"
+    },
+    {
+      "id": "ABSOLUTE_PATH_REJECTED",
+      "description": "Absolute workstation paths are not canonical semantic data.",
+      "inputA": {"logicalPath":"D:\\repos\\sumer-reel-forge\\assets\\shot.png"},
+      "expected": "validation-error"
+    },
+    {
+      "id": "NULL_PRESERVATION",
+      "description": "Explicit null remains distinct when schema says null has meaning.",
+      "inputA": {"optionalValue":null},
+      "inputB": {},
+      "expected": "schema-dependent-and-explicit"
+    },
+    {
+      "id": "RUNTIME_VERSION_CHANGE",
+      "inputA": {"runtime":{"id":"runtime:fake","version":"1.0.0"}},
+      "inputB": {"runtime":{"id":"runtime:fake","version":"1.0.1"}},
+      "expected": "different-canonical-hash"
+    },
+    {
+      "id": "ASSET_HASH_CHANGE",
+      "inputA": {"asset":{"id":"asset:test","sha256":"sha256:aaaaaaaa"}},
+      "inputB": {"asset":{"id":"asset:test","sha256":"sha256:bbbbbbbb"}},
+      "expected": "different-canonical-hash"
+    },
+    {
+      "id": "UNRELATED_DIAGNOSTIC_CHANGE",
+      "schemaHints": {"/diagnostics":"informational-non-hash-critical"},
+      "inputA": {"sceneId":"scene:test","diagnostics":{"hostname":"ANKI"}},
+      "inputB": {"sceneId":"scene:test","diagnostics":{"hostname":"github-runner"}},
+      "expected": "same-semantic-hash-after-hash-critical-projection"
+    },
+    {
+      "id": "INVALID_NAN",
+      "description": "NaN cannot be represented in canonical JSON and must be rejected before serialization.",
+      "inputExpression": "{ value: Number.NaN }",
+      "expected": "validation-error"
+    }
+  ],
+  "planningNotes": [
+    "Expected literal canonical bytes and SHA-256 values are intentionally deferred until the Phase 2D canonicalizer is implemented and frozen.",
+    "After freeze, placeholders are replaced by normative expected payload/hash vectors."
+  ]
+}
