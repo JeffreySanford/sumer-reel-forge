@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { basename, join, resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import { checkWorkflowHostCompatibility } from '../renderer/comfyui-workflow-doctor.mjs';
 import {
   analyzeGrayMask,
@@ -30,7 +30,6 @@ const FFMPEG = process.env.FFMPEG_COMMAND ?? 'ffmpeg';
 const SHOT_NUMBER = 3;
 const LAYER_ID = 'shot03-enki-eyes-v1';
 const BODY_ID = 'shot03-enki-body-v1';
-const MASK_THRESHOLD = 16;
 const TARGET_EYE_BAND_FILL = 0.015;
 const INPAINT_PADDING = 40;
 const CROP_ALIGNMENT = 8;
