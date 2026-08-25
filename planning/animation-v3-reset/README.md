@@ -74,14 +74,18 @@ The literary/mythological source layer is anchored to the Oxford **Electronic Te
 42. [`repository-storage-retention.md`](./repository-storage-retention.md) — Git/tmp/cache/evidence retention, cleanup, golden images, bakes, model and release artifact policy.
 43. [`capability-acceptance-scorecards.md`](./capability-acceptance-scorecards.md) — universal maturity scorecard spanning narrative need, determinism, unit/Storybook/E2E, proof, performance, provenance and human value.
 44. [`planning-definition-of-ready.md`](./planning-definition-of-ready.md) — implementation Definition of Ready/Done for capabilities, runtime spikes, phases, visual promotion and docs-only work.
+45. [`historical-period-visual-policy.md`](./historical-period-visual-policy.md) — period bands, near-period/contextual evidence rules, mythic design synthesis and initial authoritative museum/site evidence targets.
+46. [`audio-dialogue-caption-architecture.md`](./audio-dialogue-caption-architecture.md) — narration/dialogue assets, voice identity, viseme/lip-sync tracks, captions, mix buses, QA and E2E.
+47. [`cinematography-motion-language.md`](./cinematography-motion-language.md) — common camera, actor, environmental, physics and mythic motion language across runtimes.
+48. [`lighting-color-material-direction.md`](./lighting-color-material-direction.md) — painterly preservation, palette/lighting roles, hybrid runtime material ownership and visual-style testing.
 
 ## Current implementation status
 
 ### Phase 0 — architecture/planning
 
-**Exceptionally detailed and substantially complete.** The reset now includes both abstract contracts and worked examples: architecture, runtime ownership, chapter capability demand, local/CI testing, Storybook/E2E, risk, accessibility, observability, dependency policy, persistence, resilience, asset lifecycle, promotion, traceability, Studio UX, runtime admission, historical research, storage, naming, concrete Scene/City/receipt examples, acceptance scorecards and phase readiness rules.
+**Exceptionally detailed and substantially complete.** The reset now includes software contracts, worked data examples, production workflow, historical-source and visual-period policy, testing/CI, Storybook/E2E, accessibility, observability, storage/versioning, review/promotion, audio/dialogue, cinematography and visual art-direction rules.
 
-Planning can still evolve when implementation produces evidence, but the first implementation phases should not need chat history to rediscover architecture or testing policy.
+Planning can still evolve when implementation produces evidence, but the first implementation phases should not need chat history to rediscover architecture, testing policy or production language.
 
 ### Phase 1 — historical-source foundation
 
@@ -96,12 +100,12 @@ Completed first slice:
 - unit tests;
 - local Nx test/build verified green (10/10 tests on 2026-08-25).
 
-Next planned Phase 1 slices are specified in `phase-1-provenance-studio-ux.md` and `historical-visual-research-workflow.md`:
+Next planned Phase 1 slices are specified in `phase-1-provenance-studio-ux.md`, `historical-visual-research-workflow.md`, and `historical-period-visual-policy.md`:
 
-- real museum/archaeological visual-evidence records;
+- authoritative museum/archaeological visual-evidence records;
 - source validation/reporting;
 - read-only Studio provenance components;
-- Storybook coverage for every adaptation/evidence/staleness state;
+- Storybook coverage for adaptation/evidence/staleness/period states;
 - provenance accessibility checks;
 - provenance Playwright E2E.
 
@@ -109,13 +113,13 @@ No animation runtime dependency is installed as part of Phase 1.
 
 ### Phase 2 — Scene V3 foundation
 
-Not started. `phase-2-implementation-blueprint.md`, `scene-v3-example-enki-helm.md`, `resolved-scene-and-receipt-examples.md`, `benchmark-fixture-data-contract.md`, `id-naming-version-conventions.md`, and `local-developer-environment.md` define the intended implementation down to public contracts, compiler stages, sample data, fixture families, local test gates, cross-platform reproducibility, Linux CI re-check and capability-sized PR sequence.
+Not started. The implementation blueprint, worked Scene V3 example, resolved-scene/receipt examples, benchmark fixture contract, naming rules and local environment plan now exercise the proposed foundation from authoring through deterministic resolution and evidence.
 
 Phase 2 remains engine-independent: Rive/Pixi/Three/Rapier do not enter until the common contract/frame/runtime/scene foundation and Animation Lab exist.
 
 ### Runtime adoption
 
-Not started. Each runtime has a bounded spike playbook and now a common capability acceptance scorecard. No package earns production status from a feature list; it must pass its manuscript-derived benchmark, local quality gates, Storybook/render proof, negative fixtures, licensing/security review, performance budget and human visual gate where applicable.
+Not started. Each runtime has a bounded spike playbook and common capability acceptance scorecard. No package earns production status from a feature list; it must pass its manuscript-derived benchmark, local quality gates, Storybook/render proof, negative fixtures, licensing/security review, performance budget and human visual gate where applicable.
 
 ## External authorities and technology references
 
@@ -123,6 +127,13 @@ Not started. Each runtime has a bounded spike playbook and now a common capabili
 
 - Oxford ETCSL catalogue: https://etcsl.orinst.ox.ac.uk/edition2/etcslfullcat.php
 - ETCSL narrative/mythological catalogue: https://etcsl.orinst.ox.ac.uk/cgi-bin/etcsl.cgi?text=c.1%2A
+
+### Initial visual evidence authorities
+
+- British Museum Standard of Ur: https://www.britishmuseum.org/collection/object/W_1928-1010-3
+- British Museum Royal Game of Ur: https://www.britishmuseum.org/collection/object/W_1928-1009-378
+- Met Early Dynastic banquet cylinder seal 56.157.1: https://www.metmuseum.org/art/collection/search/324572
+- Penn Museum al-‘Ubaid/Ninhursag temple publication: https://www.penn.museum/sites/bulletin/2583/
 
 ### Planned animation/runtime technologies
 
@@ -177,6 +188,10 @@ Not started. Each runtime has a bounded spike playbook and now a common capabili
 33. **A reusable capability must satisfy its full acceptance scorecard, not only a visually successful demo.**
 34. **Worked examples must remain representable by the contracts as they become code; otherwise planning reopens before implementation is forced around a bad abstraction.**
 35. **Definition of Ready is explicit before implementation; Definition of Done includes all applicable local and GitHub quality layers.**
+36. **Mythic/literary time, frame-story chronology and archaeological evidence dates are related but distinct.**
+37. **Audio/dialogue/captions are frame-bound production data, not an afterthought layered after visual animation.**
+38. **Camera and decorative motion may support but never substitute for readable primary action.**
+39. **Rive/Pixi/Three/Remotion must share one painterly visual direction; runtime defaults are not art direction.**
 
 ## Local-first quality rule
 
