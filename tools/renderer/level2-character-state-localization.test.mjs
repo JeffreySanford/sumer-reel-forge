@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  analyzeEyeSeedComponents,
   analyzeGrayMask,
   constrainSamEyeMask,
   deriveEnkiUpperFaceRoi,
@@ -97,4 +98,50 @@ test('sparse valid SAM seed grows to a minimal eyelid patch without escaping eye
   assert.ok(analysis.bounds.maxX <= roi.eyeBand.maxX);
   assert.ok(analysis.bounds.minY >= roi.eyeBand.minY);
   assert.ok(analysis.bounds.maxY <= roi.eyeBand.maxY);
+});
+
+test('large painted-face eye band scales sparse semantic seeds into compact horizontal eyelid patches', () => {
+  const dimensions = { width: 941, height: 1672 };
+  const body = rgba(dimensions.width, dimensions.height);
+  fillAlpha(body, dimensions.width, {
+    minX: 310,
+    minY: 220,
+    maxX: 650,
+    maxY: 1320,
+  });
+  const roi = deriveEnkiUpperFaceRoi({ bodyRgba: body, dimensions });
+  const seed = new Uint8Array(dimensions.width * dimensions.height);
+  const bandWidth = roi.eyeBand.maxX - roi.eyeBand.minX + 1;
+  const bandHeight = roi.eyeBand.maxY - roi.eyeBand.minY + 1;
+  const y = Math.round((roi.eyeBand.minY + roi.eyeBand.maxY) / 2);
+  const leftX = Math.round(roi.eyeBand.minX + bandWidth * 0.38);
+  const rightX = Math.round(roi.eyeBand.minX + bandWidth * 0.62);
+  seed[y * dimensions.width + leftX] = 255;
+  seed[y * dimensions.width + rightX] = 255;
+
+  const components = analyzeEyeSeedComponents(
+    seed,
+    dimensions,
+    roi.eyeBand,
+  );
+  assert.equal(components.length, 2);
+
+  const expanded = dilateEyeMaskWithinConstraints({
+    mask: seed,
+    bodyRgba: body,
+    dimensions,
+    eyeBand: roi.eyeBand,
+    radius: 1,
+  });
+  const fill = eyeBandFillRatio(expanded, dimensions, roi.eyeBand);
+  const analysis = analyzeGrayMask(expanded, dimensions);
+
+  assert.ok(fill >= 0.01, `large-scale eyelid patch remained too sparse: ${fill}`);
+  assert.ok(fill < 0.08, `large-scale eyelid patch became too broad: ${fill}`);
+  assert.ok(
+    analysis.bounds.maxY - analysis.bounds.minY + 1 < bandHeight * 0.5,
+    'eyelid patch became vertically face-like instead of compact',
+  );
+  assert.ok(analysis.bounds.minX >= roi.eyeBand.minX);
+  assert.ok(analysis.bounds.maxX <= roi.eyeBand.maxX);
 });
