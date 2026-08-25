@@ -53,12 +53,21 @@ The literary/mythological source layer is anchored to the Oxford **Electronic Te
 21. [`dependency-license-security.md`](./dependency-license-security.md) — package adoption, licensing, version lockstep and supply-chain controls.
 22. [`persistence-versioning.md`](./persistence-versioning.md) — scene/rig/source/proof version domains, migration and staleness rules.
 23. [`failure-injection-resilience.md`](./failure-injection-resilience.md) — deliberate negative integration tests, service failures, corrupt assets, stale revisions and promotion resilience.
+24. [`phase-1-provenance-studio-ux.md`](./phase-1-provenance-studio-ux.md) — concrete Phase 1 provenance components, warnings, Storybook states, accessibility and E2E scenarios.
+25. [`phase-2-implementation-blueprint.md`](./phase-2-implementation-blueprint.md) — exact planned Nx libraries, Scene V3 compiler stages, FrameContext, runtime registry, fixtures, tests and PR sequence.
+26. [`asset-taxonomy-ownership.md`](./asset-taxonomy-ownership.md) — source/derived/rig/runtime/material/spatial/simulation/generative/proof/canonical asset classes and lifecycle rules.
+27. [`review-promotion-workflow.md`](./review-promotion-workflow.md) — candidate → QA → human review → transactional promotion → supersession state machine.
+28. [`test-command-manifest.md`](./test-command-manifest.md) — local L0–L4 commands, Storybook/E2E/lint/build expectations and GitHub Actions parity.
+29. [`branch-pr-change-management.md`](./branch-pr-change-management.md) — branch types, capability-sized PRs, local evidence, CI rerun discipline and dependency/schema upgrade policy.
+30. [`traceability-requirements-matrix.md`](./traceability-requirements-matrix.md) — manuscript/source → Scene V3 → assets/runtimes → frame/proof → QA/human → promotion trace chain.
 
 ## Current implementation status
 
 ### Phase 0 — architecture/planning
 
-Substantially complete and intentionally detailed. The architecture, runtime ownership, chapter capability demand, testing layers, local/CI verification model, risk model, accessibility, observability, dependency policy, persistence model, resilience model and phase exits are now explicit enough to guide implementation without relying on chat history.
+Substantially complete and intentionally detailed. The architecture, runtime ownership, chapter capability demand, testing layers, local/CI verification model, risk model, accessibility, observability, dependency policy, persistence model, resilience model, asset lifecycle, promotion model, traceability and phase exits are now explicit enough to guide implementation without relying on chat history.
+
+The planning level is intentionally deeper than a typical prototype because the platform must coordinate multiple animation runtimes while preserving historical-fiction provenance, deterministic rendering and reusable test evidence.
 
 ### Phase 1 — historical-source foundation
 
@@ -73,9 +82,22 @@ Completed first slice:
 - unit tests;
 - local Nx test/build verified green (10/10 tests on 2026-08-25).
 
-Next planned Phase 1 slices are real museum/archaeological visual-evidence records, source validation/reporting, and read-only Studio/Storybook provenance surfaces.
+Next planned Phase 1 slices are now specified in `phase-1-provenance-studio-ux.md`:
+
+- real museum/archaeological visual-evidence records;
+- source validation/reporting;
+- read-only Studio provenance components;
+- Storybook coverage for every adaptation/evidence/staleness state;
+- provenance accessibility checks;
+- provenance Playwright E2E.
 
 No animation runtime dependency is installed as part of Phase 1.
+
+### Phase 2 — Scene V3 foundation
+
+Not started. `phase-2-implementation-blueprint.md` now defines the intended implementation down to libraries, public contracts, compiler stages, fixture families, local test gates, Linux CI re-check and capability-sized PR sequence.
+
+Phase 2 is explicitly engine-independent: Rive/Pixi/Three/Rapier do not enter until the common contract/frame/runtime/scene foundation and Animation Lab exist.
 
 ## External authorities and technology references
 
@@ -125,6 +147,9 @@ No animation runtime dependency is installed as part of Phase 1.
 21. **Animation dependencies require benchmark, licensing, security and rollback decisions before adoption.**
 22. **Scene, source, rig, runtime and proof versions are distinct and staleness is reasoned explicitly.**
 23. **Representative failure modes are injected in tests before a subsystem is production-ready.**
+24. **Asset class, lifecycle and maturity are explicit; debug/proof/candidate artifacts cannot masquerade as canonical production assets.**
+25. **Promotion is transactional and exact-byte bound to QA and human-review evidence.**
+26. **Any promoted frame must be traceable from manuscript/source through scene/assets/runtime/proof to promotion without relying on chat history.**
 
 ## Local-first quality rule
 
@@ -140,6 +165,10 @@ affected lint + build
 affected Storybook tests/build
   ↓
 affected E2E
+  ↓
+local rendered proof when visual behavior changed
+  ↓
+human review when production visual behavior changed
   ↓
 phase local gate
   ↓
