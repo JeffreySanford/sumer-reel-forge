@@ -34,6 +34,7 @@ montage/city-growth.v1.candidate.json
 ingest/enki-editorial.v1.candidate.json
 rollback/reel1-rollback-drill.v1.candidate.json
 research/ch1-3-source-audit.v1.candidate.json
+research/divine-manifestation-ontology.v1.candidate.json
 ```
 
 ## Rules
@@ -48,6 +49,7 @@ research/ch1-3-source-audit.v1.candidate.json
 8. A planning fixture may say `DEFER`, `CANDIDATE_NOT_EXECUTABLE` or `UNRESOLVED`; schema-shaped data is never evidence that a capability or historical claim is already proven.
 9. Modern symbolic correspondence is never promoted into historical-source evidence without an independent authoritative historical source.
 10. Search results are discovery aids; canonical research fixtures bind the underlying corpus, museum, publication or institutional authority.
+11. Deity patronage, attested cult presence, narrative office, manifestation and symbolic correspondence remain independently typed; no fixture may collapse them into a single deity/city field.
 
 ## Foundation candidates
 
@@ -105,9 +107,11 @@ research/ch1-3-source-audit.v1.candidate.json
 
 `rollback/reel1-rollback-drill.v1.candidate.json` defines the minimum durable inputs required to reconstruct and roll back a canonical Reel 1 release without `latest`, chat history or mutable local folders.
 
-## Historical research audit candidate
+## Historical research audit candidates
 
 `research/ch1-3-source-audit.v1.candidate.json` pressure-tests the final research classification layer across direct text, cult history, archaeology, adaptation, mythic synthesis, modern symbolic correspondence and anachronism.
+
+`research/divine-manifestation-ontology.v1.candidate.json` pressure-tests the distinction among patron deity, attested cult/offering presence, narrative office, project manifestation, historical syncretism and modern symbolic correspondence. Its Kish/Shuruppak/Uttu–Inanna–Ishtar/Lilith examples are intentionally difficult cases for Phase 1B.
 
 Representative intended behaviors:
 
@@ -118,9 +122,25 @@ Enki / Eridu / Abzu
 Dilmun fresh water / emporium
   → DIRECT_TEXTUAL
 
-Shuruppak / Nergal patron claim
-  → historical correction Sud/Ninlil
-  + optional modern Nergal/Geburah symbolic correspondence
+Shuruppak / Nergal
+  → historical patron Sud/Ninlil
+  + intentional Nergal/Geburah functional-symbolic assignment
+
+Kish / An
+  → historical patron Zababa
+  + An offering/cult presence
+  + An/Kether symbolic assignment
+
+Uttu / Inanna
+  → separate ancient named figures
+  + textual textile-function bridge
+  + PROJECT_METAPHYSICS manifestation relationship
+
+Inanna / Ishtar
+  → HISTORICAL_SYNCRETISM
+
+Lilith relation to Inanna/Ishtar
+  → MODERN_SYMBOLIC_CORRESPONDENCE, historicalIdentityClaim=false
 
 Bronze Age lemon
   → ANACHRONISTIC
@@ -129,7 +149,7 @@ Tree of Life as ancient Sumerian system
   → MODERN_SYMBOLIC_CORRESPONDENCE
 ```
 
-The research candidate is not a complete sentence-by-sentence manuscript database. It establishes the machine-readable classification shape that later research records should follow.
+The research candidates are not a complete sentence-by-sentence manuscript database. They establish machine-readable classification shapes that later research records should follow.
 
 ## Promotion into executable fixtures
 
