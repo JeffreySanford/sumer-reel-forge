@@ -34,7 +34,7 @@ test('Shot 3 Level 2 audition preserves the repository sha256: checksum format e
   assert.doesNotMatch(source, /replace\(\/\^sha256:\//);
 });
 
-test('Shot 3 Level 2 rigging uses the source-preserving foreground extraction production lane', async () => {
+test('Shot 3 Level 2 rigging uses the source-preserving foreground extraction lane before or after human promotion', async () => {
   const [manifest, productionLanes, wrapper] = await Promise.all([
     text(manifestPath).then(JSON.parse),
     text(productionLanesPath).then(JSON.parse),
@@ -47,7 +47,11 @@ test('Shot 3 Level 2 rigging uses the source-preserving foreground extraction pr
   assert.equal(rigging.role, 'foreground-occluder');
   assert.equal(rigging.hasAlpha, true);
   assert.deepEqual(rigging.motionPresets, ['riggingTension']);
-  assert.equal(rigging.state, 'planned');
+  assert.ok(['planned', 'approved'].includes(rigging.state));
+  if (rigging.state === 'approved') {
+    assert.equal(rigging.review?.status, 'approved');
+    assert.match(rigging.sha256 ?? '', /^sha256:[a-f0-9]{64}$/i);
+  }
 
   const lane = productionLanes.lanes.find(
     (item) => item.id === 'foreground-source-extraction',
