@@ -8,6 +8,7 @@ import {
   deriveEnkiUpperFaceRoi,
   dilateEyeMaskWithinConstraints,
   eyeBandFillRatio,
+  retainStrongestEyeComponents,
 } from '../animation/src/level2-character-state-localization.mjs';
 
 function rgba(width, height, alpha = 0) {
@@ -22,6 +23,14 @@ function fillAlpha(buffer, width, bounds, alpha = 255) {
   for (let y = bounds.minY; y <= bounds.maxY; y += 1) {
     for (let x = bounds.minX; x <= bounds.maxX; x += 1) {
       buffer[(y * width + x) * 4 + 3] = alpha;
+    }
+  }
+}
+
+function fillMask(mask, width, bounds, value = 255) {
+  for (let y = bounds.minY; y <= bounds.maxY; y += 1) {
+    for (let x = bounds.minX; x <= bounds.maxX; x += 1) {
+      mask[y * width + x] = value;
     }
   }
 }
@@ -70,6 +79,46 @@ test('SAM eye mask is clipped to approved Enki alpha and deterministic eye band'
   assert.ok(analysis.bounds.minY >= roi.eyeBand.minY);
   assert.ok(analysis.bounds.maxY <= roi.eyeBand.maxY);
   assert.ok(constrained.outsideBandRejected > 0);
+});
+
+test('fragmented SAM eye seeds are pruned to the strongest two components before growth', () => {
+  const dimensions = { width: 240, height: 320 };
+  const body = rgba(dimensions.width, dimensions.height);
+  fillAlpha(body, dimensions.width, { minX: 70, minY: 40, maxX: 170, maxY: 270 });
+  const roi = deriveEnkiUpperFaceRoi({ bodyRgba: body, dimensions });
+  const seed = new Uint8Array(dimensions.width * dimensions.height);
+  const y = Math.round((roi.eyeBand.minY + roi.eyeBand.maxY) / 2);
+
+  fillMask(seed, dimensions.width, { minX: 95, minY: y, maxX: 100, maxY: y + 1 });
+  fillMask(seed, dimensions.width, { minX: 135, minY: y, maxX: 140, maxY: y + 1 });
+  seed[(y - 5) * dimensions.width + 80] = 255;
+  seed[(y + 6) * dimensions.width + 160] = 255;
+
+  assert.equal(analyzeEyeSeedComponents(seed, dimensions, roi.eyeBand).length, 4);
+
+  const retained = retainStrongestEyeComponents({
+    mask: seed,
+    dimensions,
+    eyeBand: roi.eyeBand,
+    maxComponents: 2,
+  });
+  const retainedComponents = analyzeEyeSeedComponents(retained, dimensions, roi.eyeBand);
+  assert.equal(retainedComponents.length, 2);
+  assert.equal(retainedComponents[0].selected, 12);
+  assert.equal(retainedComponents[1].selected, 12);
+
+  const expanded = dilateEyeMaskWithinConstraints({
+    mask: seed,
+    bodyRgba: body,
+    dimensions,
+    eyeBand: roi.eyeBand,
+    radius: 1,
+  });
+  const expandedComponents = analyzeEyeSeedComponents(expanded, dimensions, roi.eyeBand);
+  assert.ok(
+    expandedComponents.length <= 2,
+    `fragment noise survived into ${expandedComponents.length} components`,
+  );
 });
 
 test('sparse valid SAM seed grows to a minimal eyelid patch without escaping eye constraints', () => {
