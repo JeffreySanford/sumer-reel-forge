@@ -1,10 +1,14 @@
 import { spawn } from 'node:child_process';
-import { access, mkdir, readdir, writeFile } from 'node:fs/promises';
+import { access, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { basename, join, resolve } from 'node:path';
 
 const ROOT = resolve('.');
 const PREVIEW_ROOT = resolve('tmp/animation-previews/shot03-level2-preview');
+const CANDIDATE_ROOT = resolve(
+  'tmp/animation-assets/candidates/chapter-01-reel-01-animation-v1',
+);
 const STATUS_PATH = resolve('tmp/animation-previews/shot03-level2-status.json');
+const BLINK_LAYER_ID = 'shot03-enki-eyes-v1';
 const EXPECTED_MILESTONE_FAILURE =
   'ACTIVE MILESTONE GATE: approved Shot 3 meets Level 2 Living Shot motion quality';
 
@@ -17,6 +21,11 @@ const focusedTests = [
   {
     id: 'rigging-causality',
     path: 'tools/renderer/level2-rigging-causality-gate.test.mjs',
+    mode: 'must-pass',
+  },
+  {
+    id: 'character-state-lane',
+    path: 'tools/renderer/level2-character-state.test.mjs',
     mode: 'must-pass',
   },
   {
@@ -38,15 +47,17 @@ async function main() {
     if (!classified.expected) unexpectedFailure = true;
   }
 
+  const blinkCandidateReady = await hasQaPassedCandidate(BLINK_LAYER_ID);
   let preview = null;
   if (!options.skipPreview && !unexpectedFailure) {
-    const result = await runCaptured('node', [
-      'tools/scripts/shot03-level2-rigging.mjs',
-      'preview',
-    ]);
+    const previewCommand = blinkCandidateReady
+      ? ['tools/scripts/shot03-level2-enki-blink.mjs', 'preview']
+      : ['tools/scripts/shot03-level2-rigging.mjs', 'preview'];
+    const result = await runCaptured('node', previewCommand);
     const directory = await newestPreviewDirectory();
     preview = {
       ...result,
+      mode: blinkCandidateReady ? 'rigging+blink' : 'rigging-only',
       directory,
       videoPath: directory
         ? join(directory, 'shot03-level2-candidate-preview.mp4')
@@ -56,8 +67,20 @@ async function main() {
   }
 
   const milestone = results.find((item) => item.id === 'living-shot-milestone');
-  await writeStatus({ results, preview, milestone, unexpectedFailure });
-  printSummary(results, preview, milestone, unexpectedFailure);
+  await writeStatus({
+    results,
+    preview,
+    milestone,
+    blinkCandidateReady,
+    unexpectedFailure,
+  });
+  printSummary(
+    results,
+    preview,
+    milestone,
+    blinkCandidateReady,
+    unexpectedFailure,
+  );
   process.exitCode = unexpectedFailure ? 1 : 0;
 }
 
@@ -93,12 +116,24 @@ function classifyTest(test, result) {
   };
 }
 
-function printSummary(results, preview, milestone, unexpectedFailure) {
+function printSummary(
+  results,
+  preview,
+  milestone,
+  blinkCandidateReady,
+  unexpectedFailure,
+) {
   console.log('');
   console.log('Shot 3 Level 2');
   for (const result of results.filter((item) => item.id !== 'living-shot-milestone')) {
     console.log(`${result.state === 'pass' ? '[PASS]' : '[FAIL]'} ${result.id}`);
   }
+
+  console.log(
+    blinkCandidateReady
+      ? '[INFO] blink candidate: QA-passed; combined rigging + blink audition enabled'
+      : '[INFO] blink candidate: not QA-passed yet; rendering rigging-only audition',
+  );
 
   if (milestone?.state === 'green') {
     console.log('[GREEN] milestone gate');
@@ -113,8 +148,8 @@ function printSummary(results, preview, milestone, unexpectedFailure) {
   if (preview) {
     console.log(
       preview.code === 0
-        ? `[PASS] preview: ${preview.videoPath ?? 'rendered; output path unavailable'}`
-        : '[FAIL] preview',
+        ? `[PASS] preview (${preview.mode}): ${preview.videoPath ?? 'rendered; output path unavailable'}`
+        : `[FAIL] preview (${preview.mode})`,
     );
   }
 
@@ -135,14 +170,21 @@ function printSummary(results, preview, milestone, unexpectedFailure) {
   }
 }
 
-async function writeStatus({ results, preview, milestone, unexpectedFailure }) {
+async function writeStatus({
+  results,
+  preview,
+  milestone,
+  blinkCandidateReady,
+  unexpectedFailure,
+}) {
   await mkdir(resolve('tmp/animation-previews'), { recursive: true });
   const payload = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     generatedAt: new Date().toISOString(),
     shotNumber: 3,
     milestoneState: milestone?.state ?? 'unknown',
     milestoneReasons: milestone?.reasons ?? [],
+    blinkCandidateReady,
     checks: results.map((result) => ({
       id: result.id,
       state: result.state,
@@ -151,6 +193,7 @@ async function writeStatus({ results, preview, milestone, unexpectedFailure }) {
     preview: preview
       ? {
           pass: preview.code === 0,
+          mode: preview.mode,
           directory: preview.directory,
           videoPath: preview.videoPath,
         }
@@ -158,6 +201,34 @@ async function writeStatus({ results, preview, milestone, unexpectedFailure }) {
     unexpectedFailure,
   };
   await writeFile(STATUS_PATH, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
+}
+
+async function hasQaPassedCandidate(layerId) {
+  let entries = [];
+  try {
+    entries = await readdir(CANDIDATE_ROOT, { withFileTypes: true });
+  } catch {
+    return false;
+  }
+  const directories = entries
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => join(CANDIDATE_ROOT, entry.name))
+    .sort((a, b) => basename(b).localeCompare(basename(a)));
+  for (const directory of directories) {
+    try {
+      const run = JSON.parse(await readFile(join(directory, 'candidate-run.json'), 'utf8'));
+      if (!run.candidates?.some((item) => item.layerId === layerId)) continue;
+      const files = await readdir(directory, { withFileTypes: true });
+      for (const file of files) {
+        if (!file.isFile() || !file.name.endsWith('.json')) continue;
+        const qa = JSON.parse(await readFile(join(directory, file.name), 'utf8'));
+        if (qa.layerId === layerId && qa.qaStatus === 'PASS') return true;
+      }
+    } catch {
+      // Keep searching older candidate runs.
+    }
+  }
+  return false;
 }
 
 function milestoneReasons(output) {
