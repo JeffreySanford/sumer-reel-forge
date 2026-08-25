@@ -84,12 +84,24 @@ The literary/mythological source layer is anchored to the Oxford **Electronic Te
 52. [`master-production-board.md`](./master-production-board.md) — Chapter 1–3 production-unit model, readiness dimensions, capability reuse, dependencies and blockers.
 53. [`test-id-coverage-taxonomy.md`](./test-id-coverage-taxonomy.md) — stable unit/Storybook/visual/motion/semantic/E2E/failure/performance/human test IDs and coverage mapping.
 54. [`architecture-review-checklist.md`](./architecture-review-checklist.md) — cross-document readiness review for narrative, runtime ownership, testing, render, promotion, accessibility, performance and migration.
+55. [`phase-1-visual-evidence-records.md`](./phase-1-visual-evidence-records.md) — concrete British Museum/Met/Penn source packets, allowed/forbidden inference and Phase 1 evidence-contract pressure test.
+56. [`enki-character-bible-v1.md`](./enki-character-bible-v1.md) — production Enki identity/costume/source/rig-prep packet bound to the approved Reel 1 baseline and Shot 3 hashes.
+57. [`enlil-character-bible-v1.md`](./enlil-character-bible-v1.md) — Chapter 2 Enlil narrative/performance packet with an explicit `SOURCE_PENDING` visual gate.
+58. [`eridu-visual-research-brief.md`](./eridu-visual-research-brief.md) — direct/contextual/analogical/speculative research requirements before Eridu CityKit reconstruction is promoted.
+59. [`benchmark-acceptance-packets.md`](./benchmark-acceptance-packets.md) — implementation-facing acceptance sheets for the six core pre-Reel-1 V3 benchmarks.
+60. [`phase-2-pr-packet.md`](./phase-2-pr-packet.md) — PR 2A–2E expected files, stable tests, local commands, CI gates, review questions and stop conditions.
+61. [`schema-change-review-template.md`](./schema-change-review-template.md) — mandatory persisted-contract/hash/migration review template once Scene V3 implementation begins.
+62. [`reel-assembly-release-specification.md`](./reel-assembly-release-specification.md) — exact scene/audio/caption/title assembly, QC, release receipt, promotion and rollback contract.
+63. [`chapter-capability-heat-map.md`](./chapter-capability-heat-map.md) — coarse reuse-weight model showing which platform capabilities unlock the most Chapters 1–3 manuscript demand.
+64. [`fixtures/README.md`](./fixtures/README.md) — machine-readable Scene V3 planning candidates, including positive and negative JSON fixtures for Phase 2 pressure testing.
 
 ## Current implementation status
 
 ### Phase 0 — architecture/planning
 
-**Exceptionally detailed and substantially complete.** The reset now covers software architecture and runtime boundaries, Chapters 1–3 production demand, historical source/period policy, worked Scene/City/receipt examples, character continuity, coordinates/transforms, audio/dialogue, cinematography, visual look, rendering/delivery, local/CI testing, Storybook/E2E, accessibility, observability, storage/versioning, review/promotion, production readiness and final architecture review.
+**Architecture-complete enough to implement, with concrete production packets now layered on top.** The reset covers software architecture/runtime boundaries, Chapters 1–3 production demand, historical source/period policy, worked Scene/City/receipt examples, character continuity, coordinates/transforms, audio/dialogue, cinematography, visual look, rendering/delivery, local/CI testing, Storybook/E2E, accessibility, observability, storage/versioning, review/promotion, production readiness and final architecture review.
+
+The newest planning layer now binds that architecture to real project data: authoritative visual-evidence targets, Enki's approved Shot 3 source/derived assets, Enlil's explicit source-pending state, an Eridu research brief, six benchmark acceptance packets, file/test/command-level Phase 2 PRs, schema-change governance, release assembly and machine-readable Scene V3 candidate fixtures.
 
 Planning remains evidence-responsive: implementation can reopen a decision when a benchmark disproves an assumption. The purpose is not to make change impossible; it is to ensure changes are deliberate and traceable.
 
@@ -106,19 +118,23 @@ Completed first slice:
 - unit tests;
 - local Nx test/build verified green (10/10 tests on 2026-08-25).
 
-Next planned Phase 1 slices include authoritative visual-evidence records, validation/reporting, provenance Studio components, Storybook/a11y coverage and provenance E2E.
+Concrete visual-evidence planning now verifies the first British Museum/Met/Penn records and exposes two contract decisions before Phase 1B code: a single object can have multiple project usages, and modern scholarship/site publications should not be forced into museum-object-shaped records. Resolve those decisions before implementing the first visual-evidence registry slice.
+
+Next Phase 1 implementation slices remain validation/reporting, authoritative visual-evidence records/applications, provenance Studio components, Storybook/a11y coverage and provenance E2E.
 
 No animation runtime dependency is installed as part of Phase 1.
 
 ### Phase 2 — Scene V3 foundation
 
-Not started. The foundation now has both abstract contract design and worked examples for scene resolution, receipts, coordinate ownership, stable IDs, fixtures, render profiles and test/evidence taxonomy.
+Not started. The foundation now has abstract contract design, worked examples, machine-readable candidate fixtures, exact PR 2A–2E packets, schema-change governance, receipt/coordinate/test contracts and a V2 compatibility plan.
 
 Phase 2 remains engine-independent: Rive/Pixi/Three/Rapier do not enter until the common contract/frame/runtime/scene foundation and Animation Lab exist.
 
 ### Runtime adoption
 
 Not started. Each runtime has a bounded spike playbook and capability acceptance scorecard. No package earns production status from a feature list; it must pass manuscript-derived benchmark, exact-frame authority, local quality gates, Storybook/render proof, negative fixtures, licensing/security review, performance budget and human visual gate where applicable.
+
+The six platform gate packets are now explicit: Enki Facial, Enki Helm, Stag Spatial, Kutu Storm, Igigi Crew and Eridu City Growth.
 
 ## External authorities and technology references
 
@@ -196,6 +212,10 @@ Not started. Each runtime has a bounded spike playbook and capability acceptance
 42. **Technical rendering preserves visual intent through pinned frame/color/alpha/output contracts.**
 43. **Production priority is driven by narrative value and reusable capability demand, not the latest failing shot.**
 44. **Test coverage is multi-layer evidence with stable IDs; a single green test percentage cannot hide missing Storybook/E2E/render/human gates.**
+45. **A visual-evidence object's identity is separate from each project-specific inference/use made from that evidence.**
+46. **Schema changes are production migrations once persisted scenes/receipts depend on them; canonical hash and staleness impact must be reviewed explicitly.**
+47. **Reel release binds exact scene/audio/caption/title revisions; “latest” is never a release input.**
+48. **A source-pending hero identity may be planned and tested as pending, but cannot be silently completed by a runtime implementation.**
 
 ## Local-first quality rule
 
@@ -227,4 +247,4 @@ GPU-heavy rendered animation proofs and human review remain local/milestone evid
 
 ## Reset rule
 
-Do not resume broad Reel 1 Level 2 production until the foundation benchmarks in `benchmark-specifications.md`, `implementation-backlog.md`, `capability-acceptance-scorecards.md`, `architecture-review-checklist.md`, and `phase-exit-checklists.md` are green. Existing Reel 1 Scene V2 work remains valid evidence and can later migrate through a Scene V2 → Scene V3 compatibility adapter.
+Do not resume broad Reel 1 Level 2/V3 production until the foundation benchmarks in `benchmark-specifications.md`, `benchmark-acceptance-packets.md`, `implementation-backlog.md`, `capability-acceptance-scorecards.md`, `architecture-review-checklist.md`, and `phase-exit-checklists.md` are green. Existing Reel 1 Scene V2 work remains valid evidence and can later migrate through a Scene V2 → Scene V3 compatibility adapter.

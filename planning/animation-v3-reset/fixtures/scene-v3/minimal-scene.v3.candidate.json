@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "3",
+  "id": "scene:fixture:minimal",
+  "revision": 1,
+  "story": {
+    "manuscriptId": "manuscript:fixture",
+    "manuscriptRevision": 1,
+    "chapterId": "fixture",
+    "narrativeThreadId": "thread:fixture:minimal",
+    "beat": "FIXTURE",
+    "adaptation": "fictional-bridge"
+  },
+  "historicalSourceIds": [],
+  "visualEvidenceIds": [],
+  "fps": 30,
+  "durationFrames": 30,
+  "width": 1080,
+  "height": 1920,
+  "seed": 30001,
+  "camera": [],
+  "actors": [],
+  "props": [],
+  "environments": [],
+  "performances": [],
+  "materials": [],
+  "effects": [],
+  "simulations": [],
+  "crowds": [],
+  "herds": [],
+  "worldStates": [],
+  "qa": {
+    "benchmarkFixtureIds": [],
+    "requiredInvariants": [
+      "frame:integer-authority",
+      "seed:deterministic"
+    ],
+    "humanReviewRequired": false
+  }
+}
