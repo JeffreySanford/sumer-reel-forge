@@ -30,11 +30,11 @@ The original `riggingTension` renderer was found to be an independent oscillator
 
 A shared deterministic motion model defines `heavyPhysical` as the vessel driver and makes `riggingTension` sample that same driver with a `0.24s` delay. The rigging response inherits vessel heave/roll and adds bounded lag/follow-through. A numerical causality regression verifies the shared driver, real delay, measurable secondary contribution, and restrained bounds.
 
-Local validation on 2026-08-24 confirmed:
+Local validation confirmed:
 
 - `Level 2 rigging response numerically lags the shared heavyPhysical vessel driver` — PASS;
 - `ACTIVE LEVEL 2 RIGGING GATE: renderer uses the vessel-driven delayed rigging response and no legacy oscillator` — PASS;
-- focused renderer state: `94/95` with only the overall canonical Level 2 milestone intentionally red;
+- focused renderer state had only the overall canonical Level 2 milestone intentionally red;
 - compact Level 2 loop: candidate audition PASS, rigging causality PASS, rigging preview PASS.
 
 The rigging asset remains **unpromoted pending human normal-speed visual approval**.
@@ -71,18 +71,31 @@ Rigging must not be promoted until both structure and assembled-motion review ar
 
 ## Second Level 2 slice — Enki articulation
 
-The character-state production lane for `shot03-enki-eyes-v1` is now implemented and awaiting local candidate generation.
+The character-state production lane for `shot03-enki-eyes-v1` is implemented and has now produced a QA-passed blink candidate plus a combined rigging+blink preview.
 
 The lane deliberately does **not** send the blink state through ordinary semantic extraction. Its production flow is:
 
 1. use the approved checksum-backed `shot03-enki-body-v1` as the identity/localization anchor;
-2. use SAM3 only to locate both eye/eyelid regions;
-3. deterministically reject localization that is empty, too broad, outside Enki alpha, below the expected upper-face band, or too tall relative to the character;
-4. crop the immutable editorial source around that tiny validated region;
-5. run low-denoise (`0.42`) masked inpainting asking only for naturally closed eyelids;
-6. return a full-canvas transparent character-state layer containing only the generated eye-state pixels;
-7. run identity-delta QA requiring bounded alpha coverage, containment inside Enki, upper-face registration, a nontrivial visible change, and bounded RGB difference;
-8. require human identity review before any promotion.
+2. derive a deterministic upper-face working region;
+3. use SAM3 only as a semantic eye/eyelid locator;
+4. prune fragmented SAM output to the strongest one/two compact eye components;
+5. constrain the state edit to the deterministic eye band and bounded character geometry;
+6. crop the immutable editorial source around the validated eye-state region;
+7. run low-denoise (`0.42`) masked inpainting asking only for naturally closed eyelids;
+8. return a full-canvas transparent character-state layer containing only the generated eye-state pixels;
+9. run identity-delta QA requiring bounded alpha coverage, upper-face registration, a nontrivial visible change, and bounded RGB difference;
+10. require human identity review before any promotion.
+
+The first successful combined build reported:
+
+- candidate audition — PASS;
+- rigging causality — PASS;
+- character-state lane — PASS;
+- character-state localization — PASS;
+- blink build — PASS;
+- blink identity QA — PASS;
+- combined rigging + blink preview — PASS;
+- canonical milestone — still intentionally red because both Level 2 assets remain unpromoted.
 
 Hard invariants:
 
@@ -92,7 +105,7 @@ Hard invariants:
 - automatic promotion is forbidden;
 - the canonical animation manifest remains unchanged during generation/audition.
 
-The renderer already activates `blinkOnce` only when the character-state asset is staged/approved for the audition. The blink window remains the existing Scene V2 interval (`0.46`–`0.51` progress), so the state persists for multiple frames and returns to the open-eye baseline.
+The renderer activates `blinkOnce` only when the character-state asset is staged/approved for the audition. The blink window remains the existing Scene V2 interval (`0.46`–`0.51` progress), so the state persists for multiple frames and returns to the open-eye baseline.
 
 ## Compact development loop
 
@@ -102,15 +115,11 @@ Use the focused loop for normal Level 2 iteration instead of all renderer tests:
 node tools/scripts/shot03-level2-dev-loop.mjs
 ```
 
-It runs only the candidate-audition, rigging-causality, character-state-lane and active Living Shot milestone checks. The known milestone red is non-blocking, so the preview still renders.
-
-For the first blink candidate, use one command:
+For a blink candidate build:
 
 ```bash
 node tools/scripts/shot03-level2-dev-loop.mjs --build-blink
 ```
-
-That command captures the verbose production output, performs SAM localization, blink generation, identity QA and the combined rigging+blink audition, then prints only a compact summary. If a QA-passed blink candidate already exists, the ordinary dev loop automatically switches from a rigging-only preview to a combined `rigging+blink` preview.
 
 The machine-readable status remains:
 
@@ -119,6 +128,45 @@ tmp/animation-previews/shot03-level2-status.json
 ```
 
 Full `pnpm renderer:test` and `pnpm quality` are milestone/release gates rather than the inner visual-development loop.
+
+## Human review and promotion
+
+The current combined preview is an audition only. Watch the exact MP4 at normal speed before approving either optional layer.
+
+Review should confirm:
+
+- rigging follows vessel motion with delayed tension rather than independent oscillation;
+- rigging does not obscure Enki's face or caption-safe composition;
+- the blink reads naturally at normal speed and returns cleanly to the open-eye state;
+- Enki's identity, lighting, expression, beard, brow, nose and registration remain stable;
+- no patch seam, one-frame pop or face redraw is visible;
+- the Level 2 version feels more alive without becoming theatrical.
+
+Before promotion, run the dry-run planner against the newest complete combined preview:
+
+```bash
+node tools/scripts/shot03-level2-promote-reviewed.mjs
+```
+
+Promotion is intentionally separate from generation and requires the exact watched preview directory plus an explicit confirmation token:
+
+```bash
+node tools/scripts/shot03-level2-promote-reviewed.mjs \
+  --apply \
+  --preview-dir="<exact reviewed shot03-level2-preview directory>" \
+  --confirm=APPROVE_SHOT_3_LEVEL2
+```
+
+The promotion command:
+
+- accepts only `shot03-rigging-v1` and `shot03-enki-eyes-v1`;
+- verifies the reviewed MP4 checksum;
+- verifies both candidate checksums and upstream QA PASS evidence;
+- refuses automatic promotion and refuses `--apply` without an explicit reviewed preview path;
+- copies only the two reviewed optional candidates to their canonical animation-v1 paths;
+- marks only those optional layers approved in the manifest;
+- writes a promotion receipt under `tmp/animation-assets/promotions/shot03-level2`;
+- never modifies `editorial-v1`.
 
 ## Gate behavior
 
@@ -135,7 +183,7 @@ Passing the declarative gate is necessary but not sufficient for Level 2 approva
 
 ## Next QA milestone
 
-After the first human-approved Level 2 Shot 3 candidate exists, add rendered-motion evidence that distinguishes camera motion from subject/material motion and verifies:
+After human approval and promotion, add rendered-motion evidence that distinguishes camera motion from subject/material motion and verifies:
 
 - vessel movement after camera compensation;
 - measurable rigging response delayed from vessel motion;
