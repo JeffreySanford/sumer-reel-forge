@@ -100,11 +100,46 @@ The literary/mythological source layer is anchored to the Oxford **Electronic Te
    - per-phase exit gates;
    - stop conditions and PR-sizing guidance.
 
+12. [`architecture-decision-records.md`](./architecture-decision-records.md)
+   - 30 explicit ADRs for time authority, runtime ownership, provenance, local-first testing, CI, package versions, promotion and human review;
+   - accepted/trial/deferred decision status;
+   - benchmark-driven dependency policy.
+
+13. [`chapter-capability-matrix.md`](./chapter-capability-matrix.md)
+   - Chapter 1–3 narrative threads mapped to reusable Level 2/3 capabilities;
+   - preferred runtime ownership;
+   - required tests per capability;
+   - chapter production-readiness gates.
+
+14. [`quality-gates-local-ci.md`](./quality-gates-local-ci.md)
+   - local L0–L4 quality tiers;
+   - GitHub Actions re-check contract;
+   - lint/unit/build/Storybook/E2E requirements;
+   - render-proof receipt policy;
+   - Actions-quota operating model.
+
+15. [`test-fixture-catalog.md`](./test-fixture-catalog.md)
+   - shared fixtures for unit, Storybook, visual regression, motion proofs and E2E;
+   - positive/negative fixture inventory;
+   - story catalog and proof-state naming;
+   - anti-flake and golden-image rules.
+
+16. [`risk-register.md`](./risk-register.md)
+   - architecture, visual, historical, licensing, CI, performance and testing risks;
+   - triggers, mitigations and fallbacks;
+   - escaped-failure-to-regression policy.
+
+17. [`phase-exit-checklists.md`](./phase-exit-checklists.md)
+   - explicit Phase 0–17 exit gates;
+   - local and GitHub Actions obligations;
+   - render/human gates where applicable;
+   - universal stop conditions.
+
 ## Current implementation status
 
 ### Phase 0 — architecture/planning
 
-Substantially complete. Planning may continue to refine concrete decisions, but the ownership model is now defined well enough to guide foundation work.
+Substantially complete and intentionally detailed. The architecture, runtime ownership, chapter capability demand, testing layers, local/CI verification model, risk model and phase exits are now explicit enough to guide implementation without relying on chat history.
 
 ### Phase 1 — historical-source foundation
 
@@ -163,7 +198,34 @@ No animation runtime dependency is installed as part of Phase 1.
 13. **Runtime versions and the exact rendered assets are evidence-bound.**
 14. **Historical-fiction revision is allowed; provenance must be reclassified rather than erased.**
 15. **Scene V2 remains a supported historical baseline until explicit migration.**
+16. **Applicable unit, Storybook, E2E, lint and build checks run locally before push and are independently repeated in GitHub Actions.**
+17. **Negative regression fixtures are mandatory for acceptance gates.**
+18. **A phase is not repository-complete until local and CI deterministic gates are green.**
+
+## Local-first quality rule
+
+For implementation work:
+
+```text
+edit
+  ↓
+focused local unit/contract tests
+  ↓
+affected lint + build
+  ↓
+affected Storybook tests/build
+  ↓
+affected E2E
+  ↓
+phase local gate
+  ↓
+push coherent batch
+  ↓
+GitHub Actions independently repeats deterministic gates
+```
+
+GPU-heavy rendered animation proofs and human review remain local/milestone evidence unless a dedicated workflow explicitly opts in.
 
 ## Reset rule
 
-Do not resume broad Reel 1 Level 2 production until the foundation benchmarks in `benchmark-specifications.md` and `implementation-backlog.md` are green. Existing Reel 1 Scene V2 work remains valid evidence and can later migrate through a Scene V2 → Scene V3 compatibility adapter.
+Do not resume broad Reel 1 Level 2 production until the foundation benchmarks in `benchmark-specifications.md`, `implementation-backlog.md`, and `phase-exit-checklists.md` are green. Existing Reel 1 Scene V2 work remains valid evidence and can later migrate through a Scene V2 → Scene V3 compatibility adapter.
