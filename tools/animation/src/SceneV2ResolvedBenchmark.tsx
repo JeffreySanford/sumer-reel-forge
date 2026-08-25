@@ -11,6 +11,7 @@ import {
   type SceneV2BenchmarkProps,
 } from './SceneV2Benchmark';
 import { ContainedWaterMaterialLayer } from './ContainedWaterMaterialLayer';
+import { blinkOnceOpacity } from './level2-blink-motion.mjs';
 import {
   heavyPhysicalDriver,
   riggingTensionResponse,
@@ -306,13 +307,12 @@ function layerOpacity(
       (item) => item.preset === 'blinkOnce' && item.enabled !== false,
     );
     if (!blink) return 0;
-    const local = clamp(
-      (progress - blink.startProgress) /
-        Math.max(0.001, blink.endProgress - blink.startProgress),
-      0,
-      1,
-    );
-    return Math.pow(Math.sin(local * Math.PI), 2) * blink.intensity;
+    return blinkOnceOpacity({
+      progress,
+      startProgress: blink.startProgress,
+      endProgress: blink.endProgress,
+      intensity: blink.intensity,
+    });
   }
 
   if (layer.role === 'light') {
