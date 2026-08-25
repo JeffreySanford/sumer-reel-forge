@@ -1,10 +1,16 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
+import {
+  BLINK_CLOSE_FRACTION,
+  BLINK_HOLD_END_FRACTION,
+  blinkOnceOpacity,
+} from '../animation/src/level2-blink-motion.mjs';
 
 const proofPath = 'tools/scripts/shot03-level2-rendered-proof.mjs';
 const benchmarkPath = 'tools/scripts/render-scene-v2-benchmark.ts';
 const indexPath = 'tools/animation/src/index.tsx';
+const resolvedRendererPath = 'tools/animation/src/SceneV2ResolvedBenchmark.tsx';
 
 async function text(path) {
   return readFile(path, 'utf8');
@@ -57,6 +63,40 @@ test('rendered proof requires a persistent bounded blink and clean open-state re
   assert.match(proof, /maxConsecutiveActiveFrames/);
   assert.match(proof, /returnPass/);
   assert.match(proof, /Multiple consecutive active frames prove persistence/);
+});
+
+test('blinkOnce runtime has a fast close, real full-opacity hold, and clean reopen', async () => {
+  const renderer = await text(resolvedRendererPath);
+  assert.match(renderer, /blinkOnceOpacity/);
+  assert.doesNotMatch(renderer, /Math\.pow\(Math\.sin\(local \* Math\.PI\), 2\)/);
+  assert.ok(BLINK_CLOSE_FRACTION <= 0.25, 'Blink close must remain fast.');
+  assert.ok(
+    BLINK_HOLD_END_FRACTION - BLINK_CLOSE_FRACTION >= 0.45,
+    'Blink must reserve a substantial middle interval for a fully closed hold.',
+  );
+
+  const durationFrames = 210;
+  const startProgress = 0.46;
+  const endProgress = 0.51;
+  const opacities = Array.from({ length: durationFrames }, (_unused, frame) =>
+    blinkOnceOpacity({
+      progress: frame / (durationFrames - 1),
+      startProgress,
+      endProgress,
+      intensity: 1,
+    }),
+  );
+  const fullyClosedFrames = opacities
+    .map((opacity, frame) => ({ opacity, frame }))
+    .filter(({ opacity }) => opacity >= 0.999)
+    .map(({ frame }) => frame);
+
+  assert.ok(
+    fullyClosedFrames.length >= 3,
+    `Expected at least three fully opaque closed-eye frames, found ${fullyClosedFrames.length}.`,
+  );
+  assert.equal(opacities[Math.round(startProgress * (durationFrames - 1)) - 2], 0);
+  assert.equal(opacities[Math.round(endProgress * (durationFrames - 1)) + 2], 0);
 });
 
 test('Level 1 versus Level 2 A/B remains a human preference gate', async () => {
