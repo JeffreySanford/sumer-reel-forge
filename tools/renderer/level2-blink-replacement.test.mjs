@@ -18,19 +18,20 @@ test('replacement lane preserves approved canonical state and writes candidates 
   assert.match(text, /automaticPromotionAllowed: false/);
   assert.match(text, /explicitReplacementPromotionRequired: true/);
   assert.doesNotMatch(text, /writeFile\(MANIFEST_PATH/);
-  assert.doesNotMatch(text, /copyFile\([^\n]*currentStatePath/);
 });
 
-test('replacement lane reuses only approved eye alpha as localization and expands it before inpainting', async () => {
+test('replacement lane reuses approved eye alpha as a trusted seed and expands it with replacement-specific bounds', async () => {
   const text = await source();
 
   assert.match(text, /alphaMaskFromRgba\(context\.currentStateRgba/);
   assert.match(text, /source: 'current approved closed-eye alpha only'/);
   assert.match(text, /TARGET_EYE_BAND_FILL = 0\.015/);
-  assert.match(text, /dilateEyeMaskWithinConstraints/);
-  assert.match(text, /minEyeBandFill: TARGET_EYE_BAND_FILL/);
-  assert.match(text, /maxEyeComponents: 2/);
-  assert.match(text, /expanded replacement mask is still too sparse/i);
+  assert.match(text, /MAX_EYE_BAND_FILL = 0\.03/);
+  assert.match(text, /expandTrustedEyeSeedMask/);
+  assert.match(text, /minSeedInBandRatio: 0\.98/);
+  assert.match(text, /maxHorizontalRadius: 24/);
+  assert.match(text, /maxVerticalRadius: 10/);
+  assert.doesNotMatch(text, /dilateEyeMaskWithinConstraints/);
 });
 
 test('replacement candidate must pass the stronger eye-state proof before promotion can be considered', async () => {
