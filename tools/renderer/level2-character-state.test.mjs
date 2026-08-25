@@ -55,7 +55,15 @@ test('Shot 3 blink lane constrains SAM to approved upper-face geometry before in
   assert.match(source, /deriveEnkiUpperFaceRoi/);
   assert.match(source, /constrainSamEyeMask/);
   assert.match(source, /validateEyeLocalization/);
-  assert.match(source, /eyeBandFillRatio/);
+  assert.match(source, /analyzeEyeSeedComponents/);
+  assert.match(source, /compactSupportRatio/);
+  assert.match(source, /meaningfulComponentCount/);
+  assert.doesNotMatch(
+    source,
+    /eyeBandFillRatio\s*<\s*0\.01/,
+    'a compact eyelid mask must not be rejected only because it fills less than 1% of the rectangular eye band',
+  );
+  assert.match(source, /eyeBandFillRatio\s*>\s*0\.55/);
   assert.match(source, /outsideEnkiRatio/);
   assert.match(source, /normalizedCenterYWithinBody/);
   assert.match(source, /changedPixelRatio/);
