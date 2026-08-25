@@ -1,5 +1,7 @@
 const DEFAULT_THRESHOLD = 16;
 const ALIGNMENT = 8;
+const DEFAULT_MIN_EYE_BAND_FILL = 0.01;
+const DEFAULT_MAX_ADAPTIVE_RADIUS = 3;
 
 export function deriveEnkiUpperFaceRoi({
   bodyRgba,
@@ -118,12 +120,112 @@ export function dilateEyeMaskWithinConstraints({
   eyeBand,
   radius = 1,
   threshold = DEFAULT_THRESHOLD,
+  minEyeBandFill = DEFAULT_MIN_EYE_BAND_FILL,
+  maxAdaptiveRadius = DEFAULT_MAX_ADAPTIVE_RADIUS,
 }) {
   if (!Number.isInteger(radius) || radius < 0 || radius > 3) {
     throw new Error('Eye-mask dilation radius must be an integer from 0 to 3.');
   }
+  if (
+    !Number.isInteger(maxAdaptiveRadius) ||
+    maxAdaptiveRadius < radius ||
+    maxAdaptiveRadius > 3
+  ) {
+    throw new Error(
+      'Eye-mask maxAdaptiveRadius must be an integer from radius through 3.',
+    );
+  }
+  if (
+    !Number.isFinite(minEyeBandFill) ||
+    minEyeBandFill < 0 ||
+    minEyeBandFill > 0.1
+  ) {
+    throw new Error('Eye-mask minEyeBandFill must be between 0 and 0.1.');
+  }
   if (radius === 0) return new Uint8Array(mask);
 
+  let output = dilateAtRadius({
+    mask,
+    bodyRgba,
+    dimensions,
+    eyeBand,
+    radius,
+    threshold,
+  });
+  let fill = eyeBandFillRatio(output, dimensions, eyeBand, threshold);
+
+  // SAM is only the semantic locator. Tiny but valid seeds are expanded into the
+  // minimum practical eyelid-editing patch, while the approved Enki alpha and
+  // deterministic eye band remain hard geometric boundaries.
+  for (
+    let adaptiveRadius = radius + 1;
+    fill < minEyeBandFill && adaptiveRadius <= maxAdaptiveRadius;
+    adaptiveRadius += 1
+  ) {
+    output = dilateAtRadius({
+      mask,
+      bodyRgba,
+      dimensions,
+      eyeBand,
+      radius: adaptiveRadius,
+      threshold,
+    });
+    fill = eyeBandFillRatio(output, dimensions, eyeBand, threshold);
+  }
+
+  return output;
+}
+
+export function eyeBandFillRatio(
+  mask,
+  dimensions,
+  eyeBand,
+  threshold = DEFAULT_THRESHOLD,
+) {
+  const area =
+    (eyeBand.maxX - eyeBand.minX + 1) *
+    (eyeBand.maxY - eyeBand.minY + 1);
+  if (area <= 0) return 1;
+  let selected = 0;
+  for (let y = eyeBand.minY; y <= eyeBand.maxY; y += 1) {
+    for (let x = eyeBand.minX; x <= eyeBand.maxX; x += 1) {
+      if (mask[y * dimensions.width + x] > threshold) selected += 1;
+    }
+  }
+  return selected / area;
+}
+
+export function analyzeGrayMask(mask, dimensions, threshold = DEFAULT_THRESHOLD) {
+  let selected = 0;
+  let minX = dimensions.width;
+  let minY = dimensions.height;
+  let maxX = -1;
+  let maxY = -1;
+  for (let y = 0; y < dimensions.height; y += 1) {
+    for (let x = 0; x < dimensions.width; x += 1) {
+      if (mask[y * dimensions.width + x] <= threshold) continue;
+      selected += 1;
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x);
+      maxY = Math.max(maxY, y);
+    }
+  }
+  return {
+    selected,
+    coverageRatio: selected / (dimensions.width * dimensions.height),
+    bounds: selected ? { minX, minY, maxX, maxY } : null,
+  };
+}
+
+function dilateAtRadius({
+  mask,
+  bodyRgba,
+  dimensions,
+  eyeBand,
+  radius,
+  threshold,
+}) {
   const output = new Uint8Array(mask);
   for (let y = eyeBand.minY; y <= eyeBand.maxY; y += 1) {
     for (let x = eyeBand.minX; x <= eyeBand.maxX; x += 1) {
@@ -152,29 +254,6 @@ export function dilateEyeMaskWithinConstraints({
     }
   }
   return output;
-}
-
-export function analyzeGrayMask(mask, dimensions, threshold = DEFAULT_THRESHOLD) {
-  let selected = 0;
-  let minX = dimensions.width;
-  let minY = dimensions.height;
-  let maxX = -1;
-  let maxY = -1;
-  for (let y = 0; y < dimensions.height; y += 1) {
-    for (let x = 0; x < dimensions.width; x += 1) {
-      if (mask[y * dimensions.width + x] <= threshold) continue;
-      selected += 1;
-      minX = Math.min(minX, x);
-      minY = Math.min(minY, y);
-      maxX = Math.max(maxX, x);
-      maxY = Math.max(maxY, y);
-    }
-  }
-  return {
-    selected,
-    coverageRatio: selected / (dimensions.width * dimensions.height),
-    bounds: selected ? { minX, minY, maxX, maxY } : null,
-  };
 }
 
 function alphaBounds(rgba, dimensions, threshold, window = {}) {
