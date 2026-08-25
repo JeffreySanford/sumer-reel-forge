@@ -29,6 +29,11 @@ const focusedTests = [
     mode: 'must-pass',
   },
   {
+    id: 'character-state-localization',
+    path: 'tools/renderer/level2-character-state-localization.test.mjs',
+    mode: 'must-pass',
+  },
+  {
     id: 'living-shot-milestone',
     path: 'tools/renderer/level2-living-shot-gate.test.mjs',
     mode: 'milestone',
@@ -214,7 +219,7 @@ async function writeStatus({
 }) {
   await mkdir(resolve('tmp/animation-previews'), { recursive: true });
   const payload = {
-    schemaVersion: 3,
+    schemaVersion: 4,
     generatedAt: new Date().toISOString(),
     shotNumber: 3,
     milestoneState: milestone?.state ?? 'unknown',
