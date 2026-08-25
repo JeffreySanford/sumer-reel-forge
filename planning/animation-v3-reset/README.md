@@ -30,116 +30,35 @@ The literary/mythological source layer is anchored to the Oxford **Electronic Te
 
 ## Planning documents
 
-1. [`narrative-source-map.md`](./narrative-source-map.md)
-   - manuscript → ETCSL mapping;
-   - source hierarchy;
-   - historical-fiction adaptation policy;
-   - visual/archaeological provenance model;
-   - source-confidence rules.
-
-2. [`level-2-specification.md`](./level-2-specification.md)
-   - formal definition of Level 2 — Living Illustration;
-   - Rive/Pixi responsibilities;
-   - performance clips;
-   - material deformation;
-   - Level 2 test and exit gates.
-
-3. [`level-3-architecture.md`](./level-3-architecture.md)
-   - formal definition of Level 3 — Spatial Performance;
-   - Scene V3 and `FrameContext`;
-   - runtime-adapter architecture;
-   - Three/R3F, Rapier, Spine, CityKit, crowds, montage, generative adapters;
-   - repository/package boundaries.
-
-4. [`testing-provenance-roadmap.md`](./testing-provenance-roadmap.md)
-   - unit, Storybook, visual, motion-proof, E2E and human-review strategy;
-   - historical-source tests;
-   - CI tiers;
-   - platform benchmark scenes;
-   - phased implementation plan and migration rules.
-
-5. [`package-adoption-matrix.md`](./package-adoption-matrix.md)
-   - runtime ownership boundaries;
-   - exact-version and licensing policy;
-   - bounded dependency spikes;
-   - keep/constrain/reject gates for Rive, Pixi, Three/R3F, Rapier, Spine, Theatre and generative adapters.
-
-6. [`scene-v3-contract-design.md`](./scene-v3-contract-design.md)
-   - planned concrete Scene V3 TypeScript contracts;
-   - deterministic seed semantics;
-   - actor/performance/material/world separation;
-   - resolved-scene and render-receipt contracts;
-   - Scene V2 compatibility requirements.
-
-7. [`benchmark-specifications.md`](./benchmark-specifications.md)
-   - platform proof scenes derived from Chapters 1–3;
-   - exact subsystem ownership;
-   - controls/negative tests;
-   - Storybook states, rendered evidence and human acceptance criteria.
-
-8. [`animation-lab-storybook-contract.md`](./animation-lab-storybook-contract.md)
-   - dedicated React/Vite Animation Lab plan;
-   - exact-frame Storybook convention;
-   - debug/source overlays;
-   - interaction, visual and motion-proof integration.
-
-9. [`migration-release-strategy.md`](./migration-release-strategy.md)
-   - coexistence of V2 and V3;
-   - shot-by-shot migration;
-   - runtime/asset maturity states;
-   - rollback, package/schema upgrade and release-channel policy.
-
-10. [`performance-render-budget.md`](./performance-render-budget.md)
-   - workstation assumptions;
-   - preview/production profiles;
-   - Rive/Pixi/R3F/Rapier/crowd/CityKit budgets;
-   - render observability, cache and CI strategy.
-
-11. [`implementation-backlog.md`](./implementation-backlog.md)
-   - dependency-aware phase sequence from source registry through Reel 1/Chapter 2/Chapter 3 readiness;
-   - per-phase exit gates;
-   - stop conditions and PR-sizing guidance.
-
-12. [`architecture-decision-records.md`](./architecture-decision-records.md)
-   - 30 explicit ADRs for time authority, runtime ownership, provenance, local-first testing, CI, package versions, promotion and human review;
-   - accepted/trial/deferred decision status;
-   - benchmark-driven dependency policy.
-
-13. [`chapter-capability-matrix.md`](./chapter-capability-matrix.md)
-   - Chapter 1–3 narrative threads mapped to reusable Level 2/3 capabilities;
-   - preferred runtime ownership;
-   - required tests per capability;
-   - chapter production-readiness gates.
-
-14. [`quality-gates-local-ci.md`](./quality-gates-local-ci.md)
-   - local L0–L4 quality tiers;
-   - GitHub Actions re-check contract;
-   - lint/unit/build/Storybook/E2E requirements;
-   - render-proof receipt policy;
-   - Actions-quota operating model.
-
-15. [`test-fixture-catalog.md`](./test-fixture-catalog.md)
-   - shared fixtures for unit, Storybook, visual regression, motion proofs and E2E;
-   - positive/negative fixture inventory;
-   - story catalog and proof-state naming;
-   - anti-flake and golden-image rules.
-
-16. [`risk-register.md`](./risk-register.md)
-   - architecture, visual, historical, licensing, CI, performance and testing risks;
-   - triggers, mitigations and fallbacks;
-   - escaped-failure-to-regression policy.
-
-17. [`phase-exit-checklists.md`](./phase-exit-checklists.md)
-   - explicit Phase 0–17 exit gates;
-   - local and GitHub Actions obligations;
-   - render/human gates where applicable;
-   - universal stop conditions.
+1. [`narrative-source-map.md`](./narrative-source-map.md) — manuscript → ETCSL/other source mapping, adaptation policy and visual provenance.
+2. [`level-2-specification.md`](./level-2-specification.md) — formal Level 2 Living Illustration contract.
+3. [`level-3-architecture.md`](./level-3-architecture.md) — Scene V3, runtimes, world/crowd/city/montage architecture.
+4. [`testing-provenance-roadmap.md`](./testing-provenance-roadmap.md) — full testing/provenance strategy and phased roadmap.
+5. [`package-adoption-matrix.md`](./package-adoption-matrix.md) — Rive/Pixi/Three/Rapier/Spine/Theatre adoption rules.
+6. [`scene-v3-contract-design.md`](./scene-v3-contract-design.md) — planned concrete Scene V3 TypeScript contract boundaries.
+7. [`benchmark-specifications.md`](./benchmark-specifications.md) — manuscript-derived benchmark scenes and acceptance criteria.
+8. [`animation-lab-storybook-contract.md`](./animation-lab-storybook-contract.md) — React/Vite Animation Lab and exact-frame Storybook model.
+9. [`migration-release-strategy.md`](./migration-release-strategy.md) — V2/V3 coexistence, rollback and migration.
+10. [`performance-render-budget.md`](./performance-render-budget.md) — workstation, runtime and render budgets.
+11. [`implementation-backlog.md`](./implementation-backlog.md) — dependency-aware Phase 0–17 execution backlog.
+12. [`architecture-decision-records.md`](./architecture-decision-records.md) — 30 ADRs locking time authority, runtime ownership, provenance, testing and promotion rules.
+13. [`chapter-capability-matrix.md`](./chapter-capability-matrix.md) — Chapter 1–3 narrative requirements mapped to reusable L2/L3 capabilities and tests.
+14. [`quality-gates-local-ci.md`](./quality-gates-local-ci.md) — local L0–L4 test tiers and GitHub Actions re-check contract.
+15. [`test-fixture-catalog.md`](./test-fixture-catalog.md) — shared unit/Storybook/visual/motion/E2E fixtures and negative regressions.
+16. [`risk-register.md`](./risk-register.md) — architecture, historical, licensing, performance, CI and visual risks.
+17. [`phase-exit-checklists.md`](./phase-exit-checklists.md) — explicit Phase 0–17 local/CI/render/human exit gates.
+18. [`ci-workflow-redesign.md`](./ci-workflow-redesign.md) — proposed quota-aware GitHub Actions topology and local command parity.
+19. [`accessibility-motion-testing.md`](./accessibility-motion-testing.md) — Studio accessibility, reduced-motion, captions, motion safety and AT/browser testing.
+20. [`observability-diagnostics.md`](./observability-diagnostics.md) — Scene/runtime/frame/render diagnostics, asset traces and proof bundles.
+21. [`dependency-license-security.md`](./dependency-license-security.md) — package adoption, licensing, version lockstep and supply-chain controls.
+22. [`persistence-versioning.md`](./persistence-versioning.md) — scene/rig/source/proof version domains, migration and staleness rules.
+23. [`failure-injection-resilience.md`](./failure-injection-resilience.md) — deliberate negative integration tests, service failures, corrupt assets, stale revisions and promotion resilience.
 
 ## Current implementation status
 
 ### Phase 0 — architecture/planning
 
-Substantially complete and intentionally detailed. The architecture, runtime ownership, chapter capability demand, testing layers, local/CI verification model, risk model and phase exits are now explicit enough to guide implementation without relying on chat history.
+Substantially complete and intentionally detailed. The architecture, runtime ownership, chapter capability demand, testing layers, local/CI verification model, risk model, accessibility, observability, dependency policy, persistence model, resilience model and phase exits are now explicit enough to guide implementation without relying on chat history.
 
 ### Phase 1 — historical-source foundation
 
@@ -201,6 +120,11 @@ No animation runtime dependency is installed as part of Phase 1.
 16. **Applicable unit, Storybook, E2E, lint and build checks run locally before push and are independently repeated in GitHub Actions.**
 17. **Negative regression fixtures are mandatory for acceptance gates.**
 18. **A phase is not repository-complete until local and CI deterministic gates are green.**
+19. **Studio authoring and review surfaces are keyboard-accessible and test reduced-motion behavior.**
+20. **Runtime/render diagnostics are structured enough to identify which layer failed.**
+21. **Animation dependencies require benchmark, licensing, security and rollback decisions before adoption.**
+22. **Scene, source, rig, runtime and proof versions are distinct and staleness is reasoned explicitly.**
+23. **Representative failure modes are injected in tests before a subsystem is production-ready.**
 
 ## Local-first quality rule
 
