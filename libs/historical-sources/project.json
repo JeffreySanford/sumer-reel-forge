@@ -1,0 +1,19 @@
+{
+  "name": "historical-sources",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/historical-sources/src",
+  "projectType": "library",
+  "tags": ["type:domain", "scope:historical-sources"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/historical-sources",
+        "main": "libs/historical-sources/src/index.ts",
+        "tsConfig": "libs/historical-sources/tsconfig.lib.json",
+        "assets": ["libs/historical-sources/*.md"]
+      }
+    }
+  }
+}
