@@ -46,11 +46,20 @@ test('rendered proof isolates vessel and rigging from identical same-frame contr
   const proof = await text(proofPath);
 
   assert.match(proof, /vessel-frozen-props\.json/);
-  assert.match(proof, /removePreset\(shot3\(vesselFrozenProps\), 'shot03-vessel-v1', 'heavyPhysical'\)/);
+  assert.match(
+    proof,
+    /removePreset\(shot3\(vesselFrozenProps\), 'shot03-vessel-v1', 'heavyPhysical'\)/,
+  );
   assert.match(proof, /rigging-frozen-props\.json/);
-  assert.match(proof, /removePreset\(shot3\(riggingFrozenProps\), 'shot03-rigging-v1', 'riggingTension'\)/);
+  assert.match(
+    proof,
+    /removePreset\(\s*shot3\(riggingFrozenProps\),\s*'shot03-rigging-v1',\s*'riggingTension',\s*\)/,
+  );
   assert.match(proof, /same frame, camera, grade, atmosphere, lighting/);
-  assert.match(proof, /existing numerical causality gate proves the 0\.24s vessel-driven lag/);
+  assert.match(
+    proof,
+    /existing numerical causality gate proves the 0\.24s vessel-driven lag/,
+  );
 });
 
 test('rendered proof requires a persistent bounded blink and clean open-state return', async () => {
@@ -58,17 +67,22 @@ test('rendered proof requires a persistent bounded blink and clean open-state re
 
   assert.match(proof, /blink-disabled-props\.json/);
   assert.match(proof, /minConsecutiveActiveFrames: 3/);
+  assert.match(proof, /minReadableChangedRatio: 0\.00025/);
   assert.match(proof, /maxChangedRatio: 0\.0065/);
   assert.match(proof, /returnChangedRatioMax: 0\.000001/);
   assert.match(proof, /maxConsecutiveActiveFrames/);
   assert.match(proof, /returnPass/);
+  assert.match(proof, /readablePass/);
   assert.match(proof, /Multiple consecutive active frames prove persistence/);
 });
 
 test('blinkOnce runtime has a fast close, real full-opacity hold, and clean reopen', async () => {
   const renderer = await text(resolvedRendererPath);
   assert.match(renderer, /blinkOnceOpacity/);
-  assert.doesNotMatch(renderer, /Math\.pow\(Math\.sin\(local \* Math\.PI\), 2\)/);
+  assert.doesNotMatch(
+    renderer,
+    /Math\.pow\(Math\.sin\(local \* Math\.PI\), 2\)/,
+  );
   assert.ok(BLINK_CLOSE_FRACTION <= 0.25, 'Blink close must remain fast.');
   assert.ok(
     BLINK_HOLD_END_FRACTION - BLINK_CLOSE_FRACTION >= 0.45,
@@ -95,8 +109,14 @@ test('blinkOnce runtime has a fast close, real full-opacity hold, and clean reop
     fullyClosedFrames.length >= 3,
     `Expected at least three fully opaque closed-eye frames, found ${fullyClosedFrames.length}.`,
   );
-  assert.equal(opacities[Math.round(startProgress * (durationFrames - 1)) - 2], 0);
-  assert.equal(opacities[Math.round(endProgress * (durationFrames - 1)) + 2], 0);
+  assert.equal(
+    opacities[Math.round(startProgress * (durationFrames - 1)) - 2],
+    0,
+  );
+  assert.equal(
+    opacities[Math.round(endProgress * (durationFrames - 1)) + 2],
+    0,
+  );
 });
 
 test('Level 1 versus Level 2 A/B remains a human preference gate', async () => {

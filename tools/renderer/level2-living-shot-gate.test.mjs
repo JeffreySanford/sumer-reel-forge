@@ -6,19 +6,15 @@ const SCENE_PATH =
   'tools/animation/scenes/reel-01-shot-03-benchmark.scene-v2.json';
 const MANIFEST_PATH =
   'assets/blessings-of-sumer/chapter-01/reel-01/animation-v1/manifest.json';
+const ACCEPTANCE_PATH =
+  'planning/acceptance/shot03-level2-rendered-acceptance.json';
 
 const CHARACTER_ARTICULATION_PRESETS = new Set([
   'blinkOnce',
   'subtleGazeShift',
 ]);
-const SECONDARY_MOTION_PRESETS = new Set([
-  'clothLag',
-  'riggingTension',
-]);
-const VESSEL_MOTION_PRESETS = new Set([
-  'heavyPhysical',
-  'boatBob',
-]);
+const SECONDARY_MOTION_PRESETS = new Set(['clothLag', 'riggingTension']);
+const VESSEL_MOTION_PRESETS = new Set(['heavyPhysical', 'boatBob']);
 
 async function loadCurrentShot3State() {
   const [scene, manifest] = await Promise.all([
@@ -27,7 +23,9 @@ async function loadCurrentShot3State() {
   ]);
 
   const sceneShot = scene.shots.find((shot) => shot.sourceShotNumber === 3);
-  const manifestShot = manifest.shots.find((shot) => shot.sourceShotNumber === 3);
+  const manifestShot = manifest.shots.find(
+    (shot) => shot.sourceShotNumber === 3,
+  );
 
   assert.ok(sceneShot, 'Shot 3 Scene V2 definition is missing.');
   assert.ok(manifestShot, 'Shot 3 animation manifest entry is missing.');
@@ -132,7 +130,9 @@ function evaluateLevel2Shot3(sceneShot, manifestShot) {
   }
 
   const nonCameraChannels = channels.length;
-  const distinctMotionFamilies = new Set(channels.map((channel) => channel.preset));
+  const distinctMotionFamilies = new Set(
+    channels.map((channel) => channel.preset),
+  );
 
   const hasIndependentVesselMotion = activeLayers.some(
     (layer) =>
@@ -195,15 +195,83 @@ function evaluateLevel2Shot3(sceneShot, manifestShot) {
   };
 }
 
+async function evaluateLevel2Shot3FinalAcceptance(sceneShot, manifestShot) {
+  const result = evaluateLevel2Shot3(sceneShot, manifestShot);
+  const acceptance = await readAcceptanceReceipt();
+  const acceptanceFailures = evaluateAcceptanceReceipt(acceptance);
+
+  return {
+    ...result,
+    pass: result.pass && acceptanceFailures.length === 0,
+    failures: [...result.failures, ...acceptanceFailures],
+  };
+}
+
+async function readAcceptanceReceipt() {
+  try {
+    return JSON.parse(await readFile(ACCEPTANCE_PATH, 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+function evaluateAcceptanceReceipt(receipt) {
+  const failures = [];
+  if (!receipt) {
+    return [
+      `needs rendered Level 1 / Level 2 A/B human acceptance receipt at ${ACCEPTANCE_PATH}`,
+    ];
+  }
+  if (receipt.schemaVersion !== 1) {
+    failures.push('needs Shot 3 Level 2 acceptance receipt schemaVersion 1');
+  }
+  if (receipt.shotNumber !== 3) {
+    failures.push('needs Shot 3 Level 2 acceptance receipt for source shot 3');
+  }
+  if (receipt.decision !== 'accepted') {
+    failures.push('needs human decision accepted');
+  }
+  if (receipt.proof?.proofType !== 'shot03-level2-rendered-motion-proof') {
+    failures.push('needs rendered-motion proof receipt');
+  }
+  if (receipt.proof?.deterministicPass !== true) {
+    failures.push('needs deterministic rendered proof pass');
+  }
+  if (receipt.abReview?.watchedAtNormalSpeed !== true) {
+    failures.push('needs normal-speed Level 1 / Level 2 A/B review');
+  }
+  if (receipt.abReview?.preferred !== 'level2') {
+    failures.push('needs human preference for Level 2 over Level 1');
+  }
+  if (!Array.isArray(receipt.abReview?.meaningfulImprovements)) {
+    failures.push('needs meaningful motion improvements list');
+  } else if (receipt.abReview.meaningfulImprovements.length < 3) {
+    failures.push('needs at least three meaningful motion improvements');
+  }
+  if (receipt.abReview?.compensatingLossFound !== false) {
+    failures.push(
+      'needs no compensating source-fidelity or material-realism loss',
+    );
+  }
+  if (!receipt.reviewedAt || !receipt.reviewer) {
+    failures.push('needs reviewer and reviewedAt');
+  }
+  return failures;
+}
+
 function approvePlannedLayer(manifestShot, layerId) {
-  const layer = manifestShot.layers.find((candidate) => candidate.id === layerId);
+  const layer = manifestShot.layers.find(
+    (candidate) => candidate.id === layerId,
+  );
   assert.ok(layer, `Fixture is missing ${layerId}.`);
   layer.state = 'approved';
   layer.review = { ...layer.review, status: 'approved' };
 }
 
 function deactivateLevel2Layer(manifestShot, layerId) {
-  const layer = manifestShot.layers.find((candidate) => candidate.id === layerId);
+  const layer = manifestShot.layers.find(
+    (candidate) => candidate.id === layerId,
+  );
   assert.ok(layer, `Fixture is missing ${layerId}.`);
   layer.state = 'planned';
   layer.review = { ...layer.review, status: 'pending' };
@@ -221,7 +289,10 @@ test('Level 2 Shot 3 gate rejects a layered still treatment that lacks articulat
   assert.ok(result.metrics.nonCameraChannels >= 4);
   assert.equal(result.metrics.hasCharacterArticulation, false);
   assert.equal(result.metrics.hasSecondaryLagOrInertia, false);
-  assert.match(result.failures.join('\n'), /visible character articulation beyond breathing/);
+  assert.match(
+    result.failures.join('\n'),
+    /visible character articulation beyond breathing/,
+  );
   assert.match(result.failures.join('\n'), /secondary lag\/inertia channel/);
 });
 
@@ -241,7 +312,10 @@ test('Level 2 Shot 3 gate is achievable when reviewed blink and rigging channels
 
 test('ACTIVE MILESTONE GATE: approved Shot 3 meets Level 2 Living Shot motion quality', async () => {
   const { sceneShot, manifestShot } = await loadCurrentShot3State();
-  const result = evaluateLevel2Shot3(sceneShot, manifestShot);
+  const result = await evaluateLevel2Shot3FinalAcceptance(
+    sceneShot,
+    manifestShot,
+  );
 
   assert.equal(
     result.pass,

@@ -29,7 +29,9 @@ const shotFourScenePath = resolve(
 );
 
 async function loadManifest(): Promise<AnimationAssetManifest> {
-  return JSON.parse(await readFile(manifestPath, 'utf8')) as AnimationAssetManifest;
+  return JSON.parse(
+    await readFile(manifestPath, 'utf8'),
+  ) as AnimationAssetManifest;
 }
 
 async function loadScene(path = shotThreeScenePath): Promise<SceneV2> {
@@ -74,7 +76,9 @@ test('current animation-v1 manifest is valid with approved benchmark shots', asy
     const shot = requireShot(manifest, shotId);
     assert.equal(shot.status, 'approved');
     for (const requiredId of shot.activationPolicy.requiredLayerIds) {
-      const layer = shot.layers.find((candidate) => candidate.id === requiredId);
+      const layer = shot.layers.find(
+        (candidate) => candidate.id === requiredId,
+      );
       assert.ok(layer, `Missing required layer ${requiredId}.`);
       assert.equal(layer.state, 'approved');
       assert.equal(layer.review.status, 'approved');
@@ -85,7 +89,10 @@ test('current animation-v1 manifest is valid with approved benchmark shots', asy
 test('legacy Shots 1 and 2 use exact immutable editorial source-backed activation', async () => {
   const manifest = await loadManifest();
 
-  for (const shotId of ['black-water-before-dawn', 'stag-of-the-absu-coastline']) {
+  for (const shotId of [
+    'black-water-before-dawn',
+    'stag-of-the-absu-coastline',
+  ]) {
     const shot = requireShot(manifest, shotId);
     const requiredId = shot.activationPolicy.requiredLayerIds[0]!;
     const layer = shot.layers.find((candidate) => candidate.id === requiredId);
@@ -117,7 +124,11 @@ test('unchecksummed legacy layers lose the exemption if they stop being exact ed
 test('render loader activates the source-backed Shot 1 and Shot 2 baselines', async () => {
   for (const [scenePath, shotId, layerId] of [
     [shotOneScenePath, 'black-water-before-dawn', 'shot01-editorial-source-v1'],
-    [shotTwoScenePath, 'stag-of-the-absu-coastline', 'shot02-editorial-source-v1'],
+    [
+      shotTwoScenePath,
+      'stag-of-the-absu-coastline',
+      'shot02-editorial-source-v1',
+    ],
   ] as const) {
     const loaded = await loadSceneV2ForRender(scenePath, resolve('assets'));
     assert.equal(loaded.assetResolution.mode, 'layered');
@@ -165,7 +176,9 @@ test('approved Shot 3 activation layers switch to layered mode and wake matching
   const shot = requireShot(manifest, 'enki-at-the-helm');
   const approvedChecksums = new Map(
     shot.layers
-      .filter((layer) => shot.activationPolicy.requiredLayerIds.includes(layer.id))
+      .filter((layer) =>
+        shot.activationPolicy.requiredLayerIds.includes(layer.id),
+      )
       .map((layer) => [layer.id, layer.sha256] as const),
   );
 
@@ -182,7 +195,7 @@ test('approved Shot 3 activation layers switch to layered mode and wake matching
   assert.equal(resolution.mode, 'layered');
   assert.deepEqual(resolution.layeredShotIds, ['enki-at-the-helm']);
   assert.equal(resolution.scene.assetVersion, 'animation-v1');
-  assert.equal(resolution.scene.shots[0]?.layers.length, 5);
+  assert.equal(resolution.scene.shots[0]?.layers.length, 7);
   assert.equal(
     resolution.scene.shots[0]?.layers.some(
       (layer) => layer.assetId === 'shot03-enki-body-v1',
@@ -198,7 +211,7 @@ test('approved Shot 3 activation layers switch to layered mode and wake matching
   assert.equal(resolution.scene.shots[0]?.performance[0]?.preset, 'breathing');
   assert.equal(resolution.scene.shots[0]?.performance[0]?.enabled, true);
   assert.equal(resolution.scene.shots[0]?.performance[1]?.preset, 'blinkOnce');
-  assert.equal(resolution.scene.shots[0]?.performance[1]?.enabled, false);
+  assert.equal(resolution.scene.shots[0]?.performance[1]?.enabled, true);
 });
 
 test('approved layer state still requires explicit approved human review', async () => {
@@ -245,10 +258,7 @@ test('render loader verifies the active approved Shot 3 layered assets', async (
   );
 
   assert.equal(loaded.assetResolution.mode, 'layered');
-  assert.match(
-    loaded.manifestPath ?? '',
-    /animation-v1[\\/]manifest\.json$/,
-  );
+  assert.match(loaded.manifestPath ?? '', /animation-v1[\\/]manifest\.json$/);
   assert.deepEqual(loaded.assetResolution.layeredShotIds, ['enki-at-the-helm']);
   assert.equal(
     loaded.scene.shots[0]?.layers.some(

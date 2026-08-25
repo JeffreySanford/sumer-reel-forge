@@ -1,13 +1,22 @@
 flowchart TD
-  Reel[Approved reel data] --> Scene[Animation scene spec]
-  VisualBible[Visual bible assets] --> Scene
-  Narration[Narration audio] --> Timing[Narration timing]
-  Timing --> LipSync[Optional Rhubarb mouth cues]
-  Scene --> Remotion[Remotion composition]
-  Timing --> Remotion
-  LipSync -.-> Remotion
-  Captions[Caption timings] --> Remotion
-  Remotion --> Video[Animated MP4]
-  Video --> Validate[FFmpeg / FFprobe validation]
-  Validate --> Manifest[Manifest and checksums]
-  Manifest --> Review[Studio asset review]
+  Editorial[Immutable editorial-v1 source] --> Manifest[animation-v1 manifest]
+  Manifest --> L1[Level 1 approved baseline]
+  Manifest --> Candidates[Level 2 candidate layers]
+  Candidates --> QA[Structural and source-preservation QA]
+  QA --> Audition[Layered Remotion audition]
+  Audition --> Promotion[Explicit human promotion]
+  Promotion --> Manifest
+
+  L1 --> Proof[Rendered Level 1 / Level 2 proof]
+  Manifest --> Proof
+  Proof --> Evidence[Deterministic motion evidence]
+  Proof --> AB[Normal-speed A/B review video]
+  Evidence --> HumanGate[Human visual-quality review]
+  AB --> HumanGate
+  HumanGate --> Receipt[Durable acceptance receipt]
+  Receipt --> Milestone[Level 2 milestone gate]
+
+  Manifest --> Canonical[Canonical Scene V2 render]
+  Narration[Chatterbox narration cues] --> Finalize[Audio finalization]
+  Canonical --> Finalize
+  Finalize --> Reel[Level 2 reel candidate]

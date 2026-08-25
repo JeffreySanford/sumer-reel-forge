@@ -2,17 +2,53 @@
 
 ## Current state
 
-Shot 3 Level 1 is structurally healthy but intentionally fails the active Level 2 Living Shot milestone gate.
+Shot 3 Level 1 is structurally healthy. Shot 3 now has promoted Level 2 rigging and blink-state layers, so the declarative motion-channel requirements are satisfied, but the active Level 2 Living Shot milestone still intentionally fails. The latest rendered A/B proof was rejected because the blink does not read on screen.
 
 Current canonical gate evidence:
 
-- non-camera motion channels: 5;
-- distinct motion families: 4;
+- non-camera motion channels: 7;
+- distinct motion families: 6;
 - independent vessel motion: present;
-- visible character articulation beyond breathing: missing from the canonical approved asset set;
-- secondary lag/inertia: missing from the canonical approved asset set.
+- visible character articulation beyond breathing: rejected; the current approved `blinkOnce` state is present numerically but not readable on screen;
+- secondary lag/inertia: present through approved vessel-driven `riggingTension`;
+- final rendered/human acceptance: still missing.
 
-The active gate must remain red until the canonical approved Shot 3 genuinely gains the missing motion classes. Do not lower the threshold or mark planned layers approved merely to satisfy the test.
+The active gate must remain red until the approved rendered proof and normal-speed Level 1 / Level 2 A/B review show that the motion is actually better on screen. Do not lower the threshold, accept only declarative manifest evidence, or treat promoted layers as sufficient by themselves.
+
+## 2026-08-25 acceptance checkpoint — declarative gate green, milestone still red
+
+The rigging and blink layers were human-promoted into the canonical `animation-v1` manifest. The focused Level 2 loop now reports the candidate, rigging causality, character-state lane, and localization checks as passing, while the milestone remains **known red** for the correct reason:
+
+```text
+[KNOWN RED] milestone: rendered Level 1 / Level 2 A/B human acceptance before Shot 3 is considered complete
+```
+
+This is intentional. The current task is no longer to prove that Shot 3 can declare Level 2 motion channels. The current task is to prove that those channels are visibly effective in the rendered shot and preferred by human review.
+
+## 2026-08-25 rendered proof checkpoint — rejected blink readability
+
+The rendered proof bundle was refreshed at:
+
+```text
+tmp/animation-previews/shot03-level2-proof/2026-08-25T14-48-31-261Z
+```
+
+Key artifacts:
+
+- A/B video: `shot03-level1-vs-level2-ab.mp4`;
+- proof report: `shot03-level2-rendered-proof.json`;
+- A/B checksum: `sha256:163b10058eee3f8eef4c546e40d98882d72c18c08170fd8e80ad932ceca2e45d`.
+
+Original deterministic rendered evidence reported:
+
+- vessel contribution: `5/5` review beats;
+- rigging contribution: `5/5` review beats;
+- blink persistence: `8` active frames;
+- blink return: clean.
+
+Human review rejected the proof because the Level 2 side does not visibly blink. Pixel inspection confirmed the failure mode: the current closed-eye layer contributes only `55` opaque pixels and the rendered blink peak changes about `53` pixels in the `1080x1920` frame. The proof script now requires a readable changed-pixel floor before it can report blink pass.
+
+This does **not** complete Shot 3 Level 2. The next task is to regenerate or replace `shot03-enki-eyes-v1` with a source-faithful closed-eye state that visibly reads as a blink, rerun the rendered proof, and only then request normal-speed A/B acceptance.
 
 ## 2026-08-24 rigging checkpoint — implementation validated
 
@@ -176,8 +212,8 @@ Expected progression:
 2. **Rigging candidate audition** — canonical gate remains red because candidates are not approved production assets.
 3. **Blink candidate audition** — canonical gate remains red because candidates are not approved production assets.
 4. **Human A/B review** — reject either candidate if motion/identity does not visibly improve the shot.
-5. **Rigging + blink promoted after human approval** — declarative Level 2 gate may turn green if all required conditions are genuinely active.
-6. **Rendered perceptual gate** — must then prove that the declared motion is visible and useful at normal playback speed.
+5. **Rigging + blink promoted after human approval** — declarative Level 2 channel requirements can be satisfied if all required conditions are genuinely active.
+6. **Rendered perceptual gate** — active milestone remains red until the rendered proof and human A/B review prove that the declared motion is visible, useful, and preferred at normal playback speed.
 
 Passing the declarative gate is necessary but not sufficient for Level 2 approval.
 

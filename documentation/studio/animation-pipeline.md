@@ -174,6 +174,20 @@ Target motion relationships:
 
 The benchmark must be reviewed against the approved Level 1 Shot 3 as an A/B comparison.
 
+The active Shot 3 Level 2 gate is intentionally split:
+
+1. declarative motion-channel evidence verifies that approved layers and performance channels can express Level 2 motion;
+2. rendered proof verifies vessel, rigging, and readable blink contribution in same-frame controls;
+3. human A/B acceptance records that the rendered Level 2 treatment is visually preferable to Level 1 without a compensating loss of source fidelity or material realism.
+
+The current rendered proof bundle is:
+
+```text
+tmp/animation-previews/shot03-level2-proof/2026-08-25T14-48-31-261Z
+```
+
+Human review rejected this bundle because the right-hand Level 2 render does not visibly blink. The proof now treats blink readability as separate from numeric persistence: a revised closed-eye state must produce a source-faithful, visible blink before `planning/acceptance/shot03-level2-rendered-acceptance.json` can be created.
+
 ## Secondary Level 2 Benchmarks
 
 ### Shot 4 - Nammu beneath the water

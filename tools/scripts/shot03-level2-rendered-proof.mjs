@@ -30,6 +30,7 @@ const THRESHOLDS = {
   blink: {
     minMeanDiff: 0.0002,
     minChangedRatio: 0.00001,
+    minReadableChangedRatio: 0.00025,
     minConsecutiveActiveFrames: 3,
     maxChangedRatio: 0.0065,
     returnChangedRatioMax: 0.000001,
@@ -37,21 +38,29 @@ const THRESHOLDS = {
 };
 
 void main().catch((error) => {
-  console.error(error instanceof Error ? error.stack ?? error.message : String(error));
+  console.error(
+    error instanceof Error ? (error.stack ?? error.message) : String(error),
+  );
   process.exitCode = 1;
 });
 
 async function main() {
   const manifest = JSON.parse(await readFile(MANIFEST_PATH, 'utf8'));
-  const manifestShot = manifest.shots?.find((item) => item.sourceShotNumber === 3);
-  if (!manifestShot) throw new Error('Shot 3 is missing from the animation manifest.');
+  const manifestShot = manifest.shots?.find(
+    (item) => item.sourceShotNumber === 3,
+  );
+  if (!manifestShot)
+    throw new Error('Shot 3 is missing from the animation manifest.');
 
   const approvedLevel2 = [];
   for (const layerId of OPTIONAL_LEVEL2_IDS) {
     const layer = manifestShot.layers?.find((item) => item.id === layerId);
-    if (!layer?.path) throw new Error(`${layerId} is missing its canonical path.`);
+    if (!layer?.path)
+      throw new Error(`${layerId} is missing its canonical path.`);
     if (layer.state !== 'approved' || layer.review?.status !== 'approved') {
-      throw new Error(`${layerId} must be human-approved before rendered Level 2 proof.`);
+      throw new Error(
+        `${layerId} must be human-approved before rendered Level 2 proof.`,
+      );
     }
     if (!/^sha256:[a-f0-9]{64}$/i.test(layer.sha256 ?? '')) {
       throw new Error(`${layerId} is missing checksum provenance.`);
@@ -59,7 +68,9 @@ async function main() {
     const path = resolve(ASSET_ROOT, layer.path);
     const actual = prefixedSha(await readFile(path));
     if (normalizeSha(actual) !== normalizeSha(layer.sha256)) {
-      throw new Error(`${layerId} canonical checksum does not match the manifest.`);
+      throw new Error(
+        `${layerId} canonical checksum does not match the manifest.`,
+      );
     }
     approvedLevel2.push({ layerId, path, checksum: actual });
   }
@@ -97,18 +108,23 @@ async function main() {
   const canonicalShot = canonicalProps.scene?.shots?.find(
     (item) => item.sourceShotNumber === 3,
   );
-  if (!canonicalShot) throw new Error('Rendered canonical props do not contain Shot 3.');
+  if (!canonicalShot)
+    throw new Error('Rendered canonical props do not contain Shot 3.');
 
   for (const layerId of OPTIONAL_LEVEL2_IDS) {
     if (!canonicalShot.layers?.some((layer) => layer.id === layerId)) {
-      throw new Error(`Canonical render did not stage approved Level 2 layer ${layerId}.`);
+      throw new Error(
+        `Canonical render did not stage approved Level 2 layer ${layerId}.`,
+      );
     }
   }
   const blinkPerformance = canonicalShot.performance?.find(
     (item) => item.preset === 'blinkOnce',
   );
   if (!blinkPerformance || blinkPerformance.enabled === false) {
-    throw new Error('Canonical render did not activate approved blinkOnce performance.');
+    throw new Error(
+      'Canonical render did not activate approved blinkOnce performance.',
+    );
   }
 
   console.log('[2/5] Build Level 1 and frozen-motion controls...');
@@ -123,7 +139,11 @@ async function main() {
   removePreset(shot3(vesselFrozenProps), 'shot03-vessel-v1', 'heavyPhysical');
 
   const riggingFrozenProps = structuredClone(canonicalProps);
-  removePreset(shot3(riggingFrozenProps), 'shot03-rigging-v1', 'riggingTension');
+  removePreset(
+    shot3(riggingFrozenProps),
+    'shot03-rigging-v1',
+    'riggingTension',
+  );
 
   const blinkDisabledProps = structuredClone(canonicalProps);
   disableBlink(shot3(blinkDisabledProps));
@@ -154,7 +174,9 @@ async function main() {
   const abVideoPath = join(outputDirectory, 'shot03-level1-vs-level2-ab.mp4');
   makeAbVideo(level1VideoPath, canonicalVideoPath, abVideoPath);
 
-  console.log('[3/5] Prove vessel and rigging visual contribution with same-frame controls...');
+  console.log(
+    '[3/5] Prove vessel and rigging visual contribution with same-frame controls...',
+  );
   const vesselComparisons = await compareFrames({
     label: 'vessel',
     frames: MOTION_FRAMES,
@@ -190,16 +212,20 @@ async function main() {
     durationFrames,
   );
   const activeBlinkFrames = [];
-  for (let frame = blinkStartFrame + 1; frame <= blinkEndFrame - 1; frame += 1) {
+  for (
+    let frame = blinkStartFrame + 1;
+    frame <= blinkEndFrame - 1;
+    frame += 1
+  ) {
     activeBlinkFrames.push(frame);
   }
   const returnFrames = [
     clampFrame(blinkStartFrame - 2, durationFrames),
     clampFrame(blinkEndFrame + 2, durationFrames),
   ];
-  const blinkFrames = [...new Set([...returnFrames, ...activeBlinkFrames])].sort(
-    (a, b) => a - b,
-  );
+  const blinkFrames = [
+    ...new Set([...returnFrames, ...activeBlinkFrames]),
+  ].sort((a, b) => a - b);
   const blinkComparisons = await compareFrames({
     label: 'blink',
     frames: blinkFrames,
@@ -294,9 +320,15 @@ async function main() {
   await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
 
   console.log('');
-  console.log(`[${vesselEvaluation.pass ? 'PASS' : 'REVIEW'}] vessel contribution: ${vesselEvaluation.passingFrames}/${vesselComparisons.length} beats`);
-  console.log(`[${riggingEvaluation.pass ? 'PASS' : 'REVIEW'}] rigging contribution: ${riggingEvaluation.passingFrames}/${riggingComparisons.length} beats`);
-  console.log(`[${blinkEvaluation.pass ? 'PASS' : 'REVIEW'}] blink: max active run ${blinkEvaluation.maxConsecutiveActiveFrames} frames · return ${blinkEvaluation.returnPass ? 'clean' : 'review'}`);
+  console.log(
+    `[${vesselEvaluation.pass ? 'PASS' : 'REVIEW'}] vessel contribution: ${vesselEvaluation.passingFrames}/${vesselComparisons.length} beats`,
+  );
+  console.log(
+    `[${riggingEvaluation.pass ? 'PASS' : 'REVIEW'}] rigging contribution: ${riggingEvaluation.passingFrames}/${riggingComparisons.length} beats`,
+  );
+  console.log(
+    `[${blinkEvaluation.pass ? 'PASS' : 'REVIEW'}] blink: max active run ${blinkEvaluation.maxConsecutiveActiveFrames} frames · return ${blinkEvaluation.returnPass ? 'clean' : 'review'}`,
+  );
   console.log(`[INFO] A/B review: ${abVideoPath}`);
   console.log(`[INFO] proof report: ${reportPath}`);
   console.log(
@@ -316,7 +348,9 @@ function shot3(props) {
 function removePreset(shot, layerId, preset) {
   const layer = shot.layers?.find((item) => item.id === layerId);
   if (!layer) throw new Error(`Control could not find ${layerId}.`);
-  layer.motionPresets = (layer.motionPresets ?? []).filter((item) => item !== preset);
+  layer.motionPresets = (layer.motionPresets ?? []).filter(
+    (item) => item !== preset,
+  );
 }
 
 function disableBlink(shot) {
@@ -416,7 +450,9 @@ function measureDifference(canonicalPath, controlPath, differencePath) {
   );
   if (raw.error) throw raw.error;
   if (raw.status !== 0) {
-    throw new Error(`ffmpeg difference failed: ${String(raw.stderr ?? '').trim()}`);
+    throw new Error(
+      `ffmpeg difference failed: ${String(raw.stderr ?? '').trim()}`,
+    );
   }
   let sum = 0;
   let changed = 0;
@@ -470,7 +506,12 @@ function repeatableMotionEvaluation(comparisons, thresholds) {
   };
 }
 
-function evaluateBlink({ comparisons, activeFrames, returnFrames, thresholds }) {
+function evaluateBlink({
+  comparisons,
+  activeFrames,
+  returnFrames,
+  thresholds,
+}) {
   const byFrame = new Map(comparisons.map((item) => [item.frame, item]));
   const activeFlags = activeFrames.map((frame) => {
     const item = byFrame.get(frame);
@@ -496,10 +537,16 @@ function evaluateBlink({ comparisons, activeFrames, returnFrames, thresholds }) 
     0,
     ...activeFrames.map((frame) => byFrame.get(frame)?.changedPixelRatio ?? 0),
   );
+  const readablePass =
+    activePeakChangedPixelRatio >= thresholds.minReadableChangedRatio;
   return {
-    pass: maxRun >= thresholds.minConsecutiveActiveFrames && returnPass,
+    pass:
+      maxRun >= thresholds.minConsecutiveActiveFrames &&
+      returnPass &&
+      readablePass,
     maxConsecutiveActiveFrames: maxRun,
     returnPass,
+    readablePass,
     activePeakChangedPixelRatio,
   };
 }
@@ -537,7 +584,9 @@ function runFfmpeg(args) {
   });
   if (result.error) throw result.error;
   if (result.status !== 0) {
-    throw new Error(`ffmpeg failed: ${result.stderr || result.stdout || 'unknown error'}`);
+    throw new Error(
+      `ffmpeg failed: ${result.stderr || result.stdout || 'unknown error'}`,
+    );
   }
 }
 
@@ -560,7 +609,9 @@ function prefixedSha(bytes) {
 }
 
 function normalizeSha(value) {
-  return String(value ?? '').replace(/^sha256:/i, '').toLowerCase();
+  return String(value ?? '')
+    .replace(/^sha256:/i, '')
+    .toLowerCase();
 }
 
 function clampFrame(frame, durationFrames) {
