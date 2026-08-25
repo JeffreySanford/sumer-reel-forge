@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "1",
+  "traceId": "trace:enki-helm:frame-101:v1",
+  "releaseId": "UNRESOLVED_FUTURE_RELEASE",
+  "sceneId": "scene:ch01:r01:s03",
+  "fixtureId": "fixture:benchmark:enki-helm:v1",
+  "frame": 101,
+  "proofState": "BLINK_CLOSED",
+  "narrative": {
+    "chapter": "Chapter 1 - Enki",
+    "intent": "calm competence during maritime travel"
+  },
+  "sourceIds": ["etcsl-1.1.3","etcsl-1.1.4"],
+  "semanticInputs": [
+    "actor:enki",
+    "prop:stag-of-absu",
+    "clip:enki:blink-natural:v1",
+    "material:water:gulf-calm:v1"
+  ],
+  "resolvedSceneHash": "sha256:UNRESOLVED_AT_IMPLEMENTATION",
+  "renderedFrameHash": "sha256:UNRESOLVED_AT_RENDER",
+  "evidenceIds": [
+    "VISUAL-ENKI-002-blink-closed",
+    "MOTION-ENKI-001-natural-blink",
+    "FAILURE-ENKI-002-cyan-eye-debug-leak"
+  ],
+  "planningStatus": "CANDIDATE_NOT_EXECUTABLE"
+}

@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "planning-research-audit-v1",
+  "id": "research-audit:chapters-1-3:v1",
+  "status": "PLANNING_RESEARCH_COMPLETE_WITH_OPEN_QUESTIONS",
+  "researchDate": "2026-08-25",
+  "classificationVocabulary": [
+    "DIRECT_TEXTUAL",
+    "CULTIC_HISTORICAL",
+    "ARCHAEOLOGICALLY_CORROBORATED",
+    "PLAUSIBLE_CONTEXT",
+    "LITERARY_STEREOTYPE",
+    "DELIBERATE_ADAPTATION",
+    "MYTHIC_SYNTHESIS",
+    "DEBATED",
+    "MODERN_SYMBOLIC_CORRESPONDENCE",
+    "ANACHRONISTIC",
+    "CONTRADICTED_BY_CURRENT_EVIDENCE",
+    "UNRESOLVED"
+  ],
+  "sampleClaims": [
+    {
+      "id": "claim:enki-eridu-abzu",
+      "classification": ["DIRECT_TEXTUAL", "CULTIC_HISTORICAL"],
+      "recommendedAction": "KEEP_AND_STRENGTHEN",
+      "authority": "https://oracc.museum.upenn.edu/amgg/listofdeities/enki/"
+    },
+    {
+      "id": "claim:dilmun-fresh-water-emporium",
+      "classification": ["DIRECT_TEXTUAL"],
+      "recommendedAction": "KEEP_AND_STRENGTHEN",
+      "authority": "https://etcsl.orinst.ox.ac.uk/section1/tr111.htm"
+    },
+    {
+      "id": "claim:shuruppak-nergal-patron",
+      "classification": ["CONTRADICTED_BY_CURRENT_EVIDENCE", "MODERN_SYMBOLIC_CORRESPONDENCE"],
+      "recommendedAction": "SPLIT_HISTORICAL_AND_SYMBOLIC",
+      "historicalReplacement": "Sud/Ninlil",
+      "historicalAuthority": "https://oracc.museum.upenn.edu/amgg/listofdeities/ninlil/"
+    },
+    {
+      "id": "claim:uruk-uttu-patron",
+      "classification": ["CONTRADICTED_BY_CURRENT_EVIDENCE"],
+      "recommendedAction": "HISTORICAL_PATRON_INANNA_RETAIN_UTTU_WEAVING",
+      "authority": "https://oracc.museum.upenn.edu/amgg/listofdeities/inanaitar/"
+    },
+    {
+      "id": "claim:bronze-age-lemon",
+      "classification": ["ANACHRONISTIC"],
+      "recommendedAction": "CHANGE_RECOMMENDED",
+      "authority": "https://cris.tau.ac.il/en/publications/the-citrus-route-revealed-from-southeast-asia-into-the-mediterran/"
+    },
+    {
+      "id": "claim:tree-of-life-sumerian-origin",
+      "classification": ["MODERN_SYMBOLIC_CORRESPONDENCE"],
+      "recommendedAction": "RETAIN_AS_MODERN_SYMBOLIC_LAYER_NO_TRANSMISSION_CLAIM"
+    }
+  ],
+  "openBlockingResearch": [
+    "production-unit-period-bands",
+    "paleogeography-by-scene",
+    "eridu-temple-phase",
+    "umma-cult-source-verification"
+  ],
+  "negativeModes": [
+    "MODERN_SYMBOLIC_SOURCE_USED_AS_ANCIENT_EVIDENCE",
+    "LATER_ANALOGUE_LABELED_DIRECT",
+    "ONE_GENEALOGY_LABELED_UNIVERSAL",
+    "MUSEUM_IMAGE_RIGHTS_INFERRED_FROM_HISTORICAL_CONFIDENCE",
+    "SEARCH_RESULT_PROMOTED_WITHOUT_AUTHORITY_PAGE"
+  ]
+}

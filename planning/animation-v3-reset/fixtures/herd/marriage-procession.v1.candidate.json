@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "planning-herd-v1",
+  "id": "herd:ch02:marriage-procession:v1",
+  "status": "CANDIDATE_NOT_EXECUTABLE",
+  "behavior": "PROCESSION",
+  "count": 36,
+  "seed": 22002,
+  "routeId": "route:ch02:marriage-procession:v1",
+  "archetypePool": ["animal:sheep:v1", "animal:goat:v1", "animal:donkey:v1"],
+  "requiredGaits": ["WALK", "STOP", "HEAD_TURN"],
+  "variationChannels": ["gait-phase", "path-offset", "pause-duration", "body-scale", "variant"],
+  "requiredProofStates": ["PROCESSION_START", "MIXED_SPECIES_READ", "SPACING_MID", "PROCESSION_END"],
+  "negativeModes": ["ONE_GAIT_ALL_SPECIES", "PERFECT_SYNC", "FOOT_SLIDE", "ADDED_ANIMAL_REROLLS_EXISTING"]
+}

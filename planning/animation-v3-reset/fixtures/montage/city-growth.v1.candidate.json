@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "planning-montage-v1",
+  "id": "montage:chapter-3:city-growth:v1",
+  "status": "CANDIDATE_NOT_EXECUTABLE",
+  "continuitySubjectIds": ["world:city-growth-benchmark:v1"],
+  "segments": [
+    {"id": "segment:sparse", "order": 0, "semanticTimeLabel": "EARLY_SETTLEMENT", "worldStateIds": ["SPARSE_SETTLEMENT"], "durationFrames": 30},
+    {"id": "segment:canal", "order": 1, "semanticTimeLabel": "CANAL_ACCESS", "worldStateIds": ["CANAL_ACCESS"], "durationFrames": 30},
+    {"id": "segment:construction", "order": 2, "semanticTimeLabel": "CONSTRUCTION_EXPANSION", "worldStateIds": ["CONSTRUCTION"], "durationFrames": 30},
+    {"id": "segment:agriculture", "order": 3, "semanticTimeLabel": "AGRICULTURAL_PRODUCTION", "worldStateIds": ["AGRICULTURAL_PRODUCTION"], "durationFrames": 30},
+    {"id": "segment:mature", "order": 4, "semanticTimeLabel": "MATURE_CIVIC_CENTER", "worldStateIds": ["MATURE_CIVIC_CENTER"], "durationFrames": 30}
+  ],
+  "fictionalElapsedTime": "UNRESOLVED_NARRATIVE_SCALE",
+  "negativeModes": ["DUPLICATE_SEGMENT_ORDER", "MISSING_CONTINUITY_ANCHOR", "WORLD_STATE_REGRESSION", "FRAME_TIME_CONFUSED_WITH_HISTORICAL_DATE"]
+}

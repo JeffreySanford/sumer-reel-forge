@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "planning-lighting-profile-v1",
+  "id": "lighting:kutu-storm:v1",
+  "status": "CANDIDATE_NOT_EXECUTABLE",
+  "role": "STORM",
+  "paletteProfileId": "palette:kutu-storm:v1",
+  "keyDirection": "UNRESOLVED_ART_DIRECTION",
+  "keyStrength": "UNRESOLVED_HUMAN_TUNING",
+  "ambientStrength": "UNRESOLVED_HUMAN_TUNING",
+  "atmosphereStrength": "UNRESOLVED_HUMAN_TUNING",
+  "safetyProfileId": "motion-safety:storm-flash:v1",
+  "requiredProofStates": ["PRE_STORM", "STORM_ACCENT", "POST_ACCENT"],
+  "negativeModes": ["RUNTIME_DEFAULT_LIGHTING", "ACTOR_ENVIRONMENT_DIRECTION_CONFLICT", "FULL_FRAME_STROBE", "IDENTITY_DESTROYING_RELIGHT"]
+}

@@ -1,0 +1,55 @@
+{
+  "schemaVersion": "3",
+  "id": "scene:fixture:negative:duplicate-id",
+  "revision": 1,
+  "story": {
+    "manuscriptId": "manuscript:fixture",
+    "manuscriptRevision": 1,
+    "chapterId": "fixture",
+    "narrativeThreadId": "thread:fixture:negative",
+    "beat": "FIXTURE",
+    "adaptation": "fictional-bridge"
+  },
+  "historicalSourceIds": [],
+  "visualEvidenceIds": [],
+  "fps": 30,
+  "durationFrames": 30,
+  "width": 1080,
+  "height": 1920,
+  "seed": 39999,
+  "camera": [],
+  "actors": [],
+  "props": [
+    {
+      "id": "prop:duplicate",
+      "runtime": "fake",
+      "asset": {
+        "id": "asset:fixture:box-a",
+        "revision": 1
+      }
+    },
+    {
+      "id": "prop:duplicate",
+      "runtime": "fake",
+      "asset": {
+        "id": "asset:fixture:box-b",
+        "revision": 1
+      }
+    }
+  ],
+  "environments": [],
+  "performances": [],
+  "materials": [],
+  "effects": [],
+  "simulations": [],
+  "crowds": [],
+  "herds": [],
+  "worldStates": [],
+  "qa": {
+    "benchmarkFixtureIds": [],
+    "requiredInvariants": [
+      "ids:unique"
+    ],
+    "humanReviewRequired": false
+  }
+}

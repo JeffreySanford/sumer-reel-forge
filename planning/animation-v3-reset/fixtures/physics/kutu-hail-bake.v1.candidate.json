@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "1",
+  "id": "bake:kutu-hail:stag-response:v1",
+  "revision": 1,
+  "simulationDefinitionId": "simulation:kutu-hail:v1",
+  "simulationDefinitionHash": "sha256:PLANNING_PLACEHOLDER",
+  "engine": "rapier",
+  "engineVersion": "PINNED_AT_IMPLEMENTATION",
+  "adapterVersion": "1",
+  "timestep": {"numerator":1,"denominator":60},
+  "sceneFps": 30,
+  "seed": 41007,
+  "constructionHash": "sha256:PLANNING_PLACEHOLDER",
+  "initialStateHash": "sha256:PLANNING_PLACEHOLDER",
+  "bodyOrder": ["physics:stag:hull"],
+  "frameCount": 210,
+  "channels": [],
+  "eventLog": [],
+  "bakeHash": "sha256:UNRESOLVED_UNTIL_EXECUTABLE_BAKE",
+  "planningStatus": "CANDIDATE_NOT_EXECUTABLE"
+}

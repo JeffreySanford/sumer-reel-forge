@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "planning-dialogue-marker-v1",
+  "id": "dialogue-track:enlil-council-line:v1",
+  "status": "CANDIDATE_NOT_EXECUTABLE",
+  "audioAssetId": "audio:enlil:council-line:v1",
+  "audioSha256": "UNRESOLVED_APPROVED_AUDIO_HASH",
+  "transcriptLineId": "line:ch02:grand-council:enlil-001",
+  "speakerActorId": "actor:enlil",
+  "fps": 30,
+  "startFrame": 0,
+  "endFrameExclusive": "UNRESOLVED_AFTER_APPROVED_AUDIO",
+  "requiredMarkerTypes": ["PHRASE", "VISEME", "EMPHASIS", "PAUSE", "GESTURE_WINDOW", "LISTENER_REACTION_WINDOW"],
+  "namedProofStates": ["LINE_START", "FIRST_EMPHASIS", "FORMAL_GESTURE_WINDOW", "MID_LINE_PAUSE", "FINAL_EMPHASIS", "LINE_END"],
+  "negativeModes": ["AUDIO_HASH_MISMATCH", "MARKER_OUT_OF_RANGE", "MOUTH_MOTION_DURING_SILENCE"]
+}

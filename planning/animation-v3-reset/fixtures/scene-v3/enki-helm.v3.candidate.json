@@ -1,0 +1,160 @@
+{
+  "schemaVersion": "3",
+  "id": "scene:ch01:r01:s03",
+  "revision": 1,
+  "story": {
+    "manuscriptId": "manuscript:blessings-of-sumer",
+    "manuscriptRevision": 1,
+    "chapterId": "chapter-01-enki",
+    "narrativeThreadId": "ch1-eridu-nibru",
+    "beat": "TRAVEL",
+    "adaptation": "composite-adaptation"
+  },
+  "historicalSourceIds": [
+    "etcsl-1.1.3",
+    "etcsl-1.1.4"
+  ],
+  "visualEvidenceIds": [],
+  "fps": 30,
+  "durationFrames": 210,
+  "width": 1080,
+  "height": 1920,
+  "seed": 31003,
+  "camera": [
+    {
+      "id": "camera:main",
+      "runtime": "2d",
+      "projection": "orthographic",
+      "trackId": "track:camera:drift"
+    }
+  ],
+  "actors": [
+    {
+      "id": "actor-instance:enki:s03",
+      "actorDefinitionId": "actor:enki",
+      "runtime": "rive",
+      "rigAsset": {
+        "id": "asset:enki:rig",
+        "revision": 1
+      },
+      "transform": {
+        "position": {
+          "x": 0,
+          "y": 0,
+          "z": 2
+        },
+        "rotation": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "scale": {
+          "x": 1,
+          "y": 1,
+          "z": 1
+        },
+        "parentId": "prop:stag-of-absu"
+      }
+    }
+  ],
+  "props": [
+    {
+      "id": "prop:stag-of-absu",
+      "runtime": "layered-v2",
+      "asset": {
+        "id": "shot03-vessel-v1",
+        "revision": 1
+      }
+    },
+    {
+      "id": "prop:stag-rigging",
+      "runtime": "pixi",
+      "asset": {
+        "id": "shot03-rigging-v1",
+        "revision": 1
+      },
+      "transform": {
+        "parentId": "prop:stag-of-absu"
+      }
+    }
+  ],
+  "environments": [
+    {
+      "id": "environment:gulf-water",
+      "runtime": "pixi",
+      "definitionId": "environment:gulf-water:v1"
+    }
+  ],
+  "performances": [
+    {
+      "id": "perf:enki:breath",
+      "targetId": "actor-instance:enki:s03",
+      "clipId": "clip:enki:breathe-calm:v1",
+      "startFrame": 0,
+      "endFrame": 210,
+      "blendMode": "additive"
+    },
+    {
+      "id": "perf:enki:blink",
+      "targetId": "actor-instance:enki:s03",
+      "clipId": "clip:enki:blink-natural:v1",
+      "startFrame": 92,
+      "endFrame": 110,
+      "blendMode": "weighted"
+    },
+    {
+      "id": "perf:enki:gaze",
+      "targetId": "actor-instance:enki:s03",
+      "clipId": "clip:enki:gaze-horizon:v1",
+      "startFrame": 40,
+      "endFrame": 150
+    },
+    {
+      "id": "perf:enki:helm-adjust",
+      "targetId": "actor-instance:enki:s03",
+      "clipId": "clip:enki:helm-adjust:v1",
+      "startFrame": 118,
+      "endFrame": 178
+    }
+  ],
+  "materials": [
+    {
+      "id": "material:water:s03",
+      "runtime": "pixi",
+      "targetId": "environment:gulf-water",
+      "definitionId": "material:water:gulf-calm:v1"
+    },
+    {
+      "id": "material:rigging:s03",
+      "runtime": "pixi",
+      "targetId": "prop:stag-rigging",
+      "definitionId": "material:rigging:reed-rope:v1",
+      "drivers": [
+        {
+          "driverId": "driver:rigging:vessel-lag:v1",
+          "sourceTargetId": "prop:stag-of-absu",
+          "sourceChannel": "rotation.z"
+        }
+      ]
+    }
+  ],
+  "effects": [],
+  "simulations": [],
+  "crowds": [],
+  "herds": [],
+  "worldStates": [],
+  "qa": {
+    "benchmarkFixtureIds": [
+      "benchmark:enki-helm:v1"
+    ],
+    "requiredInvariants": [
+      "identity:enki",
+      "contact:enki-tiller",
+      "motion:independent-channels",
+      "motion:rigging-causal-lag",
+      "artifact:no-debug-leak",
+      "source:editorial-fidelity"
+    ],
+    "humanReviewRequired": true
+  }
+}
