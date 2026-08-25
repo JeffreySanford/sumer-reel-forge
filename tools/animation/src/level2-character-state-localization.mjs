@@ -2,6 +2,7 @@ const DEFAULT_THRESHOLD = 16;
 const ALIGNMENT = 8;
 const DEFAULT_MIN_EYE_BAND_FILL = 0.01;
 const DEFAULT_MAX_ADAPTIVE_RADIUS = 3;
+const DEFAULT_MAX_EYE_COMPONENTS = 2;
 
 export function deriveEnkiUpperFaceRoi({
   bodyRgba,
@@ -122,6 +123,7 @@ export function dilateEyeMaskWithinConstraints({
   threshold = DEFAULT_THRESHOLD,
   minEyeBandFill = DEFAULT_MIN_EYE_BAND_FILL,
   maxAdaptiveRadius = DEFAULT_MAX_ADAPTIVE_RADIUS,
+  maxEyeComponents = DEFAULT_MAX_EYE_COMPONENTS,
 }) {
   if (!Number.isInteger(radius) || radius < 0 || radius > 3) {
     throw new Error('Eye-mask dilation radius must be an integer from 0 to 3.');
@@ -142,6 +144,13 @@ export function dilateEyeMaskWithinConstraints({
   ) {
     throw new Error('Eye-mask minEyeBandFill must be between 0 and 0.1.');
   }
+  if (
+    !Number.isInteger(maxEyeComponents) ||
+    maxEyeComponents < 1 ||
+    maxEyeComponents > 4
+  ) {
+    throw new Error('Eye-mask maxEyeComponents must be an integer from 1 through 4.');
+  }
   if (radius === 0) return new Uint8Array(mask);
 
   let output = dilateAtRadius({
@@ -154,9 +163,7 @@ export function dilateEyeMaskWithinConstraints({
   });
   let fill = eyeBandFillRatio(output, dimensions, eyeBand, threshold);
 
-  // SAM is only the semantic locator. Tiny but valid seeds are expanded into the
-  // minimum practical eyelid-editing patch, while the approved Enki alpha and
-  // deterministic eye band remain hard geometric boundaries.
+  // First preserve the literal SAM shape and try only tiny isotropic growth.
   for (
     let adaptiveRadius = radius + 1;
     fill < minEyeBandFill && adaptiveRadius <= maxAdaptiveRadius;
@@ -173,6 +180,25 @@ export function dilateEyeMaskWithinConstraints({
     fill = eyeBandFillRatio(output, dimensions, eyeBand, threshold);
   }
 
+  // Real painted eyes can be only a few semantic pixels even when the allowed
+  // eye band is comparatively large. If SAM found a valid in-band seed but the
+  // fixed 1-3px growth is still too sparse, turn at most the strongest one/two
+  // connected seed components into horizontally biased eyelid editing patches.
+  // The approved Enki alpha and deterministic eye band remain hard boundaries,
+  // and growth stops as soon as the existing minimum fill is reached.
+  if (fill < minEyeBandFill) {
+    output = growCompactEyeSeedComponents({
+      seedMask: mask,
+      baseMask: output,
+      bodyRgba,
+      dimensions,
+      eyeBand,
+      threshold,
+      targetFill: minEyeBandFill,
+      maxComponents: maxEyeComponents,
+    });
+  }
+
   return output;
 }
 
@@ -182,9 +208,7 @@ export function eyeBandFillRatio(
   eyeBand,
   threshold = DEFAULT_THRESHOLD,
 ) {
-  const area =
-    (eyeBand.maxX - eyeBand.minX + 1) *
-    (eyeBand.maxY - eyeBand.minY + 1);
+  const area = eyeBandArea(eyeBand);
   if (area <= 0) return 1;
   let selected = 0;
   for (let y = eyeBand.minY; y <= eyeBand.maxY; y += 1) {
@@ -193,6 +217,78 @@ export function eyeBandFillRatio(
     }
   }
   return selected / area;
+}
+
+export function analyzeEyeSeedComponents(
+  mask,
+  dimensions,
+  eyeBand,
+  threshold = DEFAULT_THRESHOLD,
+) {
+  const visited = new Uint8Array(dimensions.width * dimensions.height);
+  const components = [];
+  const neighbors = [
+    [-1, -1],
+    [0, -1],
+    [1, -1],
+    [-1, 0],
+    [1, 0],
+    [-1, 1],
+    [0, 1],
+    [1, 1],
+  ];
+
+  for (let y = eyeBand.minY; y <= eyeBand.maxY; y += 1) {
+    for (let x = eyeBand.minX; x <= eyeBand.maxX; x += 1) {
+      const start = y * dimensions.width + x;
+      if (visited[start] || mask[start] <= threshold) continue;
+
+      const queue = [start];
+      visited[start] = 1;
+      let cursor = 0;
+      let selected = 0;
+      let sumX = 0;
+      let sumY = 0;
+      let minX = x;
+      let maxX = x;
+      let minY = y;
+      let maxY = y;
+
+      while (cursor < queue.length) {
+        const pixel = queue[cursor++];
+        const px = pixel % dimensions.width;
+        const py = Math.floor(pixel / dimensions.width);
+        selected += 1;
+        sumX += px;
+        sumY += py;
+        minX = Math.min(minX, px);
+        maxX = Math.max(maxX, px);
+        minY = Math.min(minY, py);
+        maxY = Math.max(maxY, py);
+
+        for (const [dx, dy] of neighbors) {
+          const nx = px + dx;
+          const ny = py + dy;
+          if (!insideBounds(nx, ny, eyeBand)) continue;
+          const next = ny * dimensions.width + nx;
+          if (visited[next] || mask[next] <= threshold) continue;
+          visited[next] = 1;
+          queue.push(next);
+        }
+      }
+
+      components.push({
+        selected,
+        centerX: sumX / selected,
+        centerY: sumY / selected,
+        bounds: { minX, minY, maxX, maxY },
+        width: maxX - minX + 1,
+        height: maxY - minY + 1,
+      });
+    }
+  }
+
+  return components.sort((a, b) => b.selected - a.selected);
 }
 
 export function analyzeGrayMask(mask, dimensions, threshold = DEFAULT_THRESHOLD) {
@@ -216,6 +312,85 @@ export function analyzeGrayMask(mask, dimensions, threshold = DEFAULT_THRESHOLD)
     coverageRatio: selected / (dimensions.width * dimensions.height),
     bounds: selected ? { minX, minY, maxX, maxY } : null,
   };
+}
+
+function growCompactEyeSeedComponents({
+  seedMask,
+  baseMask,
+  bodyRgba,
+  dimensions,
+  eyeBand,
+  threshold,
+  targetFill,
+  maxComponents,
+}) {
+  const components = analyzeEyeSeedComponents(
+    seedMask,
+    dimensions,
+    eyeBand,
+    threshold,
+  ).slice(0, maxComponents);
+  if (!components.length) return new Uint8Array(baseMask);
+
+  const output = new Uint8Array(baseMask);
+  const bandWidth = eyeBand.maxX - eyeBand.minX + 1;
+  const bandHeight = eyeBand.maxY - eyeBand.minY + 1;
+  const maxHalfWidth = Math.max(3, Math.min(18, Math.round(bandWidth * 0.14)));
+  const maxHalfHeight = Math.max(2, Math.min(8, Math.round(bandHeight * 0.22)));
+  const targetSelected = Math.ceil(eyeBandArea(eyeBand) * targetFill);
+
+  for (let step = 1; step <= Math.max(maxHalfWidth, maxHalfHeight); step += 1) {
+    const halfWidth = Math.min(maxHalfWidth, 2 + step);
+    const halfHeight = Math.min(maxHalfHeight, 1 + Math.floor(step / 3));
+    for (const component of components) {
+      paintConstrainedEllipse({
+        output,
+        bodyRgba,
+        dimensions,
+        eyeBand,
+        centerX: Math.round(component.centerX),
+        centerY: Math.round(component.centerY),
+        halfWidth,
+        halfHeight,
+        threshold,
+      });
+    }
+    if (
+      countSelectedInBand(output, dimensions, eyeBand, threshold) >=
+      targetSelected
+    ) {
+      break;
+    }
+  }
+
+  return output;
+}
+
+function paintConstrainedEllipse({
+  output,
+  bodyRgba,
+  dimensions,
+  eyeBand,
+  centerX,
+  centerY,
+  halfWidth,
+  halfHeight,
+  threshold,
+}) {
+  const minX = Math.max(eyeBand.minX, centerX - halfWidth);
+  const maxX = Math.min(eyeBand.maxX, centerX + halfWidth);
+  const minY = Math.max(eyeBand.minY, centerY - halfHeight);
+  const maxY = Math.min(eyeBand.maxY, centerY + halfHeight);
+  for (let y = minY; y <= maxY; y += 1) {
+    for (let x = minX; x <= maxX; x += 1) {
+      const dx = halfWidth ? (x - centerX) / halfWidth : 0;
+      const dy = halfHeight ? (y - centerY) / halfHeight : 0;
+      if (dx * dx + dy * dy > 1) continue;
+      const pixel = y * dimensions.width + x;
+      if (bodyRgba[pixel * 4 + 3] <= threshold) continue;
+      output[pixel] = 255;
+    }
+  }
 }
 
 function dilateAtRadius({
@@ -254,6 +429,23 @@ function dilateAtRadius({
     }
   }
   return output;
+}
+
+function countSelectedInBand(mask, dimensions, eyeBand, threshold) {
+  let selected = 0;
+  for (let y = eyeBand.minY; y <= eyeBand.maxY; y += 1) {
+    for (let x = eyeBand.minX; x <= eyeBand.maxX; x += 1) {
+      if (mask[y * dimensions.width + x] > threshold) selected += 1;
+    }
+  }
+  return selected;
+}
+
+function eyeBandArea(eyeBand) {
+  return (
+    (eyeBand.maxX - eyeBand.minX + 1) *
+    (eyeBand.maxY - eyeBand.minY + 1)
+  );
 }
 
 function alphaBounds(rgba, dimensions, threshold, window = {}) {
