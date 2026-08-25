@@ -1,0 +1,136 @@
+{
+  "1": {
+    "inputs": {
+      "image": "{{SOURCE_IMAGE}}"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Shot 3 face source crop"
+    }
+  },
+  "2": {
+    "inputs": {
+      "image": "{{AUXILIARY_IMAGE}}",
+      "channel": "red"
+    },
+    "class_type": "LoadImageMask",
+    "_meta": {
+      "title": "Validated localized eye-state mask"
+    }
+  },
+  "3": {
+    "inputs": {
+      "ckpt_name": "sd-v1-5-inpainting.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "Stable Diffusion 1.5 inpainting"
+    }
+  },
+  "4": {
+    "inputs": {
+      "text": "Preserve the exact existing painted face, identity, age, skin tone, brow, nose, beard, lighting, perspective, brushwork and expression. Change only the supplied tiny eye-state mask so both eyelids are naturally closed for a brief calm blink. The result must look like the same man one instant later, not a redrawn face. {{LAYER_PROMPT}}",
+      "clip": [
+        "3",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Localized blink-state prompt"
+    }
+  },
+  "5": {
+    "inputs": {
+      "text": "different face, changed identity, younger, older, beautified, smile, frown, changed gaze, changed eyebrows, changed nose, changed beard, changed skin tone, changed lighting, extra eyes, asymmetric eyes, glowing eyes, fantasy eyes, makeup, face redesign, new expression, open eyes, text, watermark, logo. {{NEGATIVE_PROMPT}}",
+      "clip": [
+        "3",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Reject face drift"
+    }
+  },
+  "6": {
+    "inputs": {
+      "pixels": [
+        "1",
+        0
+      ],
+      "vae": [
+        "3",
+        2
+      ],
+      "mask": [
+        "2",
+        0
+      ],
+      "grow_mask_by": 4
+    },
+    "class_type": "VAEEncodeForInpaint",
+    "_meta": {
+      "title": "Encode only localized eye state"
+    }
+  },
+  "7": {
+    "inputs": {
+      "seed": "{{SEED}}",
+      "steps": 28,
+      "cfg": 4.5,
+      "sampler_name": "dpmpp_2m",
+      "scheduler": "karras",
+      "denoise": 0.42,
+      "model": [
+        "3",
+        0
+      ],
+      "positive": [
+        "4",
+        0
+      ],
+      "negative": [
+        "5",
+        0
+      ],
+      "latent_image": [
+        "6",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "Conservative eye-state inpaint"
+    }
+  },
+  "8": {
+    "inputs": {
+      "samples": [
+        "7",
+        0
+      ],
+      "vae": [
+        "3",
+        2
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "Decode blink-state crop"
+    }
+  },
+  "9": {
+    "inputs": {
+      "filename_prefix": "{{OUTPUT_PREFIX}}",
+      "images": [
+        "8",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save blink-state crop"
+    }
+  }
+}
