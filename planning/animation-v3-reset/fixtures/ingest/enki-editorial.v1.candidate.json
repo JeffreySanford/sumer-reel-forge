@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "planning-asset-ingest-receipt-v1",
+  "id": "ingest:enki-editorial-source:v1",
+  "status": "CANDIDATE_NOT_EXECUTABLE",
+  "assetId": "asset:enki:editorial-source",
+  "assetRevision": 1,
+  "assetClass": "EDITORIAL_SOURCE",
+  "contentSha256": "UNRESOLVED_MEASURE_FROM_APPROVED_SOURCE",
+  "byteLength": "UNRESOLVED_MEASURE_FROM_APPROVED_SOURCE",
+  "mimeType": "image/png",
+  "canonicalLogicalPath": "actors/enki/source/approved-editorial-v1.png",
+  "sourceAssetIds": [],
+  "creationMethod": "DIRECT_SOURCE",
+  "rightsStatus": "PROJECT_AUTHORED_OR_APPROVED_SOURCE_VERIFY",
+  "maturity": "APPROVED",
+  "negativeModes": ["HASH_MISMATCH", "ABSOLUTE_PATH_IDENTITY", "BYTES_CHANGED_WITHOUT_REVISION", "RIGHTS_INFERRED_FROM_CONFIDENCE"]
+}

@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "planning-growth-sequence-v1",
+  "id": "growth:dilmun-transformation:v1",
+  "status": "CANDIDATE_NOT_EXECUTABLE",
+  "sequence": [
+    {"order": 0, "state": "BARREN", "requires": []},
+    {"order": 1, "state": "WATER_INTRODUCED", "requires": ["water:dilmun:fresh:v1"]},
+    {"order": 2, "state": "FIRST_GREEN", "requires": ["WATER_INTRODUCED"]},
+    {"order": 3, "state": "CULTIVATED", "requires": ["FIRST_GREEN", "agriculture:irrigation:v1"]},
+    {"order": 4, "state": "ABUNDANT", "requires": ["CULTIVATED"]}
+  ],
+  "seed": 13007,
+  "speciesProfiles": ["vegetation:reed:v1", "vegetation:date-palm:v1", "crop:barley:v1"],
+  "speciesEvidenceStatus": "UNRESOLVED_APPLICATIONS",
+  "negativeModes": ["MATURE_BEFORE_WATER", "CAMERA_ONLY_TRANSFORMATION", "GLOBAL_GREEN_FILTER", "UNRELATED_REGION_REROLL"]
+}

@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "planning-camera-grammar-v1",
+  "id": "camera:benchmark:enki-helm:v1",
+  "status": "CANDIDATE_NOT_EXECUTABLE",
+  "intent": "HOLD",
+  "subjectIds": ["actor-instance:enki:s03", "prop-instance:stag:s03"],
+  "startFrame": 0,
+  "endFrameExclusive": 210,
+  "framingProfileId": "framing:vertical-hero-medium:v1",
+  "motionProfileId": "motion:camera-hold:v1",
+  "constraints": ["CAMERA_FROZEN_PROOF_REQUIRED", "FACE_SAFE_REGION", "TILLER_CONTACT_READABLE", "NO_UNSUPPORTED_BACKSIDE_REVEAL"],
+  "namedProofStates": ["CAMERA_START", "PRIMARY_ACTION_READ", "CAMERA_END"],
+  "negativeModes": ["CAMERA_SUBSTITUTES_PRIMARY_ACTION", "SUBJECT_LEAVES_SAFE_REGION", "UNSUPPORTED_BACKSIDE_REVEAL"]
+}

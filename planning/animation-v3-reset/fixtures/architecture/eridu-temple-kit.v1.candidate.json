@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "planning-architecture-kit-v1",
+  "id": "architecture-kit:eridu-temple:v1",
+  "status": "CANDIDATE_NOT_EXECUTABLE",
+  "periodBand": "UNRESOLVED_RESEARCH_BANDED",
+  "region": "Southern Mesopotamia",
+  "moduleIds": ["arch:platform:v1", "arch:stair:v1", "arch:courtyard:v1", "arch:doorway:v1", "arch:quay-interface:v1"],
+  "buildingId": "building:eridu:e-absu:v1",
+  "materialProfileIds": ["material:mudbrick:v1", "material:reed:v1", "material:bitumen:v1"],
+  "evidenceApplications": ["UNRESOLVED_ERIDU_DIRECT", "UNRESOLVED_NEAR_PERIOD_ANALOGUE"],
+  "geometryStatus": "UNRESOLVED_AUTHORED_GEOMETRY",
+  "requiredProofStates": ["FRONT_APPROACH", "ENTRY_RELATIONSHIP", "QUAY_RELATIONSHIP"],
+  "negativeModes": ["INVENTED_MEASUREMENT_DIRECT", "ANALOGUE_LABELED_SITE", "MESH_ID_AS_BUILDING_ID", "UNSUPPORTED_BACKSIDE_REVEAL"]
+}
