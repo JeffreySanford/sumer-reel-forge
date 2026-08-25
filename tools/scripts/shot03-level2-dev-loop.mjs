@@ -11,6 +11,7 @@ const STATUS_PATH = resolve('tmp/animation-previews/shot03-level2-status.json');
 const BLINK_LAYER_ID = 'shot03-enki-eyes-v1';
 const EXPECTED_MILESTONE_FAILURE =
   'ACTIVE MILESTONE GATE: approved Shot 3 meets Level 2 Living Shot motion quality';
+const MILESTONE_ENV = 'SRF_ENFORCE_SHOT03_LEVEL2_MILESTONE';
 
 const focusedTests = [
   {
@@ -46,7 +47,11 @@ async function main() {
   let unexpectedFailure = false;
 
   for (const test of focusedTests) {
-    const result = await runCaptured('node', ['--test', test.path]);
+    const env =
+      test.mode === 'milestone'
+        ? { ...process.env, [MILESTONE_ENV]: '1' }
+        : process.env;
+    const result = await runCaptured('node', ['--test', test.path], { env });
     const classified = classifyTest(test, result);
     results.push({ ...test, ...result, ...classified });
     if (!classified.expected) unexpectedFailure = true;
@@ -308,11 +313,11 @@ async function newestPreviewDirectory() {
   }
 }
 
-function runCaptured(command, args) {
+function runCaptured(command, args, { env = process.env } = {}) {
   return new Promise((resolvePromise) => {
     const child = spawn(command, args, {
       cwd: ROOT,
-      env: process.env,
+      env,
       shell: process.platform === 'win32',
       windowsHide: true,
       stdio: ['ignore', 'pipe', 'pipe'],
