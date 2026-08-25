@@ -271,18 +271,22 @@
           "motionPresets": [
             "riggingTension"
           ],
-          "state": "planned",
+          "state": "approved",
           "hasAlpha": true,
           "source": {
             "type": "derived",
             "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-03.png"
           },
           "review": {
-            "status": "pending",
+            "status": "approved",
             "notes": [
-              "Must not cross Enki's face or caption safe zone."
+              "Must not cross Enki's face or caption safe zone.",
+              "Human-approved from Shot 3 Level 2 audition 2026-08-25T12-19-03-084Z at 2026-08-25T12:32:09.535Z.",
+              "Reviewed MP4: D:\\repos\\sumer-reel-forge\\tmp\\animation-previews\\shot03-level2-preview\\2026-08-25T12-19-03-084Z\\shot03-level2-candidate-preview.mp4",
+              "semantic-overlay-structure-qa PASS: D:\\repos\\sumer-reel-forge\\tmp\\animation-assets\\candidates\\chapter-01-reel-01-animation-v1\\2026-08-24T23-33-18-622Z\\shot03-rigging-v1-structure-qa.json"
             ]
-          }
+          },
+          "sha256": "sha256:1f3e6add78d406d3f17ee618604da37eef9b2a8bf403650ba98986f4ab82d5f7"
         },
         {
           "id": "shot03-enki-eyes-v1",
@@ -299,18 +303,22 @@
           "motionPresets": [
             "blinkOnce"
           ],
-          "state": "planned",
+          "state": "approved",
           "hasAlpha": true,
           "source": {
             "type": "reference-state",
             "from": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-03.png"
           },
           "review": {
-            "status": "pending",
+            "status": "approved",
             "notes": [
-              "Identity and lighting must remain stable against the open-eye source."
+              "Identity and lighting must remain stable against the open-eye source.",
+              "Human-approved from Shot 3 Level 2 audition 2026-08-25T12-19-03-084Z at 2026-08-25T12:32:09.535Z.",
+              "Reviewed MP4: D:\\repos\\sumer-reel-forge\\tmp\\animation-previews\\shot03-level2-preview\\2026-08-25T12-19-03-084Z\\shot03-level2-candidate-preview.mp4",
+              "character-state-identity-delta-qa PASS: D:\\repos\\sumer-reel-forge\\tmp\\animation-assets\\candidates\\chapter-01-reel-01-animation-v1\\2026-08-25T12-18-22-199Z\\shot03-enki-eyes-v1-character-state-qa.json"
             ]
-          }
+          },
+          "sha256": "sha256:b1d40abaaa8a8d29d368f5063eab35d172f6e70158e97b4facba7142d407d9e7"
         }
       ]
     },
