@@ -1,9 +1,10 @@
 import { spawn } from 'node:child_process';
-import { access, readdir } from 'node:fs/promises';
+import { access, mkdir, readdir, writeFile } from 'node:fs/promises';
 import { basename, join, resolve } from 'node:path';
 
 const ROOT = resolve('.');
 const PREVIEW_ROOT = resolve('tmp/animation-previews/shot03-level2-preview');
+const STATUS_PATH = resolve('tmp/animation-previews/shot03-level2-status.json');
 const EXPECTED_MILESTONE_FAILURE =
   'ACTIVE MILESTONE GATE: approved Shot 3 meets Level 2 Living Shot motion quality';
 
@@ -11,18 +12,17 @@ const focusedTests = [
   {
     id: 'candidate-audition',
     path: 'tools/renderer/level2-candidate-audition.test.mjs',
-    expectedExitCode: 0,
+    mode: 'must-pass',
   },
   {
     id: 'rigging-causality',
     path: 'tools/renderer/level2-rigging-causality-gate.test.mjs',
-    expectedExitCode: 0,
+    mode: 'must-pass',
   },
   {
     id: 'living-shot-milestone',
     path: 'tools/renderer/level2-living-shot-gate.test.mjs',
-    expectedExitCode: 1,
-    expectedFailureText: EXPECTED_MILESTONE_FAILURE,
+    mode: 'milestone',
   },
 ];
 
@@ -33,65 +33,131 @@ async function main() {
 
   for (const test of focusedTests) {
     const result = await runCaptured('node', ['--test', test.path]);
-    const expected =
-      result.code === test.expectedExitCode &&
-      (!test.expectedFailureText || result.output.includes(test.expectedFailureText));
-    results.push({ ...test, ...result, expected });
-    if (!expected) unexpectedFailure = true;
+    const classified = classifyTest(test, result);
+    results.push({ ...test, ...result, ...classified });
+    if (!classified.expected) unexpectedFailure = true;
   }
 
   let preview = null;
   if (!options.skipPreview && !unexpectedFailure) {
-    const before = await newestPreviewDirectory();
     const result = await runCaptured('node', [
       'tools/scripts/shot03-level2-rigging.mjs',
       'preview',
     ]);
-    const after = await newestPreviewDirectory();
+    const directory = await newestPreviewDirectory();
     preview = {
       ...result,
-      directory: after && after !== before ? after : after,
+      directory,
+      videoPath: directory
+        ? join(directory, 'shot03-level2-candidate-preview.mp4')
+        : null,
     };
     if (result.code !== 0) unexpectedFailure = true;
   }
 
-  printSummary(results, preview, unexpectedFailure);
+  const milestone = results.find((item) => item.id === 'living-shot-milestone');
+  await writeStatus({ results, preview, milestone, unexpectedFailure });
+  printSummary(results, preview, milestone, unexpectedFailure);
   process.exitCode = unexpectedFailure ? 1 : 0;
 }
 
-function printSummary(results, preview, unexpectedFailure) {
-  console.log('');
-  console.log('Shot 3 Level 2 dev loop');
-  console.log('-----------------------');
-  for (const result of results) {
-    if (result.id === 'living-shot-milestone' && result.expected) {
-      const reasons = milestoneReasons(result.output);
-      console.log(`[KNOWN RED] milestone gate${reasons.length ? `: ${reasons.join('; ')}` : ''}`);
-      continue;
+function classifyTest(test, result) {
+  if (test.mode === 'must-pass') {
+    return {
+      expected: result.code === 0,
+      state: result.code === 0 ? 'pass' : 'unexpected-failure',
+      reasons: [],
+    };
+  }
+
+  if (test.mode === 'milestone') {
+    if (result.code === 0) {
+      return { expected: true, state: 'green', reasons: [] };
     }
-    console.log(`${result.expected ? '[PASS]' : '[FAIL]'} ${result.id}`);
+    if (
+      result.code === 1 &&
+      result.output.includes(EXPECTED_MILESTONE_FAILURE)
+    ) {
+      return {
+        expected: true,
+        state: 'known-red',
+        reasons: milestoneReasons(result.output),
+      };
+    }
+  }
+
+  return {
+    expected: false,
+    state: 'unexpected-failure',
+    reasons: [],
+  };
+}
+
+function printSummary(results, preview, milestone, unexpectedFailure) {
+  console.log('');
+  console.log('Shot 3 Level 2');
+  for (const result of results.filter((item) => item.id !== 'living-shot-milestone')) {
+    console.log(`${result.state === 'pass' ? '[PASS]' : '[FAIL]'} ${result.id}`);
+  }
+
+  if (milestone?.state === 'green') {
+    console.log('[GREEN] milestone gate');
+  } else if (milestone?.state === 'known-red') {
+    console.log(
+      `[KNOWN RED] milestone: ${milestone.reasons.length ? milestone.reasons.join('; ') : 'canonical Level 2 acceptance not reached yet'}`,
+    );
+  } else {
+    console.log('[FAIL] milestone gate produced an unexpected result');
   }
 
   if (preview) {
-    if (preview.code === 0) {
-      console.log(`[PASS] rigging preview${preview.directory ? `: ${preview.directory}` : ''}`);
-      if (preview.directory) {
-        console.log(`       video: ${join(preview.directory, 'shot03-level2-candidate-preview.mp4')}`);
-      }
-    } else {
-      console.log('[FAIL] rigging preview');
-      printFailureTail(preview.output);
-    }
+    console.log(
+      preview.code === 0
+        ? `[PASS] preview: ${preview.videoPath ?? 'rendered; output path unavailable'}`
+        : '[FAIL] preview',
+    );
   }
 
+  console.log(`STATUS FILE: ${STATUS_PATH}`);
+  console.log(
+    unexpectedFailure
+      ? 'STATUS: BLOCKED — paste this summary plus the failure tail.'
+      : milestone?.state === 'green'
+        ? 'STATUS: LEVEL 2 DECLARATIVE GATE GREEN — proceed to rendered/human acceptance.'
+        : 'STATUS: CONTINUE — paste only this summary; attach the preview/contact sheet when visual review is needed.',
+  );
+
   if (unexpectedFailure) {
-    console.log('STATUS: BLOCKED — unexpected Level 2 regression.');
     for (const result of results.filter((item) => !item.expected)) {
       printFailureTail(result.output);
     }
-  } else {
-    console.log('STATUS: CONTINUE — infrastructure green; milestone intentionally red until canonical Level 2 motion is approved.');
+    if (preview && preview.code !== 0) printFailureTail(preview.output);
   }
+}
+
+async function writeStatus({ results, preview, milestone, unexpectedFailure }) {
+  await mkdir(resolve('tmp/animation-previews'), { recursive: true });
+  const payload = {
+    schemaVersion: 1,
+    generatedAt: new Date().toISOString(),
+    shotNumber: 3,
+    milestoneState: milestone?.state ?? 'unknown',
+    milestoneReasons: milestone?.reasons ?? [],
+    checks: results.map((result) => ({
+      id: result.id,
+      state: result.state,
+      exitCode: result.code,
+    })),
+    preview: preview
+      ? {
+          pass: preview.code === 0,
+          directory: preview.directory,
+          videoPath: preview.videoPath,
+        }
+      : null,
+    unexpectedFailure,
+  };
+  await writeFile(STATUS_PATH, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
 }
 
 function milestoneReasons(output) {
