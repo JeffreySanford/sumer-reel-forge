@@ -1,0 +1,71 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+
+import {
+  analyzeGrayMask,
+  constrainSamEyeMask,
+  deriveEnkiUpperFaceRoi,
+  dilateEyeMaskWithinConstraints,
+} from '../animation/src/level2-character-state-localization.mjs';
+
+function rgba(width, height, alpha = 0) {
+  const value = new Uint8Array(width * height * 4);
+  for (let pixel = 0; pixel < width * height; pixel += 1) {
+    value[pixel * 4 + 3] = alpha;
+  }
+  return value;
+}
+
+function fillAlpha(buffer, width, bounds, alpha = 255) {
+  for (let y = bounds.minY; y <= bounds.maxY; y += 1) {
+    for (let x = bounds.minX; x <= bounds.maxX; x += 1) {
+      buffer[(y * width + x) * 4 + 3] = alpha;
+    }
+  }
+}
+
+test('upper-face ROI is derived from approved character alpha instead of the whole canvas', () => {
+  const dimensions = { width: 200, height: 300 };
+  const body = rgba(dimensions.width, dimensions.height);
+  fillAlpha(body, dimensions.width, { minX: 70, minY: 40, maxX: 130, maxY: 250 });
+
+  const roi = deriveEnkiUpperFaceRoi({ bodyRgba: body, dimensions });
+
+  assert.ok(roi.crop.height < 120, `face crop unexpectedly tall: ${roi.crop.height}`);
+  assert.ok(roi.crop.width < 120, `face crop unexpectedly wide: ${roi.crop.width}`);
+  assert.ok(roi.eyeBand.minY >= roi.headBounds.minY);
+  assert.ok(roi.eyeBand.maxY <= roi.headBounds.maxY);
+});
+
+test('SAM eye mask is clipped to approved Enki alpha and deterministic eye band', () => {
+  const dimensions = { width: 200, height: 300 };
+  const body = rgba(dimensions.width, dimensions.height);
+  fillAlpha(body, dimensions.width, { minX: 70, minY: 40, maxX: 130, maxY: 250 });
+  const roi = deriveEnkiUpperFaceRoi({ bodyRgba: body, dimensions });
+  const samDimensions = { width: roi.crop.width, height: roi.crop.height };
+  const sam = rgba(samDimensions.width, samDimensions.height, 255);
+
+  const constrained = constrainSamEyeMask({
+    samRgba: sam,
+    samDimensions,
+    crop: roi.crop,
+    bodyRgba: body,
+    dimensions,
+    eyeBand: roi.eyeBand,
+  });
+  const expanded = dilateEyeMaskWithinConstraints({
+    mask: constrained.mask,
+    bodyRgba: body,
+    dimensions,
+    eyeBand: roi.eyeBand,
+    radius: 1,
+  });
+  const analysis = analyzeGrayMask(expanded, dimensions);
+
+  assert.ok(analysis.selected > 0);
+  assert.ok(analysis.bounds.minX >= roi.eyeBand.minX);
+  assert.ok(analysis.bounds.maxX <= roi.eyeBand.maxX);
+  assert.ok(analysis.bounds.minY >= roi.eyeBand.minY);
+  assert.ok(analysis.bounds.maxY <= roi.eyeBand.maxY);
+  assert.ok(constrained.outsideBandRejected > 0);
+});
