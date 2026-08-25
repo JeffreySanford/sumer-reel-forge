@@ -6,6 +6,7 @@ import {
   constrainSamEyeMask,
   deriveEnkiUpperFaceRoi,
   dilateEyeMaskWithinConstraints,
+  eyeBandFillRatio,
 } from '../animation/src/level2-character-state-localization.mjs';
 
 function rgba(width, height, alpha = 0) {
@@ -68,4 +69,32 @@ test('SAM eye mask is clipped to approved Enki alpha and deterministic eye band'
   assert.ok(analysis.bounds.minY >= roi.eyeBand.minY);
   assert.ok(analysis.bounds.maxY <= roi.eyeBand.maxY);
   assert.ok(constrained.outsideBandRejected > 0);
+});
+
+test('sparse valid SAM seed grows to a minimal eyelid patch without escaping eye constraints', () => {
+  const dimensions = { width: 200, height: 300 };
+  const body = rgba(dimensions.width, dimensions.height);
+  fillAlpha(body, dimensions.width, { minX: 70, minY: 40, maxX: 130, maxY: 250 });
+  const roi = deriveEnkiUpperFaceRoi({ bodyRgba: body, dimensions });
+  const seed = new Uint8Array(dimensions.width * dimensions.height);
+  const seedX = Math.round((roi.eyeBand.minX + roi.eyeBand.maxX) / 2);
+  const seedY = Math.round((roi.eyeBand.minY + roi.eyeBand.maxY) / 2);
+  seed[seedY * dimensions.width + seedX] = 255;
+
+  const expanded = dilateEyeMaskWithinConstraints({
+    mask: seed,
+    bodyRgba: body,
+    dimensions,
+    eyeBand: roi.eyeBand,
+    radius: 1,
+  });
+  const analysis = analyzeGrayMask(expanded, dimensions);
+  const fill = eyeBandFillRatio(expanded, dimensions, roi.eyeBand);
+
+  assert.ok(fill >= 0.01, `adaptive eyelid patch remained too sparse: ${fill}`);
+  assert.ok(fill < 0.1, `adaptive eyelid patch became too broad: ${fill}`);
+  assert.ok(analysis.bounds.minX >= roi.eyeBand.minX);
+  assert.ok(analysis.bounds.maxX <= roi.eyeBand.maxX);
+  assert.ok(analysis.bounds.minY >= roi.eyeBand.minY);
+  assert.ok(analysis.bounds.maxY <= roi.eyeBand.maxY);
 });
