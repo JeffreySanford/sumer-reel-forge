@@ -16,6 +16,13 @@ scene-v3/negative-duplicate-id.v3.candidate.json
 evidence/standard-of-ur-applications.v1.candidate.json
 canonicalization/canonicalization-cases.v1.candidate.json
 rig/enki-registration.v1.candidate.json
+
+performance/enki-blink-natural.v1.candidate.json
+physics/kutu-hail-bake.v1.candidate.json
+world/eridu-topology.v1.candidate.json
+crowd/igigi-crew.v1.candidate.json
+receipts/enki-helm-benchmark-proof.v1.candidate.json
+trace/enki-helm-frame-101.v1.candidate.json
 ```
 
 ## Rules
@@ -26,93 +33,55 @@ rig/enki-registration.v1.candidate.json
 4. Negative candidates are supposed to fail once validation exists.
 5. Engine-specific implementation objects must not leak into authoring JSON.
 6. Logical paths remain semantic/repository-relative; resolved workstation paths belong in diagnostics, not authored canonical data.
-7. Planning placeholders such as unresolved Enki measurements must be explicitly labeled and are invalid as production-ready data.
+7. Planning placeholders such as unresolved Enki measurements, hashes, topology geometry or runtime versions must be explicitly labeled and are invalid as production-ready data.
 
 ## Scene V3 candidates
 
-### Minimal scene
+`minimal-scene.v3.candidate.json` is the smallest positive Scene V3 shape and future canonical serialization baseline.
 
-Purpose:
+`enki-helm.v3.candidate.json` pressure-tests real actor parentage, performance tracks, material drivers and QA requirements.
 
-- smallest positive Scene V3 shape;
-- frame/dimension/seed validation;
-- canonical serialization baseline;
-- source-free synthetic foundation test.
+`negative-duplicate-id.v3.candidate.json` is expected to fail uniqueness validation.
 
-Expected eventual stable test:
+## Evidence and registration candidates
 
-```text
-CONTRACT-SCENE-001-valid-minimal
-```
+`evidence/standard-of-ur-applications.v1.candidate.json` proves one canonical evidence identity can support multiple project applications without cloning historical-object identity.
 
-### Enki at the Helm
+`canonicalization/canonicalization-cases.v1.candidate.json` defines normalization edge cases for key order, array semantics, paths, nulls, runtime versions and hashes.
 
-Purpose:
+`rig/enki-registration.v1.candidate.json` defines required landmark/region/anchor identities while refusing to fabricate unseen pixel measurements.
 
-- pressure-test a real project scene;
-- bind current source-registry IDs;
-- exercise actor parentage, performance tracks, material-driver relationships and QA requirements;
-- remain consistent with the paper Enki Helm example.
+## Performance candidate
 
-Expected eventual fixture identity:
+`performance/enki-blink-natural.v1.candidate.json` pressure-tests a reusable semantic performance clip with exact local frames, semantic eye channels, proof states and runtime-independent timing.
 
-```text
-fixture:benchmark:enki-helm:v1
-```
+Future stable coverage includes `CONTRACT-PERF-001-valid-clip` and `MOTION-ENKI-001-natural-blink`.
 
-### Duplicate-ID negative
+## Physics candidate
 
-Purpose:
+`physics/kutu-hail-bake.v1.candidate.json` defines the immutable bake identity expected for a Rapier-authored Kutu storm response while leaving actual simulation/hash data unresolved until a deterministic bake exists.
 
-- guarantee validator does not accept duplicate semantic IDs in a uniqueness-required namespace.
+It must never be treated as a usable bake while placeholder hashes remain.
 
-Expected test:
+## World topology candidate
 
-```text
-CONTRACT-SCENE-004-duplicate-id
-```
+`world/eridu-topology.v1.candidate.json` captures persistent semantic relationships among Eridu water nodes, quay, temple approach, water edge and route edge without inventing final coordinates.
 
-## Evidence application candidate
+Topology relationships are under test before authored geometry is frozen.
 
-`evidence/standard-of-ur-applications.v1.candidate.json` proves the newly selected model:
+## Crowd candidate
 
-```text
-one canonical evidence identity
-  -> multiple project applications
-  -> different targets/usages/confidence/inference constraints
-```
+`crowd/igigi-crew.v1.candidate.json` defines seed, count, region, archetype and behavior requirements for the first deterministic work-crowd benchmark, including perfect-sync and overdensity negative modes.
 
-It deliberately includes both project-wide staging and Enlil-costume-context applications without duplicating the Standard of Ur object record.
+## Benchmark receipt candidate
 
-## Canonicalization candidate
+`receipts/enki-helm-benchmark-proof.v1.candidate.json` deliberately begins in `DEFER` with `NOT_IMPLEMENTED_BLOCKING` because required proof evidence does not exist yet.
 
-`canonicalization/canonicalization-cases.v1.candidate.json` lists normalization cases for:
+This protects planning from turning a schema-shaped object into a false capability claim.
 
-- object key order;
-- set-like vs authored array order;
-- Windows path normalization;
-- absolute-path rejection;
-- explicit null semantics;
-- runtime/asset hash changes;
-- informational diagnostic exclusion;
-- invalid numeric values.
+## Forensic trace candidate
 
-Literal expected canonical bytes/SHA-256 values are deferred until Phase 2D freezes the implementation. Once frozen, placeholders are replaced by normative vectors.
-
-## Enki registration candidate
-
-`rig/enki-registration.v1.candidate.json` defines required landmark/region/anchor identities while intentionally leaving source dimensions and pixel coordinates unresolved.
-
-This is deliberate. Planning must not fabricate measurements from an unseen source image. Before it becomes executable registration data:
-
-```text
-source hash verified
-source dimensions measured
-all required landmarks measured/qualified
-region rectangles recorded
-actor-local origin defined
-human overlay review approved
-```
+`trace/enki-helm-frame-101.v1.candidate.json` is the first end-to-end trace skeleton for the `BLINK_CLOSED` proof frame, connecting narrative/source IDs, semantic inputs and future resolved/render evidence hashes.
 
 ## Promotion into executable fixtures
 

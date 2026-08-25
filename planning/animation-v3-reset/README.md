@@ -93,7 +93,7 @@ The literary/mythological source layer is anchored to the Oxford **Electronic Te
 61. [`schema-change-review-template.md`](./schema-change-review-template.md) — mandatory persisted-contract/hash/migration review template once Scene V3 implementation begins.
 62. [`reel-assembly-release-specification.md`](./reel-assembly-release-specification.md) — exact scene/audio/caption/title assembly, QC, release receipt, promotion and rollback contract.
 63. [`chapter-capability-heat-map.md`](./chapter-capability-heat-map.md) — coarse reuse-weight model showing which platform capabilities unlock the most Chapters 1–3 manuscript demand.
-64. [`fixtures/README.md`](./fixtures/README.md) — machine-readable planning candidates for Scene V3, evidence applications, canonicalization and rig registration.
+64. [`fixtures/README.md`](./fixtures/README.md) — machine-readable planning candidates for Scene V3, evidence, canonicalization, rigging, performance, physics, world, crowds, receipts and forensic trace.
 65. [`visual-evidence-application-contract.md`](./visual-evidence-application-contract.md) — separates canonical historical evidence identity from project-specific target/use/confidence/inference/rights applications.
 66. [`phase-1b-implementation-packet.md`](./phase-1b-implementation-packet.md) — exact Phase 1B files, slices, stable tests, local commands, CI expectations and stop conditions for visual evidence.
 67. [`enki-rig-registration-landmarks.md`](./enki-rig-registration-landmarks.md) — source-pixel/actor-local registration, landmarks, region provenance, anchors and rig-prep negative tests.
@@ -103,16 +103,25 @@ The literary/mythological source layer is anchored to the Oxford **Electronic Te
 71. [`canonical-hash-fixture-specification.md`](./canonical-hash-fixture-specification.md) — versioned semantic normalization + UTF-8 + SHA-256 contract and Windows/Linux fixture expectations.
 72. [`runtime-adapter-evidence-contract.md`](./runtime-adapter-evidence-contract.md) — runtime identity/assets/channels/state fingerprints and the hard separation between runtime evidence, independent QA and human review.
 73. [`semantic-seed-versioning-test-vectors.md`](./semantic-seed-versioning-test-vectors.md) — semantic seed tuple encoding, isolation, versioning, RNG admission criteria and normative test-vector plan.
+74. [`actor-performance-clip-contract.md`](./actor-performance-clip-contract.md) — reusable frame-addressed semantic performance clips, blending, contacts, proof states and revision impact.
+75. [`physics-bake-format-specification.md`](./physics-bake-format-specification.md) — immutable fixed-step simulation bake identity, sampling, playback, evidence and failure rules.
+76. [`citykit-topology-region-path-contract.md`](./citykit-topology-region-path-contract.md) — persistent city nodes/edges/regions/paths/water topology independent of runtime representation.
+77. [`crowd-archetype-agent-scheduling-contract.md`](./crowd-archetype-agent-scheduling-contract.md) — deterministic archetypes, stable agent IDs, work schedules, density, LOD and anti-clone rules.
+78. [`production-source-sheet-specification.md`](./production-source-sheet-specification.md) — reusable actor/prop source-sheet authority, views, registration, reconstruction and derivation policy.
+79. [`benchmark-proof-receipt-schema.md`](./benchmark-proof-receipt-schema.md) — machine-readable index of unit/Storybook/render/performance/human evidence behind runtime adoption decisions.
+80. [`render-failure-triage-playbook.md`](./render-failure-triage-playbook.md) — evidence-preserving diagnosis order from preflight through runtime, QA, human review and promotion.
+81. [`forensic-frame-trace-worked-example.md`](./forensic-frame-trace-worked-example.md) — end-to-end Enki frame 101 trace from narrative/source through runtime state, proof, promotion and release.
+82. [`change-impact-dependency-graph.md`](./change-impact-dependency-graph.md) — typed dependency/staleness graph for rigs, clips, materials, cities, scenes, proofs and releases.
 
 ## Current implementation status
 
 ### Phase 0 — architecture/planning
 
-**Architecture-complete enough to implement, with implementation-grade production packets layered on top.** The reset now covers software architecture/runtime boundaries, Chapters 1–3 production demand, historical source/period policy, worked Scene/City/receipt examples, character and vessel continuity, coordinates/registration, audio/dialogue, cinematography, water/material visual language, rendering/delivery, local/CI testing, Storybook/E2E, accessibility, observability, canonical hashing, deterministic randomness, storage/versioning, review/promotion, production readiness and final architecture review.
+**Architecture-complete enough to implement, with production-operating contracts layered on top.** The reset now covers software/runtime architecture, Chapters 1–3 demand, provenance/evidence, character/prop/source continuity, transforms/registration, performance clips, water/materials, persistent city topology, deterministic crowds, fixed-step physics bakes, Storybook/render parity, canonical hashing, semantic randomness, benchmark receipts, failure triage, dependency impact, release assembly and forensic traceability.
 
-The newest planning layer deliberately eliminates several places where hidden implementation choices could otherwise leak into production: evidence applications are distinct from evidence identity; Enki registration cannot invent coordinates; the Stag has persistent semantic identity independent of runtime/physics; water profiles are semantic rather than shader-owned; Storybook and Remotion share fixture state; runtime evidence cannot self-approve; canonical hash input is versioned; and random variation is isolated by semantic seed identity.
+The newest layer removes more hidden implementation state: clips own semantic performance rather than runtime input names; approved physics is immutable bake data rather than render-time simulation; CityKit topology survives representation changes; crowd agent identity survives scheduling/LOD changes; reusable source sheets prevent one shot crop becoming permanent identity; benchmark decisions are backed by explicit independent evidence; and any released frame is expected to trace all the way back to manuscript/source inputs.
 
-Planning remains evidence-responsive: implementation can reopen a decision when a benchmark disproves an assumption. The purpose is not to make change impossible; it is to ensure changes are deliberate and traceable.
+Planning remains evidence-responsive: implementation can reopen a decision when a benchmark disproves an assumption. The point is deliberate, reviewable change rather than frozen architecture.
 
 ### Phase 1 — historical-source foundation
 
@@ -127,25 +136,21 @@ Completed first slice:
 - unit tests;
 - local Nx test/build verified green (10/10 tests on 2026-08-25).
 
-The visual-evidence contract decision is now resolved in planning: **canonical evidence identity + project-specific `VisualEvidenceApplication` records** is the preferred target model. Rights status remains separate from historical confidence, and publications/scholarship remain textual research provenance rather than being forced into museum-object records.
-
-`phase-1b-implementation-packet.md` now specifies the conservative file-by-file library extension, initial applications, stable negative tests, reporting layer and local/CI gates. Implementation has not been claimed yet.
-
-Next Phase 1 implementation slices remain visual-evidence contract/records/applications/reporting, then provenance Studio components, Storybook/a11y coverage and provenance E2E.
+Planning selects **canonical evidence identity + project-specific `VisualEvidenceApplication` records**. Rights status remains separate from historical confidence. `phase-1b-implementation-packet.md` specifies the next code slice; implementation has not been claimed yet.
 
 No animation runtime dependency is installed as part of Phase 1.
 
 ### Phase 2 — Scene V3 foundation
 
-Not started. The foundation now has abstract contract design, worked examples, machine-readable candidate fixtures, exact PR 2A–2E packets, schema-change governance, canonical-hash rules, semantic-seed versioning/test-vector requirements, runtime-evidence boundaries, receipt/coordinate/test contracts and a V2 compatibility plan.
+Not started. Phase 2 now has abstract contracts, worked examples, machine-readable planning candidates, PR 2A–2E packets, schema-change governance, canonical-hash rules, semantic-seed rules, runtime evidence, performance-clip semantics, source-sheet/registration requirements, benchmark receipt expectations and V2 compatibility planning.
 
-Phase 2 remains engine-independent: Rive/Pixi/Three/Rapier do not enter until the common contract/frame/runtime/scene foundation and Animation Lab exist.
+Phase 2 remains engine-independent: real Rive/Pixi/Three/Rapier adoption follows the common contract/frame/runtime/scene foundation and Animation Lab.
 
 ### Runtime adoption
 
-Not started. Each runtime has a bounded spike playbook and capability acceptance scorecard. No package earns production status from a feature list; it must pass manuscript-derived benchmark, exact-frame authority, local quality gates, Storybook/render proof, negative fixtures, licensing/security review, performance budget and human visual gate where applicable.
+Not started. Each runtime must pass manuscript-derived benchmark, exact-frame authority, local quality gates, Storybook/render proof, negative fixtures, licensing/security review, performance budget and human visual gate where applicable.
 
-The six platform gate packets remain explicit: Enki Facial, Enki Helm, Stag Spatial, Kutu Storm, Igigi Crew and Eridu City Growth. Enki rig-prep/landmark registration, persistent Stag identity and reusable water-profile contracts now define what the first runtime spikes must preserve.
+The six platform gates remain Enki Facial, Enki Helm, Stag Spatial, Kutu Storm, Igigi Crew and Eridu City Growth. Their supporting clip/bake/topology/crowd/source/evidence contracts are now specified before runtime implementation.
 
 ## External authorities and technology references
 
@@ -212,7 +217,7 @@ The six platform gate packets remain explicit: Enki Facial, Enki Helm, Stag Spat
 31. **Semantic IDs and content hashes are separate: IDs name meaning; hashes prove exact bytes.**
 32. **Ephemeral candidates/proofs/caches may be deleted without destroying canonical traceability.**
 33. **A reusable capability must satisfy its full acceptance scorecard, not only a visually successful demo.**
-34. **Worked examples must remain representable by the contracts as they become code; otherwise planning reopens before implementation is forced around a bad abstraction.**
+34. **Worked examples must remain representable by the contracts as they become code.**
 35. **Definition of Ready is explicit before implementation; Definition of Done includes all applicable local and GitHub quality layers.**
 36. **Mythic/literary time, frame-story chronology and archaeological evidence dates are related but distinct.**
 37. **Audio/dialogue/captions are frame-bound production data, not an afterthought layered after visual animation.**
@@ -224,17 +229,26 @@ The six platform gate packets remain explicit: Enki Facial, Enki Helm, Stag Spat
 43. **Production priority is driven by narrative value and reusable capability demand, not the latest failing shot.**
 44. **Test coverage is multi-layer evidence with stable IDs; a single green test percentage cannot hide missing Storybook/E2E/render/human gates.**
 45. **A visual-evidence object's identity is separate from each project-specific inference/use made from that evidence.**
-46. **Schema changes are production migrations once persisted scenes/receipts depend on them; canonical hash and staleness impact must be reviewed explicitly.**
-47. **Reel release binds exact scene/audio/caption/title revisions; “latest” is never a release input.**
-48. **A source-pending hero identity may be planned and tested as pending, but cannot be silently completed by a runtime implementation.**
-49. **Historical confidence and image-byte rights are separate dimensions; strong evidence is not automatic permission to ingest or publish an image.**
-50. **Rig registration coordinates are measured from approved sources and versioned; planning never fabricates geometry to fill a schema.**
-51. **Persistent prop identity is separate from runtime representation and physics approximation; a collider or Three model cannot silently redefine the Stag.**
-52. **Water/material behavior is authored as semantic profiles; shader uniforms and runtime defaults are implementation details.**
-53. **Storybook and Remotion consume shared fixture/frame semantics; Storybook is an inspection surface, not another animation timeline.**
-54. **Canonical semantic content is normalized under an explicit version and hashed with SHA-256; machine-local diagnostics are not semantic identity.**
+46. **Schema changes are production migrations once persisted scenes/receipts depend on them.**
+47. **Reel release binds exact scene/audio/caption/title revisions; `latest` is never a release input.**
+48. **A source-pending hero identity cannot be silently completed by a runtime implementation.**
+49. **Historical confidence and image-byte rights are separate dimensions.**
+50. **Rig registration coordinates are measured from approved sources and versioned.**
+51. **Persistent prop identity is separate from runtime representation and physics approximation.**
+52. **Water/material behavior is authored as semantic profiles; shader uniforms are implementation details.**
+53. **Storybook and Remotion consume shared fixture/frame semantics.**
+54. **Canonical semantic content is normalized under an explicit version and hashed with SHA-256.**
 55. **Runtime adapters report evidence but never self-certify final visual correctness or promotion.**
-56. **Deterministic variation is isolated by versioned semantic seed identity; unrelated additions cannot perturb approved animation channels.**
+56. **Deterministic variation is isolated by versioned semantic seed identity.**
+57. **Performance clips own semantic frame-addressed action; runtime bone/input names remain adapter implementation details.**
+58. **Approved physics is replayed from immutable hash-bound bakes; production render does not silently re-simulate.**
+59. **City topology is persistent semantic world data and survives Level 2/Level 3 representation changes.**
+60. **Crowd agent identity/scheduling is deterministic and independent from render order, LOD and unrelated population additions.**
+61. **Reusable source sheets distinguish approved identity from reconstructed/unseen views and never fabricate source measurements.**
+62. **Benchmark adoption decisions are indexes of current independent evidence, not aggregate green percentages.**
+63. **Render diagnosis freezes exact inputs before changing candidates, thresholds or runtimes.**
+64. **Released frames remain reverse-traceable through scene, clip/material/world/runtime evidence, proof, approval and manuscript/source identity.**
+65. **Dependency impact is typed and selective; a local revision must not globally stale unrelated evidence or silently repoint releases.**
 
 ## Local-first quality rule
 

@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "1",
+  "benchmarkId": "benchmark:enki-helm:v1",
+  "benchmarkRevision": 1,
+  "fixtureId": "fixture:benchmark:enki-helm:v1",
+  "commitSha": "UNRESOLVED_AT_EXECUTION",
+  "resolvedSceneHash": "sha256:UNRESOLVED_AT_EXECUTION",
+  "environmentProfileId": "RENDER",
+  "runtimeBindings": [],
+  "requiredCoverage": [
+    "CONTRACT-RIVE-001-enki-channel-map",
+    "VISUAL-ENKI-002-blink-closed",
+    "MOTION-ENKI-001-natural-blink",
+    "FAILURE-ENKI-002-cyan-eye-debug-leak",
+    "HUMAN-HELM-001-combined-v3"
+  ],
+  "evidence": [],
+  "blockingFailures": ["NOT_IMPLEMENTED_BLOCKING"],
+  "warnings": [],
+  "decision": "DEFER",
+  "planningStatus": "CANDIDATE_NOT_EXECUTABLE"
+}

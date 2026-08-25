@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "1",
+  "id": "clip:enki:blink-natural:v1",
+  "revision": 1,
+  "semanticAction": "blink-natural",
+  "compatibleActorIds": ["actor:enki"],
+  "compatibleRigCapabilities": ["facial-performance"],
+  "fpsBasis": 30,
+  "durationFrames": 11,
+  "channels": [
+    {
+      "channelId": "face.eye-left-open",
+      "blend": "weighted",
+      "keyframes": [[0,1],[3,0.5],[5,0],[7,0.5],[10,1]]
+    },
+    {
+      "channelId": "face.eye-right-open",
+      "blend": "weighted",
+      "keyframes": [[0,1],[3,0.5],[5,0],[7,0.5],[10,1]]
+    }
+  ],
+  "events": [
+    {"id":"BLINK_CLOSED","frame":5}
+  ],
+  "proofStates": [
+    {"id":"OPEN","frame":0},
+    {"id":"CLOSING","frame":3},
+    {"id":"CLOSED","frame":5},
+    {"id":"OPENING","frame":7},
+    {"id":"RETURNED_OPEN","frame":10}
+  ],
+  "planningStatus": "CANDIDATE_NOT_EXECUTABLE"
+}

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "1",
+  "id": "crowd:c03:igigi-canal:v1",
+  "revision": 1,
+  "seed": 818122,
+  "count": 20,
+  "regionId": "region:eridu:canal-bank",
+  "archetypeWeights": [
+    {"id":"archetype:worker:canal:v1","weight":1.0}
+  ],
+  "behaviorProfileId": "behavior:canal-work:v1",
+  "densityProfileId": "density:work-crew:medium:v1",
+  "scheduleWindow": {"startFrame":0,"endFrameExclusive":300},
+  "requiredActivities": ["dig","carry-silt","walk-load","walk-empty","rest","tool-adjust"],
+  "negativeModes": ["PERFECT_SYNC_NEGATIVE","OVERDENSITY_NEGATIVE"],
+  "planningStatus": "CANDIDATE_NOT_EXECUTABLE"
+}

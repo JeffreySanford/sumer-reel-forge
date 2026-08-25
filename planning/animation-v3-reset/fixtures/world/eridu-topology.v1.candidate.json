@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "1",
+  "id": "topology:eridu:v1",
+  "revision": 1,
+  "cityId": "city:eridu",
+  "coordinateSpace": "CITY_LOCAL",
+  "boundary": {"status":"UNRESOLVED_AUTHORED_GEOMETRY"},
+  "waterNodes": [
+    {"id":"node:eridu:canal-entry"},
+    {"id":"node:eridu:quay-east"}
+  ],
+  "waterEdges": [
+    {"id":"edge:eridu:water:main-canal-01","from":"node:eridu:canal-entry","to":"node:eridu:quay-east"}
+  ],
+  "routeNodes": [
+    {"id":"node:eridu:temple-approach"},
+    {"id":"node:eridu:quay-east"}
+  ],
+  "routeEdges": [
+    {"id":"edge:eridu:path:quay-to-temple","from":"node:eridu:quay-east","to":"node:eridu:temple-approach"}
+  ],
+  "regions": [
+    {"id":"region:eridu:quay","status":"UNRESOLVED_AUTHORED_GEOMETRY"},
+    {"id":"region:eridu:reed-work","status":"UNRESOLVED_AUTHORED_GEOMETRY"},
+    {"id":"region:eridu:temple-approach","status":"UNRESOLVED_AUTHORED_GEOMETRY"}
+  ],
+  "planningStatus": "CANDIDATE_NOT_EXECUTABLE"
+}
