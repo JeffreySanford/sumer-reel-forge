@@ -26,6 +26,13 @@ export function synthesizeDeterministicClosedEyeState({
     throw new Error(`Deterministic closed-eye synthesis requires one or two trusted eye groups; found ${eyeGroups.length}.`);
   }
 
+  const samplingByGroup = new Map(
+    eyeGroups.map((group) => [
+      group,
+      deriveCleanSamplingRows(group, eyeBand),
+    ]),
+  );
+
   const output = new Uint8Array(referenceRgba.length);
   let selected = 0;
   for (let y = eyeBand.minY; y <= eyeBand.maxY; y += 1) {
@@ -34,12 +41,16 @@ export function synthesizeDeterministicClosedEyeState({
       if (editMask[pixel] <= threshold) continue;
       selected += 1;
       const group = nearestGroup(x, y, eyeGroups);
-      const sampleOffset = clamp(Math.round(Math.max(5, group.height * 0.75)), 5, 12);
-      const aboveY = clamp(Math.round(group.centerY - sampleOffset), eyeBand.minY, eyeBand.maxY);
-      const belowY = clamp(Math.round(group.centerY + sampleOffset), eyeBand.minY, eyeBand.maxY);
-      const above = rgbaAt(referenceRgba, dimensions, x, aboveY);
-      const below = rgbaAt(referenceRgba, dimensions, x, belowY);
-      const skin = blendRgb(above, below, preset.skinAboveWeight);
+      const sampling = samplingByGroup.get(group);
+      const above = rgbaAt(referenceRgba, dimensions, x, sampling.aboveY);
+      const below = rgbaAt(referenceRgba, dimensions, x, sampling.belowY);
+      const verticalProgress = normalizedBetween(y, group.bounds.minY, group.bounds.maxY);
+      const dynamicAboveWeight = clamp(
+        preset.skinAboveWeight + (0.5 - verticalProgress) * 0.16,
+        0.5,
+        0.82,
+      );
+      const skin = blendRgb(above, below, dynamicAboveWeight);
       writeRgba(output, pixel, skin, 255);
     }
   }
@@ -83,6 +94,11 @@ export function synthesizeDeterministicClosedEyeState({
       seamPixels,
       eyeGroupCount: eyeGroups.length,
       eyeGroups,
+      samplingRows: eyeGroups.map((group) => ({
+        centerX: group.centerX,
+        centerY: group.centerY,
+        ...samplingByGroup.get(group),
+      })),
       style: preset.id,
     },
   };
@@ -112,6 +128,31 @@ export function deriveEyeGroups(seedMask, dimensions, eyeBand, threshold = DEFAU
   const right = summarize(points.filter((point) => point.x > splitX));
   if (!left || !right || Math.abs(left.centerX - right.centerX) < 6) return [strongest];
   return [left, right].sort((a, b) => a.centerX - b.centerX);
+}
+
+export function deriveCleanSamplingRows(group, eyeBand) {
+  const groupHeight = Math.max(1, group.bounds.maxY - group.bounds.minY + 1);
+  const margin = clamp(Math.round(groupHeight * 0.2), 3, 8);
+  let aboveY = group.bounds.minY - margin;
+  let belowY = group.bounds.maxY + margin;
+
+  if (aboveY < eyeBand.minY) aboveY = group.bounds.minY - 1;
+  if (belowY > eyeBand.maxY) belowY = group.bounds.maxY + 1;
+
+  aboveY = clamp(aboveY, eyeBand.minY, eyeBand.maxY);
+  belowY = clamp(belowY, eyeBand.minY, eyeBand.maxY);
+
+  const aboveEscapes = aboveY < group.bounds.minY;
+  const belowEscapes = belowY > group.bounds.maxY;
+  if (!aboveEscapes && !belowEscapes) {
+    throw new Error(
+      `Deterministic closed-eye sampler cannot escape trusted eye bounds ${group.bounds.minY}-${group.bounds.maxY} inside eye band ${eyeBand.minY}-${eyeBand.maxY}.`,
+    );
+  }
+  if (!aboveEscapes) aboveY = belowY;
+  if (!belowEscapes) belowY = aboveY;
+
+  return { aboveY, belowY, margin };
 }
 
 function summarize(points) {
@@ -173,6 +214,11 @@ function blendRgb(a, b, aWeight) {
   return [0, 1, 2].map((channel) =>
     clampByte(Math.round(a[channel] * aWeight + b[channel] * (1 - aWeight))),
   );
+}
+
+function normalizedBetween(value, min, max) {
+  if (max <= min) return 0.5;
+  return clamp((value - min) / (max - min), 0, 1);
 }
 
 function luminance(rgb) {
