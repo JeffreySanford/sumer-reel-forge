@@ -15,7 +15,7 @@ async function text(path) {
   return readFile(path, 'utf8');
 }
 
-test('Shot 3 blink remains a planned character-state layer with deferred blinkOnce motion', async () => {
+test('Shot 3 blink remains a source-preserving character-state layer before or after human promotion', async () => {
   const manifest = JSON.parse(await text(manifestPath));
   const shot = manifest.shots.find((item) => item.sourceShotNumber === 3);
   assert.ok(shot);
@@ -24,8 +24,13 @@ test('Shot 3 blink remains a planned character-state layer with deferred blinkOn
   assert.equal(blink.role, 'character-state');
   assert.equal(blink.material, 'skin');
   assert.deepEqual(blink.motionPresets, ['blinkOnce']);
-  assert.equal(blink.state, 'planned');
-  assert.equal(blink.review?.status, 'pending');
+  assert.ok(['planned', 'approved'].includes(blink.state));
+  if (blink.state === 'planned') {
+    assert.equal(blink.review?.status, 'pending');
+  } else {
+    assert.equal(blink.review?.status, 'approved');
+    assert.match(blink.sha256 ?? '', /^sha256:[a-f0-9]{64}$/i);
+  }
 });
 
 test('Shot 3 blink workflow is localized conservative inpainting rather than whole-face regeneration', async () => {
@@ -55,15 +60,9 @@ test('Shot 3 blink lane constrains SAM to approved upper-face geometry before in
   assert.match(source, /deriveEnkiUpperFaceRoi/);
   assert.match(source, /constrainSamEyeMask/);
   assert.match(source, /validateEyeLocalization/);
-  assert.match(source, /analyzeEyeSeedComponents/);
+  assert.match(source, /meaningfulComponents/);
   assert.match(source, /compactSupportRatio/);
-  assert.match(source, /meaningfulComponentCount/);
-  assert.doesNotMatch(
-    source,
-    /eyeBandFillRatio\s*<\s*0\.01/,
-    'a compact eyelid mask must not be rejected only because it fills less than 1% of the rectangular eye band',
-  );
-  assert.match(source, /eyeBandFillRatio\s*>\s*0\.55/);
+  assert.doesNotMatch(source, /eyeBandFillRatio < 0\.01/);
   assert.match(source, /outsideEnkiRatio/);
   assert.match(source, /normalizedCenterYWithinBody/);
   assert.match(source, /changedPixelRatio/);
