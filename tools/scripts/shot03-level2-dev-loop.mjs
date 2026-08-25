@@ -47,23 +47,45 @@ async function main() {
     if (!classified.expected) unexpectedFailure = true;
   }
 
+  let blinkBuild = null;
+  if (options.buildBlink && !unexpectedFailure) {
+    blinkBuild = await runCaptured('node', [
+      'tools/scripts/shot03-level2-enki-blink.mjs',
+      'all',
+    ]);
+    if (blinkBuild.code !== 0) unexpectedFailure = true;
+  }
+
   const blinkCandidateReady = await hasQaPassedCandidate(BLINK_LAYER_ID);
   let preview = null;
   if (!options.skipPreview && !unexpectedFailure) {
-    const previewCommand = blinkCandidateReady
-      ? ['tools/scripts/shot03-level2-enki-blink.mjs', 'preview']
-      : ['tools/scripts/shot03-level2-rigging.mjs', 'preview'];
-    const result = await runCaptured('node', previewCommand);
-    const directory = await newestPreviewDirectory();
-    preview = {
-      ...result,
-      mode: blinkCandidateReady ? 'rigging+blink' : 'rigging-only',
-      directory,
-      videoPath: directory
-        ? join(directory, 'shot03-level2-candidate-preview.mp4')
-        : null,
-    };
-    if (result.code !== 0) unexpectedFailure = true;
+    if (blinkBuild?.code === 0 && blinkCandidateReady) {
+      const directory = await newestPreviewDirectory();
+      preview = {
+        code: 0,
+        output: blinkBuild.output,
+        mode: 'rigging+blink',
+        directory,
+        videoPath: directory
+          ? join(directory, 'shot03-level2-candidate-preview.mp4')
+          : null,
+      };
+    } else {
+      const previewCommand = blinkCandidateReady
+        ? ['tools/scripts/shot03-level2-enki-blink.mjs', 'preview']
+        : ['tools/scripts/shot03-level2-rigging.mjs', 'preview'];
+      const result = await runCaptured('node', previewCommand);
+      const directory = await newestPreviewDirectory();
+      preview = {
+        ...result,
+        mode: blinkCandidateReady ? 'rigging+blink' : 'rigging-only',
+        directory,
+        videoPath: directory
+          ? join(directory, 'shot03-level2-candidate-preview.mp4')
+          : null,
+      };
+      if (result.code !== 0) unexpectedFailure = true;
+    }
   }
 
   const milestone = results.find((item) => item.id === 'living-shot-milestone');
@@ -71,6 +93,7 @@ async function main() {
     results,
     preview,
     milestone,
+    blinkBuild,
     blinkCandidateReady,
     unexpectedFailure,
   });
@@ -78,6 +101,7 @@ async function main() {
     results,
     preview,
     milestone,
+    blinkBuild,
     blinkCandidateReady,
     unexpectedFailure,
   );
@@ -120,6 +144,7 @@ function printSummary(
   results,
   preview,
   milestone,
+  blinkBuild,
   blinkCandidateReady,
   unexpectedFailure,
 ) {
@@ -127,6 +152,14 @@ function printSummary(
   console.log('Shot 3 Level 2');
   for (const result of results.filter((item) => item.id !== 'living-shot-milestone')) {
     console.log(`${result.state === 'pass' ? '[PASS]' : '[FAIL]'} ${result.id}`);
+  }
+
+  if (blinkBuild) {
+    console.log(
+      blinkBuild.code === 0
+        ? '[PASS] blink build: localized + generated + identity-QA + combined preview'
+        : '[FAIL] blink build',
+    );
   }
 
   console.log(
@@ -166,6 +199,7 @@ function printSummary(
     for (const result of results.filter((item) => !item.expected)) {
       printFailureTail(result.output);
     }
+    if (blinkBuild && blinkBuild.code !== 0) printFailureTail(blinkBuild.output);
     if (preview && preview.code !== 0) printFailureTail(preview.output);
   }
 }
@@ -174,16 +208,20 @@ async function writeStatus({
   results,
   preview,
   milestone,
+  blinkBuild,
   blinkCandidateReady,
   unexpectedFailure,
 }) {
   await mkdir(resolve('tmp/animation-previews'), { recursive: true });
   const payload = {
-    schemaVersion: 2,
+    schemaVersion: 3,
     generatedAt: new Date().toISOString(),
     shotNumber: 3,
     milestoneState: milestone?.state ?? 'unknown',
     milestoneReasons: milestone?.reasons ?? [],
+    blinkBuild: blinkBuild
+      ? { attempted: true, pass: blinkBuild.code === 0 }
+      : { attempted: false, pass: null },
     blinkCandidateReady,
     checks: results.map((result) => ({
       id: result.id,
@@ -294,9 +332,10 @@ function runCaptured(command, args) {
 }
 
 function parseOptions(args) {
-  const result = { skipPreview: false };
+  const result = { skipPreview: false, buildBlink: false };
   for (const arg of args) {
     if (arg === '--skip-preview') result.skipPreview = true;
+    else if (arg === '--build-blink') result.buildBlink = true;
     else throw new Error(`Unknown option ${arg}`);
   }
   return result;
