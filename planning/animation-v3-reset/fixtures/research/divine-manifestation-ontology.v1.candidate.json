@@ -1,0 +1,81 @@
+{
+  "contract": "divine-manifestation-ontology:v1-candidate",
+  "status": "PLANNING_CANDIDATE_NOT_EXECUTABLE",
+  "relationships": [
+    {
+      "id": "rel:kish:zababa:patron",
+      "subjectId": "city:kish",
+      "objectId": "deity:zababa",
+      "relationship": "PATRON",
+      "provenanceClass": "DIRECT_HISTORICAL",
+      "historicalIdentityClaim": true
+    },
+    {
+      "id": "rel:kish:an:offering-attested",
+      "subjectId": "city:kish",
+      "objectId": "deity:an",
+      "relationship": "OFFERING_ATTESTED",
+      "provenanceClass": "DIRECT_HISTORICAL",
+      "historicalIdentityClaim": true
+    },
+    {
+      "id": "rel:kish:kether:an",
+      "subjectId": "city:kish",
+      "objectId": "deity:an",
+      "relationship": "SYMBOLIC_CORRESPONDENCE",
+      "symbolicNode": "KETHER",
+      "provenanceClass": "MODERN_SYMBOLIC_CORRESPONDENCE",
+      "historicalIdentityClaim": false
+    },
+    {
+      "id": "rel:shuruppak:sud:patron",
+      "subjectId": "city:shuruppak",
+      "objectId": "deity:sud-ninlil",
+      "relationship": "PATRON",
+      "provenanceClass": "DIRECT_HISTORICAL",
+      "historicalIdentityClaim": true
+    },
+    {
+      "id": "rel:shuruppak:nergal:geburah",
+      "subjectId": "city:shuruppak",
+      "objectId": "deity:nergal",
+      "relationship": "SYMBOLIC_CORRESPONDENCE",
+      "symbolicNode": "GEBURAH",
+      "provenanceClass": "PROJECT_METAPHYSICS",
+      "historicalIdentityClaim": false
+    },
+    {
+      "id": "rel:uttu:inanna:manifestation",
+      "subjectId": "deity:uttu",
+      "objectId": "deity:inanna",
+      "relationship": "MANIFESTATION",
+      "provenanceClass": "PROJECT_METAPHYSICS",
+      "historicalIdentityClaim": false,
+      "rationale": "Project developmental theology; ancient texts distinguish the names while sharing textile/thread functions."
+    },
+    {
+      "id": "rel:inanna:ishtar:syncretism",
+      "subjectId": "deity:inanna",
+      "objectId": "deity:ishtar",
+      "relationship": "HISTORICAL_SYNCRETISM",
+      "provenanceClass": "DIRECT_HISTORICAL",
+      "historicalIdentityClaim": true
+    },
+    {
+      "id": "rel:ishtar:lilith:shadow",
+      "subjectId": "deity:ishtar",
+      "objectId": "deity:lilith",
+      "relationship": "MANIFESTATION",
+      "qualifier": "SHADOW_CORRESPONDENCE",
+      "provenanceClass": "MODERN_SYMBOLIC_CORRESPONDENCE",
+      "historicalIdentityClaim": false
+    }
+  ],
+  "negativeAssertions": [
+    "PATRON does not erase other attested cult presence",
+    "SYMBOLIC_CORRESPONDENCE never implies ancient transmission",
+    "MANIFESTATION does not transitively create HISTORICAL_SYNCRETISM",
+    "Utu and Uttu are different deity IDs",
+    "Lilith may not be promoted to ancient Inanna identity without a qualifying historical source"
+  ]
+}
