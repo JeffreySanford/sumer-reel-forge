@@ -100,7 +100,7 @@ test('sparse valid SAM seed grows to a minimal eyelid patch without escaping eye
   assert.ok(analysis.bounds.maxY <= roi.eyeBand.maxY);
 });
 
-test('large painted-face eye band scales sparse semantic seeds into compact horizontal eyelid patches', () => {
+test('large painted-face eye band scales two sparse semantic seeds into compact horizontal eyelid patches', () => {
   const dimensions = { width: 941, height: 1672 };
   const body = rgba(dimensions.width, dimensions.height);
   fillAlpha(body, dimensions.width, {
@@ -144,4 +144,38 @@ test('large painted-face eye band scales sparse semantic seeds into compact hori
   );
   assert.ok(analysis.bounds.minX >= roi.eyeBand.minX);
   assert.ok(analysis.bounds.maxX <= roi.eyeBand.maxX);
+});
+
+test('large painted-face single visible-eye seed can still reach the minimum bounded edit area', () => {
+  const dimensions = { width: 941, height: 1672 };
+  const body = rgba(dimensions.width, dimensions.height);
+  fillAlpha(body, dimensions.width, {
+    minX: 350,
+    minY: 250,
+    maxX: 620,
+    maxY: 1260,
+  });
+  const roi = deriveEnkiUpperFaceRoi({ bodyRgba: body, dimensions });
+  const seed = new Uint8Array(dimensions.width * dimensions.height);
+  const x = Math.round((roi.eyeBand.minX + roi.eyeBand.maxX) / 2);
+  const y = Math.round((roi.eyeBand.minY + roi.eyeBand.maxY) / 2);
+  seed[y * dimensions.width + x] = 255;
+
+  const expanded = dilateEyeMaskWithinConstraints({
+    mask: seed,
+    bodyRgba: body,
+    dimensions,
+    eyeBand: roi.eyeBand,
+    radius: 1,
+  });
+  const fill = eyeBandFillRatio(expanded, dimensions, roi.eyeBand);
+  const analysis = analyzeGrayMask(expanded, dimensions);
+  const bandHeight = roi.eyeBand.maxY - roi.eyeBand.minY + 1;
+
+  assert.ok(fill >= 0.01, `single-eye large-scale patch remained too sparse: ${fill}`);
+  assert.ok(fill < 0.08, `single-eye large-scale patch became too broad: ${fill}`);
+  assert.ok(
+    analysis.bounds.maxY - analysis.bounds.minY + 1 < bandHeight * 0.5,
+    'single-eye patch became vertically face-like instead of eyelid-like',
+  );
 });
