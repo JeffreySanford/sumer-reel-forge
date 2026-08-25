@@ -60,7 +60,7 @@ test('Shot 3 blink lane constrains SAM to approved upper-face geometry before in
   assert.match(source, /deriveEnkiUpperFaceRoi/);
   assert.match(source, /constrainSamEyeMask/);
   assert.match(source, /validateEyeLocalization/);
-  assert.match(source, /meaningfulComponents/);
+  assert.match(source, /meaningfulComponentCount/);
   assert.match(source, /compactSupportRatio/);
   assert.doesNotMatch(source, /eyeBandFillRatio < 0\.01/);
   assert.match(source, /outsideEnkiRatio/);
