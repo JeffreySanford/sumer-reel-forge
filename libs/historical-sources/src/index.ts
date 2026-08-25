@@ -6,3 +6,5 @@ export * from './lib/visual-evidence-applications';
 export * from './lib/visual-evidence-validation';
 export * from './lib/divine-relationships';
 export * from './lib/provenance-report';
+export * from './lib/provenance-query';
+export * from './lib/provenance-registry';
