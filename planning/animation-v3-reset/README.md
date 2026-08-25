@@ -78,14 +78,20 @@ The literary/mythological source layer is anchored to the Oxford **Electronic Te
 46. [`audio-dialogue-caption-architecture.md`](./audio-dialogue-caption-architecture.md) — narration/dialogue assets, voice identity, viseme/lip-sync tracks, captions, mix buses, QA and E2E.
 47. [`cinematography-motion-language.md`](./cinematography-motion-language.md) — common camera, actor, environmental, physics and mythic motion language across runtimes.
 48. [`lighting-color-material-direction.md`](./lighting-color-material-direction.md) — painterly preservation, palette/lighting roles, hybrid runtime material ownership and visual-style testing.
+49. [`character-costume-rig-bible.md`](./character-costume-rig-bible.md) — reusable hero identity, costume/rig/voice profiles, semantic channels, contact anchors and continuity testing.
+50. [`spatial-coordinate-transform-standard.md`](./spatial-coordinate-transform-standard.md) — source/output/2D/world/physics coordinate spaces, units, pivots, anchors, transform ownership and conversion tests.
+51. [`render-color-delivery-standard.md`](./render-color-delivery-standard.md) — resolution/fps, color/alpha, codecs, frame extraction, calibration fixtures, output QC and delivery receipts.
+52. [`master-production-board.md`](./master-production-board.md) — Chapter 1–3 production-unit model, readiness dimensions, capability reuse, dependencies and blockers.
+53. [`test-id-coverage-taxonomy.md`](./test-id-coverage-taxonomy.md) — stable unit/Storybook/visual/motion/semantic/E2E/failure/performance/human test IDs and coverage mapping.
+54. [`architecture-review-checklist.md`](./architecture-review-checklist.md) — cross-document readiness review for narrative, runtime ownership, testing, render, promotion, accessibility, performance and migration.
 
 ## Current implementation status
 
 ### Phase 0 — architecture/planning
 
-**Exceptionally detailed and substantially complete.** The reset now includes software contracts, worked data examples, production workflow, historical-source and visual-period policy, testing/CI, Storybook/E2E, accessibility, observability, storage/versioning, review/promotion, audio/dialogue, cinematography and visual art-direction rules.
+**Exceptionally detailed and substantially complete.** The reset now covers software architecture and runtime boundaries, Chapters 1–3 production demand, historical source/period policy, worked Scene/City/receipt examples, character continuity, coordinates/transforms, audio/dialogue, cinematography, visual look, rendering/delivery, local/CI testing, Storybook/E2E, accessibility, observability, storage/versioning, review/promotion, production readiness and final architecture review.
 
-Planning can still evolve when implementation produces evidence, but the first implementation phases should not need chat history to rediscover architecture, testing policy or production language.
+Planning remains evidence-responsive: implementation can reopen a decision when a benchmark disproves an assumption. The purpose is not to make change impossible; it is to ensure changes are deliberate and traceable.
 
 ### Phase 1 — historical-source foundation
 
@@ -100,26 +106,19 @@ Completed first slice:
 - unit tests;
 - local Nx test/build verified green (10/10 tests on 2026-08-25).
 
-Next planned Phase 1 slices are specified in `phase-1-provenance-studio-ux.md`, `historical-visual-research-workflow.md`, and `historical-period-visual-policy.md`:
-
-- authoritative museum/archaeological visual-evidence records;
-- source validation/reporting;
-- read-only Studio provenance components;
-- Storybook coverage for adaptation/evidence/staleness/period states;
-- provenance accessibility checks;
-- provenance Playwright E2E.
+Next planned Phase 1 slices include authoritative visual-evidence records, validation/reporting, provenance Studio components, Storybook/a11y coverage and provenance E2E.
 
 No animation runtime dependency is installed as part of Phase 1.
 
 ### Phase 2 — Scene V3 foundation
 
-Not started. The implementation blueprint, worked Scene V3 example, resolved-scene/receipt examples, benchmark fixture contract, naming rules and local environment plan now exercise the proposed foundation from authoring through deterministic resolution and evidence.
+Not started. The foundation now has both abstract contract design and worked examples for scene resolution, receipts, coordinate ownership, stable IDs, fixtures, render profiles and test/evidence taxonomy.
 
 Phase 2 remains engine-independent: Rive/Pixi/Three/Rapier do not enter until the common contract/frame/runtime/scene foundation and Animation Lab exist.
 
 ### Runtime adoption
 
-Not started. Each runtime has a bounded spike playbook and common capability acceptance scorecard. No package earns production status from a feature list; it must pass its manuscript-derived benchmark, local quality gates, Storybook/render proof, negative fixtures, licensing/security review, performance budget and human visual gate where applicable.
+Not started. Each runtime has a bounded spike playbook and capability acceptance scorecard. No package earns production status from a feature list; it must pass manuscript-derived benchmark, exact-frame authority, local quality gates, Storybook/render proof, negative fixtures, licensing/security review, performance budget and human visual gate where applicable.
 
 ## External authorities and technology references
 
@@ -192,6 +191,11 @@ Not started. Each runtime has a bounded spike playbook and common capability acc
 37. **Audio/dialogue/captions are frame-bound production data, not an afterthought layered after visual animation.**
 38. **Camera and decorative motion may support but never substitute for readable primary action.**
 39. **Rive/Pixi/Three/Remotion must share one painterly visual direction; runtime defaults are not art direction.**
+40. **Character identity/costume/rig revisions are explicit continuity data rather than regenerated shot-local appearance.**
+41. **Every transform has one declared coordinate space and owner; world/physics/local conversions are explicit.**
+42. **Technical rendering preserves visual intent through pinned frame/color/alpha/output contracts.**
+43. **Production priority is driven by narrative value and reusable capability demand, not the latest failing shot.**
+44. **Test coverage is multi-layer evidence with stable IDs; a single green test percentage cannot hide missing Storybook/E2E/render/human gates.**
 
 ## Local-first quality rule
 
@@ -223,4 +227,4 @@ GPU-heavy rendered animation proofs and human review remain local/milestone evid
 
 ## Reset rule
 
-Do not resume broad Reel 1 Level 2 production until the foundation benchmarks in `benchmark-specifications.md`, `implementation-backlog.md`, `capability-acceptance-scorecards.md`, and `phase-exit-checklists.md` are green. Existing Reel 1 Scene V2 work remains valid evidence and can later migrate through a Scene V2 → Scene V3 compatibility adapter.
+Do not resume broad Reel 1 Level 2 production until the foundation benchmarks in `benchmark-specifications.md`, `implementation-backlog.md`, `capability-acceptance-scorecards.md`, `architecture-review-checklist.md`, and `phase-exit-checklists.md` are green. Existing Reel 1 Scene V2 work remains valid evidence and can later migrate through a Scene V2 → Scene V3 compatibility adapter.
