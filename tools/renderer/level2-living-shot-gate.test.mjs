@@ -202,9 +202,20 @@ function approvePlannedLayer(manifestShot, layerId) {
   layer.review = { ...layer.review, status: 'approved' };
 }
 
+function deactivateLevel2Layer(manifestShot, layerId) {
+  const layer = manifestShot.layers.find((candidate) => candidate.id === layerId);
+  assert.ok(layer, `Fixture is missing ${layerId}.`);
+  layer.state = 'planned';
+  layer.review = { ...layer.review, status: 'pending' };
+}
+
 test('Level 2 Shot 3 gate rejects a layered still treatment that lacks articulation and secondary motion', async () => {
   const { sceneShot, manifestShot } = await loadCurrentShot3State();
-  const result = evaluateLevel2Shot3(sceneShot, manifestShot);
+  const layeredStillManifestShot = structuredClone(manifestShot);
+  deactivateLevel2Layer(layeredStillManifestShot, 'shot03-enki-eyes-v1');
+  deactivateLevel2Layer(layeredStillManifestShot, 'shot03-rigging-v1');
+
+  const result = evaluateLevel2Shot3(sceneShot, layeredStillManifestShot);
 
   assert.equal(result.metrics.hasIndependentVesselMotion, true);
   assert.ok(result.metrics.nonCameraChannels >= 4);
