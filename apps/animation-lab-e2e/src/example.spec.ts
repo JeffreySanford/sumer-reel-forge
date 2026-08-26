@@ -94,9 +94,9 @@ test('renders the composed Shot 3 visual review through Pixi at exact frames', a
   await page.goto('/');
 
   await expect(page.getByRole('heading', { name: 'Enki at the Helm' })).toBeVisible();
-  await expect(page.getByText('frame 101 / 210')).toBeVisible();
+  await expect(page.getByText('frame 101 / 210', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: /BLINK_CLOSED frame 101/i })).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.getByText('PIXI RUNTIME PREVIEW')).toBeVisible();
+  await expect(page.getByText('PIXI RUNTIME PREVIEW', { exact: true })).toBeVisible();
 
   const pixiHost = page.locator('[aria-label="Pixi exact-frame renderer"]');
   await expectPixiReady(pixiHost);
@@ -140,14 +140,14 @@ test('renders the composed Shot 3 visual review through Pixi at exact frames', a
     testInfo,
   );
 
-  await expect(page.getByText('4 runtimes evaluated')).toBeVisible();
-  await expect(page.getByText('EVIDENCE BOUND')).toBeVisible();
-  await expect(page.getByText('9:16')).toBeVisible();
+  await expect(page.getByText('4 runtimes evaluated', { exact: true })).toBeVisible();
+  await expect(page.getByText('EVIDENCE BOUND', { exact: true })).toBeVisible();
+  await expect(page.getByText('9:16', { exact: true })).toBeVisible();
   await expect(page.getByText('artwork review', { exact: true })).toBeVisible();
   await expect(page.getByText('Shot 3 required layers', { exact: true })).toBeVisible();
-  await expect(page.getByText('ticker stopped')).toBeVisible();
-  await expect(page.getByText('4 checksum-bound source assets')).toBeVisible();
-  await expect(page.getByText('1 bounded exact-frame material')).toBeVisible();
+  await expect(page.getByText('ticker stopped', { exact: true })).toBeVisible();
+  await expect(page.getByText('4 checksum-bound source assets', { exact: true })).toBeVisible();
+  await expect(page.getByText('1 bounded exact-frame material', { exact: true })).toBeVisible();
 
   await expect(
     page.locator('[data-local-transform="actor-instance:enki:s03"]'),
@@ -163,7 +163,7 @@ test('renders the composed Shot 3 visual review through Pixi at exact frames', a
   ).toContainText('2d-transform');
 
   await page.getByRole('button', { name: /START frame 0/i }).click();
-  await expect(page.getByText('frame 0 / 210')).toBeVisible();
+  await expect(page.getByText('frame 0 / 210', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: /START frame 0/i })).toHaveAttribute('aria-pressed', 'true');
   await expect(canvas).toHaveAttribute('aria-label', 'Pixi runtime preview at frame 0');
   await expect(canvas).toHaveAttribute('data-pixi-frame', '0');
@@ -179,7 +179,7 @@ test('renders the composed Shot 3 visual review through Pixi at exact frames', a
   );
 
   await page.getByRole('button', { name: /END_SETTLED frame 209/i }).click();
-  await expect(page.getByText('frame 209 / 210')).toBeVisible();
+  await expect(page.getByText('frame 209 / 210', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: /END_SETTLED frame 209/i })).toHaveAttribute('aria-pressed', 'true');
   await expect(canvas).toHaveAttribute('aria-label', 'Pixi runtime preview at frame 209');
   await capturePixiFrameEvidence(
@@ -191,6 +191,6 @@ test('renders the composed Shot 3 visual review through Pixi at exact frames', a
   );
 
   await page.getByRole('tab', { name: 'QA' }).click();
-  await expect(page.getByText('QA contracts are visible, not presumed passed')).toBeVisible();
-  await expect(page.getByText('NOT_RUN')).toHaveCount(3);
+  await expect(page.getByText('QA contracts are visible, not presumed passed', { exact: true })).toBeVisible();
+  await expect(page.getByText('NOT_RUN', { exact: true })).toHaveCount(3);
 });
