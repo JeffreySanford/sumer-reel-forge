@@ -7,6 +7,11 @@ import {
 } from '@sumer-reel-forge/animation-inspection';
 import styles from './app.module.css';
 import { GOLDEN_INSPECTION_FIXTURE } from './golden-inspection.fixture';
+import { RuntimePreviewPanel } from './runtime-preview-panel';
+import {
+  GOLDEN_FAKE_RUNTIME_PREVIEW_ADAPTER,
+  type RuntimePreviewAdapter,
+} from './runtime-preview';
 
 type InspectorTab =
   | 'Properties'
@@ -35,6 +40,7 @@ const INSPECTOR_TABS: readonly InspectorTab[] = [
 export interface AppProps {
   readonly fixture?: ResolvedSceneInspectionInput;
   readonly initialFrame?: number;
+  readonly previewAdapter?: RuntimePreviewAdapter;
 }
 
 function shortHash(value: string): string {
@@ -145,6 +151,7 @@ function InspectorContent({
 export function App({
   fixture = GOLDEN_INSPECTION_FIXTURE,
   initialFrame = 101,
+  previewAdapter = GOLDEN_FAKE_RUNTIME_PREVIEW_ADAPTER,
 }: AppProps) {
   const [frame, setFrame] = useState(initialFrame);
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>('Provenance');
@@ -152,7 +159,6 @@ export function App({
     () => buildSceneInspection(fixture, frame),
     [fixture, frame],
   );
-  const activeProof = inspection.proofStates.find((state) => state.active);
 
   const applyCommand = (command: ExactFrameCommand) => {
     setFrame((current) =>
@@ -211,13 +217,11 @@ export function App({
         </aside>
 
         <section className={styles.previewColumn}>
-          <section className={styles.preview} aria-label="Inspection preview">
-            <div className={styles.previewBadge}>INSPECTION ONLY</div>
-            <div className={styles.frameNumber}>{inspection.exactFrame.frame}</div>
-            <strong>{activeProof?.id ?? 'UNNAMED FRAME'}</strong>
-            <p>No visual runtime is mounted in this foundation slice.</p>
-            <p>Resolved scene state remains the authority.</p>
-          </section>
+          <RuntimePreviewPanel
+            fixture={fixture}
+            inspection={inspection}
+            adapter={previewAdapter}
+          />
 
           <section
             className={styles.frameControl}
