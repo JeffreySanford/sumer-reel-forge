@@ -13,11 +13,30 @@ describe('Animation Lab App', () => {
     ).toBe('true');
     expect(screen.getByRole('img', { name: 'Fake runtime preview at frame 101' })).toBeTruthy();
     expect(screen.getByText('4 runtimes evaluated')).toBeTruthy();
+    const enki = container.querySelector('[data-runtime-node="actor-instance:enki:s03"]');
+    expect(enki?.getAttribute('data-local-x')).toBe('1.010');
+    expect(enki?.getAttribute('data-composed-x')).toBe('7.030');
+    expect(enki?.getAttribute('data-parent-id')).toBe('prop:stag-of-absu');
+    expect(enki?.getAttribute('data-capabilities')).toBe('2d-transform,world-state');
+  });
+
+  it('shows viewport, evidence, and parent-chain diagnostics', () => {
+    const { container } = render(<App />);
+
+    const summary = container.querySelector('[aria-label="Preview diagnostics summary"]');
+    expect(screen.getByText('EVIDENCE BOUND')).toBeTruthy();
+    expect(summary?.textContent).toContain('1080×1920');
+    expect(summary?.textContent).toContain('9:16');
+    expect(screen.getByRole('heading', { name: 'Runtime node diagnostics' })).toBeTruthy();
     expect(
-      container.querySelector('[data-runtime-node="actor-instance:enki:s03"]')?.getAttribute(
-        'data-runtime-x',
-      ),
-    ).toBe('7.030');
+      container.querySelector('[data-parent-chain-row="actor-instance:enki:s03"]')?.textContent,
+    ).toContain('prop:stag-of-absu');
+    expect(
+      container.querySelector('[data-local-transform="actor-instance:enki:s03"]')?.textContent,
+    ).toBe('(1.010, 0.000)');
+    expect(
+      container.querySelector('[data-composed-transform="actor-instance:enki:s03"]')?.textContent,
+    ).toBe('(7.030, 2.505)');
   });
 
   it('selects named proof states and re-evaluates runtime state without playback', () => {
@@ -33,6 +52,9 @@ describe('Animation Lab App', () => {
         'data-runtime-x',
       ),
     ).toBe('4.000');
+    expect(
+      container.querySelector('[data-composed-transform="actor-instance:enki:s03"]')?.textContent,
+    ).toBe('(4.000, 2.000)');
   });
 
   it('supports exact-frame keyboard stepping', () => {

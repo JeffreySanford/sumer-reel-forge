@@ -12,6 +12,7 @@ import {
 } from '@sumer-reel-forge/animation-runtime';
 
 export type RuntimePreviewNodeKind = 'environment' | 'prop' | 'actor';
+export type RuntimePreviewEvidenceStatus = 'BOUND' | 'STALE';
 
 export interface RuntimePreviewNode {
   readonly id: string;
@@ -19,10 +20,33 @@ export interface RuntimePreviewNode {
   readonly kind: RuntimePreviewNodeKind;
   readonly runtimeId: string;
   readonly definitionId: string;
+  /** Composed preview-space transform. Kept for existing consumers. */
   readonly x: number;
   readonly y: number;
   readonly opacity: number;
+  readonly localX: number;
+  readonly localY: number;
+  readonly localOpacity: number;
+  readonly parentId?: string;
+  readonly parentChain: readonly string[];
+  readonly capabilities: readonly string[];
   readonly proofState?: string;
+}
+
+export interface RuntimePreviewViewport {
+  readonly width: number;
+  readonly height: number;
+  readonly aspectRatio: number;
+  readonly aspectRatioLabel: string;
+}
+
+export interface RuntimePreviewEvidence {
+  readonly status: RuntimePreviewEvidenceStatus;
+  readonly sourceSceneHash: string;
+  readonly resolvedSceneHash: string;
+  readonly historicalSourceCount: number;
+  readonly visualEvidenceCount: number;
+  readonly assetCount: number;
 }
 
 export interface RuntimePreviewModel {
@@ -31,6 +55,8 @@ export interface RuntimePreviewModel {
   readonly proofState?: string;
   readonly evaluatedRuntimeCount: number;
   readonly nodes: readonly RuntimePreviewNode[];
+  readonly viewport?: RuntimePreviewViewport;
+  readonly evidence?: RuntimePreviewEvidence;
 }
 
 export interface RuntimePreviewInput {
@@ -44,6 +70,24 @@ export interface RuntimePreviewAdapter {
 }
 
 type UnknownRecord = Record<string, unknown>;
+
+type NodeRuntimeState = {
+  readonly state: RuntimeFrameState;
+  readonly runtimeId: string;
+};
+
+type PositionedState = {
+  readonly x: number;
+  readonly y: number;
+  readonly opacity: number;
+};
+
+type ComposedNodeState = {
+  readonly local: PositionedState;
+  readonly composed: PositionedState;
+  readonly parentId?: string;
+  readonly parentChain: readonly string[];
+};
 
 const DEFAULT_FAKE_DEFINITIONS: Readonly<Record<string, FakeRuntimeDefinition>> = {
   'runtime-def:camera:foundation': {
@@ -130,16 +174,99 @@ function frameContext(input: RuntimePreviewInput): RuntimeFrameContext {
   };
 }
 
-function statePosition(state: RuntimeFrameState): {
-  readonly x: number;
-  readonly y: number;
-  readonly opacity: number;
-} {
+function statePosition(state: RuntimeFrameState): PositionedState {
   return {
     x: finiteNumber(state.values['x'], 0),
     y: finiteNumber(state.values['y'], 0),
     opacity: finiteNumber(state.values['opacity'], 1),
   };
+}
+
+function greatestCommonDivisor(left: number, right: number): number {
+  let a = Math.abs(Math.trunc(left));
+  let b = Math.abs(Math.trunc(right));
+  while (b !== 0) {
+    const remainder = a % b;
+    a = b;
+    b = remainder;
+  }
+  return a || 1;
+}
+
+function viewportFor(fixture: ResolvedSceneInspectionInput): RuntimePreviewViewport {
+  const divisor = greatestCommonDivisor(fixture.frame.width, fixture.frame.height);
+  return Object.freeze({
+    width: fixture.frame.width,
+    height: fixture.frame.height,
+    aspectRatio: fixture.frame.width / fixture.frame.height,
+    aspectRatioLabel: `${fixture.frame.width / divisor}:${fixture.frame.height / divisor}`,
+  });
+}
+
+function evidenceFor(input: RuntimePreviewInput): RuntimePreviewEvidence {
+  const sourceBound =
+    input.fixture.sourceSceneHash === input.inspection.diagnostics.sourceSceneHash;
+  const resolvedBound =
+    input.fixture.resolvedSceneHash === input.inspection.diagnostics.resolvedSceneHash;
+  return Object.freeze({
+    status: sourceBound && resolvedBound ? 'BOUND' : 'STALE',
+    sourceSceneHash: input.fixture.sourceSceneHash,
+    resolvedSceneHash: input.fixture.resolvedSceneHash,
+    historicalSourceCount: input.fixture.historicalSources.length,
+    visualEvidenceCount: input.fixture.visualEvidence.length,
+    assetCount: input.fixture.assets.length,
+  });
+}
+
+function composeNodeState(
+  nodeId: string,
+  nodeState: ReadonlyMap<string, NodeRuntimeState>,
+  parentIds: ReadonlyMap<string, string>,
+  cache: Map<string, ComposedNodeState>,
+  visiting: Set<string>,
+): ComposedNodeState {
+  const cached = cache.get(nodeId);
+  if (cached) return cached;
+
+  if (visiting.has(nodeId)) {
+    throw new Error(`Runtime preview parent cycle includes ${nodeId}.`);
+  }
+
+  const entry = nodeState.get(nodeId);
+  if (!entry) {
+    throw new Error(`Runtime preview node ${nodeId} has no evaluated runtime state.`);
+  }
+
+  visiting.add(nodeId);
+  const local = statePosition(entry.state);
+  const parentId = parentIds.get(nodeId);
+  let composed: PositionedState = local;
+  let parentChain: readonly string[] = [];
+
+  if (parentId) {
+    if (!nodeState.has(parentId)) {
+      throw new Error(
+        `Runtime preview parent ${parentId} for ${nodeId} has no evaluated runtime state.`,
+      );
+    }
+    const parent = composeNodeState(parentId, nodeState, parentIds, cache, visiting);
+    composed = {
+      x: local.x + parent.composed.x,
+      y: local.y + parent.composed.y,
+      opacity: Math.min(1, Math.max(0, local.opacity * parent.composed.opacity)),
+    };
+    parentChain = Object.freeze([parentId, ...parent.parentChain]);
+  }
+
+  visiting.delete(nodeId);
+  const result = Object.freeze({
+    local,
+    composed,
+    ...(parentId ? { parentId } : {}),
+    parentChain,
+  });
+  cache.set(nodeId, result);
+  return result;
 }
 
 export class FakeRuntimePreviewAdapter implements RuntimePreviewAdapter {
@@ -155,6 +282,7 @@ export class FakeRuntimePreviewAdapter implements RuntimePreviewAdapter {
     const context = frameContext(input);
     const statesByRuntimeId = new Map<string, RuntimeFrameState>();
     const definitionsByRuntimeId = new Map<string, string>();
+    const capabilitiesByRuntimeId = new Map<string, readonly string[]>();
 
     for (const binding of input.fixture.runtimes) {
       if (binding.runtime !== this.runtime.type || binding.version !== this.runtime.version) {
@@ -179,13 +307,11 @@ export class FakeRuntimePreviewAdapter implements RuntimePreviewAdapter {
         assertDeterministicEvaluation(this.runtime, prepared, context),
       );
       definitionsByRuntimeId.set(binding.id, binding.definitionId);
+      capabilitiesByRuntimeId.set(binding.id, Object.freeze([...binding.capabilities]));
     }
 
     const parentIds = readParentIds(input.fixture);
-    const nodeState = new Map<
-      string,
-      { readonly state: RuntimeFrameState; readonly runtimeId: string }
-    >();
+    const nodeState = new Map<string, NodeRuntimeState>();
 
     for (const group of input.inspection.hierarchy) {
       for (const node of group.nodes) {
@@ -201,6 +327,7 @@ export class FakeRuntimePreviewAdapter implements RuntimePreviewAdapter {
       ['actor', 'actors'],
     ]);
     const nodes: RuntimePreviewNode[] = [];
+    const composedCache = new Map<string, ComposedNodeState>();
 
     for (const [kind, groupId] of drawableGroups) {
       const group = input.inspection.hierarchy.find((item) => item.id === groupId);
@@ -209,21 +336,28 @@ export class FakeRuntimePreviewAdapter implements RuntimePreviewAdapter {
         if (!node.runtimeId) continue;
         const entry = nodeState.get(node.id);
         if (!entry) continue;
-        const local = statePosition(entry.state);
-        const parentId = parentIds.get(node.id);
-        const parentEntry = parentId ? nodeState.get(parentId) : undefined;
-        const parent = parentEntry
-          ? statePosition(parentEntry.state)
-          : { x: 0, y: 0, opacity: 1 };
+        const transform = composeNodeState(
+          node.id,
+          nodeState,
+          parentIds,
+          composedCache,
+          new Set<string>(),
+        );
         nodes.push({
           id: node.id,
           label: node.label,
           kind,
           runtimeId: entry.runtimeId,
           definitionId: definitionsByRuntimeId.get(entry.runtimeId) ?? entry.state.definitionId,
-          x: local.x + parent.x,
-          y: local.y + parent.y,
-          opacity: Math.min(1, Math.max(0, local.opacity * parent.opacity)),
+          x: transform.composed.x,
+          y: transform.composed.y,
+          opacity: transform.composed.opacity,
+          localX: transform.local.x,
+          localY: transform.local.y,
+          localOpacity: transform.local.opacity,
+          ...(transform.parentId ? { parentId: transform.parentId } : {}),
+          parentChain: transform.parentChain,
+          capabilities: capabilitiesByRuntimeId.get(entry.runtimeId) ?? [],
           ...(entry.state.proofState ? { proofState: entry.state.proofState } : {}),
         });
       }
@@ -236,6 +370,8 @@ export class FakeRuntimePreviewAdapter implements RuntimePreviewAdapter {
       ...(activeProofId ? { proofState: activeProofId } : {}),
       evaluatedRuntimeCount: statesByRuntimeId.size,
       nodes: Object.freeze(nodes),
+      viewport: viewportFor(input.fixture),
+      evidence: evidenceFor(input),
     });
   }
 }

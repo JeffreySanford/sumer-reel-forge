@@ -1,6 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { App } from './app';
-import type { RuntimePreviewAdapter } from './runtime-preview';
+import {
+  GOLDEN_FAKE_RUNTIME_PREVIEW_ADAPTER,
+  type RuntimePreviewAdapter,
+} from './runtime-preview';
 
 const meta: Meta<typeof App> = {
   component: App,
@@ -56,4 +59,24 @@ const emptyAdapter: RuntimePreviewAdapter = {
 
 export const RuntimeEmpty: Story = {
   render: () => <App previewAdapter={emptyAdapter} />,
+};
+
+const staleEvidenceAdapter: RuntimePreviewAdapter = {
+  id: 'storybook-stale-evidence@1',
+  evaluate(input) {
+    const model = GOLDEN_FAKE_RUNTIME_PREVIEW_ADAPTER.evaluate(input);
+    if (!model.evidence) return model;
+    return {
+      ...model,
+      adapterId: this.id,
+      evidence: {
+        ...model.evidence,
+        status: 'STALE',
+      },
+    };
+  },
+};
+
+export const RuntimeStaleEvidence: Story = {
+  render: () => <App previewAdapter={staleEvidenceAdapter} />,
 };
