@@ -244,6 +244,7 @@ export function App({
               <button
                 key={proof.id}
                 type="button"
+                aria-label={`${proof.id} frame ${proof.frame}`}
                 aria-pressed={proof.active}
                 onClick={() => setFrame(proof.frame)}
               >
