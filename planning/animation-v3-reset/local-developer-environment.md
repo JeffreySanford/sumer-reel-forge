@@ -212,13 +212,23 @@ Never kill arbitrary machine-wide processes merely because they use Node.
 
 ## 14. Animation Lab Playwright while `start:all` is running
 
-Animation Lab Playwright uses `reuseExistingServer: true`.
+Animation Lab Playwright uses `reuseExistingServer: true` and its own endpoint variable:
 
-With the workstation already running on 4300, the E2E suite may reuse that server instead of spawning another preview server.
+```text
+ANIMATION_LAB_BASE_URL=http://localhost:4300
+```
 
-This supports the normal interactive workflow.
+The Angular Studio continues to own the generic frontend variable:
 
-If a future gate specifically requires production-preview-bundle behavior, run it on an explicit alternate port/`BASE_URL` or disable reuse for that gate. Do not destabilize the normal 4300 workstation contract.
+```text
+BASE_URL=http://localhost:4200
+```
+
+These must remain separate. Nx can load workspace `.env` values into E2E execution; allowing Animation Lab to read the generic `BASE_URL` would silently redirect Lab tests to Angular Studio on 4200 even while the Lab preview server is correctly listening on 4300.
+
+With the workstation already running on 4300, the E2E suite may reuse that server instead of spawning another preview server. This supports the normal interactive workflow.
+
+If a future gate specifically requires production-preview-bundle behavior, run it on an explicit alternate port/`ANIMATION_LAB_BASE_URL` or disable reuse for that gate. Do not destabilize the normal 4300 workstation contract.
 
 ## 15. Environment configuration
 
@@ -229,6 +239,13 @@ REQUIRED_CORE
 OPTIONAL_LOCAL_SERVICE
 TEST_ONLY
 SECRET
+```
+
+Current frontend E2E ownership:
+
+```text
+BASE_URL                 Angular Studio Playwright endpoint, default 4200
+ANIMATION_LAB_BASE_URL   Animation Lab Playwright endpoint, default 4300
 ```
 
 Do not put secrets into Scene V3, receipts or logs.
@@ -589,15 +606,18 @@ Future Studio workflow execution must use typed/allowlisted API methods or jobs 
 
 ## 40. Immediate local environment exit gate
 
-Before the current Pixi/startup branch merges:
+Before the current workstation-startup branch merges:
 
 - [x] Animation Lab configured for stable port 4300;
-- [x] Playwright aligned to 4300;
+- [x] Playwright web server aligned to 4300;
+- [x] Animation Lab E2E uses `ANIMATION_LAB_BASE_URL` rather than Angular Studio `BASE_URL`;
+- [x] env templates document 4200 Studio / 4300 Lab ownership separately;
 - [x] `start:all` code launches and waits for Animation Lab;
 - [x] Windows cleanup includes 4300/Animation Lab;
+- [x] source-level workstation regression tests cover the 3000/4200/4300 contract;
+- [ ] focused Lab E2E is green locally after the endpoint-variable split;
 - [ ] local `pnpm start:all` reaches API 3000, Studio 4200 and Lab 4300;
-- [ ] Ctrl+C releases all three repo-owned dev listeners;
-- [ ] focused Lab lint/test/E2E remain green after the port move.
+- [ ] Ctrl+C releases all three repo-owned dev listeners.
 
 Longer-term environment work still includes:
 
