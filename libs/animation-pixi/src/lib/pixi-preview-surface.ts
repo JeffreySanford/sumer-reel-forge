@@ -2,6 +2,15 @@ export const PIXI_PREVIEW_RENDER_MODE = 'manual-exact-frame' as const;
 
 export type PixiRenderNodeKind = 'environment' | 'prop' | 'actor';
 
+export interface PixiSourceAsset {
+  readonly id: string;
+  readonly role: string;
+  readonly url: string;
+  readonly sha256: string;
+  readonly width: number;
+  readonly height: number;
+}
+
 export interface PixiRenderNode {
   readonly id: string;
   readonly label: string;
@@ -18,6 +27,7 @@ export interface PixiRenderFrame {
   readonly height: number;
   readonly nodeCount: number;
   readonly nodes: readonly PixiRenderNode[];
+  readonly sourceAssets: readonly PixiSourceAsset[];
 }
 
 export interface PixiPreviewApplicationOptions {
@@ -37,6 +47,7 @@ export interface PixiPreviewSurface {
   readonly width: number;
   readonly height: number;
   readonly renderMode: typeof PIXI_PREVIEW_RENDER_MODE;
+  readonly sourceAssetCount: number;
   render(frame: PixiRenderFrame): void;
   destroy(): void;
 }
@@ -66,6 +77,22 @@ type PixiGraphicsLike = DestroyableChild & {
 
 type PixiGraphicsConstructor = new () => PixiGraphicsLike;
 
+type PixiTextureLike = DestroyableChild;
+
+type PixiTextureFactory = {
+  from(source: HTMLImageElement): PixiTextureLike;
+};
+
+type PixiSpriteLike = DestroyableChild & {
+  alpha: number;
+  width: number;
+  height: number;
+  x: number;
+  y: number;
+};
+
+type PixiSpriteConstructor = new (texture: PixiTextureLike) => PixiSpriteLike;
+
 type PixiStageLike = {
   addChild(...children: DestroyableChild[]): unknown;
   removeChildren(): DestroyableChild[];
@@ -84,6 +111,12 @@ type PixiApplicationLike = {
 
 type PixiApplicationConstructor = new () => PixiApplicationLike;
 
+type PreparedSourceAsset = {
+  readonly asset: PixiSourceAsset;
+  readonly normalizedSha256: string;
+  readonly texture: PixiTextureLike;
+};
+
 function assertViewportDimension(value: number, label: string): number {
   if (!Number.isFinite(value) || value <= 0 || !Number.isInteger(value)) {
     throw new Error(`Pixi preview ${label} must be a positive integer.`);
@@ -96,6 +129,14 @@ function assertFrameNumber(value: number): number {
     throw new Error('Pixi preview frame must be a non-negative integer.');
   }
   return value;
+}
+
+export function normalizePixiSourceAssetSha256(value: string): string {
+  const normalized = value.startsWith('sha256:') ? value.slice('sha256:'.length) : value;
+  if (!/^[a-f0-9]{64}$/i.test(normalized)) {
+    throw new Error('Pixi source asset sha256 must contain exactly 64 hexadecimal characters.');
+  }
+  return normalized.toLowerCase();
 }
 
 export function buildPixiApplicationOptions(
@@ -123,7 +164,94 @@ function destroyStageChildren(stage: PixiStageLike): void {
   for (const child of stage.removeChildren()) child.destroy();
 }
 
-function assertCompatibleFrame(frame: PixiRenderFrame, width: number, height: number): void {
+function bytesToHex(bytes: ArrayBuffer): string {
+  return Array.from(new Uint8Array(bytes), (value) => value.toString(16).padStart(2, '0')).join('');
+}
+
+async function verifySourceAssetBytes(asset: PixiSourceAsset, bytes: ArrayBuffer): Promise<string> {
+  if (!globalThis.crypto?.subtle) {
+    throw new Error(`Pixi source asset ${asset.id} cannot be verified because Web Crypto is unavailable.`);
+  }
+  const expected = normalizePixiSourceAssetSha256(asset.sha256);
+  const digest = await globalThis.crypto.subtle.digest('SHA-256', bytes);
+  const actual = bytesToHex(digest);
+  if (actual !== expected) {
+    throw new Error(
+      `Pixi source asset ${asset.id} checksum mismatch: expected ${expected}, received ${actual}.`,
+    );
+  }
+  return actual;
+}
+
+function assertSourceAssetRegistration(
+  asset: PixiSourceAsset,
+  width: number,
+  height: number,
+): void {
+  if (!asset.id.trim()) throw new Error('Pixi source asset id must not be empty.');
+  if (!asset.url.trim()) throw new Error(`Pixi source asset ${asset.id} URL must not be empty.`);
+  normalizePixiSourceAssetSha256(asset.sha256);
+  if (asset.width !== width || asset.height !== height) {
+    throw new Error(
+      `Pixi source asset ${asset.id} registration ${asset.width}x${asset.height} does not match surface ${width}x${height}.`,
+    );
+  }
+}
+
+async function decodeVerifiedSourceAsset(
+  asset: PixiSourceAsset,
+  Texture: PixiTextureFactory,
+  width: number,
+  height: number,
+): Promise<PreparedSourceAsset> {
+  assertSourceAssetRegistration(asset, width, height);
+
+  const response = await fetch(asset.url, { cache: 'no-store' });
+  if (!response.ok) {
+    throw new Error(`Pixi source asset ${asset.id} failed to load with HTTP ${response.status}.`);
+  }
+
+  const bytes = await response.arrayBuffer();
+  const normalizedSha256 = await verifySourceAssetBytes(asset, bytes);
+  const blobUrl = URL.createObjectURL(
+    new Blob([bytes], { type: response.headers.get('content-type') ?? 'image/png' }),
+  );
+
+  try {
+    const image = new Image();
+    const loaded = new Promise<void>((resolve, reject) => {
+      image.addEventListener('load', () => resolve(), { once: true });
+      image.addEventListener(
+        'error',
+        () => reject(new Error(`Pixi source asset ${asset.id} could not be decoded as an image.`)),
+        { once: true },
+      );
+    });
+    image.src = blobUrl;
+    await loaded;
+
+    if (image.naturalWidth !== asset.width || image.naturalHeight !== asset.height) {
+      throw new Error(
+        `Pixi source asset ${asset.id} decoded as ${image.naturalWidth}x${image.naturalHeight}, expected ${asset.width}x${asset.height}.`,
+      );
+    }
+
+    return Object.freeze({
+      asset: Object.freeze({ ...asset }),
+      normalizedSha256,
+      texture: Texture.from(image),
+    });
+  } finally {
+    URL.revokeObjectURL(blobUrl);
+  }
+}
+
+function assertCompatibleFrame(
+  frame: PixiRenderFrame,
+  width: number,
+  height: number,
+  preparedSourceAssets: readonly PreparedSourceAsset[],
+): void {
   assertFrameNumber(frame.frame);
   if (frame.width !== width || frame.height !== height) {
     throw new Error(
@@ -135,14 +263,43 @@ function assertCompatibleFrame(frame: PixiRenderFrame, width: number, height: nu
       `Pixi preview frame nodeCount ${frame.nodeCount} does not match ${frame.nodes.length} nodes.`,
     );
   }
+  if (frame.sourceAssets.length !== preparedSourceAssets.length) {
+    throw new Error(
+      `Pixi preview frame source asset count ${frame.sourceAssets.length} does not match prepared count ${preparedSourceAssets.length}.`,
+    );
+  }
+  frame.sourceAssets.forEach((asset, index) => {
+    const prepared = preparedSourceAssets[index];
+    if (
+      !prepared ||
+      asset.id !== prepared.asset.id ||
+      normalizePixiSourceAssetSha256(asset.sha256) !== prepared.normalizedSha256 ||
+      asset.width !== prepared.asset.width ||
+      asset.height !== prepared.asset.height
+    ) {
+      throw new Error(`Pixi preview frame source asset ${asset.id} does not match prepared identity.`);
+    }
+  });
 }
 
 function drawFrame(
   app: PixiApplicationLike,
   Graphics: PixiGraphicsConstructor,
+  Sprite: PixiSpriteConstructor,
   frame: PixiRenderFrame,
+  preparedSourceAssets: readonly PreparedSourceAsset[],
 ): void {
   destroyStageChildren(app.stage);
+
+  for (const prepared of preparedSourceAssets) {
+    const sprite = new Sprite(prepared.texture);
+    sprite.x = 0;
+    sprite.y = 0;
+    sprite.width = frame.width;
+    sprite.height = frame.height;
+    sprite.alpha = 1;
+    app.stage.addChild(sprite);
+  }
 
   const camera = new Graphics()
     .rect(frame.width * 0.04, frame.height * 0.025, frame.width * 0.92, frame.height * 0.95)
@@ -212,20 +369,47 @@ function drawFrame(
 export async function createPixiPreviewSurface(
   width: number,
   height: number,
+  sourceAssets: readonly PixiSourceAsset[] = [],
 ): Promise<PixiPreviewSurface> {
   const options = buildPixiApplicationOptions(width, height);
   const pixi = await import('pixi.js');
   const Application = pixi.Application as unknown as PixiApplicationConstructor;
   const Graphics = pixi.Graphics as unknown as PixiGraphicsConstructor;
+  const Sprite = pixi.Sprite as unknown as PixiSpriteConstructor;
+  const Texture = pixi.Texture as unknown as PixiTextureFactory;
   const app = new Application();
   await app.init(options);
   app.ticker.stop();
+
+  const preparedSourceAssets: PreparedSourceAsset[] = [];
+  const seenIds = new Set<string>();
+  try {
+    for (const asset of sourceAssets) {
+      if (seenIds.has(asset.id)) throw new Error(`Duplicate Pixi source asset id ${asset.id}.`);
+      seenIds.add(asset.id);
+      preparedSourceAssets.push(await decodeVerifiedSourceAsset(asset, Texture, options.width, options.height));
+    }
+  } catch (error) {
+    for (const prepared of preparedSourceAssets) prepared.texture.destroy();
+    app.destroy(true, { children: true });
+    throw error;
+  }
 
   app.canvas.setAttribute('role', 'img');
   app.canvas.setAttribute('data-pixi-canvas', 'true');
   app.canvas.setAttribute('data-pixi-render-mode', PIXI_PREVIEW_RENDER_MODE);
   app.canvas.setAttribute('data-viewport-width', String(options.width));
   app.canvas.setAttribute('data-viewport-height', String(options.height));
+  app.canvas.setAttribute('data-pixi-source-asset-count', String(preparedSourceAssets.length));
+  app.canvas.setAttribute(
+    'data-pixi-source-asset-ids',
+    preparedSourceAssets.map((prepared) => prepared.asset.id).join(','),
+  );
+  app.canvas.setAttribute(
+    'data-pixi-source-asset-sha256',
+    preparedSourceAssets.map((prepared) => `sha256:${prepared.normalizedSha256}`).join(','),
+  );
+  app.canvas.setAttribute('data-pixi-source-asset-verification', 'verified');
 
   let destroyed = false;
 
@@ -234,14 +418,17 @@ export async function createPixiPreviewSurface(
     width: options.width,
     height: options.height,
     renderMode: PIXI_PREVIEW_RENDER_MODE,
+    sourceAssetCount: preparedSourceAssets.length,
     render(frame: PixiRenderFrame): void {
       if (destroyed) throw new Error('Pixi preview surface is already destroyed.');
-      assertCompatibleFrame(frame, options.width, options.height);
-      drawFrame(app, Graphics, frame);
+      assertCompatibleFrame(frame, options.width, options.height, preparedSourceAssets);
+      drawFrame(app, Graphics, Sprite, frame, preparedSourceAssets);
     },
     destroy(): void {
       if (destroyed) return;
       destroyed = true;
+      destroyStageChildren(app.stage);
+      for (const prepared of preparedSourceAssets) prepared.texture.destroy();
       app.destroy(true, { children: true });
     },
   });
