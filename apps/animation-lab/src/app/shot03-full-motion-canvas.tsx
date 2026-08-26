@@ -14,6 +14,12 @@ import {
   type Shot03RecoveryBlinkProfile,
 } from './shot03-recovery-blink-motion';
 import {
+  buildShot03RecoveryBreathMotionState,
+  SHOT03_RECOVERY_BREATH_ACTIVE_PROFILE,
+  SHOT03_RECOVERY_BREATH_CONTROL_PROFILE,
+  type Shot03RecoveryBreathProfile,
+} from './shot03-recovery-breath-motion';
+import {
   buildShot03RecoveryCharacterMotionState,
   SHOT03_RECOVERY_CHARACTER_ACTIVE_PROFILE,
   SHOT03_RECOVERY_CHARACTER_CONTROL_PROFILE,
@@ -41,6 +47,7 @@ type Shot03MotionProfile =
   | typeof SHOT03_SECONDARY_ISOLATION_PROFILE
   | Shot03RecoveryMotionProfile
   | Shot03RecoveryBlinkProfile
+  | Shot03RecoveryBreathProfile
   | Shot03RecoveryCharacterProfile;
 
 function resolveMotionProfile(): Shot03MotionProfile {
@@ -62,6 +69,12 @@ function resolveMotionProfile(): Shot03MotionProfile {
   }
   if (configured === SHOT03_RECOVERY_BLINK_CONTROL_PROFILE) {
     return SHOT03_RECOVERY_BLINK_CONTROL_PROFILE;
+  }
+  if (configured === SHOT03_RECOVERY_BREATH_ACTIVE_PROFILE) {
+    return SHOT03_RECOVERY_BREATH_ACTIVE_PROFILE;
+  }
+  if (configured === SHOT03_RECOVERY_BREATH_CONTROL_PROFILE) {
+    return SHOT03_RECOVERY_BREATH_CONTROL_PROFILE;
   }
   if (configured === SHOT03_RECOVERY_CHARACTER_ACTIVE_PROFILE) {
     return SHOT03_RECOVERY_CHARACTER_ACTIVE_PROFILE;
@@ -90,6 +103,15 @@ function isRecoveryBlinkProfile(
   );
 }
 
+function isRecoveryBreathProfile(
+  profile: Shot03MotionProfile,
+): profile is Shot03RecoveryBreathProfile {
+  return (
+    profile === SHOT03_RECOVERY_BREATH_ACTIVE_PROFILE ||
+    profile === SHOT03_RECOVERY_BREATH_CONTROL_PROFILE
+  );
+}
+
 function isRecoveryCharacterProfile(
   profile: Shot03MotionProfile,
 ): profile is Shot03RecoveryCharacterProfile {
@@ -103,6 +125,7 @@ function isRecoveryAssetProfile(profile: Shot03MotionProfile): boolean {
   return (
     isRecoveryMotionProfile(profile) ||
     isRecoveryBlinkProfile(profile) ||
+    isRecoveryBreathProfile(profile) ||
     isRecoveryCharacterProfile(profile)
   );
 }
@@ -171,6 +194,14 @@ export function Shot03FullMotionCanvas({
     }
     if (isRecoveryBlinkProfile(motionProfile)) {
       return buildShot03RecoveryBlinkMotionState(
+        model.frame,
+        fps,
+        durationFrames,
+        motionProfile,
+      );
+    }
+    if (isRecoveryBreathProfile(motionProfile)) {
+      return buildShot03RecoveryBreathMotionState(
         model.frame,
         fps,
         durationFrames,
@@ -291,6 +322,8 @@ export function Shot03FullMotionCanvas({
   const cameraOnly = motionProfile === SHOT03_RECOVERY_CAMERA_ONLY_PROFILE;
   const blinkReview = isRecoveryBlinkProfile(motionProfile);
   const blinkControl = motionProfile === SHOT03_RECOVERY_BLINK_CONTROL_PROFILE;
+  const breathReview = isRecoveryBreathProfile(motionProfile);
+  const breathControl = motionProfile === SHOT03_RECOVERY_BREATH_CONTROL_PROFILE;
   const characterReview = isRecoveryCharacterProfile(motionProfile);
   const characterControl =
     motionProfile === SHOT03_RECOVERY_CHARACTER_CONTROL_PROFILE;
@@ -298,6 +331,10 @@ export function Shot03FullMotionCanvas({
     'character' in motion
       ? motion.character
       : { x: 0, y: 0, rotationDegrees: 0, lagSeconds: 0 };
+  const breath =
+    'breath' in motion
+      ? motion.breath
+      : { amount: 0, scaleX: 1, scaleY: 1, cycleFrames: 0 };
   const hiddenRecoveryLayers = blinkReview
     ? 'shot03-water-v1,shot03-rigging-v1'
     : recovery
@@ -315,27 +352,32 @@ export function Shot03FullMotionCanvas({
         data-pixi-frame={frame.frame}
         data-pixi-source-asset-count={frame.sourceAssets.length}
         data-pixi-review-mode={
-          characterReview
-            ? 'recovered-character-motion'
-            : blinkReview
-              ? 'recovered-blink-motion'
-              : recovery
-                ? 'recovered-primary-motion'
-                : 'full-motion'
+          breathReview
+            ? 'recovered-breath-motion'
+            : characterReview
+              ? 'recovered-character-motion'
+              : blinkReview
+                ? 'recovered-blink-motion'
+                : recovery
+                  ? 'recovered-primary-motion'
+                  : 'full-motion'
         }
         data-pixi-review-composition={
-          characterReview
-            ? 'shot03-recovered-primary-plus-character-settle'
-            : blinkReview
-              ? 'shot03-recovered-primary-plus-blink'
-              : recovery
-                ? 'shot03-recovered-primary-layers'
-                : 'shot03-full-motion-layers'
+          breathReview
+            ? 'shot03-recovered-character-plus-breath'
+            : characterReview
+              ? 'shot03-recovered-primary-plus-character-settle'
+              : blinkReview
+                ? 'shot03-recovered-primary-plus-blink'
+                : recovery
+                  ? 'shot03-recovered-primary-layers'
+                  : 'shot03-full-motion-layers'
         }
         data-shot03-motion-profile={motionProfile}
         data-shot03-camera={`x=${motion.camera.x.toFixed(3)},y=${motion.camera.y.toFixed(3)},scale=${motion.camera.scale.toFixed(6)}`}
         data-shot03-vessel={`heave=${motion.vessel.heaveY.toFixed(3)},roll=${motion.vessel.rollDegrees.toFixed(6)}`}
         data-shot03-enki-local={`x=${character.x.toFixed(3)},y=${character.y.toFixed(3)},rot=${character.rotationDegrees.toFixed(6)},lag=${character.lagSeconds.toFixed(3)}`}
+        data-shot03-breath={`amount=${breath.amount.toFixed(6)},scaleX=${breath.scaleX.toFixed(6)},scaleY=${breath.scaleY.toFixed(6)},cycle=${breath.cycleFrames}`}
         data-shot03-rigging={`x=${motion.rigging.x.toFixed(3)},y=${motion.rigging.y.toFixed(3)},rot=${motion.rigging.rotationDegrees.toFixed(6)},lag=${motion.rigging.lagSeconds.toFixed(3)}`}
         data-shot03-blink-opacity={motion.blinkOpacity.toFixed(3)}
         data-shot03-recovery-hidden-layers={hiddenRecoveryLayers}
@@ -343,71 +385,85 @@ export function Shot03FullMotionCanvas({
           recovery ? (recoveryEyeCandidate ? 'candidate' : 'canonical') : ''
         }
         data-shot03-recovery-control={
-          characterReview
-            ? characterControl
-              ? 'character-control'
-              : 'character-active'
-            : cameraOnly
-              ? 'camera-only'
-              : blinkReview
-                ? blinkControl
-                  ? 'blink-control'
-                  : 'blink-active'
-                : recovery
-                  ? 'active'
-                  : ''
+          breathReview
+            ? breathControl
+              ? 'breath-control'
+              : 'breath-active'
+            : characterReview
+              ? characterControl
+                ? 'character-control'
+                : 'character-active'
+              : cameraOnly
+                ? 'camera-only'
+                : blinkReview
+                  ? blinkControl
+                    ? 'blink-control'
+                    : 'blink-active'
+                  : recovery
+                    ? 'active'
+                    : ''
         }
         aria-label="Pixi Shot 3 full-motion renderer"
       />
       <div className={previewStyles.pixiStatus} aria-live="polite">
         <strong>PIXI {status}</strong>
         <span>
-          {characterReview
-            ? characterControl
-              ? 'recovered character-motion matched control'
-              : 'recovered primary motion + Enki counter-sway review'
-            : blinkReview
-              ? blinkControl
-                ? 'recovered blink-disabled matched control'
-                : 'recovered primary motion + blink review'
-              : recovery
-                ? cameraOnly
-                  ? 'recovered primary-layer camera-only control'
-                  : 'recovered primary-layer motion review'
-                : isolation
-                  ? 'secondary-motion isolation review'
-                  : 'full 7-second motion review'}
+          {breathReview
+            ? breathControl
+              ? 'accepted Enki counter-sway matched breathing control'
+              : 'accepted Enki counter-sway + breathe-calm review'
+            : characterReview
+              ? characterControl
+                ? 'recovered character-motion matched control'
+                : 'recovered primary motion + Enki counter-sway review'
+              : blinkReview
+                ? blinkControl
+                  ? 'recovered blink-disabled matched control'
+                  : 'recovered primary motion + blink review'
+                : recovery
+                  ? cameraOnly
+                    ? 'recovered primary-layer camera-only control'
+                    : 'recovered primary-layer motion review'
+                  : isolation
+                    ? 'secondary-motion isolation review'
+                    : 'full 7-second motion review'}
         </span>
         <span>
-          {characterReview
-            ? characterControl
-              ? 'accepted camera + vessel motion; Enki remains rigidly vessel-carried'
-              : 'accepted camera + vessel motion; Enki adds bounded delayed counter-sway'
-            : blinkReview
-              ? blinkControl
-                ? 'same camera + vessel/Enki motion; closed-eye overlay disabled'
-                : 'same camera + vessel/Enki motion; closed-eye overlay follows canonical blink timing'
-              : recovery
-                ? cameraOnly
-                  ? 'camera only; vessel/Enki remain locally frozen'
-                  : 'camera + vessel/Enki rigid-group heave/roll'
-                : isolation
-                  ? 'camera frozen + exaggerated vessel/rigging diagnostic'
-                  : 'camera + vessel + delayed rigging + blink state'}
+          {breathReview
+            ? breathControl
+              ? 'accepted camera + vessel + Enki counter-sway; breathing deformation disabled'
+              : 'accepted camera + vessel + Enki counter-sway; torso-anchored anisotropic breathe-calm deformation added'
+            : characterReview
+              ? characterControl
+                ? 'accepted camera + vessel motion; Enki remains rigidly vessel-carried'
+                : 'accepted camera + vessel motion; Enki adds bounded delayed counter-sway'
+              : blinkReview
+                ? blinkControl
+                  ? 'same camera + vessel/Enki motion; closed-eye overlay disabled'
+                  : 'same camera + vessel/Enki motion; closed-eye overlay follows canonical blink timing'
+                : recovery
+                  ? cameraOnly
+                    ? 'camera only; vessel/Enki remain locally frozen'
+                    : 'camera + vessel/Enki rigid-group heave/roll'
+                  : isolation
+                    ? 'camera frozen + exaggerated vessel/rigging diagnostic'
+                    : 'camera + vessel + delayed rigging + blink state'}
         </span>
         <span>manual-exact-frame</span>
         <span>ticker stopped</span>
         <span>{frame.sourceAssets.length} checksum-bound source assets</span>
         <span>
-          {characterReview
-            ? 'blink/water/legacy rigging hidden; only recovered Enki local motion is added'
-            : blinkReview
-              ? recoveryEyeCandidate
-                ? 'replacement blink candidate; legacy water/rigging hidden'
-                : 'canonical blink; legacy water/rigging hidden'
-              : recovery
-                ? 'legacy water/rigging/blink layers hidden; repaired background remains source-baked'
-                : 'water held static for this proof'}
+          {breathReview
+            ? 'blink/water/legacy rigging hidden; accepted counter-sway frozen underneath breathe-calm'
+            : characterReview
+              ? 'blink/water/legacy rigging hidden; only recovered Enki local motion is added'
+              : blinkReview
+                ? recoveryEyeCandidate
+                  ? 'replacement blink candidate; legacy water/rigging hidden'
+                  : 'canonical blink; legacy water/rigging hidden'
+                : recovery
+                  ? 'legacy water/rigging/blink layers hidden; repaired background remains source-baked'
+                  : 'water held static for this proof'}
         </span>
         {error ? <code>{error}</code> : null}
       </div>
