@@ -1,7 +1,8 @@
+import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { copyFile, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
-import { basename, join, resolve } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 import { maybeOpenReviewArtifacts } from './open-review-artifacts.mjs';
 import { reviewGeneratedMedia } from './review-generated-media.mjs';
 
@@ -54,6 +55,7 @@ async function main() {
     'shot03-decomposition-proof.json',
   );
   let decomposition = null;
+  let decompositionReused = false;
   if (!options.forceDecomposition && existsSync(decompositionReceiptPath)) {
     try {
       const cached = JSON.parse(await readFile(decompositionReceiptPath, 'utf8'));
@@ -62,9 +64,8 @@ async function main() {
       const aiNonBlocking = !cached.ai?.status || cached.ai.status === 'PASS_ADVISORY';
       if (sameSourceReport && technicalPass && aiNonBlocking) {
         decomposition = cached;
-        console.log(
-          `[REUSE] existing decomposition PASS: ${decompositionReceiptPath}`,
-        );
+        decompositionReused = true;
+        console.log(`[REUSE] existing decomposition PASS: ${decompositionReceiptPath}`);
         if (cached.ai?.status) console.log(`[REUSE] local vision status: ${cached.ai.status}`);
       }
     } catch {
@@ -95,53 +96,74 @@ async function main() {
   }
   console.log('[PASS] decomposition source-fidelity gate is credible enough to generate a temporary background candidate.');
 
-  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const bridgeDirectory = join(CANDIDATE_ROOT, `${stamp}-shot03-roi-bridge`);
-  const bridgeShotDirectory = join(bridgeDirectory, 'shot-03');
-  const backgroundOutput = join(CANDIDATE_ROOT, `${stamp}-shot03-roi-background`);
-  await mkdir(bridgeShotDirectory, { recursive: true });
-  await Promise.all([
-    copyFile(vesselPath, join(bridgeShotDirectory, 'shot03-vessel-v1.png')),
-    copyFile(enkiPath, join(bridgeShotDirectory, 'shot03-enki-body-v1.png')),
-  ]);
-  const bridgeReceiptPath = join(bridgeDirectory, 'roi-bridge.json');
-  await writeFile(
-    bridgeReceiptPath,
-    `${JSON.stringify(
-      {
-        schemaVersion: 1,
-        type: 'shot03-roi-background-input-bridge',
-        generatedAt: new Date().toISOString(),
-        sourceRoiReportPath: roiReportPath,
-        sourceDecompositionReceiptPath: decompositionReceiptPath,
-        vesselSourcePath: vesselPath,
-        enkiSourcePath: enkiPath,
-        stagedVesselPath: join(bridgeShotDirectory, 'shot03-vessel-v1.png'),
-        stagedEnkiPath: join(bridgeShotDirectory, 'shot03-enki-body-v1.png'),
-        canonicalAssetsMutated: false,
-        canonicalManifestMutated: false,
-        automaticPromotionAllowed: false,
-      },
-      null,
-      2,
-    )}\n`,
-    'utf8',
-  );
+  let bridgeDirectory;
+  let bridgeReceiptPath;
+  let backgroundOutput;
+  let backgroundReused = false;
 
-  console.log('');
-  console.log('[2/5] Background inpaint preflight...');
-  const commonBackgroundArgs = [
-    `--enki-candidate-dir=${bridgeDirectory}`,
-    `--vessel-candidate-dir=${bridgeDirectory}`,
-    `--output=${backgroundOutput}`,
-  ];
-  if (options.padding !== undefined) commonBackgroundArgs.push(`--padding=${options.padding}`);
-  if (options.seed !== undefined) commonBackgroundArgs.push(`--seed=${options.seed}`);
-  runNode(BACKGROUND_SCRIPT, ['preflight', ...commonBackgroundArgs]);
+  if (!options.forceBackground) {
+    const reusable = await findReusableBackgroundCandidate({ vesselPath, enkiPath });
+    if (reusable) {
+      ({ bridgeDirectory, bridgeReceiptPath, backgroundOutput } = reusable);
+      backgroundReused = true;
+      console.log('');
+      console.log(`[REUSE] existing generated background candidate: ${backgroundOutput}`);
+      console.log('[REUSE] input foreground checksums match the current ROI vessel and Enki candidates.');
+    }
+  }
 
-  console.log('');
-  console.log('[3/5] Generate temporary clean background...');
-  runNode(BACKGROUND_SCRIPT, ['generate', ...commonBackgroundArgs]);
+  if (!backgroundReused) {
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    bridgeDirectory = join(CANDIDATE_ROOT, `${stamp}-shot03-roi-bridge`);
+    const bridgeShotDirectory = join(bridgeDirectory, 'shot-03');
+    backgroundOutput = join(CANDIDATE_ROOT, `${stamp}-shot03-roi-background`);
+    await mkdir(bridgeShotDirectory, { recursive: true });
+    await Promise.all([
+      copyFile(vesselPath, join(bridgeShotDirectory, 'shot03-vessel-v1.png')),
+      copyFile(enkiPath, join(bridgeShotDirectory, 'shot03-enki-body-v1.png')),
+    ]);
+    bridgeReceiptPath = join(bridgeDirectory, 'roi-bridge.json');
+    await writeFile(
+      bridgeReceiptPath,
+      `${JSON.stringify(
+        {
+          schemaVersion: 1,
+          type: 'shot03-roi-background-input-bridge',
+          generatedAt: new Date().toISOString(),
+          sourceRoiReportPath: roiReportPath,
+          sourceDecompositionReceiptPath: decompositionReceiptPath,
+          vesselSourcePath: vesselPath,
+          enkiSourcePath: enkiPath,
+          stagedVesselPath: join(bridgeShotDirectory, 'shot03-vessel-v1.png'),
+          stagedEnkiPath: join(bridgeShotDirectory, 'shot03-enki-body-v1.png'),
+          canonicalAssetsMutated: false,
+          canonicalManifestMutated: false,
+          automaticPromotionAllowed: false,
+        },
+        null,
+        2,
+      )}\n`,
+      'utf8',
+    );
+
+    console.log('');
+    console.log('[2/5] Background inpaint preflight...');
+    const commonBackgroundArgs = [
+      `--enki-candidate-dir=${bridgeDirectory}`,
+      `--vessel-candidate-dir=${bridgeDirectory}`,
+      `--output=${backgroundOutput}`,
+    ];
+    if (options.padding !== undefined) commonBackgroundArgs.push(`--padding=${options.padding}`);
+    if (options.seed !== undefined) commonBackgroundArgs.push(`--seed=${options.seed}`);
+    runNode(BACKGROUND_SCRIPT, ['preflight', ...commonBackgroundArgs]);
+
+    console.log('');
+    console.log('[3/5] Generate temporary clean background...');
+    runNode(BACKGROUND_SCRIPT, ['generate', ...commonBackgroundArgs]);
+  } else {
+    console.log('[2/5] Background inpaint preflight: REUSED with existing generated candidate.');
+    console.log('[3/5] Generate temporary clean background: REUSED; no ComfyUI rerun.');
+  }
 
   console.log('');
   console.log('[4/5] Deterministic background preservation QA...');
@@ -212,7 +234,8 @@ async function main() {
     generatedAt: new Date().toISOString(),
     sourceRoiReportPath: roiReportPath,
     sourceDecompositionReceiptPath: decompositionReceiptPath,
-    decompositionReused: !options.forceDecomposition,
+    decompositionReused,
+    backgroundReused,
     bridgeDirectory,
     bridgeReceiptPath,
     backgroundOutput,
@@ -241,6 +264,59 @@ async function main() {
     enabled: !options.noOpen,
     delayMs: 120,
   });
+}
+
+async function findReusableBackgroundCandidate({ vesselPath, enkiPath }) {
+  let entries;
+  try {
+    entries = await readdir(CANDIDATE_ROOT, { withFileTypes: true });
+  } catch {
+    return null;
+  }
+  const directories = entries
+    .filter((entry) => entry.isDirectory() && entry.name.endsWith('-shot03-roi-background'))
+    .map((entry) => join(CANDIDATE_ROOT, entry.name))
+    .sort((a, b) => basename(b).localeCompare(basename(a)));
+
+  const [vesselSha, enkiSha] = await Promise.all([sha256File(vesselPath), sha256File(enkiPath)]);
+  for (const backgroundOutput of directories) {
+    const metadataPath = join(backgroundOutput, 'shot-03', 'shot03-background-v1.candidate.json');
+    if (!existsSync(metadataPath)) continue;
+    try {
+      const metadata = JSON.parse(await readFile(metadataPath, 'utf8'));
+      const candidatePath = resolve(metadata.candidatePath ?? '');
+      const stagedVesselPath = resolve(metadata.backgroundInputs?.vesselCandidatePath ?? '');
+      const stagedEnkiPath = resolve(metadata.backgroundInputs?.enkiCandidatePath ?? '');
+      const sourcePath = resolve(metadata.backgroundInputs?.sourcePath ?? '');
+      if (
+        sourcePath !== SOURCE_PATH ||
+        !existsSync(candidatePath) ||
+        !existsSync(stagedVesselPath) ||
+        !existsSync(stagedEnkiPath)
+      ) {
+        continue;
+      }
+      const [stagedVesselSha, stagedEnkiSha] = await Promise.all([
+        sha256File(stagedVesselPath),
+        sha256File(stagedEnkiPath),
+      ]);
+      if (stagedVesselSha !== vesselSha || stagedEnkiSha !== enkiSha) continue;
+
+      const bridgeDirectory = dirname(dirname(stagedEnkiPath));
+      return {
+        backgroundOutput,
+        bridgeDirectory,
+        bridgeReceiptPath: join(bridgeDirectory, 'roi-bridge.json'),
+      };
+    } catch {
+      // Ignore stale or incomplete background candidates and continue newest-first.
+    }
+  }
+  return null;
+}
+
+async function sha256File(path) {
+  return createHash('sha256').update(await readFile(path)).digest('hex');
 }
 
 async function latestRoiReport() {
@@ -276,6 +352,7 @@ function parseOptions(args) {
     noAiReview: false,
     requireAiReview: false,
     forceDecomposition: false,
+    forceBackground: false,
     seed: undefined,
     padding: undefined,
   };
@@ -284,6 +361,7 @@ function parseOptions(args) {
     else if (arg === '--no-ai-review') result.noAiReview = true;
     else if (arg === '--require-ai-review') result.requireAiReview = true;
     else if (arg === '--force-decomposition') result.forceDecomposition = true;
+    else if (arg === '--force-background') result.forceBackground = true;
     else if (arg.startsWith('--seed=')) {
       const value = Number(arg.slice('--seed='.length));
       if (!Number.isSafeInteger(value) || value < 0) throw new Error('--seed must be a non-negative safe integer.');
