@@ -26,8 +26,9 @@ describe('buildPixiPreviewPlan', () => {
       id: 'shot03-water-v1',
       role: 'water',
       sha256: SHOT03_WATER_SHA256,
-      width: 1080,
-      height: 1920,
+      width: 941,
+      height: 1672,
+      registration: 'cover-center',
     });
     expect(enki?.x).toBeCloseTo(661.068);
     expect(enki?.y).toBeCloseTo(782.837);
