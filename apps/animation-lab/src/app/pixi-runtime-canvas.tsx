@@ -105,6 +105,7 @@ export function PixiRuntimeCanvas({
         className={previewStyles.pixiHost}
         style={{ aspectRatio: `${width} / ${height}` }}
         data-pixi-state={status}
+        data-pixi-error={error ?? ''}
         data-pixi-frame={plan.frame}
         data-pixi-node-count={plan.nodeCount}
         data-pixi-source-asset-count={plan.sourceAssets.length}
