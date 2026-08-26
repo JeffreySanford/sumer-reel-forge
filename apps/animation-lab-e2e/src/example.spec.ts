@@ -1,7 +1,9 @@
-import { test, expect, type Locator } from '@playwright/test';
+import { test, expect, type Locator, type TestInfo } from '@playwright/test';
 
 const SHOT03_WATER_SHA256 =
   'sha256:f77eb37906ae589b0483dd3a11504ee39cc1aa28500ec10dba5de14a3b6f8979';
+const SHOT03_WATER_REGISTRATION_RECT =
+  'shot03-water-v1:-0.287,0.000,1080.574,1920.000';
 
 async function expectPixiReady(pixiHost: Locator): Promise<void> {
   await expect
@@ -19,7 +21,37 @@ async function expectPixiReady(pixiHost: Locator): Promise<void> {
     .toBe('READY');
 }
 
-test('renders the golden Scene V3 runtime model through Pixi at exact frames', async ({ page }) => {
+async function capturePixiFrameEvidence(
+  canvas: Locator,
+  frame: number,
+  stateId: string,
+  testInfo: TestInfo,
+): Promise<void> {
+  await expect(canvas).toHaveAttribute('data-pixi-frame', String(frame));
+  await expect(canvas).toHaveAttribute('data-pixi-source-asset-sha256', SHOT03_WATER_SHA256);
+  await expect(canvas).toHaveAttribute(
+    'data-pixi-source-asset-registration-rect',
+    SHOT03_WATER_REGISTRATION_RECT,
+  );
+  await expect(canvas).toHaveAttribute('data-pixi-source-asset-verification', 'verified');
+
+  const intrinsicViewport = await canvas.evaluate((element) => {
+    const pixiCanvas = element as HTMLCanvasElement;
+    return { width: pixiCanvas.width, height: pixiCanvas.height };
+  });
+  expect(intrinsicViewport).toEqual({ width: 1080, height: 1920 });
+
+  const screenshot = await canvas.screenshot({ animations: 'disabled' });
+  expect(screenshot.subarray(0, 8).toString('hex')).toBe('89504e470d0a1a0a');
+  expect(screenshot.length).toBeGreaterThan(1_000);
+
+  await testInfo.attach(`pixi-shot03-${stateId.toLowerCase()}-frame-${frame}`, {
+    body: screenshot,
+    contentType: 'image/png',
+  });
+}
+
+test('renders the golden Scene V3 runtime model through Pixi at exact frames', async ({ page }, testInfo) => {
   await page.goto('/');
 
   await expect(page.getByRole('heading', { name: 'Enki at the Helm' })).toBeVisible();
@@ -52,9 +84,10 @@ test('renders the golden Scene V3 runtime model through Pixi at exact frames', a
   );
   await expect(canvas).toHaveAttribute(
     'data-pixi-source-asset-registration-rect',
-    'shot03-water-v1:-0.287,0.000,1080.574,1920.000',
+    SHOT03_WATER_REGISTRATION_RECT,
   );
   await expect(canvas).toHaveAttribute('data-pixi-source-asset-verification', 'verified');
+  await capturePixiFrameEvidence(canvas, 101, 'BLINK_CLOSED', testInfo);
 
   await expect(page.getByText('4 runtimes evaluated')).toBeVisible();
   await expect(page.getByText('EVIDENCE BOUND')).toBeVisible();
@@ -83,11 +116,18 @@ test('renders the golden Scene V3 runtime model through Pixi at exact frames', a
   await expect(canvas).toHaveAttribute('data-pixi-source-asset-sha256', SHOT03_WATER_SHA256);
   await expect(canvas).toHaveAttribute(
     'data-pixi-source-asset-registration-rect',
-    'shot03-water-v1:-0.287,0.000,1080.574,1920.000',
+    SHOT03_WATER_REGISTRATION_RECT,
   );
   await expect(
     page.locator('[data-composed-transform="actor-instance:enki:s03"]'),
   ).toHaveText('(4.000, 2.000)');
+  await capturePixiFrameEvidence(canvas, 0, 'START', testInfo);
+
+  await page.getByRole('button', { name: /END_SETTLED frame 209/i }).click();
+  await expect(page.getByText('frame 209 / 210')).toBeVisible();
+  await expect(page.getByRole('button', { name: /END_SETTLED frame 209/i })).toHaveAttribute('aria-pressed', 'true');
+  await expect(canvas).toHaveAttribute('aria-label', 'Pixi runtime preview at frame 209');
+  await capturePixiFrameEvidence(canvas, 209, 'END_SETTLED', testInfo);
 
   await page.getByRole('tab', { name: 'QA' }).click();
   await expect(page.getByText('QA contracts are visible, not presumed passed')).toBeVisible();
