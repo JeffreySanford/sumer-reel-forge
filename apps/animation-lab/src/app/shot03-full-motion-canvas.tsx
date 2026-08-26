@@ -8,6 +8,12 @@ import previewStyles from './runtime-preview-panel.module.css';
 import type { RuntimePreviewModel } from './runtime-preview';
 import { buildShot03FullMotionState } from './shot03-full-motion';
 import {
+  buildShot03RecoveryBlinkMotionState,
+  SHOT03_RECOVERY_BLINK_ACTIVE_PROFILE,
+  SHOT03_RECOVERY_BLINK_CONTROL_PROFILE,
+  type Shot03RecoveryBlinkProfile,
+} from './shot03-recovery-blink-motion';
+import {
   buildShot03RecoveryMotionState,
   SHOT03_RECOVERY_ACTIVE_PROFILE,
   SHOT03_RECOVERY_CAMERA_ONLY_PROFILE,
@@ -26,7 +32,8 @@ type PixiMountStatus = 'MOUNTING' | 'READY' | 'ERROR';
 type Shot03MotionProfile =
   | 'cinematic'
   | typeof SHOT03_SECONDARY_ISOLATION_PROFILE
-  | Shot03RecoveryMotionProfile;
+  | Shot03RecoveryMotionProfile
+  | Shot03RecoveryBlinkProfile;
 
 function resolveMotionProfile(): Shot03MotionProfile {
   if (typeof window === 'undefined') return 'cinematic';
@@ -42,16 +49,35 @@ function resolveMotionProfile(): Shot03MotionProfile {
   if (configured === SHOT03_RECOVERY_CAMERA_ONLY_PROFILE) {
     return SHOT03_RECOVERY_CAMERA_ONLY_PROFILE;
   }
+  if (configured === SHOT03_RECOVERY_BLINK_ACTIVE_PROFILE) {
+    return SHOT03_RECOVERY_BLINK_ACTIVE_PROFILE;
+  }
+  if (configured === SHOT03_RECOVERY_BLINK_CONTROL_PROFILE) {
+    return SHOT03_RECOVERY_BLINK_CONTROL_PROFILE;
+  }
   return 'cinematic';
 }
 
-function isRecoveryProfile(
+function isRecoveryMotionProfile(
   profile: Shot03MotionProfile,
 ): profile is Shot03RecoveryMotionProfile {
   return (
     profile === SHOT03_RECOVERY_ACTIVE_PROFILE ||
     profile === SHOT03_RECOVERY_CAMERA_ONLY_PROFILE
   );
+}
+
+function isRecoveryBlinkProfile(
+  profile: Shot03MotionProfile,
+): profile is Shot03RecoveryBlinkProfile {
+  return (
+    profile === SHOT03_RECOVERY_BLINK_ACTIVE_PROFILE ||
+    profile === SHOT03_RECOVERY_BLINK_CONTROL_PROFILE
+  );
+}
+
+function isRecoveryAssetProfile(profile: Shot03MotionProfile): boolean {
+  return isRecoveryMotionProfile(profile) || isRecoveryBlinkProfile(profile);
 }
 
 function resolveRecoverySourceAssets(): readonly PixiSourceAsset[] {
@@ -99,7 +125,7 @@ export function Shot03FullMotionCanvas({
   const hostRef = useRef<HTMLDivElement>(null);
   const surfaceRef = useRef<PixiFullMotionSurface | null>(null);
   const motionProfile = useMemo(resolveMotionProfile, []);
-  const recovery = isRecoveryProfile(motionProfile);
+  const recovery = isRecoveryAssetProfile(motionProfile);
   const resolvedSourceAssets = useMemo(
     () =>
       sourceAssets ??
@@ -114,7 +140,15 @@ export function Shot03FullMotionCanvas({
         durationFrames,
       );
     }
-    if (isRecoveryProfile(motionProfile)) {
+    if (isRecoveryBlinkProfile(motionProfile)) {
+      return buildShot03RecoveryBlinkMotionState(
+        model.frame,
+        fps,
+        durationFrames,
+        motionProfile,
+      );
+    }
+    if (isRecoveryMotionProfile(motionProfile)) {
       return buildShot03RecoveryMotionState(
         model.frame,
         fps,
@@ -210,6 +244,13 @@ export function Shot03FullMotionCanvas({
 
   const isolation = motionProfile === SHOT03_SECONDARY_ISOLATION_PROFILE;
   const cameraOnly = motionProfile === SHOT03_RECOVERY_CAMERA_ONLY_PROFILE;
+  const blinkReview = isRecoveryBlinkProfile(motionProfile);
+  const blinkControl = motionProfile === SHOT03_RECOVERY_BLINK_CONTROL_PROFILE;
+  const hiddenRecoveryLayers = blinkReview
+    ? 'shot03-water-v1,shot03-rigging-v1'
+    : recovery
+      ? 'shot03-water-v1,shot03-enki-eyes-v1,shot03-rigging-v1'
+      : '';
 
   return (
     <div className={previewStyles.pixiFrame}>
@@ -221,48 +262,76 @@ export function Shot03FullMotionCanvas({
         data-pixi-error={error ?? ''}
         data-pixi-frame={frame.frame}
         data-pixi-source-asset-count={frame.sourceAssets.length}
-        data-pixi-review-mode={recovery ? 'recovered-primary-motion' : 'full-motion'}
+        data-pixi-review-mode={
+          blinkReview
+            ? 'recovered-blink-motion'
+            : recovery
+              ? 'recovered-primary-motion'
+              : 'full-motion'
+        }
         data-pixi-review-composition={
-          recovery ? 'shot03-recovered-primary-layers' : 'shot03-full-motion-layers'
+          blinkReview
+            ? 'shot03-recovered-primary-plus-blink'
+            : recovery
+              ? 'shot03-recovered-primary-layers'
+              : 'shot03-full-motion-layers'
         }
         data-shot03-motion-profile={motionProfile}
         data-shot03-camera={`x=${motion.camera.x.toFixed(3)},y=${motion.camera.y.toFixed(3)},scale=${motion.camera.scale.toFixed(6)}`}
         data-shot03-vessel={`heave=${motion.vessel.heaveY.toFixed(3)},roll=${motion.vessel.rollDegrees.toFixed(6)}`}
         data-shot03-rigging={`x=${motion.rigging.x.toFixed(3)},y=${motion.rigging.y.toFixed(3)},rot=${motion.rigging.rotationDegrees.toFixed(6)},lag=${motion.rigging.lagSeconds.toFixed(3)}`}
         data-shot03-blink-opacity={motion.blinkOpacity.toFixed(3)}
-        data-shot03-recovery-hidden-layers={
-          recovery ? 'shot03-water-v1,shot03-enki-eyes-v1,shot03-rigging-v1' : ''
+        data-shot03-recovery-hidden-layers={hiddenRecoveryLayers}
+        data-shot03-recovery-control={
+          cameraOnly
+            ? 'camera-only'
+            : blinkReview
+              ? blinkControl
+                ? 'blink-control'
+                : 'blink-active'
+              : recovery
+                ? 'active'
+                : ''
         }
-        data-shot03-recovery-control={cameraOnly ? 'camera-only' : recovery ? 'active' : ''}
         aria-label="Pixi Shot 3 full-motion renderer"
       />
       <div className={previewStyles.pixiStatus} aria-live="polite">
         <strong>PIXI {status}</strong>
         <span>
-          {recovery
-            ? cameraOnly
-              ? 'recovered primary-layer camera-only control'
-              : 'recovered primary-layer motion review'
-            : isolation
-              ? 'secondary-motion isolation review'
-              : 'full 7-second motion review'}
+          {blinkReview
+            ? blinkControl
+              ? 'recovered blink-disabled matched control'
+              : 'recovered primary motion + blink review'
+            : recovery
+              ? cameraOnly
+                ? 'recovered primary-layer camera-only control'
+                : 'recovered primary-layer motion review'
+              : isolation
+                ? 'secondary-motion isolation review'
+                : 'full 7-second motion review'}
         </span>
         <span>
-          {recovery
-            ? cameraOnly
-              ? 'camera only; vessel/Enki remain locally frozen'
-              : 'camera + vessel/Enki rigid-group heave/roll'
-            : isolation
-              ? 'camera frozen + exaggerated vessel/rigging diagnostic'
-              : 'camera + vessel + delayed rigging + blink state'}
+          {blinkReview
+            ? blinkControl
+              ? 'same camera + vessel/Enki motion; closed-eye overlay disabled'
+              : 'same camera + vessel/Enki motion; closed-eye overlay follows canonical blink timing'
+            : recovery
+              ? cameraOnly
+                ? 'camera only; vessel/Enki remain locally frozen'
+                : 'camera + vessel/Enki rigid-group heave/roll'
+              : isolation
+                ? 'camera frozen + exaggerated vessel/rigging diagnostic'
+                : 'camera + vessel + delayed rigging + blink state'}
         </span>
         <span>manual-exact-frame</span>
         <span>ticker stopped</span>
         <span>{frame.sourceAssets.length} checksum-bound source assets</span>
         <span>
-          {recovery
-            ? 'legacy water/rigging/blink layers hidden; repaired background remains source-baked'
-            : 'water held static for this proof'}
+          {blinkReview
+            ? 'legacy water/rigging hidden; blink is the only added secondary channel'
+            : recovery
+              ? 'legacy water/rigging/blink layers hidden; repaired background remains source-baked'
+              : 'water held static for this proof'}
         </span>
         {error ? <code>{error}</code> : null}
       </div>
