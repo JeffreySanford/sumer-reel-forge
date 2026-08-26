@@ -112,7 +112,13 @@ export function RuntimePreviewPanel({
       </div>
 
       {renderer === 'pixi' ? (
-        <PixiRuntimeCanvas model={model} width={viewportWidth} height={viewportHeight} />
+        <PixiRuntimeCanvas
+          model={model}
+          width={viewportWidth}
+          height={viewportHeight}
+          fps={inspection.exactFrame.fps}
+          durationFrames={inspection.exactFrame.durationFrames}
+        />
       ) : (
         <svg
           className={previewStyles.runtimeCanvas}
