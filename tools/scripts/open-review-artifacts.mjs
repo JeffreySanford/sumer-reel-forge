@@ -20,6 +20,9 @@ const SHOT03_ROI_ROOT = resolve(
 const SHOT03_RECOVERED_MOTION_ROOT = resolve(
   'tmp/animation-previews/pixi-shot03-recovered-motion-proof',
 );
+const SHOT03_RECOVERED_BLINK_ROOT = resolve(
+  'tmp/animation-previews/pixi-shot03-recovered-blink-proof',
+);
 
 export function shouldOpenReviewArtifacts(args = process.argv.slice(2)) {
   return !args.includes('--no-open');
@@ -83,6 +86,10 @@ export async function reviewArtifactsFromReport(reportPath) {
     report.artifacts?.exposureAbVideo,
     report.artifacts?.cameraOnlyControlVideo,
     report.artifacts?.maxExposurePair,
+    report.artifacts?.blinkActiveVideo,
+    report.artifacts?.blinkAbVideo,
+    report.artifacts?.apexPair,
+    report.artifacts?.focusedApexPair,
     report.artifacts?.frozenControlVideo,
     report.artifacts?.frozenControlFrame,
   ].filter(Boolean);
@@ -126,27 +133,39 @@ export async function latestShot03RoiReport() {
 }
 
 export async function latestShot03RecoveredMotionReport() {
+  return latestTimestampReport(
+    SHOT03_RECOVERED_MOTION_ROOT,
+    'pixi-shot03-recovered-motion-proof.json',
+    'recovered-motion',
+  );
+}
+
+export async function latestShot03RecoveredBlinkReport() {
+  return latestTimestampReport(
+    SHOT03_RECOVERED_BLINK_ROOT,
+    'pixi-shot03-recovered-blink-proof.json',
+    'recovered-blink',
+  );
+}
+
+async function latestTimestampReport(root, filename, label) {
   let entries;
   try {
-    entries = await readdir(SHOT03_RECOVERED_MOTION_ROOT, { withFileTypes: true });
+    entries = await readdir(root, { withFileTypes: true });
   } catch {
-    throw new Error(
-      `No Shot 3 recovered-motion review runs found under ${SHOT03_RECOVERED_MOTION_ROOT}.`,
-    );
+    throw new Error(`No Shot 3 ${label} review runs found under ${root}.`);
   }
 
   const directories = entries
     .filter((entry) => entry.isDirectory())
-    .map((entry) => join(SHOT03_RECOVERED_MOTION_ROOT, entry.name))
+    .map((entry) => join(root, entry.name))
     .sort((a, b) => b.localeCompare(a));
 
   for (const directory of directories) {
-    const report = join(directory, 'pixi-shot03-recovered-motion-proof.json');
+    const report = join(directory, filename);
     if (existsSync(report)) return report;
   }
-  throw new Error(
-    `No completed Shot 3 recovered-motion proof found under ${SHOT03_RECOVERED_MOTION_ROOT}.`,
-  );
+  throw new Error(`No completed Shot 3 ${label} proof found under ${root}.`);
 }
 
 async function openWithSystemViewer(path, options = {}) {
@@ -247,6 +266,7 @@ async function main() {
     console.log('  node tools/scripts/open-review-artifacts.mjs <file> [file ...]');
     console.log('  node tools/scripts/open-review-artifacts.mjs --latest-shot03-roi');
     console.log('  node tools/scripts/open-review-artifacts.mjs --latest-shot03-recovered-motion');
+    console.log('  node tools/scripts/open-review-artifacts.mjs --latest-shot03-recovered-blink');
     console.log('  node tools/scripts/open-review-artifacts.mjs --from-report=<report.json>');
     console.log('  node tools/scripts/open-review-artifacts.mjs --diagnose-open <file>');
     console.log('  node tools/scripts/open-review-artifacts.mjs --no-open <file> [file ...]');
@@ -267,6 +287,11 @@ async function main() {
     console.log(`[OPEN] latest Shot 3 recovered-motion report: ${reportPath}`);
     files.push(...(await reviewArtifactsFromReport(reportPath)));
   }
+  if (args.includes('--latest-shot03-recovered-blink')) {
+    const reportPath = await latestShot03RecoveredBlinkReport();
+    console.log(`[OPEN] latest Shot 3 recovered-blink report: ${reportPath}`);
+    files.push(...(await reviewArtifactsFromReport(reportPath)));
+  }
   if (reportArg) {
     const reportPath = reportArg.slice('--from-report='.length);
     console.log(`[OPEN] report-driven review: ${resolve(reportPath)}`);
@@ -280,6 +305,7 @@ async function main() {
         arg !== '--diagnose-open' &&
         arg !== '--latest-shot03-roi' &&
         arg !== '--latest-shot03-recovered-motion' &&
+        arg !== '--latest-shot03-recovered-blink' &&
         !arg.startsWith('--from-report='),
     ),
   );
