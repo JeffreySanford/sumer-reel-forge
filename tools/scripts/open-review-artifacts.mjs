@@ -48,7 +48,7 @@ export async function openReviewArtifacts(paths, options = {}) {
   }
 
   for (const path of files) {
-    openWithSystemViewer(path);
+    await openWithSystemViewer(path);
     console.log(`[OPEN] ${path}`);
     if (options.delayMs) {
       await new Promise((resolvePromise) => setTimeout(resolvePromise, options.delayMs));
@@ -63,8 +63,12 @@ function openWithSystemViewer(path) {
   let args;
 
   if (process.platform === 'win32') {
+    // `start` is a cmd.exe built-in. Pass the complete /c command as one
+    // argument so paths with spaces are parsed by cmd rather than Node's argv
+    // quoting rules. The first empty quoted string is the required window title.
+    const escaped = path.replaceAll('"', '""');
     command = 'cmd.exe';
-    args = ['/d', '/s', '/c', 'start', '""', `"${path.replaceAll('"', '""')}"`];
+    args = ['/d', '/s', '/c', `start "" "${escaped}"`];
   } else if (process.platform === 'darwin') {
     command = 'open';
     args = [path];
@@ -73,14 +77,20 @@ function openWithSystemViewer(path) {
     args = [path];
   }
 
-  const child = spawn(command, args, {
-    cwd: process.cwd(),
-    detached: true,
-    stdio: 'ignore',
-    windowsHide: true,
-    shell: false,
+  return new Promise((resolvePromise, rejectPromise) => {
+    const child = spawn(command, args, {
+      cwd: process.cwd(),
+      detached: true,
+      stdio: 'ignore',
+      windowsHide: true,
+      shell: false,
+    });
+    child.once('error', rejectPromise);
+    child.once('spawn', () => {
+      child.unref();
+      resolvePromise();
+    });
   });
-  child.unref();
 }
 
 async function main() {
