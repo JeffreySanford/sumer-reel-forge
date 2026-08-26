@@ -14,6 +14,20 @@ const SUPPORTED = new Set([
   '.mov',
 ]);
 
+export function shouldOpenReviewArtifacts(args = process.argv.slice(2)) {
+  return !args.includes('--no-open');
+}
+
+export async function maybeOpenReviewArtifacts(paths, options = {}) {
+  const enabled =
+    options.enabled ?? shouldOpenReviewArtifacts(options.args ?? process.argv.slice(2));
+  if (!enabled) {
+    console.log('[OPEN] skipped (--no-open)');
+    return [];
+  }
+  return openReviewArtifacts(paths, options);
+}
+
 export async function openReviewArtifacts(paths, options = {}) {
   const files = [];
   for (const value of paths ?? []) {
@@ -75,9 +89,11 @@ async function main() {
     console.log('Open generated PNG/MP4 review artifacts in the OS-associated viewer.');
     console.log('Usage:');
     console.log('  node tools/scripts/open-review-artifacts.mjs <file> [file ...]');
+    console.log('  node tools/scripts/open-review-artifacts.mjs --no-open <file> [file ...]');
     return;
   }
-  await openReviewArtifacts(args, { delayMs: 120 });
+  const files = args.filter((arg) => arg !== '--no-open');
+  await maybeOpenReviewArtifacts(files, { args, delayMs: 120 });
 }
 
 const invokedPath = process.argv[1] ? resolve(process.argv[1]) : '';
