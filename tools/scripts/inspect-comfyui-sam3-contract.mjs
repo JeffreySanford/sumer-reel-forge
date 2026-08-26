@@ -1,4 +1,8 @@
-import 'dotenv/config';
+try {
+  process.loadEnvFile?.();
+} catch (error) {
+  if (error?.code !== 'ENOENT') throw error;
+}
 
 const baseUrl = (
   process.env.COMFYUI_BASE_URL ?? 'http://127.0.0.1:8188'
@@ -57,7 +61,7 @@ async function main() {
     .map((item) => item.index);
 
   console.log('');
-  console.log(`Current Shot 3 workflows wire SAM3_Detect output index 0 into JoinImageWithAlpha.alpha.`);
+  console.log('Current Shot 3 workflows wire SAM3_Detect output index 0 into JoinImageWithAlpha.alpha.');
   if (!outputTypes.length) {
     console.log('[BLOCKED] The installed node exposes no output metadata in /object_info.');
     process.exitCode = 2;
