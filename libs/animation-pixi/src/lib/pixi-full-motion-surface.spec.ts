@@ -40,33 +40,35 @@ describe('Pixi Shot 3 local group transform model', () => {
       ],
     });
 
-    expect(groups.camera).toEqual({
+    expect(groups.camera).toMatchObject({
       id: 'camera-root',
       pivotX: 540,
-      pivotY: 921.6,
       offsetX: 0,
       offsetY: 0,
       scale: 1,
       rotationDegrees: 0,
     });
-    expect(groups.vessel).toEqual({
+    expect(groups.camera.pivotY).toBeCloseTo(921.6, 10);
+
+    expect(groups.vessel).toMatchObject({
       id: 'vessel-root',
       pivotX: 540,
-      pivotY: 1190.4,
       offsetX: 0,
       offsetY: 18,
       scale: 1,
       rotationDegrees: 0.6,
     });
-    expect(groups.rigging).toEqual({
+    expect(groups.vessel.pivotY).toBeCloseTo(1190.4, 10);
+
+    expect(groups.rigging).toMatchObject({
       id: 'rigging-root',
       pivotX: 540,
-      pivotY: 345.59999999999997,
       offsetX: 16,
       offsetY: -12,
       scale: 1,
       rotationDegrees: -1.2,
     });
+    expect(groups.rigging.pivotY).toBeCloseTo(345.6, 10);
   });
 
   it('separates camera motion from vessel and rigging local response', () => {
