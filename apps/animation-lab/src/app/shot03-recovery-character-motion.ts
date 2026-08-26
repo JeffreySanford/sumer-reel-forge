@@ -74,16 +74,22 @@ export function buildShot03RecoveryCharacterMotionState(
   const lagHeave = delayed.vessel.heaveY - primary.vessel.heaveY;
   const lagRoll = delayed.vessel.rollDegrees - primary.vessel.rollDegrees;
   const character = Object.freeze({
-    x: clamp((lagHeave * 0.34 + lagRoll * 10.5) * activity, -MAX_X_PX, MAX_X_PX),
-    y: clamp(
-      (-primary.vessel.heaveY * 0.34 + lagHeave * 0.24) * activity,
-      -MAX_Y_PX,
-      MAX_Y_PX,
+    x: canonicalZero(
+      clamp((lagHeave * 0.34 + lagRoll * 10.5) * activity, -MAX_X_PX, MAX_X_PX),
     ),
-    rotationDegrees: clamp(
-      (-primary.vessel.rollDegrees * 0.82 + lagRoll * 0.92) * activity,
-      -MAX_ROTATION_DEGREES,
-      MAX_ROTATION_DEGREES,
+    y: canonicalZero(
+      clamp(
+        (-primary.vessel.heaveY * 0.34 + lagHeave * 0.24) * activity,
+        -MAX_Y_PX,
+        MAX_Y_PX,
+      ),
+    ),
+    rotationDegrees: canonicalZero(
+      clamp(
+        (-primary.vessel.rollDegrees * 0.82 + lagRoll * 0.92) * activity,
+        -MAX_ROTATION_DEGREES,
+        MAX_ROTATION_DEGREES,
+      ),
     ),
     lagSeconds: CHARACTER_LAG_SECONDS,
   });
@@ -134,6 +140,10 @@ function characterActivityEnvelope(progress: number): number {
 function smoothstep(edge0: number, edge1: number, value: number): number {
   const t = clamp((value - edge0) / Math.max(0.0001, edge1 - edge0), 0, 1);
   return t * t * (3 - 2 * t);
+}
+
+function canonicalZero(value: number): number {
+  return Object.is(value, -0) ? 0 : value;
 }
 
 function clamp(value: number, minimum: number, maximum: number): number {
