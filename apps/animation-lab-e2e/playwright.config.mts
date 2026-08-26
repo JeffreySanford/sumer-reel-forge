@@ -2,8 +2,9 @@ import { defineConfig, devices } from '@playwright/test';
 import { nxE2EPreset } from '@nx/playwright/preset';
 import { workspaceRoot } from '@nx/devkit';
 
-// For CI, you may want to set BASE_URL to the deployed application.
-const baseURL = process.env['BASE_URL'] || 'http://localhost:4300';
+// Keep the Animation Lab endpoint separate from the Angular Studio BASE_URL.
+const baseURL =
+  process.env['ANIMATION_LAB_BASE_URL'] || 'http://localhost:4300';
 
 /**
  * Read environment variables from file.
