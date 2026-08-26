@@ -22,6 +22,7 @@ export const SHOT03_RIGGING_SHA256 =
 export const SHOT03_RECOVERY_BACKGROUND_URL = '/__shot03-recovery/background.png' as const;
 export const SHOT03_RECOVERY_VESSEL_URL = '/__shot03-recovery/vessel.png' as const;
 export const SHOT03_RECOVERY_ENKI_URL = '/__shot03-recovery/enki.png' as const;
+export const SHOT03_RECOVERY_EYES_URL = '/__shot03-recovery/eyes.png' as const;
 
 function shot03Asset(
   id: string,
@@ -107,7 +108,17 @@ export function buildShot03RecoverySourceAssets(input: {
   readonly backgroundSha256: string;
   readonly vesselSha256: string;
   readonly enkiSha256: string;
+  readonly eyesSha256?: string;
 }): readonly PixiSourceAsset[] {
+  const eyes = input.eyesSha256
+    ? shot03Asset(
+        'shot03-enki-eyes-v1',
+        'character-state',
+        SHOT03_RECOVERY_EYES_URL,
+        input.eyesSha256,
+      )
+    : SHOT03_ENKI_EYES_SOURCE_ASSET;
+
   return Object.freeze([
     shot03Asset(
       'shot03-background-v1',
@@ -128,7 +139,7 @@ export function buildShot03RecoverySourceAssets(input: {
       SHOT03_RECOVERY_ENKI_URL,
       input.enkiSha256,
     ),
-    SHOT03_ENKI_EYES_SOURCE_ASSET,
+    eyes,
     SHOT03_RIGGING_SOURCE_ASSET,
   ]);
 }
