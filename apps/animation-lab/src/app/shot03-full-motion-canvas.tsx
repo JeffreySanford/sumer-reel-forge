@@ -7,9 +7,22 @@ import {
 import previewStyles from './runtime-preview-panel.module.css';
 import type { RuntimePreviewModel } from './runtime-preview';
 import { buildShot03FullMotionState } from './shot03-full-motion';
+import {
+  buildShot03SecondaryMotionIsolationState,
+  SHOT03_SECONDARY_ISOLATION_PROFILE,
+} from './shot03-secondary-motion-isolation';
 import { SHOT03_FULL_MOTION_SOURCE_ASSETS } from './shot03-source-backed-asset';
 
 type PixiMountStatus = 'MOUNTING' | 'READY' | 'ERROR';
+type Shot03MotionProfile = 'cinematic' | typeof SHOT03_SECONDARY_ISOLATION_PROFILE;
+
+function resolveMotionProfile(): Shot03MotionProfile {
+  if (typeof window === 'undefined') return 'cinematic';
+  return new URLSearchParams(window.location.search).get('shot03-motion-profile') ===
+    SHOT03_SECONDARY_ISOLATION_PROFILE
+    ? SHOT03_SECONDARY_ISOLATION_PROFILE
+    : 'cinematic';
+}
 
 export function Shot03FullMotionCanvas({
   model,
@@ -28,9 +41,13 @@ export function Shot03FullMotionCanvas({
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const surfaceRef = useRef<PixiFullMotionSurface | null>(null);
+  const motionProfile = useMemo(resolveMotionProfile, []);
   const motion = useMemo(
-    () => buildShot03FullMotionState(model.frame, fps, durationFrames),
-    [model.frame, fps, durationFrames],
+    () =>
+      motionProfile === SHOT03_SECONDARY_ISOLATION_PROFILE
+        ? buildShot03SecondaryMotionIsolationState(model.frame, fps, durationFrames)
+        : buildShot03FullMotionState(model.frame, fps, durationFrames),
+    [model.frame, fps, durationFrames, motionProfile],
   );
   const frame = useMemo(
     () =>
@@ -109,6 +126,8 @@ export function Shot03FullMotionCanvas({
     }
   }, [frame]);
 
+  const isolation = motionProfile === SHOT03_SECONDARY_ISOLATION_PROFILE;
+
   return (
     <div className={previewStyles.pixiFrame}>
       <div
@@ -121,6 +140,7 @@ export function Shot03FullMotionCanvas({
         data-pixi-source-asset-count={frame.sourceAssets.length}
         data-pixi-review-mode="full-motion"
         data-pixi-review-composition="shot03-full-motion-layers"
+        data-shot03-motion-profile={motionProfile}
         data-shot03-camera={`x=${motion.camera.x.toFixed(3)},y=${motion.camera.y.toFixed(3)},scale=${motion.camera.scale.toFixed(6)}`}
         data-shot03-vessel={`heave=${motion.vessel.heaveY.toFixed(3)},roll=${motion.vessel.rollDegrees.toFixed(6)}`}
         data-shot03-rigging={`x=${motion.rigging.x.toFixed(3)},y=${motion.rigging.y.toFixed(3)},rot=${motion.rigging.rotationDegrees.toFixed(6)},lag=${motion.rigging.lagSeconds.toFixed(3)}`}
@@ -129,8 +149,12 @@ export function Shot03FullMotionCanvas({
       />
       <div className={previewStyles.pixiStatus} aria-live="polite">
         <strong>PIXI {status}</strong>
-        <span>full 7-second motion review</span>
-        <span>camera + vessel + delayed rigging + blink state</span>
+        <span>{isolation ? 'secondary-motion isolation review' : 'full 7-second motion review'}</span>
+        <span>
+          {isolation
+            ? 'camera frozen + exaggerated vessel/rigging diagnostic'
+            : 'camera + vessel + delayed rigging + blink state'}
+        </span>
         <span>manual-exact-frame</span>
         <span>ticker stopped</span>
         <span>{frame.sourceAssets.length} checksum-bound source assets</span>
