@@ -19,6 +19,10 @@ export const SHOT03_ENKI_EYES_SHA256 =
 export const SHOT03_RIGGING_SHA256 =
   'sha256:1f3e6add78d406d3f17ee618604da37eef9b2a8bf403650ba98986f4ab82d5f7' as const;
 
+export const SHOT03_RECOVERY_BACKGROUND_URL = '/__shot03-recovery/background.png' as const;
+export const SHOT03_RECOVERY_VESSEL_URL = '/__shot03-recovery/vessel.png' as const;
+export const SHOT03_RECOVERY_ENKI_URL = '/__shot03-recovery/enki.png' as const;
+
 function shot03Asset(
   id: string,
   role: string,
@@ -98,3 +102,33 @@ export const SHOT03_FULL_MOTION_SOURCE_ASSETS: readonly PixiSourceAsset[] = Obje
   SHOT03_ENKI_EYES_SOURCE_ASSET,
   SHOT03_RIGGING_SOURCE_ASSET,
 ]);
+
+export function buildShot03RecoverySourceAssets(input: {
+  readonly backgroundSha256: string;
+  readonly vesselSha256: string;
+  readonly enkiSha256: string;
+}): readonly PixiSourceAsset[] {
+  return Object.freeze([
+    shot03Asset(
+      'shot03-background-v1',
+      'background',
+      SHOT03_RECOVERY_BACKGROUND_URL,
+      input.backgroundSha256,
+    ),
+    SHOT03_WATER_SOURCE_ASSET,
+    shot03Asset(
+      'shot03-vessel-v1',
+      'major-prop',
+      SHOT03_RECOVERY_VESSEL_URL,
+      input.vesselSha256,
+    ),
+    shot03Asset(
+      'shot03-enki-body-v1',
+      'character',
+      SHOT03_RECOVERY_ENKI_URL,
+      input.enkiSha256,
+    ),
+    SHOT03_ENKI_EYES_SOURCE_ASSET,
+    SHOT03_RIGGING_SOURCE_ASSET,
+  ]);
+}
