@@ -6,6 +6,10 @@ const startAllSource = readFileSync(
   new URL('../scripts/start-all.mjs', import.meta.url),
   'utf8',
 );
+const animationLabPlaywrightSource = readFileSync(
+  new URL('../../apps/animation-lab-e2e/playwright.config.mts', import.meta.url),
+  'utf8',
+);
 
 test('start:all reserves the API, Angular Studio and Animation Lab workstation ports', () => {
   assert.match(
@@ -37,5 +41,14 @@ test('start:all cleanup treats Animation Lab as a managed repo-local dev server'
   assert.match(
     startAllSource,
     /Press Ctrl\+C to stop Studio\/API\/Animation Lab dev servers\./,
+  );
+});
+
+test('Animation Lab Playwright uses its own 4300 base URL instead of the Angular Studio BASE_URL', () => {
+  assert.match(animationLabPlaywrightSource, /ANIMATION_LAB_BASE_URL/);
+  assert.match(animationLabPlaywrightSource, /http:\/\/localhost:4300/);
+  assert.doesNotMatch(
+    animationLabPlaywrightSource,
+    /process\.env\[['"]BASE_URL['"]\]/,
   );
 });
