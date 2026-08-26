@@ -1,5 +1,8 @@
 import { test, expect } from '@playwright/test';
 
+const SHOT03_WATER_SHA256 =
+  'sha256:f77eb37906ae589b0483dd3a11504ee39cc1aa28500ec10dba5de14a3b6f8979';
+
 test('renders the golden Scene V3 runtime model through Pixi at exact frames', async ({ page }) => {
   await page.goto('/');
 
@@ -12,6 +15,7 @@ test('renders the golden Scene V3 runtime model through Pixi at exact frames', a
   await expect(pixiHost).toHaveAttribute('data-pixi-state', 'READY');
   await expect(pixiHost).toHaveAttribute('data-pixi-frame', '101');
   await expect(pixiHost).toHaveAttribute('data-pixi-node-count', '3');
+  await expect(pixiHost).toHaveAttribute('data-pixi-source-asset-count', '1');
 
   const canvas = page.locator('canvas[data-pixi-canvas="true"]');
   await expect(canvas).toBeVisible();
@@ -21,11 +25,16 @@ test('renders the golden Scene V3 runtime model through Pixi at exact frames', a
   await expect(canvas).toHaveAttribute('data-pixi-node-count', '3');
   await expect(canvas).toHaveAttribute('data-viewport-width', '1080');
   await expect(canvas).toHaveAttribute('data-viewport-height', '1920');
+  await expect(canvas).toHaveAttribute('data-pixi-source-asset-count', '1');
+  await expect(canvas).toHaveAttribute('data-pixi-source-asset-ids', 'shot03-water-v1');
+  await expect(canvas).toHaveAttribute('data-pixi-source-asset-sha256', SHOT03_WATER_SHA256);
+  await expect(canvas).toHaveAttribute('data-pixi-source-asset-verification', 'verified');
 
   await expect(page.getByText('4 runtimes evaluated')).toBeVisible();
   await expect(page.getByText('EVIDENCE BOUND')).toBeVisible();
   await expect(page.getByText('9:16')).toBeVisible();
   await expect(page.getByText('ticker stopped')).toBeVisible();
+  await expect(page.getByText('1 checksum-bound source asset')).toBeVisible();
 
   await expect(
     page.locator('[data-local-transform="actor-instance:enki:s03"]'),
@@ -45,6 +54,7 @@ test('renders the golden Scene V3 runtime model through Pixi at exact frames', a
   await expect(page.getByRole('button', { name: /START frame 0/i })).toHaveAttribute('aria-pressed', 'true');
   await expect(canvas).toHaveAttribute('aria-label', 'Pixi runtime preview at frame 0');
   await expect(canvas).toHaveAttribute('data-pixi-frame', '0');
+  await expect(canvas).toHaveAttribute('data-pixi-source-asset-sha256', SHOT03_WATER_SHA256);
   await expect(
     page.locator('[data-composed-transform="actor-instance:enki:s03"]'),
   ).toHaveText('(4.000, 2.000)');
