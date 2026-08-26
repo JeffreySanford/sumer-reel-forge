@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
+import { maybeOpenReviewArtifacts } from './open-review-artifacts.mjs';
 
 const ROOT = resolve('.');
 const MANIFEST_PATH = resolve(
@@ -154,6 +155,10 @@ async function main() {
     console.log('       node tools/scripts/shot03-resegment-core-layers.mjs generate');
   }
   console.log(`[INFO] report: ${reportPath}`);
+
+  if (command === 'generate') {
+    await maybeOpenReviewArtifacts(bestCandidatePaths(results), { delayMs: 120 });
+  }
 }
 
 function buildWorkflow(target, threshold) {
@@ -342,19 +347,31 @@ function printAnalysis(target, threshold, analysis, candidatePath) {
   console.log(`         ${candidatePath}`);
 }
 
+function rankResults(results) {
+  const risk = { LOW: 0, MEDIUM: 1, HIGH: 2 };
+  return [...results].sort((a, b) => {
+    return (
+      risk[a.fragmentRisk] - risk[b.fragmentRisk] ||
+      b.bboxFill - a.bboxFill ||
+      b.strongCoverage - a.strongCoverage ||
+      a.threshold - b.threshold
+    );
+  });
+}
+
+function bestCandidatePaths(results) {
+  const paths = [];
+  for (const target of [...new Set(results.map((item) => item.target))]) {
+    const best = rankResults(results.filter((item) => item.target === target))[0];
+    if (best?.candidatePath) paths.push(best.candidatePath);
+  }
+  return paths;
+}
+
 function printRanking(results) {
   console.log('[RANKING] structural candidates (lower fragment risk, then higher bbox-fill):');
   for (const target of [...new Set(results.map((item) => item.target))]) {
-    const ranked = results
-      .filter((item) => item.target === target)
-      .sort((a, b) => {
-        const risk = { LOW: 0, MEDIUM: 1, HIGH: 2 };
-        return (
-          risk[a.fragmentRisk] - risk[b.fragmentRisk] ||
-          b.bboxFill - a.bboxFill ||
-          b.strongCoverage - a.strongCoverage
-        );
-      });
+    const ranked = rankResults(results.filter((item) => item.target === target));
     console.log(`  ${target}:`);
     for (const item of ranked) {
       console.log(
@@ -374,6 +391,9 @@ function selectTargets(value) {
 function parseOptions(args) {
   const result = { layer: 'both', thresholds: [...DEFAULT_THRESHOLDS] };
   for (const arg of args) {
+    if (arg === '--no-open') {
+      continue;
+    }
     if (arg.startsWith('--layer=')) {
       result.layer = arg.slice('--layer='.length);
     } else if (arg.startsWith('--thresholds=')) {
