@@ -43,12 +43,12 @@ async function main() {
     `Window: frames ${START_FRAME}-${END_FRAME} · ${FRAME_COUNT} frames · ${FPS} fps · ${DURATION_SECONDS.toFixed(3)} s`,
   );
   console.log(
-    `Capture: intrinsic Pixi canvas ${EXPECTED_CANVAS_WIDTH}x${EXPECTED_CANVAS_HEIGHT}`,
+    `Capture: browser-composited 1:1 Pixi canvas ${EXPECTED_CANVAS_WIDTH}x${EXPECTED_CANVAS_HEIGHT}`,
   );
 
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({
-    viewport: { width: 1280, height: 1800 },
+    viewport: { width: 1600, height: 2200 },
   });
   const page = await context.newPage();
 
@@ -98,21 +98,31 @@ async function main() {
     const repeatability = [];
     for (const frame of SAMPLE_FRAMES) {
       await gotoFrame(frameControl, canvas, frame);
+      const repeatedMaterialState = await requiredAttribute(canvas, 'data-pixi-material-state');
       const repeatedPath = join(repeatDirectory, `frame-${String(frame).padStart(4, '0')}.png`);
       const repeated = await captureCanvasPng(canvas, repeatedPath);
       const repeatedHash = prefixedSha(repeated);
       const original = captures.find((capture) => capture.frame === frame);
       if (!original) throw new Error(`Missing original capture for repeatability frame ${frame}.`);
-      const pass = repeatedHash === original.screenshotSha256;
+
+      const statePass = repeatedMaterialState === original.materialState;
+      const pixelPass = repeatedHash === original.screenshotSha256;
+      const pass = statePass && pixelPass;
       repeatability.push({
         frame,
         pass,
+        statePass,
+        pixelPass,
+        originalMaterialState: original.materialState,
+        repeatedMaterialState,
         originalSha256: original.screenshotSha256,
         repeatedSha256: repeatedHash,
         repeatedPath,
       });
       if (!pass) {
-        throw new Error(`Pixi exact-frame screenshot changed when frame ${frame} was revisited.`);
+        throw new Error(
+          `Pixi exact-frame repeatability failed at frame ${frame}: state=${statePass ? 'MATCH' : 'DIFF'}, pixels=${pixelPass ? 'MATCH' : 'DIFF'}.`,
+        );
       }
     }
 
@@ -144,7 +154,7 @@ async function main() {
       sourceAssets: EXPECTED_SOURCE_IDS.split(','),
       materialId: EXPECTED_MATERIAL_ID,
       technicalEvidence: {
-        captureSource: 'pixi-canvas-backing-store',
+        captureSource: 'playwright-element-screenshot-1to1-css',
         captureDimensions: {
           width: EXPECTED_CANVAS_WIDTH,
           height: EXPECTED_CANVAS_HEIGHT,
@@ -176,7 +186,7 @@ async function main() {
         ],
       },
       interpretation:
-        'The left A/B lane freezes the composed artwork at the first proof frame while the right lane advances only through exact Scene V3 frames. In the current artwork-review composition, background, vessel, and Enki artwork remain static; the bounded water material is therefore the intended perceptual difference. Evidence PNGs are captured directly from the 1080x1920 Pixi backing canvas so browser CSS scaling is excluded from the proof. Repeatability samples revisit exact frames and require byte-identical backing-canvas PNGs.',
+        'The left A/B lane freezes the composed artwork at the first proof frame while the right lane advances only through exact Scene V3 frames. In the current artwork-review composition, background, vessel, and Enki artwork remain static; the bounded water material is therefore the intended perceptual difference. Evidence PNGs use Playwright element screenshots while temporarily presenting the intrinsic 1080x1920 Pixi canvas at a 1:1 CSS size. This keeps the browser-composited capture path that already proved repeatable while excluding responsive down-scaling and odd H.264 dimensions. Repeatability requires both the exact material-state evidence string and the captured PNG bytes to match.',
     };
     const reportPath = join(outputDirectory, 'pixi-shot03-water-motion-proof.json');
     await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
@@ -267,33 +277,74 @@ async function waitForCanvasFrame(canvas, frame) {
 }
 
 async function captureCanvasPng(canvas, outputPath) {
-  const capture = await canvas.evaluate((element) => ({
-    width: element.width,
-    height: element.height,
-    dataUrl: element.toDataURL('image/png'),
-  }));
+  const originalStyles = await canvas.evaluate((element) => {
+    const host = element.parentElement;
+    return {
+      width: element.width,
+      height: element.height,
+      canvasStyle: element.getAttribute('style'),
+      hostStyle: host?.getAttribute('style') ?? null,
+    };
+  });
 
   if (
-    capture.width !== EXPECTED_CANVAS_WIDTH ||
-    capture.height !== EXPECTED_CANVAS_HEIGHT
+    originalStyles.width !== EXPECTED_CANVAS_WIDTH ||
+    originalStyles.height !== EXPECTED_CANVAS_HEIGHT
   ) {
     throw new Error(
-      `Pixi backing canvas is ${capture.width}x${capture.height}; expected ${EXPECTED_CANVAS_WIDTH}x${EXPECTED_CANVAS_HEIGHT}.`,
+      `Pixi backing canvas is ${originalStyles.width}x${originalStyles.height}; expected ${EXPECTED_CANVAS_WIDTH}x${EXPECTED_CANVAS_HEIGHT}.`,
     );
   }
 
-  const separator = capture.dataUrl.indexOf(',');
-  if (separator < 0 || !capture.dataUrl.startsWith('data:image/png')) {
-    throw new Error('Pixi backing canvas did not produce a PNG data URL.');
-  }
+  await canvas.evaluate(
+    (element, dimensions) => {
+      const host = element.parentElement;
+      element.style.width = `${dimensions.width}px`;
+      element.style.height = `${dimensions.height}px`;
+      element.style.maxWidth = 'none';
+      element.style.maxHeight = 'none';
+      if (host) {
+        host.style.width = `${dimensions.width}px`;
+        host.style.height = `${dimensions.height}px`;
+        host.style.maxHeight = 'none';
+        host.style.overflow = 'visible';
+      }
+    },
+    { width: EXPECTED_CANVAS_WIDTH, height: EXPECTED_CANVAS_HEIGHT },
+  );
 
-  const png = Buffer.from(capture.dataUrl.slice(separator + 1), 'base64');
-  if (!png.length) {
-    throw new Error('Pixi backing canvas produced an empty PNG.');
-  }
+  try {
+    const box = await canvas.boundingBox();
+    if (
+      !box ||
+      Math.round(box.width) !== EXPECTED_CANVAS_WIDTH ||
+      Math.round(box.height) !== EXPECTED_CANVAS_HEIGHT
+    ) {
+      throw new Error(
+        `Pixi capture element is ${box ? `${box.width}x${box.height}` : 'unavailable'}; expected ${EXPECTED_CANVAS_WIDTH}x${EXPECTED_CANVAS_HEIGHT}.`,
+      );
+    }
 
-  await writeFile(outputPath, png);
-  return png;
+    const png = await canvas.screenshot({
+      path: outputPath,
+      animations: 'disabled',
+    });
+    if (!png.length) {
+      throw new Error('Pixi canvas screenshot produced an empty PNG.');
+    }
+    return png;
+  } finally {
+    await canvas.evaluate((element, styles) => {
+      if (styles.canvasStyle === null) element.removeAttribute('style');
+      else element.setAttribute('style', styles.canvasStyle);
+
+      const host = element.parentElement;
+      if (host) {
+        if (styles.hostStyle === null) host.removeAttribute('style');
+        else host.setAttribute('style', styles.hostStyle);
+      }
+    }, originalStyles);
+  }
 }
 
 async function requiredAttribute(locator, name) {
