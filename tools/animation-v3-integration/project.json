@@ -14,7 +14,7 @@
     "test": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsx --tsconfig tools/animation-v3-integration/tsconfig.json --test --test-concurrency=1 tools/animation-v3-integration/src/golden-fixture.test.ts tools/animation-v3-integration/src/v2-compatibility.test.ts"
+        "command": "tsx --tsconfig tools/animation-v3-integration/tsconfig.json --test --test-concurrency=1 tools/animation-v3-integration/src/golden-fixture.test.ts tools/animation-v3-integration/src/v2-compatibility.test.ts tools/animation-v3-integration/src/inspection-integration.test.ts"
       }
     },
     "eslint:lint": {
