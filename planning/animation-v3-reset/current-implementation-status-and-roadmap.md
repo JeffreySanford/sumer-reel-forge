@@ -153,7 +153,7 @@ hardware profile         startup profiling/recommendations
 Prisma                    generated/prepared as required
 ```
 
-The 4300 Animation Lab integration is implemented in the current feature branch and must receive a local `pnpm start:all` smoke test before merge.
+The 4300 Animation Lab integration is implemented and locally verified on Windows. During the 2026-08-26 workstation smoke test, Studio 4200, Animation Lab 4300 and API docs 3000 all returned HTTP 200 while `start:all` was running, and Ctrl+C released all three listeners.
 
 ### 3.2 Why Animation Lab belongs in `start:all`
 
@@ -186,13 +186,13 @@ Storybook and test-only servers should remain independently configurable.
 
 ### 3.4 E2E behavior while `start:all` is running
 
-Animation Lab Playwright currently permits `reuseExistingServer: true`.
+Animation Lab Playwright currently permits `reuseExistingServer: true` and uses its own `ANIMATION_LAB_BASE_URL` endpoint, defaulting to 4300. Angular Studio retains the generic `BASE_URL` defaulting to 4200.
 
 Therefore, with `start:all` already running on port 4300, E2E can target that live development server instead of spawning a second preview server.
 
 This is desirable for the normal workstation workflow.
 
-When a future gate specifically needs to prove the production preview bundle rather than the dev server, that test should use an explicit alternate port/`BASE_URL` or disable server reuse rather than taking 4300 away from the workstation.
+When a future gate specifically needs to prove the production preview bundle rather than the dev server, that test should use an explicit alternate port/`ANIMATION_LAB_BASE_URL` or disable server reuse rather than taking 4300 away from the workstation.
 
 ---
 
@@ -381,7 +381,7 @@ Implemented:
 - Playwright E2E project;
 - engine-neutral inspection consumption;
 - production build;
-- stable local dev port 4300 in the current branch.
+- stable local dev port 4300, now part of the verified `start:all` workstation profile.
 
 ### 7.2 Exact-frame controls
 
@@ -441,13 +441,13 @@ Current Lab stories cover important proof states and failure modes, including:
 
 ### 7.6 Browser verification
 
-The current Pixi branch has verified the Lab across:
+The current foundation has verified the Lab across:
 
 - Chromium;
 - Firefox;
 - WebKit.
 
-Playwright checks the real Pixi canvas as well as exact-frame/diagnostic state.
+Playwright checks the real Pixi canvas as well as exact-frame/diagnostic state. After the 4200/4300 endpoint split, the focused Animation Lab E2E suite again passed 3/3 locally.
 
 ---
 
@@ -573,19 +573,23 @@ This rule applies equally to future V3/Pixi/Rive/Three work.
 
 ## 11. Current verified quality evidence
 
-As of the latest Pixi foundation verification:
+As of the workstation-startup verification layered on top of the Pixi foundation:
 
 ```text
 animation-pixi unit/boundary tests      4/4 pass
 animation-lab tests                    20/20 pass
 animation-lab browser E2E               3/3 pass
 animation-v3-integration               10/10 pass
-renderer tests                        124 pass / 2 intentional skips / 0 fail
+renderer tests                        128 pass / 2 intentional skips / 0 fail
 workspace lint                         14 projects successful
 workspace build                        12 projects successful
 workspace test                         12 projects successful
 production dependency audit            no known vulnerabilities
+start:all workstation health            3000/4200/4300 reachable
+start:all Ctrl+C cleanup                no listeners on 3000/4200/4300
 ```
+
+The 128 renderer passes include four workstation/startup regression checks. The two skips remain the existing human-acceptance/milestone gates and are intentionally not promoted to automated approval.
 
 Known nonblocking tooling notices:
 
@@ -718,16 +722,16 @@ A substantial foundation exists, but complete runtime-independent proof receipts
 
 The next implementation sequence should optimize for usable production capability, not package count.
 
-### Step A — finish/merge current Pixi foundation branch
+### Step A — merge verified workstation startup/documentation slice
 
-Before merge:
+The local exit gate is complete:
 
-- pull current remote docs/startup changes;
-- run Animation Lab focused gates after port change;
-- run `pnpm start:all` smoke test;
-- confirm 3000/4200/4300 are all reachable;
-- confirm Ctrl+C shuts down all three dev services cleanly;
-- confirm existing untracked local files remain untouched.
+- Animation Lab E2E passed 3/3 on Chromium, Firefox and WebKit after the endpoint-variable split;
+- `pnpm start:all` exposed API 3000, Angular Studio 4200 and Animation Lab 4300 successfully;
+- all three health checks returned HTTP 200;
+- Ctrl+C released all three repo-owned listeners;
+- renderer/tool regression coverage passed with 128 passes, 2 intentional human-gate skips and 0 failures;
+- existing untracked local files remain outside the tracked startup/documentation work.
 
 ### Step B — source-backed Pixi visual proof
 
@@ -938,7 +942,7 @@ Do not mark human acceptance complete from automated evidence.
 
 ## 20. Current next milestone
 
-After the current startup/documentation update is locally verified and merged, the highest-value next milestone is:
+After merging the verified workstation startup/documentation slice, the highest-value next milestone is:
 
 > **Render a real, checksum-bound Shot 3 visual asset through the deterministic Pixi surface at exact Scene V3 frames, then add one bounded material behavior without allowing Pixi to own time.**
 
