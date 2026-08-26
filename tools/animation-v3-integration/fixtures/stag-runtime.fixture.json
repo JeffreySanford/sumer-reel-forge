@@ -1,0 +1,10 @@
+{
+  "fixtureVersion": 1,
+  "id": "runtime-def:stag:foundation",
+  "origin": { "x": 4, "y": 2 },
+  "velocityPerFrame": { "x": 0.02, "y": 0.005 },
+  "opacity": 1,
+  "proofStates": {
+    "101": "VESSEL_TRAVEL"
+  }
+}

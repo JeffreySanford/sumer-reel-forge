@@ -69,7 +69,6 @@ export interface SceneCompilerInput {
   readonly visualEvidenceIds: readonly string[];
   readonly assets: readonly CompilerAssetReference[];
   readonly qa: unknown;
-  readonly [key: string]: unknown;
 }
 
 export interface ResolvedHistoricalSource {

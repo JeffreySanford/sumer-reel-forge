@@ -1,0 +1,10 @@
+{
+  "fixtureVersion": 1,
+  "id": "runtime-def:enki:foundation",
+  "origin": { "x": 0, "y": 0 },
+  "velocityPerFrame": { "x": 0.01, "y": 0 },
+  "opacity": 1,
+  "proofStates": {
+    "101": "BLINK_CLOSED"
+  }
+}

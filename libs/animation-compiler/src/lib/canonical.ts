@@ -55,7 +55,15 @@ export function canonicalize(
   options: CanonicalizeOptions = {},
   path = '',
 ): CanonicalValue {
-  if (value === null || typeof value === 'string' || typeof value === 'boolean') {
+  if (value === null) {
+    return null;
+  }
+
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (typeof value === 'boolean') {
     return value;
   }
 

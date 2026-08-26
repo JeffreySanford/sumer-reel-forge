@@ -1,0 +1,95 @@
+{
+  "receiptVersion": 1,
+  "receiptType": "SCENE_V3_FOUNDATION",
+  "fixtureId": "fixture:scene-v3:enki-helm-foundation:v1",
+  "canonicalFormVersion": "scene-canonical-form:v1",
+  "hashAlgorithm": "sha256",
+  "sourceSceneId": "scene:ch01:r01:s03:foundation",
+  "sourceSceneRevision": 1,
+  "sourceSceneHash": "sha256:c2a675b2373dd586436be4976b56682ee0455fc29d2b3227b045fa68e7a04948",
+  "resolvedSceneHash": "sha256:45abb40d06397aefc1853ad0ec8debb36024ba6f15af55a38414dac8c49f4f82",
+  "historicalSources": [
+    {
+      "id": "etcsl-1.1.3",
+      "recordRevision": "v1",
+      "recordHash": "sha256:c67a923ff03cdf03d43cf57ecdc286215d354ed30eefc5c7eb43762e632c873c"
+    },
+    {
+      "id": "etcsl-1.1.4",
+      "recordRevision": "v1",
+      "recordHash": "sha256:aea88d8ca989413b8769250c34a6ff5d6dbd4ce23317f20f25b618c7ae5da116"
+    }
+  ],
+  "visualEvidence": [
+    {
+      "id": "visual:bm:standard-of-ur:1928-1010-3:v1",
+      "recordRevision": "v1",
+      "recordHash": "sha256:3bac3d12b131cbacc828bcde72df505dc95cc260d87aca7fa1a08e55e3734a19",
+      "rightsMode": "metadata-only"
+    }
+  ],
+  "runtimes": [
+    {
+      "id": "runtime:fake:actor",
+      "runtime": "fake",
+      "version": "1.0.0",
+      "adapterVersion": "1.0.0"
+    },
+    {
+      "id": "runtime:fake:camera",
+      "runtime": "fake",
+      "version": "1.0.0",
+      "adapterVersion": "1.0.0"
+    },
+    {
+      "id": "runtime:fake:environment",
+      "runtime": "fake",
+      "version": "1.0.0",
+      "adapterVersion": "1.0.0"
+    },
+    {
+      "id": "runtime:fake:prop",
+      "runtime": "fake",
+      "version": "1.0.0",
+      "adapterVersion": "1.0.0"
+    }
+  ],
+  "semanticSeeds": [
+    {
+      "targetId": "actor-instance:enki:s03",
+      "channel": "body.breath",
+      "purpose": "phase",
+      "algorithmVersion": 1,
+      "value": 1079719801
+    },
+    {
+      "targetId": "actor-instance:enki:s03",
+      "channel": "face.blink",
+      "purpose": "timing",
+      "algorithmVersion": 1,
+      "value": 2815321919
+    },
+    {
+      "targetId": "prop:stag-of-absu",
+      "channel": "transform.travel",
+      "purpose": "phase",
+      "algorithmVersion": 1,
+      "value": 2770206497
+    }
+  ],
+  "proofFrame": {
+    "id": "BLINK_CLOSED",
+    "frame": 101,
+    "runtimeType": "fake",
+    "runtimeVersion": "1.0.0",
+    "definitionId": "runtime-def:enki:foundation",
+    "proofState": "BLINK_CLOSED",
+    "values": {
+      "x": 1.01,
+      "y": 0,
+      "opacity": 1
+    }
+  },
+  "compilerStatus": "PASS",
+  "compilerIssueCodes": []
+}
