@@ -5,7 +5,7 @@ import { join, resolve } from 'node:path';
 import { chromium } from '@playwright/test';
 
 const ROOT = resolve('.');
-const BASE_URL = process.env.ANIMATION_LAB_BASE_URL ?? 'http://127.0.0.1:4300';
+const BASE_URL = process.env.ANIMATION_LAB_BASE_URL ?? 'http://localhost:4300';
 const OUTPUT_ROOT = resolve('tmp/animation-previews/pixi-shot03-water-motion-proof');
 const FFMPEG = process.env.FFMPEG_COMMAND ?? 'ffmpeg';
 const FPS = 30;
