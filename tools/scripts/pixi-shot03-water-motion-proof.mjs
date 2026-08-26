@@ -43,7 +43,7 @@ async function main() {
     `Window: frames ${START_FRAME}-${END_FRAME} · ${FRAME_COUNT} frames · ${FPS} fps · ${DURATION_SECONDS.toFixed(3)} s`,
   );
   console.log(
-    `Capture: browser-composited exact clip ${EXPECTED_CANVAS_WIDTH}x${EXPECTED_CANVAS_HEIGHT}`,
+    `Capture: browser-composited viewport-origin clip ${EXPECTED_CANVAS_WIDTH}x${EXPECTED_CANVAS_HEIGHT}`,
   );
 
   const browser = await chromium.launch({ headless: true });
@@ -154,7 +154,7 @@ async function main() {
       sourceAssets: EXPECTED_SOURCE_IDS.split(','),
       materialId: EXPECTED_MATERIAL_ID,
       technicalEvidence: {
-        captureSource: 'playwright-page-exact-css-clip',
+        captureSource: 'playwright-page-viewport-origin-css-clip',
         captureDimensions: {
           width: EXPECTED_CANVAS_WIDTH,
           height: EXPECTED_CANVAS_HEIGHT,
@@ -186,7 +186,7 @@ async function main() {
         ],
       },
       interpretation:
-        'The left A/B lane freezes the composed artwork at the first proof frame while the right lane advances only through exact Scene V3 frames. In the current artwork-review composition, background, vessel, and Enki artwork remain static; the bounded water material is therefore the intended perceptual difference. Evidence PNGs use the browser compositor while temporarily presenting the Pixi canvas at 1:1 scale, then capture an explicit 1080x1920 CSS-pixel page clip. This avoids fractional element-edge expansion while preserving the compositor path that proved repeatable. Every PNG header is checked for exact dimensions before it can reach FFmpeg. Repeatability requires both the exact material-state evidence string and captured PNG bytes to match.',
+        'The left A/B lane freezes the composed artwork at the first proof frame while the right lane advances only through exact Scene V3 frames. In the current artwork-review composition, background, vessel, and Enki artwork remain static; the bounded water material is therefore the intended perceptual difference. For each evidence capture, the existing Pixi canvas is temporarily pinned to viewport coordinate 0,0 at 1:1 1080x1920 CSS size, captured through the browser compositor with an explicit 0,0,1080,1920 clip, then restored. This removes responsive layout, fractional centering, and viewport-edge clipping from the evidence contract. Every PNG header is checked for exact dimensions before it can reach FFmpeg. Repeatability requires both the exact material-state evidence string and captured PNG bytes to match.',
     };
     const reportPath = join(outputDirectory, 'pixi-shot03-water-motion-proof.json');
     await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
@@ -299,16 +299,21 @@ async function captureCanvasPng(page, canvas, outputPath) {
   await canvas.evaluate(
     (element, dimensions) => {
       const host = element.parentElement;
+      if (host) host.style.overflow = 'visible';
+
+      element.style.position = 'fixed';
+      element.style.left = '0px';
+      element.style.top = '0px';
       element.style.width = `${dimensions.width}px`;
       element.style.height = `${dimensions.height}px`;
       element.style.maxWidth = 'none';
       element.style.maxHeight = 'none';
-      if (host) {
-        host.style.width = `${dimensions.width}px`;
-        host.style.height = `${dimensions.height}px`;
-        host.style.maxHeight = 'none';
-        host.style.overflow = 'visible';
-      }
+      element.style.margin = '0';
+      element.style.border = '0';
+      element.style.borderRadius = '0';
+      element.style.transform = 'none';
+      element.style.boxSizing = 'content-box';
+      element.style.zIndex = '2147483647';
     },
     { width: EXPECTED_CANVAS_WIDTH, height: EXPECTED_CANVAS_HEIGHT },
   );
@@ -317,11 +322,13 @@ async function captureCanvasPng(page, canvas, outputPath) {
     const box = await canvas.boundingBox();
     if (
       !box ||
+      Math.abs(box.x) > 0.01 ||
+      Math.abs(box.y) > 0.01 ||
       Math.round(box.width) !== EXPECTED_CANVAS_WIDTH ||
       Math.round(box.height) !== EXPECTED_CANVAS_HEIGHT
     ) {
       throw new Error(
-        `Pixi capture element is ${box ? `${box.width}x${box.height}` : 'unavailable'}; expected ${EXPECTED_CANVAS_WIDTH}x${EXPECTED_CANVAS_HEIGHT}.`,
+        `Pixi capture element is ${box ? `x=${box.x},y=${box.y},${box.width}x${box.height}` : 'unavailable'}; expected x=0,y=0,${EXPECTED_CANVAS_WIDTH}x${EXPECTED_CANVAS_HEIGHT}.`,
       );
     }
 
@@ -330,8 +337,8 @@ async function captureCanvasPng(page, canvas, outputPath) {
       animations: 'disabled',
       scale: 'css',
       clip: {
-        x: box.x,
-        y: box.y,
+        x: 0,
+        y: 0,
         width: EXPECTED_CANVAS_WIDTH,
         height: EXPECTED_CANVAS_HEIGHT,
       },
