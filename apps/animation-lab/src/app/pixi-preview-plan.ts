@@ -1,4 +1,4 @@
-import type { PixiRenderFrame } from '@sumer-reel-forge/animation-pixi';
+import type { PixiRenderFrame, PixiSourceAsset } from '@sumer-reel-forge/animation-pixi';
 import type { RuntimePreviewModel, RuntimePreviewNode } from './runtime-preview';
 
 function clamp(value: number, min: number, max: number): number {
@@ -34,6 +34,7 @@ export function buildPixiPreviewPlan(
   model: RuntimePreviewModel,
   width: number,
   height: number,
+  sourceAssets: readonly PixiSourceAsset[] = [],
 ): PixiRenderFrame {
   const resolvedWidth = assertViewportDimension(width, 'width');
   const resolvedHeight = assertViewportDimension(height, 'height');
@@ -55,5 +56,6 @@ export function buildPixiPreviewPlan(
     height: resolvedHeight,
     nodeCount: nodes.length,
     nodes: Object.freeze(nodes),
+    sourceAssets: Object.freeze(sourceAssets.map((asset) => Object.freeze({ ...asset }))),
   });
 }
