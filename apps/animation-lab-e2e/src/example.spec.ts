@@ -45,6 +45,15 @@ test('renders the golden Scene V3 runtime model through Pixi at exact frames', a
   await expect(canvas).toHaveAttribute('data-pixi-source-asset-count', '1');
   await expect(canvas).toHaveAttribute('data-pixi-source-asset-ids', 'shot03-water-v1');
   await expect(canvas).toHaveAttribute('data-pixi-source-asset-sha256', SHOT03_WATER_SHA256);
+  await expect(canvas).toHaveAttribute('data-pixi-source-asset-dimensions', 'shot03-water-v1:941x1672');
+  await expect(canvas).toHaveAttribute(
+    'data-pixi-source-asset-registration',
+    'shot03-water-v1:cover-center',
+  );
+  await expect(canvas).toHaveAttribute(
+    'data-pixi-source-asset-registration-rect',
+    'shot03-water-v1:-0.287,0.000,1080.574,1920.000',
+  );
   await expect(canvas).toHaveAttribute('data-pixi-source-asset-verification', 'verified');
 
   await expect(page.getByText('4 runtimes evaluated')).toBeVisible();
@@ -72,6 +81,10 @@ test('renders the golden Scene V3 runtime model through Pixi at exact frames', a
   await expect(canvas).toHaveAttribute('aria-label', 'Pixi runtime preview at frame 0');
   await expect(canvas).toHaveAttribute('data-pixi-frame', '0');
   await expect(canvas).toHaveAttribute('data-pixi-source-asset-sha256', SHOT03_WATER_SHA256);
+  await expect(canvas).toHaveAttribute(
+    'data-pixi-source-asset-registration-rect',
+    'shot03-water-v1:-0.287,0.000,1080.574,1920.000',
+  );
   await expect(
     page.locator('[data-composed-transform="actor-instance:enki:s03"]'),
   ).toHaveText('(4.000, 2.000)');
