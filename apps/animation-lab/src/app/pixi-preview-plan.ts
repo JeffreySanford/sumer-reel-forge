@@ -72,6 +72,10 @@ export function buildPixiPreviewPlan(
 ): PixiRenderFrame {
   const resolvedWidth = assertViewportDimension(width, 'width');
   const resolvedHeight = assertViewportDimension(height, 'height');
+
+  // Artwork review is the default: source-backed composition only. Runtime
+  // diagnostics remain available in the inspection table and may be projected
+  // into Pixi explicitly for engineering-focused tests or specialist views.
   const nodes = includeDiagnosticNodes
     ? model.nodes.map((node) =>
         Object.freeze({
