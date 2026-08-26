@@ -28,6 +28,13 @@ export function PixiRuntimeCanvas({
   planRef.current = plan;
 
   useEffect(() => {
+    const host = hostRef.current;
+    if (!host) {
+      setStatus('ERROR');
+      setError('Pixi preview host is unavailable.');
+      return;
+    }
+
     let disposed = false;
     let createdSurface: PixiPreviewSurface | null = null;
 
@@ -40,12 +47,6 @@ export function PixiRuntimeCanvas({
         createdSurface = surface;
 
         if (disposed) {
-          surface.destroy();
-          return;
-        }
-
-        const host = hostRef.current;
-        if (!host) {
           surface.destroy();
           return;
         }
@@ -66,7 +67,7 @@ export function PixiRuntimeCanvas({
       disposed = true;
       if (surfaceRef.current === createdSurface) surfaceRef.current = null;
       createdSurface?.destroy();
-      hostRef.current?.replaceChildren();
+      host.replaceChildren();
     };
   }, [width, height]);
 
