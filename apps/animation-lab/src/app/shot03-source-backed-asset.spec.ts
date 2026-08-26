@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import { SHOT03_WATER_SHA256, SHOT03_WATER_SOURCE_ASSET } from './shot03-source-backed-asset';
 
 type ManifestLayer = {
@@ -20,17 +20,28 @@ type AnimationManifest = {
   readonly shots: readonly ManifestShot[];
 };
 
-const waterPath = fileURLToPath(
-  new URL(
-    '../../../../assets/blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-03/water.png',
-    import.meta.url,
-  ),
+function findRepositoryRoot(start: string): string {
+  let current = resolve(start);
+  while (true) {
+    if (existsSync(join(current, 'nx.json')) && existsSync(join(current, 'package.json'))) {
+      return current;
+    }
+    const parent = dirname(current);
+    if (parent === current) {
+      throw new Error(`Could not locate repository root from ${start}.`);
+    }
+    current = parent;
+  }
+}
+
+const repositoryRoot = findRepositoryRoot(process.cwd());
+const waterPath = join(
+  repositoryRoot,
+  'assets/blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-03/water.png',
 );
-const manifestPath = fileURLToPath(
-  new URL(
-    '../../../../assets/blessings-of-sumer/chapter-01/reel-01/animation-v1/manifest.json',
-    import.meta.url,
-  ),
+const manifestPath = join(
+  repositoryRoot,
+  'assets/blessings-of-sumer/chapter-01/reel-01/animation-v1/manifest.json',
 );
 
 describe('Shot 3 source-backed Pixi asset', () => {
