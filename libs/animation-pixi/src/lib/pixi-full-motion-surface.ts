@@ -30,6 +30,8 @@ export interface PixiSourceLayerFrameState {
   readonly offsetX: number;
   readonly offsetY: number;
   readonly scale: number;
+  readonly scaleX?: number;
+  readonly scaleY?: number;
   readonly rotationDegrees: number;
   readonly opacity: number;
   readonly timeSource: 'exact-frame';
@@ -50,6 +52,8 @@ export interface PixiLocalGroupTransform {
   readonly offsetX: number;
   readonly offsetY: number;
   readonly scale: number;
+  readonly scaleX: number;
+  readonly scaleY: number;
   readonly rotationDegrees: number;
 }
 
@@ -220,9 +224,8 @@ export async function createPixiFullMotionSurface(
       app.canvas.setAttribute(
         'data-pixi-source-layer-state',
         frame.sourceLayerStates
-          .map(
-            (state) =>
-              `${state.assetId}:x=${state.offsetX.toFixed(3)},y=${state.offsetY.toFixed(3)},scale=${state.scale.toFixed(6)},rot=${state.rotationDegrees.toFixed(6)},opacity=${state.opacity.toFixed(3)}`,
+          .map((state) =>
+            `${state.assetId}:x=${state.offsetX.toFixed(3)},y=${state.offsetY.toFixed(3)},scale=${state.scale.toFixed(6)},scaleX=${effectiveScaleX(state).toFixed(6)},scaleY=${effectiveScaleY(state).toFixed(6)},rot=${state.rotationDegrees.toFixed(6)},opacity=${state.opacity.toFixed(3)}`,
           )
           .join(','),
       );
@@ -255,6 +258,15 @@ export function resolvePixiShot03LocalGroupState(
   assertSameTransform(cameraState, waterState, 'water must remain camera-carried');
   assertSameTransform(enkiBodyState, enkiEyesState, 'Enki eye state must remain character-carried');
 
+  const cameraScaleX = effectiveScaleX(cameraState);
+  const cameraScaleY = effectiveScaleY(cameraState);
+  const vesselScaleX = effectiveScaleX(vesselState);
+  const vesselScaleY = effectiveScaleY(vesselState);
+  const enkiScaleX = effectiveScaleX(enkiBodyState);
+  const enkiScaleY = effectiveScaleY(enkiBodyState);
+  const riggingScaleX = effectiveScaleX(riggingState);
+  const riggingScaleY = effectiveScaleY(riggingState);
+
   const camera = Object.freeze({
     id: 'camera-root' as const,
     pivotX: frame.width * 0.5,
@@ -262,6 +274,8 @@ export function resolvePixiShot03LocalGroupState(
     offsetX: cameraState.offsetX,
     offsetY: cameraState.offsetY,
     scale: cameraState.scale,
+    scaleX: cameraScaleX,
+    scaleY: cameraScaleY,
     rotationDegrees: cameraState.rotationDegrees,
   });
 
@@ -272,6 +286,8 @@ export function resolvePixiShot03LocalGroupState(
     offsetX: vesselState.offsetX - cameraState.offsetX,
     offsetY: vesselState.offsetY - cameraState.offsetY,
     scale: vesselState.scale / cameraState.scale,
+    scaleX: vesselScaleX / cameraScaleX,
+    scaleY: vesselScaleY / cameraScaleY,
     rotationDegrees: vesselState.rotationDegrees - cameraState.rotationDegrees,
   });
 
@@ -282,6 +298,8 @@ export function resolvePixiShot03LocalGroupState(
     offsetX: enkiBodyState.offsetX - vesselState.offsetX,
     offsetY: enkiBodyState.offsetY - vesselState.offsetY,
     scale: enkiBodyState.scale / vesselState.scale,
+    scaleX: enkiScaleX / vesselScaleX,
+    scaleY: enkiScaleY / vesselScaleY,
     rotationDegrees: enkiBodyState.rotationDegrees - vesselState.rotationDegrees,
   });
 
@@ -292,6 +310,8 @@ export function resolvePixiShot03LocalGroupState(
     offsetX: riggingState.offsetX - cameraState.offsetX,
     offsetY: riggingState.offsetY - cameraState.offsetY,
     scale: riggingState.scale / cameraState.scale,
+    scaleX: riggingScaleX / cameraScaleX,
+    scaleY: riggingScaleY / cameraScaleY,
     rotationDegrees: riggingState.rotationDegrees - cameraState.rotationDegrees,
   });
 
@@ -321,7 +341,7 @@ function applyGroupTransform(
   container.pivot.set(transform.pivotX, transform.pivotY);
   container.x = transform.pivotX + transform.offsetX;
   container.y = transform.pivotY + transform.offsetY;
-  container.scale.set(transform.scale, transform.scale);
+  container.scale.set(transform.scaleX, transform.scaleY);
   container.rotation = (transform.rotationDegrees * Math.PI) / 180;
 }
 
@@ -343,6 +363,14 @@ function requiredState(
   return state;
 }
 
+function effectiveScaleX(state: PixiSourceLayerFrameState): number {
+  return state.scaleX ?? state.scale;
+}
+
+function effectiveScaleY(state: PixiSourceLayerFrameState): number {
+  return state.scaleY ?? state.scale;
+}
+
 function assertSameTransform(
   expected: PixiSourceLayerFrameState,
   actual: PixiSourceLayerFrameState,
@@ -353,6 +381,8 @@ function assertSameTransform(
     Math.abs(expected.offsetX - actual.offsetX) > epsilon ||
     Math.abs(expected.offsetY - actual.offsetY) > epsilon ||
     Math.abs(expected.scale - actual.scale) > epsilon ||
+    Math.abs(effectiveScaleX(expected) - effectiveScaleX(actual)) > epsilon ||
+    Math.abs(effectiveScaleY(expected) - effectiveScaleY(actual)) > epsilon ||
     Math.abs(expected.rotationDegrees - actual.rotationDegrees) > epsilon
   ) {
     throw new Error(`${message}: ${actual.assetId} diverged from ${expected.assetId}.`);
@@ -363,7 +393,7 @@ function serializeLocalGroups(groups: PixiShot03LocalGroupState): string {
   return [groups.camera, groups.vessel, groups.enki, groups.rigging]
     .map(
       (group) =>
-        `${group.id}:pivot=${group.pivotX.toFixed(3)}/${group.pivotY.toFixed(3)},x=${group.offsetX.toFixed(3)},y=${group.offsetY.toFixed(3)},scale=${group.scale.toFixed(6)},rot=${group.rotationDegrees.toFixed(6)}`,
+        `${group.id}:pivot=${group.pivotX.toFixed(3)}/${group.pivotY.toFixed(3)},x=${group.offsetX.toFixed(3)},y=${group.offsetY.toFixed(3)},scale=${group.scale.toFixed(6)},scaleX=${group.scaleX.toFixed(6)},scaleY=${group.scaleY.toFixed(6)},rot=${group.rotationDegrees.toFixed(6)}`,
     )
     .join('|');
 }
@@ -413,16 +443,22 @@ function assertCompatibleFrame(
       throw new Error(`Duplicate Pixi source-layer state for ${state.assetId}.`);
     }
     stateIds.add(state.assetId);
+    const scaleX = effectiveScaleX(state);
+    const scaleY = effectiveScaleY(state);
     if (
       !Number.isFinite(state.offsetX) ||
       !Number.isFinite(state.offsetY) ||
       !Number.isFinite(state.scale) ||
+      !Number.isFinite(scaleX) ||
+      !Number.isFinite(scaleY) ||
       !Number.isFinite(state.rotationDegrees) ||
       !Number.isFinite(state.opacity)
     ) {
       throw new Error(`Pixi source-layer state ${state.assetId} contains non-finite values.`);
     }
-    if (state.scale <= 0) throw new Error(`Pixi source-layer state ${state.assetId} scale must be positive.`);
+    if (state.scale <= 0 || scaleX <= 0 || scaleY <= 0) {
+      throw new Error(`Pixi source-layer state ${state.assetId} scale must be positive.`);
+    }
     if (state.opacity < 0 || state.opacity > 1) {
       throw new Error(`Pixi source-layer state ${state.assetId} opacity must be between 0 and 1.`);
     }
