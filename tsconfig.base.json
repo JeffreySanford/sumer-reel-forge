@@ -24,6 +24,9 @@
       ],
       "@sumer-reel-forge/animation-frame": [
         "./libs/animation-frame/src/index.ts"
+      ],
+      "@sumer-reel-forge/animation-runtime": [
+        "./libs/animation-runtime/src/index.ts"
       ]
     }
   },
