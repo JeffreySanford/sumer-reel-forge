@@ -23,6 +23,7 @@ describe('buildPixiPreviewPlan', () => {
     expect(plan.frame).toBe(101);
     expect(plan.width).toBe(1080);
     expect(plan.height).toBe(1920);
+    expect(model.nodes).toHaveLength(3);
     expect(plan.nodeCount).toBe(0);
     expect(plan.nodes).toEqual([]);
     expect(plan.materials).toEqual([]);
