@@ -78,8 +78,8 @@ test('renders the full Shot 3 motion review through Pixi at exact frames', async
   await expect(pixiHost).toHaveAttribute('data-pixi-review-mode', 'full-motion');
   await expect(pixiHost).toHaveAttribute('data-pixi-review-composition', 'shot03-full-motion-layers');
   await expect(pixiHost).toHaveAttribute('data-shot03-camera', 'x=-2.973,y=-4.162,scale=1.014271');
-  await expect(pixiHost).toHaveAttribute('data-shot03-vessel', 'heave=-1.547,roll=-0.000565');
-  await expect(pixiHost).toHaveAttribute('data-shot03-rigging', 'x=-0.261,y=-1.428,rot=-0.070381,lag=0.240');
+  await expect(pixiHost).toHaveAttribute('data-shot03-vessel', 'heave=-4.095,roll=-0.001257');
+  await expect(pixiHost).toHaveAttribute('data-shot03-rigging', 'x=-0.712,y=-3.781,rot=-0.156403,lag=0.240');
   await expect(pixiHost).toHaveAttribute('data-shot03-blink-opacity', '1.000');
 
   const canvas = page.locator('canvas[data-pixi-full-motion-surface="true"]');
@@ -87,6 +87,18 @@ test('renders the full Shot 3 motion review through Pixi at exact frames', async
   await expect(canvas).toHaveAttribute('aria-label', 'Pixi Shot 3 full-motion preview at frame 101');
   await expect(canvas).toHaveAttribute('data-viewport-width', '1080');
   await expect(canvas).toHaveAttribute('data-viewport-height', '1920');
+  await expect(canvas).toHaveAttribute(
+    'data-pixi-source-layer-state',
+    /shot03-vessel-v1:x=-2\.973,y=-8\.258,scale=1\.014271,rot=-0\.001257,opacity=1\.000/,
+  );
+  await expect(canvas).toHaveAttribute(
+    'data-pixi-source-layer-state',
+    /shot03-enki-body-v1:x=-2\.973,y=-8\.258,scale=1\.014271,rot=-0\.001257,opacity=1\.000/,
+  );
+  await expect(canvas).toHaveAttribute(
+    'data-pixi-source-layer-state',
+    /shot03-enki-eyes-v1:x=-2\.973,y=-8\.258,scale=1\.014271,rot=-0\.001257,opacity=1\.000/,
+  );
   await capturePixiFrameEvidence(canvas, 101, 'BLINK_CLOSED', testInfo);
 
   await expect(page.getByText('4 runtimes evaluated', { exact: true })).toBeVisible();
