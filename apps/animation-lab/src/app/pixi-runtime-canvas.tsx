@@ -35,7 +35,13 @@ export function PixiRuntimeCanvas({
   planRef.current = plan;
 
   const sourceAssetSignature = useMemo(
-    () => sourceAssets.map((asset) => `${asset.id}:${asset.sha256}:${asset.width}x${asset.height}`).join('|'),
+    () =>
+      sourceAssets
+        .map(
+          (asset) =>
+            `${asset.id}:${asset.sha256}:${asset.width}x${asset.height}:${asset.registration}`,
+        )
+        .join('|'),
     [sourceAssets],
   );
 
