@@ -12,7 +12,7 @@ loadLocalEnvFile();
 const pnpmCommand = 'pnpm';
 const dockerCommand = process.platform === 'win32' ? 'docker.exe' : 'docker';
 const infrastructureServices = ['postgres'];
-const managedPorts = [3000, 4200, 9229];
+const managedPorts = [3000, 4200, 4300, 9229];
 const databaseUrl = new URL(
   process.env.DATABASE_URL ??
     'postgresql://sumer_reel_forge:sumer_reel_forge@localhost:5432/sumer_reel_forge',
@@ -396,7 +396,7 @@ $devProcessIds = Get-CimInstance Win32_Process |
     $isRepoProcess = $commandLine.Contains($root)
     $isNodeTool = $_.Name -in @('node.exe', 'esbuild.exe')
     $isStartAllDevProcess =
-      $commandLine -match 'nx\\.js"\\s+"serve"\\s+"(api|web)"' -or
+      $commandLine -match 'nx\\.js"\\s+"serve"\\s+"(api|web|animation-lab)"' -or
       $commandLine -match 'run-executor\\.js' -or
       $commandLine -match 'webpack-cli' -or
       $_.Name -eq 'esbuild.exe'
@@ -494,6 +494,7 @@ async function main() {
   assertDockerAvailable();
   await assertPortFree(3000).catch((error) => fail(error.message));
   await assertPortFree(4200).catch((error) => fail(error.message));
+  await assertPortFree(4300).catch((error) => fail(error.message));
 
   restartStaleInfrastructure();
   await prepareDatabase();
@@ -501,17 +502,25 @@ async function main() {
   startCleanupWatcher();
   startProcess('api', ['nx', 'serve', 'api'], { PORT: '3000' });
   startProcess('web', ['nx', 'serve', 'web', '--port=4200'], { PORT: '4200' });
-
-  await Promise.all([waitForPort(3000, 60000), waitForPort(4200, 60000)]).catch(
-    (error) => fail(error.message),
+  startProcess(
+    'animation-lab',
+    ['nx', 'serve', 'animation-lab', '--port=4300'],
+    { PORT: '4300' },
   );
 
+  await Promise.all([
+    waitForPort(3000, 60000),
+    waitForPort(4200, 60000),
+    waitForPort(4300, 60000),
+  ]).catch((error) => fail(error.message));
+
   console.log('Sumer Reel Forge is running:');
-  console.log('- Web: http://localhost:4200');
+  console.log('- Studio: http://localhost:4200');
+  console.log('- Animation Lab: http://localhost:4300');
   console.log('- API: http://localhost:3000/api');
   console.log('- API docs: http://localhost:3000/api/docs');
   console.log(`- Planning: ${process.env.PLANNING_PROVIDER ?? 'deterministic'}`);
-  console.log('Press Ctrl+C to stop web/API dev servers.');
+  console.log('Press Ctrl+C to stop Studio/API/Animation Lab dev servers.');
 }
 
 process.on('SIGINT', () => {
