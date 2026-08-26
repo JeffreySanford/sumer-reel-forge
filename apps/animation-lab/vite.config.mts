@@ -8,12 +8,12 @@ export default defineConfig(() => ({
   root: import.meta.dirname,
   cacheDir: '../../node_modules/.vite/apps/animation-lab',
   server: {
-    port: 4200,
+    port: 4300,
     host: 'localhost',
     strictPort: true,
   },
   preview: {
-    port: 4200,
+    port: 4300,
     host: 'localhost',
     strictPort: true,
   },
