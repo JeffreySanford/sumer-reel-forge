@@ -17,6 +17,8 @@ const SAMPLE_FRAMES = [72, 87, 101, 116, 131];
 const EXPECTED_SOURCE_IDS =
   'shot03-background-v1,shot03-water-v1,shot03-vessel-v1,shot03-enki-body-v1';
 const EXPECTED_MATERIAL_ID = 'shot03-water-micro-drift-v1';
+const EXPECTED_CANVAS_WIDTH = 1080;
+const EXPECTED_CANVAS_HEIGHT = 1920;
 
 void main().catch((error) => {
   console.error(error instanceof Error ? (error.stack ?? error.message) : String(error));
@@ -39,6 +41,9 @@ async function main() {
   console.log(`Animation Lab: ${BASE_URL}`);
   console.log(
     `Window: frames ${START_FRAME}-${END_FRAME} · ${FRAME_COUNT} frames · ${FPS} fps · ${DURATION_SECONDS.toFixed(3)} s`,
+  );
+  console.log(
+    `Capture: intrinsic Pixi canvas ${EXPECTED_CANVAS_WIDTH}x${EXPECTED_CANVAS_HEIGHT}`,
   );
 
   const browser = await chromium.launch({ headless: true });
@@ -67,10 +72,7 @@ async function main() {
 
       const materialState = await requiredAttribute(canvas, 'data-pixi-material-state');
       const screenshotPath = join(activeDirectory, `frame-${String(frame).padStart(4, '0')}.png`);
-      const screenshot = await canvas.screenshot({
-        path: screenshotPath,
-        animations: 'disabled',
-      });
+      const screenshot = await captureCanvasPng(canvas, screenshotPath);
       captures.push({
         frame,
         materialState,
@@ -96,13 +98,12 @@ async function main() {
     const repeatability = [];
     for (const frame of SAMPLE_FRAMES) {
       await gotoFrame(frameControl, canvas, frame);
-      const repeated = await canvas.screenshot({ animations: 'disabled' });
+      const repeatedPath = join(repeatDirectory, `frame-${String(frame).padStart(4, '0')}.png`);
+      const repeated = await captureCanvasPng(canvas, repeatedPath);
       const repeatedHash = prefixedSha(repeated);
       const original = captures.find((capture) => capture.frame === frame);
       if (!original) throw new Error(`Missing original capture for repeatability frame ${frame}.`);
       const pass = repeatedHash === original.screenshotSha256;
-      const repeatedPath = join(repeatDirectory, `frame-${String(frame).padStart(4, '0')}.png`);
-      await writeFile(repeatedPath, repeated);
       repeatability.push({
         frame,
         pass,
@@ -143,6 +144,11 @@ async function main() {
       sourceAssets: EXPECTED_SOURCE_IDS.split(','),
       materialId: EXPECTED_MATERIAL_ID,
       technicalEvidence: {
+        captureSource: 'pixi-canvas-backing-store',
+        captureDimensions: {
+          width: EXPECTED_CANVAS_WIDTH,
+          height: EXPECTED_CANVAS_HEIGHT,
+        },
         capturedFrameCount: captures.length,
         uniqueMaterialStateCount: uniqueMaterialStates.size,
         uniqueRenderedFrameCount: uniqueScreenshotHashes.size,
@@ -170,7 +176,7 @@ async function main() {
         ],
       },
       interpretation:
-        'The left A/B lane freezes the composed artwork at the first proof frame while the right lane advances only through exact Scene V3 frames. In the current artwork-review composition, background, vessel, and Enki artwork remain static; the bounded water material is therefore the intended perceptual difference. Repeatability samples revisit exact frames and require byte-identical browser screenshots.',
+        'The left A/B lane freezes the composed artwork at the first proof frame while the right lane advances only through exact Scene V3 frames. In the current artwork-review composition, background, vessel, and Enki artwork remain static; the bounded water material is therefore the intended perceptual difference. Evidence PNGs are captured directly from the 1080x1920 Pixi backing canvas so browser CSS scaling is excluded from the proof. Repeatability samples revisit exact frames and require byte-identical backing-canvas PNGs.',
     };
     const reportPath = join(outputDirectory, 'pixi-shot03-water-motion-proof.json');
     await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
@@ -258,6 +264,36 @@ async function waitForCanvasFrame(canvas, frame) {
     await new Promise((resolvePromise) => setTimeout(resolvePromise, 20));
   }
   throw new Error(`Timed out waiting for Pixi canvas frame ${frame}.`);
+}
+
+async function captureCanvasPng(canvas, outputPath) {
+  const capture = await canvas.evaluate((element) => ({
+    width: element.width,
+    height: element.height,
+    dataUrl: element.toDataURL('image/png'),
+  }));
+
+  if (
+    capture.width !== EXPECTED_CANVAS_WIDTH ||
+    capture.height !== EXPECTED_CANVAS_HEIGHT
+  ) {
+    throw new Error(
+      `Pixi backing canvas is ${capture.width}x${capture.height}; expected ${EXPECTED_CANVAS_WIDTH}x${EXPECTED_CANVAS_HEIGHT}.`,
+    );
+  }
+
+  const separator = capture.dataUrl.indexOf(',');
+  if (separator < 0 || !capture.dataUrl.startsWith('data:image/png')) {
+    throw new Error('Pixi backing canvas did not produce a PNG data URL.');
+  }
+
+  const png = Buffer.from(capture.dataUrl.slice(separator + 1), 'base64');
+  if (!png.length) {
+    throw new Error('Pixi backing canvas produced an empty PNG.');
+  }
+
+  await writeFile(outputPath, png);
+  return png;
 }
 
 async function requiredAttribute(locator, name) {
