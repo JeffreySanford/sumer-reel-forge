@@ -17,6 +17,8 @@ export const SHOT03_WATER_MATERIAL_BINDING: PixiContainedWaterMaterialBinding = 
   movingOpacity: 0.24,
   settleStartProgress: 0.88,
   settleFloor: 0.55,
+  readableRippleOpacity: 0.55,
+  readableRippleRateHz: 0.22,
 });
 
 export const SHOT03_WATER_MATERIAL_BINDINGS: readonly PixiContainedWaterMaterialBinding[] =

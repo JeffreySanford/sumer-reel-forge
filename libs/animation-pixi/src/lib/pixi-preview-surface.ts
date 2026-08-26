@@ -71,6 +71,15 @@ type DestroyableChild = {
   destroy(): void;
 };
 
+type PixiSpriteLike = DestroyableChild & {
+  alpha: number;
+  width: number;
+  height: number;
+  x: number;
+  y: number;
+  setMask(options: { readonly mask: PixiSpriteLike; readonly channel: 'alpha' }): void;
+};
+
 type PixiGraphicsLike = DestroyableChild & {
   alpha: number;
   rect(x: number, y: number, width: number, height: number): PixiGraphicsLike;
@@ -82,12 +91,14 @@ type PixiGraphicsLike = DestroyableChild & {
     radius: number,
   ): PixiGraphicsLike;
   circle(x: number, y: number, radius: number): PixiGraphicsLike;
+  ellipse(x: number, y: number, halfWidth: number, halfHeight: number): PixiGraphicsLike;
   moveTo(x: number, y: number): PixiGraphicsLike;
   lineTo(x: number, y: number): PixiGraphicsLike;
   fill(style: number | { readonly color: number; readonly alpha?: number }): PixiGraphicsLike;
   stroke(
     style: number | { readonly color: number; readonly width?: number; readonly alpha?: number },
   ): PixiGraphicsLike;
+  setMask(options: { readonly mask: PixiSpriteLike; readonly channel: 'alpha' }): void;
 };
 
 type PixiGraphicsConstructor = new () => PixiGraphicsLike;
@@ -96,15 +107,6 @@ type PixiTextureLike = DestroyableChild;
 
 type PixiTextureFactory = {
   from(source: HTMLImageElement): PixiTextureLike;
-};
-
-type PixiSpriteLike = DestroyableChild & {
-  alpha: number;
-  width: number;
-  height: number;
-  x: number;
-  y: number;
-  setMask(options: { readonly mask: PixiSpriteLike; readonly channel: 'alpha' }): void;
 };
 
 type PixiSpriteConstructor = new (texture: PixiTextureLike) => PixiSpriteLike;
@@ -337,7 +339,8 @@ function assertMaterialStates(
       !Number.isFinite(material.offsetY) ||
       !Number.isFinite(material.scale) ||
       !Number.isFinite(material.movingOpacity) ||
-      !Number.isFinite(material.settle)
+      !Number.isFinite(material.settle) ||
+      !Number.isFinite(material.readableRippleStrength)
     ) {
       throw new Error(`Pixi material ${material.id} contains non-finite state.`);
     }
@@ -355,6 +358,33 @@ function assertMaterialStates(
     }
     if (material.settle < 0 || material.settle > 1) {
       throw new Error(`Pixi material ${material.id} settle must be between 0 and 1.`);
+    }
+    if (material.readableRippleStrength < 0 || material.readableRippleStrength > 1) {
+      throw new Error(`Pixi material ${material.id} readableRippleStrength must be between 0 and 1.`);
+    }
+    if (material.ripples.length !== 3) {
+      throw new Error(`Pixi material ${material.id} must resolve exactly three readable ripples.`);
+    }
+    for (const ripple of material.ripples) {
+      if (
+        !Number.isFinite(ripple.cycle) ||
+        !Number.isFinite(ripple.opacity) ||
+        !Number.isFinite(ripple.scaleX) ||
+        !Number.isFinite(ripple.scaleY) ||
+        !Number.isFinite(ripple.travelX) ||
+        !Number.isFinite(ripple.travelY)
+      ) {
+        throw new Error(`Pixi material ${material.id} contains non-finite ripple state.`);
+      }
+      if (ripple.cycle < 0 || ripple.cycle >= 1) {
+        throw new Error(`Pixi material ${material.id} ripple cycle must be in [0, 1).`);
+      }
+      if (ripple.opacity < 0 || ripple.opacity > 1) {
+        throw new Error(`Pixi material ${material.id} ripple opacity must be between 0 and 1.`);
+      }
+      if (ripple.scaleX <= 0 || ripple.scaleY <= 0) {
+        throw new Error(`Pixi material ${material.id} ripple scale must be positive.`);
+      }
     }
   }
 }
@@ -407,8 +437,72 @@ function setSpriteRect(
   sprite.height = rect.height;
 }
 
+function drawReadableWaterRipples(
+  app: PixiApplicationLike,
+  Graphics: PixiGraphicsConstructor,
+  Sprite: PixiSpriteConstructor,
+  frame: PixiRenderFrame,
+  prepared: PreparedSourceAsset,
+  material: PixiMaterialFrameState,
+): void {
+  if (material.readableRippleStrength <= 0) return;
+
+  const centerX = frame.width * 0.53;
+  const centerY = frame.height * 0.832;
+  const baseHalfWidth = (frame.width * 0.175) / 2;
+  const baseHalfHeight = (frame.height * 0.051) / 2;
+
+  for (const ripple of material.ripples) {
+    if (ripple.opacity <= 0.002) continue;
+
+    const crestMask = new Sprite(prepared.texture);
+    setSpriteRect(crestMask, prepared.registrationRect);
+    crestMask.alpha = 1;
+
+    const crest = new Graphics()
+      .ellipse(
+        centerX + ripple.travelX,
+        centerY + ripple.travelY,
+        baseHalfWidth * ripple.scaleX,
+        baseHalfHeight * ripple.scaleY,
+      )
+      .stroke({
+        color: 0xfff3cd,
+        width: lineWidth(frame, 1.2),
+        alpha: 0.88,
+      });
+    crest.alpha = ripple.opacity;
+    crest.setMask({ mask: crestMask, channel: 'alpha' });
+
+    const shadowMask = new Sprite(prepared.texture);
+    setSpriteRect(shadowMask, prepared.registrationRect);
+    shadowMask.alpha = 1;
+
+    const shadow = new Graphics()
+      .ellipse(
+        centerX + ripple.travelX,
+        centerY + ripple.travelY + 1.6,
+        baseHalfWidth * ripple.scaleX * 1.025,
+        baseHalfHeight * ripple.scaleY * 1.04,
+      )
+      .stroke({
+        color: 0x3a301e,
+        width: lineWidth(frame, 1.7),
+        alpha: 0.42,
+      });
+    shadow.alpha = ripple.opacity * 0.34;
+    shadow.setMask({ mask: shadowMask, channel: 'alpha' });
+
+    app.stage.addChild(shadowMask);
+    app.stage.addChild(shadow);
+    app.stage.addChild(crestMask);
+    app.stage.addChild(crest);
+  }
+}
+
 function drawSourceAsset(
   app: PixiApplicationLike,
+  Graphics: PixiGraphicsConstructor,
   Sprite: PixiSpriteConstructor,
   frame: PixiRenderFrame,
   prepared: PreparedSourceAsset,
@@ -439,6 +533,7 @@ function drawSourceAsset(
 
   app.stage.addChild(mask);
   app.stage.addChild(moving);
+  drawReadableWaterRipples(app, Graphics, Sprite, frame, prepared, material);
 }
 
 function writeMaterialEvidence(canvas: HTMLCanvasElement, materials: readonly PixiMaterialFrameState[]): void {
@@ -450,6 +545,20 @@ function writeMaterialEvidence(canvas: HTMLCanvasElement, materials: readonly Pi
       .map(
         (material) =>
           `${material.id}:dx=${material.offsetX.toFixed(3)},dy=${material.offsetY.toFixed(3)},scale=${material.scale.toFixed(6)},settle=${material.settle.toFixed(3)},opacity=${material.movingOpacity.toFixed(3)}`,
+      )
+      .join(','),
+  );
+  canvas.setAttribute(
+    'data-pixi-material-ripple-state',
+    materials
+      .map(
+        (material) =>
+          `${material.id}:strength=${material.readableRippleStrength.toFixed(3)};${material.ripples
+            .map(
+              (ripple) =>
+                `r${ripple.index}=cycle:${ripple.cycle.toFixed(3)}|opacity:${ripple.opacity.toFixed(3)}|sx:${ripple.scaleX.toFixed(3)}|sy:${ripple.scaleY.toFixed(3)}|tx:${ripple.travelX.toFixed(3)}|ty:${ripple.travelY.toFixed(3)}`,
+            )
+            .join(';')}`,
       )
       .join(','),
   );
@@ -482,7 +591,7 @@ function drawFrame(
   destroyStageChildren(app.stage);
 
   for (const prepared of preparedSourceAssets) {
-    drawSourceAsset(app, Sprite, frame, prepared);
+    drawSourceAsset(app, Graphics, Sprite, frame, prepared);
   }
 
   const camera = new Graphics()
