@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { basename, join, resolve } from 'node:path';
 import { maybeOpenReviewArtifacts } from './open-review-artifacts.mjs';
+import { reviewGeneratedMedia } from './review-generated-media.mjs';
 
 const ROOT = resolve('.');
 const REVIEW_ROOT = resolve('tmp/animation-assets/resegmentation/shot03');
@@ -10,6 +11,8 @@ const WIDTH = 941;
 const HEIGHT = 1672;
 const PIXELS = WIDTH * HEIGHT;
 const STRONG_ALPHA = 128;
+const AI_REVIEW_ENABLED = !process.argv.includes('--no-ai-review');
+const REQUIRE_AI_REVIEW = process.argv.includes('--require-ai-review');
 
 await main().catch((error) => {
   console.error(error instanceof Error ? error.stack ?? error.message : String(error));
@@ -51,7 +54,7 @@ async function main() {
   const ranked = rankByTarget(reviewed);
   const reportPath = join(runDirectory, 'shot03-core-resegmentation-structural-review.json');
   const report = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     type: 'shot03-core-resegmentation-structural-review',
     generatedAt: new Date().toISOString(),
     sourceReportPath,
@@ -75,9 +78,56 @@ async function main() {
       );
     }
   }
+
+  let ai = null;
+  if (AI_REVIEW_ENABLED) {
+    const deterministicSummary = reviewed.map((item) => ({
+      target: item.target,
+      threshold: item.threshold,
+      largestComponentShare: item.largestComponentShare,
+      significantComponentCount: item.significantComponentCount,
+      largestComponentBbox: item.largestComponentBbox,
+      largestTouchesEdge: item.largestTouchesEdge,
+      structuralRisk: item.structuralRisk,
+    }));
+    const aiReportPath = join(runDirectory, 'ollama-structural-media-review.json');
+    ai = await reviewGeneratedMedia({
+      artifacts: [
+        {
+          path: maskSheetPath,
+          label: 'Shot 3 alpha contact sheet — top row vessel thresholds 0.10/0.20/0.30, bottom row Enki thresholds 0.10/0.20/0.30',
+        },
+      ],
+      task: [
+        'Review this alpha-mask contact sheet as a segmentation QA artifact, not as final artwork.',
+        'White pixels are selected alpha; black pixels are transparent.',
+        'A valid vessel mask should form a coherent boat/vessel silhouette without unrelated rigging, frame-edge streaks, or scene fragments.',
+        'A valid Enki mask should form a coherent human figure without boat, rigging, water, or full-frame contamination.',
+        `Deterministic component evidence: ${JSON.stringify(deterministicSummary)}`,
+        'Identify whether the masks are suitable for background removal and later animation-layer extraction.',
+      ].join(' '),
+      rubric: [
+        'coherent subject silhouette',
+        'minimal unrelated scene contamination',
+        'no unexplained frame-edge selection',
+        'deterministic component metrics and visible mask should agree',
+        'PASS_ADVISORY means only ready for human review, never automatic promotion',
+      ],
+      outputPath: aiReportPath,
+      requireAi: REQUIRE_AI_REVIEW,
+      maxVideoSamples: 1,
+    });
+    report.ai = ai;
+    report.aiReviewPath = aiReportPath;
+    await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
+  } else {
+    console.log('[ai] local media review skipped by --no-ai-review');
+  }
+
   console.log('');
   console.log(`[REVIEW] alpha contact sheet: ${maskSheetPath}`);
   console.log(`[INFO] structural report: ${reportPath}`);
+  if (ai?.status) console.log(`[INFO] local vision status: ${ai.status}`);
   console.log('[STOP] Do not rebuild the background until the dominant vessel and Enki silhouettes are visually confirmed complete.');
   await maybeOpenReviewArtifacts([maskSheetPath], { delayMs: 120 });
 }
