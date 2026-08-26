@@ -91,8 +91,8 @@ const reviewLayers = [
   },
 ] as const;
 
-describe('Shot 3 source-backed Pixi assets', () => {
-  it('matches the exact approved canonical bytes and source-space identity for the required visual-review layers', () => {
+describe('Shot 3 source-backed Pixi review composition', () => {
+  it('matches the exact approved canonical bytes and source-space identity for all required layers', () => {
     const editorialDimensions = readPngDimensions(readFileSync(editorialSourcePath));
     const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as AnimationManifest;
     const shot = manifest.shots.find((candidate) => candidate.shotId === 'enki-at-the-helm');
