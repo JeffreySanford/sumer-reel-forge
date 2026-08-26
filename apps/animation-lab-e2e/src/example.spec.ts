@@ -140,6 +140,8 @@ test('renders the composed Shot 3 visual review through Pixi at exact frames', a
     testInfo,
   );
 
+  // These are compact status labels; use exact matching so explanatory copy cannot
+  // make Playwright strict mode treat the review state as ambiguous.
   await expect(page.getByText('4 runtimes evaluated', { exact: true })).toBeVisible();
   await expect(page.getByText('EVIDENCE BOUND', { exact: true })).toBeVisible();
   await expect(page.getByText('9:16', { exact: true })).toBeVisible();
