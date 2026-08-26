@@ -1,7 +1,23 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Locator } from '@playwright/test';
 
 const SHOT03_WATER_SHA256 =
   'sha256:f77eb37906ae589b0483dd3a11504ee39cc1aa28500ec10dba5de14a3b6f8979';
+
+async function expectPixiReady(pixiHost: Locator): Promise<void> {
+  await expect
+    .poll(
+      async () => {
+        const state = await pixiHost.getAttribute('data-pixi-state');
+        if (state === 'ERROR') {
+          const message = await pixiHost.getAttribute('data-pixi-error');
+          throw new Error(`Pixi preview failed before READY: ${message || 'unknown error'}`);
+        }
+        return state;
+      },
+      { timeout: 10_000 },
+    )
+    .toBe('READY');
+}
 
 test('renders the golden Scene V3 runtime model through Pixi at exact frames', async ({ page }) => {
   await page.goto('/');
@@ -12,7 +28,8 @@ test('renders the golden Scene V3 runtime model through Pixi at exact frames', a
   await expect(page.getByText('PIXI RUNTIME PREVIEW')).toBeVisible();
 
   const pixiHost = page.locator('[aria-label="Pixi exact-frame renderer"]');
-  await expect(pixiHost).toHaveAttribute('data-pixi-state', 'READY');
+  await expectPixiReady(pixiHost);
+  await expect(pixiHost).toHaveAttribute('data-pixi-error', '');
   await expect(pixiHost).toHaveAttribute('data-pixi-frame', '101');
   await expect(pixiHost).toHaveAttribute('data-pixi-node-count', '3');
   await expect(pixiHost).toHaveAttribute('data-pixi-source-asset-count', '1');
