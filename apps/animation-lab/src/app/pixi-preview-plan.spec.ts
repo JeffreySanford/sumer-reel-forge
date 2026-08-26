@@ -91,13 +91,13 @@ describe('buildPixiPreviewPlan', () => {
       kind: 'contained-water-micro-drift',
       containment: 'source-alpha',
       timeSource: 'exact-frame',
-      maxOffsetX: 2.4,
-      maxOffsetY: 1.2,
-      maxScale: 1.006,
+      maxOffsetX: 8,
+      maxOffsetY: 4,
+      maxScale: 1.012,
       settle: 1,
     });
-    expect(plan.materials[0]?.offsetX).toBeCloseTo(0.5, 9);
-    expect(plan.materials[0]?.offsetY).toBeCloseTo(-1.1272727273, 9);
+    expect(plan.materials[0]?.offsetX).toBeCloseTo(1.6666666667, 9);
+    expect(plan.materials[0]?.offsetY).toBeCloseTo(-3.7575757576, 9);
   });
 
   it('changes diagnostic geometry and material state only when the exact runtime frame changes', () => {
