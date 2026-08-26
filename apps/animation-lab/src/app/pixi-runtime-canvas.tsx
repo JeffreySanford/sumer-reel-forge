@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   createPixiPreviewSurface,
   PIXI_PREVIEW_RENDER_MODE,
+  type PixiContainedWaterMaterialBinding,
   type PixiPreviewSurface,
   type PixiSourceAsset,
 } from '@sumer-reel-forge/animation-pixi';
@@ -9,25 +10,44 @@ import previewStyles from './runtime-preview-panel.module.css';
 import { buildPixiPreviewPlan } from './pixi-preview-plan';
 import type { RuntimePreviewModel } from './runtime-preview';
 import { SHOT03_SOURCE_BACKED_ASSETS } from './shot03-source-backed-asset';
+import { SHOT03_WATER_MATERIAL_BINDINGS } from './shot03-water-material';
 
 type PixiMountStatus = 'MOUNTING' | 'READY' | 'ERROR';
+
+function plural(count: number, singular: string, pluralValue = `${singular}s`): string {
+  return count === 1 ? singular : pluralValue;
+}
 
 export function PixiRuntimeCanvas({
   model,
   width,
   height,
+  fps,
+  durationFrames,
   sourceAssets = SHOT03_SOURCE_BACKED_ASSETS,
+  materialBindings = SHOT03_WATER_MATERIAL_BINDINGS,
 }: {
   readonly model: RuntimePreviewModel;
   readonly width: number;
   readonly height: number;
+  readonly fps: number;
+  readonly durationFrames: number;
   readonly sourceAssets?: readonly PixiSourceAsset[];
+  readonly materialBindings?: readonly PixiContainedWaterMaterialBinding[];
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const surfaceRef = useRef<PixiPreviewSurface | null>(null);
   const plan = useMemo(
-    () => buildPixiPreviewPlan(model, width, height, sourceAssets),
-    [model, width, height, sourceAssets],
+    () =>
+      buildPixiPreviewPlan(
+        model,
+        width,
+        height,
+        sourceAssets,
+        materialBindings,
+        { fps, durationFrames },
+      ),
+    [model, width, height, sourceAssets, materialBindings, fps, durationFrames],
   );
   const planRef = useRef(plan);
   const [status, setStatus] = useState<PixiMountStatus>('MOUNTING');
@@ -115,13 +135,23 @@ export function PixiRuntimeCanvas({
         data-pixi-frame={plan.frame}
         data-pixi-node-count={plan.nodeCount}
         data-pixi-source-asset-count={plan.sourceAssets.length}
+        data-pixi-material-count={plan.materials.length}
+        data-pixi-review-mode="artwork"
+        data-pixi-review-composition="shot03-required-layers"
         aria-label="Pixi exact-frame renderer"
       />
       <div className={previewStyles.pixiStatus} aria-live="polite">
         <strong>PIXI {status}</strong>
+        <span>artwork review</span>
+        <span>Shot 3 required layers</span>
         <span>{PIXI_PREVIEW_RENDER_MODE}</span>
         <span>ticker stopped</span>
-        <span>{plan.sourceAssets.length} checksum-bound source asset</span>
+        <span>
+          {plan.sourceAssets.length} checksum-bound {plural(plan.sourceAssets.length, 'source asset')}
+        </span>
+        <span>
+          {plan.materials.length} bounded exact-frame {plural(plan.materials.length, 'material')}
+        </span>
         {error ? <code>{error}</code> : null}
       </div>
     </div>

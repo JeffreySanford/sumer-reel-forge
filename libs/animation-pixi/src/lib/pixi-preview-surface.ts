@@ -1,3 +1,5 @@
+import type { PixiMaterialFrameState } from './pixi-water-material';
+
 export const PIXI_PREVIEW_RENDER_MODE = 'manual-exact-frame' as const;
 
 export type PixiRenderNodeKind = 'environment' | 'prop' | 'actor';
@@ -40,6 +42,7 @@ export interface PixiRenderFrame {
   readonly nodeCount: number;
   readonly nodes: readonly PixiRenderNode[];
   readonly sourceAssets: readonly PixiSourceAsset[];
+  readonly materials: readonly PixiMaterialFrameState[];
 }
 
 export interface PixiPreviewApplicationOptions {
@@ -101,6 +104,7 @@ type PixiSpriteLike = DestroyableChild & {
   height: number;
   x: number;
   y: number;
+  setMask(options: { readonly mask: PixiSpriteLike; readonly channel: 'alpha' }): void;
 };
 
 type PixiSpriteConstructor = new (texture: PixiTextureLike) => PixiSpriteLike;
@@ -298,6 +302,63 @@ async function decodeVerifiedSourceAsset(
   }
 }
 
+function assertMaterialStates(
+  frame: PixiRenderFrame,
+  preparedSourceAssets: readonly PreparedSourceAsset[],
+): void {
+  const assetIds = new Set(preparedSourceAssets.map((prepared) => prepared.asset.id));
+  const materialIds = new Set<string>();
+  const materialAssetIds = new Set<string>();
+
+  for (const material of frame.materials) {
+    if (!material.id.trim()) throw new Error('Pixi material id must not be empty.');
+    if (materialIds.has(material.id)) throw new Error(`Duplicate Pixi material id ${material.id}.`);
+    materialIds.add(material.id);
+
+    if (!assetIds.has(material.assetId)) {
+      throw new Error(`Pixi material ${material.id} references unknown source asset ${material.assetId}.`);
+    }
+    if (materialAssetIds.has(material.assetId)) {
+      throw new Error(`Pixi source asset ${material.assetId} has more than one material state.`);
+    }
+    materialAssetIds.add(material.assetId);
+
+    if (material.kind !== 'contained-water-micro-drift') {
+      throw new Error(`Unsupported Pixi material kind ${String(material.kind)}.`);
+    }
+    if (material.containment !== 'source-alpha') {
+      throw new Error(`Pixi material ${material.id} must use source-alpha containment.`);
+    }
+    if (material.timeSource !== 'exact-frame') {
+      throw new Error(`Pixi material ${material.id} must use exact-frame time authority.`);
+    }
+    if (
+      !Number.isFinite(material.offsetX) ||
+      !Number.isFinite(material.offsetY) ||
+      !Number.isFinite(material.scale) ||
+      !Number.isFinite(material.movingOpacity) ||
+      !Number.isFinite(material.settle)
+    ) {
+      throw new Error(`Pixi material ${material.id} contains non-finite state.`);
+    }
+    if (Math.abs(material.offsetX) > material.maxOffsetX + 1e-9) {
+      throw new Error(`Pixi material ${material.id} exceeded maxOffsetX.`);
+    }
+    if (Math.abs(material.offsetY) > material.maxOffsetY + 1e-9) {
+      throw new Error(`Pixi material ${material.id} exceeded maxOffsetY.`);
+    }
+    if (material.scale < 1 || material.scale > material.maxScale + 1e-9) {
+      throw new Error(`Pixi material ${material.id} exceeded its scale bounds.`);
+    }
+    if (material.movingOpacity < 0 || material.movingOpacity > 1) {
+      throw new Error(`Pixi material ${material.id} movingOpacity must be between 0 and 1.`);
+    }
+    if (material.settle < 0 || material.settle > 1) {
+      throw new Error(`Pixi material ${material.id} settle must be between 0 and 1.`);
+    }
+  }
+}
+
 function assertCompatibleFrame(
   frame: PixiRenderFrame,
   width: number,
@@ -333,6 +394,82 @@ function assertCompatibleFrame(
       throw new Error(`Pixi preview frame source asset ${asset.id} does not match prepared identity.`);
     }
   });
+  assertMaterialStates(frame, preparedSourceAssets);
+}
+
+function setSpriteRect(
+  sprite: PixiSpriteLike,
+  rect: Pick<PixiSourceRegistrationRect, 'x' | 'y' | 'width' | 'height'>,
+): void {
+  sprite.x = rect.x;
+  sprite.y = rect.y;
+  sprite.width = rect.width;
+  sprite.height = rect.height;
+}
+
+function drawSourceAsset(
+  app: PixiApplicationLike,
+  Sprite: PixiSpriteConstructor,
+  frame: PixiRenderFrame,
+  prepared: PreparedSourceAsset,
+): void {
+  const base = new Sprite(prepared.texture);
+  setSpriteRect(base, prepared.registrationRect);
+  base.alpha = 1;
+  app.stage.addChild(base);
+
+  const material = frame.materials.find((candidate) => candidate.assetId === prepared.asset.id);
+  if (!material) return;
+
+  const moving = new Sprite(prepared.texture);
+  const mask = new Sprite(prepared.texture);
+  setSpriteRect(mask, prepared.registrationRect);
+  mask.alpha = 1;
+
+  const movingWidth = prepared.registrationRect.width * material.scale;
+  const movingHeight = prepared.registrationRect.height * material.scale;
+  moving.x =
+    prepared.registrationRect.x - (movingWidth - prepared.registrationRect.width) / 2 + material.offsetX;
+  moving.y =
+    prepared.registrationRect.y - (movingHeight - prepared.registrationRect.height) / 2 + material.offsetY;
+  moving.width = movingWidth;
+  moving.height = movingHeight;
+  moving.alpha = material.movingOpacity;
+  moving.setMask({ mask, channel: 'alpha' });
+
+  app.stage.addChild(mask);
+  app.stage.addChild(moving);
+}
+
+function writeMaterialEvidence(canvas: HTMLCanvasElement, materials: readonly PixiMaterialFrameState[]): void {
+  canvas.setAttribute('data-pixi-material-count', String(materials.length));
+  canvas.setAttribute('data-pixi-material-ids', materials.map((material) => material.id).join(','));
+  canvas.setAttribute(
+    'data-pixi-material-state',
+    materials
+      .map(
+        (material) =>
+          `${material.id}:dx=${material.offsetX.toFixed(3)},dy=${material.offsetY.toFixed(3)},scale=${material.scale.toFixed(6)},settle=${material.settle.toFixed(3)},opacity=${material.movingOpacity.toFixed(3)}`,
+      )
+      .join(','),
+  );
+  canvas.setAttribute(
+    'data-pixi-material-bounds',
+    materials
+      .map(
+        (material) =>
+          `${material.id}:max-dx=${material.maxOffsetX.toFixed(3)},max-dy=${material.maxOffsetY.toFixed(3)},max-scale=${material.maxScale.toFixed(6)}`,
+      )
+      .join(','),
+  );
+  canvas.setAttribute(
+    'data-pixi-material-containment',
+    materials.map((material) => `${material.id}:${material.containment}`).join(','),
+  );
+  canvas.setAttribute(
+    'data-pixi-material-time-source',
+    materials.map((material) => `${material.id}:${material.timeSource}`).join(','),
+  );
 }
 
 function drawFrame(
@@ -345,13 +482,7 @@ function drawFrame(
   destroyStageChildren(app.stage);
 
   for (const prepared of preparedSourceAssets) {
-    const sprite = new Sprite(prepared.texture);
-    sprite.x = prepared.registrationRect.x;
-    sprite.y = prepared.registrationRect.y;
-    sprite.width = prepared.registrationRect.width;
-    sprite.height = prepared.registrationRect.height;
-    sprite.alpha = 1;
-    app.stage.addChild(sprite);
+    drawSourceAsset(app, Sprite, frame, prepared);
   }
 
   const camera = new Graphics()
@@ -417,6 +548,7 @@ function drawFrame(
   app.canvas.setAttribute('aria-label', `Pixi runtime preview at frame ${frame.frame}`);
   app.canvas.setAttribute('data-pixi-frame', String(frame.frame));
   app.canvas.setAttribute('data-pixi-node-count', String(frame.nodeCount));
+  writeMaterialEvidence(app.canvas, frame.materials);
 }
 
 export async function createPixiPreviewSurface(

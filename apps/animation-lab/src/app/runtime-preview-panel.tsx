@@ -112,7 +112,13 @@ export function RuntimePreviewPanel({
       </div>
 
       {renderer === 'pixi' ? (
-        <PixiRuntimeCanvas model={model} width={viewportWidth} height={viewportHeight} />
+        <PixiRuntimeCanvas
+          model={model}
+          width={viewportWidth}
+          height={viewportHeight}
+          fps={inspection.exactFrame.fps}
+          durationFrames={inspection.exactFrame.durationFrames}
+        />
       ) : (
         <svg
           className={previewStyles.runtimeCanvas}
@@ -238,7 +244,7 @@ export function RuntimePreviewPanel({
       ) : null}
       <p className={previewStyles.previewDisclaimer}>
         {renderer === 'pixi'
-          ? 'Pixi draws the resolved exact frame manually; its ticker is stopped and does not own story time.'
+          ? 'Artwork review mode composes the approved Shot 3 source layers; the water is the only bounded material behavior. Runtime diagnostics remain below the artwork, and Pixi still does not own story time.'
           : 'Diagnostic geometry only. Runtime values are real; artwork and final rendering are not mounted.'}
       </p>
     </section>
