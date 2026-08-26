@@ -1,5 +1,15 @@
-import type { PixiRenderFrame, PixiSourceAsset } from '@sumer-reel-forge/animation-pixi';
+import {
+  buildPixiContainedWaterMaterialState,
+  type PixiContainedWaterMaterialBinding,
+  type PixiRenderFrame,
+  type PixiSourceAsset,
+} from '@sumer-reel-forge/animation-pixi';
 import type { RuntimePreviewModel, RuntimePreviewNode } from './runtime-preview';
+
+export interface PixiPreviewTiming {
+  readonly fps: number;
+  readonly durationFrames: number;
+}
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
@@ -30,11 +40,34 @@ function assertViewportDimension(value: number, label: string): number {
   return value;
 }
 
+function buildMaterialStates(
+  frame: number,
+  bindings: readonly PixiContainedWaterMaterialBinding[],
+  timing: PixiPreviewTiming | undefined,
+) {
+  if (bindings.length === 0) return Object.freeze([]);
+  if (!timing) {
+    throw new Error('Pixi material bindings require exact fps and durationFrames timing.');
+  }
+
+  return Object.freeze(
+    bindings.map((binding) =>
+      buildPixiContainedWaterMaterialState(binding, {
+        frame,
+        fps: timing.fps,
+        durationFrames: timing.durationFrames,
+      }),
+    ),
+  );
+}
+
 export function buildPixiPreviewPlan(
   model: RuntimePreviewModel,
   width: number,
   height: number,
   sourceAssets: readonly PixiSourceAsset[] = [],
+  materialBindings: readonly PixiContainedWaterMaterialBinding[] = [],
+  timing?: PixiPreviewTiming,
 ): PixiRenderFrame {
   const resolvedWidth = assertViewportDimension(width, 'width');
   const resolvedHeight = assertViewportDimension(height, 'height');
@@ -57,5 +90,6 @@ export function buildPixiPreviewPlan(
     nodeCount: nodes.length,
     nodes: Object.freeze(nodes),
     sourceAssets: Object.freeze(sourceAssets.map((asset) => Object.freeze({ ...asset }))),
+    materials: buildMaterialStates(model.frame, materialBindings, timing),
   });
 }
