@@ -1,0 +1,9 @@
+{
+  "name": "animation-lab",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/animation-lab/src",
+  "projectType": "application",
+  "tags": ["type:app", "scope:animation-v3"],
+  "// targets": "to see all targets run: nx show project animation-lab --web",
+  "targets": {}
+}

@@ -11,6 +11,7 @@ export default [
       '**/vitest.config.*.timestamp*',
       '**/.venv/**',
       '**/__pycache__/**',
+      '**/vite.config.*.timestamp*',
     ],
   },
   {

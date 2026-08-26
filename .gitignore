@@ -59,3 +59,5 @@ __screenshots__/
 vitest.config.*.timestamp*
 
 storybook-static
+
+vite.config.*.timestamp*
