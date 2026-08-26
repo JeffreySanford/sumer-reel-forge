@@ -8,20 +8,77 @@ import previewStyles from './runtime-preview-panel.module.css';
 import type { RuntimePreviewModel } from './runtime-preview';
 import { buildShot03FullMotionState } from './shot03-full-motion';
 import {
+  buildShot03RecoveryMotionState,
+  SHOT03_RECOVERY_ACTIVE_PROFILE,
+  SHOT03_RECOVERY_CAMERA_ONLY_PROFILE,
+  type Shot03RecoveryMotionProfile,
+} from './shot03-recovery-motion';
+import {
   buildShot03SecondaryMotionIsolationState,
   SHOT03_SECONDARY_ISOLATION_PROFILE,
 } from './shot03-secondary-motion-isolation';
-import { SHOT03_FULL_MOTION_SOURCE_ASSETS } from './shot03-source-backed-asset';
+import {
+  buildShot03RecoverySourceAssets,
+  SHOT03_FULL_MOTION_SOURCE_ASSETS,
+} from './shot03-source-backed-asset';
 
 type PixiMountStatus = 'MOUNTING' | 'READY' | 'ERROR';
-type Shot03MotionProfile = 'cinematic' | typeof SHOT03_SECONDARY_ISOLATION_PROFILE;
+type Shot03MotionProfile =
+  | 'cinematic'
+  | typeof SHOT03_SECONDARY_ISOLATION_PROFILE
+  | Shot03RecoveryMotionProfile;
 
 function resolveMotionProfile(): Shot03MotionProfile {
   if (typeof window === 'undefined') return 'cinematic';
-  return new URLSearchParams(window.location.search).get('shot03-motion-profile') ===
-    SHOT03_SECONDARY_ISOLATION_PROFILE
-    ? SHOT03_SECONDARY_ISOLATION_PROFILE
-    : 'cinematic';
+  const configured = new URLSearchParams(window.location.search).get(
+    'shot03-motion-profile',
+  );
+  if (configured === SHOT03_SECONDARY_ISOLATION_PROFILE) {
+    return SHOT03_SECONDARY_ISOLATION_PROFILE;
+  }
+  if (configured === SHOT03_RECOVERY_ACTIVE_PROFILE) {
+    return SHOT03_RECOVERY_ACTIVE_PROFILE;
+  }
+  if (configured === SHOT03_RECOVERY_CAMERA_ONLY_PROFILE) {
+    return SHOT03_RECOVERY_CAMERA_ONLY_PROFILE;
+  }
+  return 'cinematic';
+}
+
+function isRecoveryProfile(
+  profile: Shot03MotionProfile,
+): profile is Shot03RecoveryMotionProfile {
+  return (
+    profile === SHOT03_RECOVERY_ACTIVE_PROFILE ||
+    profile === SHOT03_RECOVERY_CAMERA_ONLY_PROFILE
+  );
+}
+
+function resolveRecoverySourceAssets(): readonly PixiSourceAsset[] {
+  if (typeof window === 'undefined') {
+    throw new Error('Shot 3 recovery assets require a browser review session.');
+  }
+  const params = new URLSearchParams(window.location.search);
+  const backgroundSha256 = requiredQueryParam(
+    params,
+    'shot03-recovery-background-sha256',
+  );
+  const vesselSha256 = requiredQueryParam(
+    params,
+    'shot03-recovery-vessel-sha256',
+  );
+  const enkiSha256 = requiredQueryParam(params, 'shot03-recovery-enki-sha256');
+  return buildShot03RecoverySourceAssets({
+    backgroundSha256,
+    vesselSha256,
+    enkiSha256,
+  });
+}
+
+function requiredQueryParam(params: URLSearchParams, name: string): string {
+  const value = params.get(name)?.trim();
+  if (!value) throw new Error(`Shot 3 recovery review is missing query parameter ${name}.`);
+  return value;
 }
 
 export function Shot03FullMotionCanvas({
@@ -30,7 +87,7 @@ export function Shot03FullMotionCanvas({
   height,
   fps,
   durationFrames,
-  sourceAssets = SHOT03_FULL_MOTION_SOURCE_ASSETS,
+  sourceAssets,
 }: {
   readonly model: RuntimePreviewModel;
   readonly width: number;
@@ -42,23 +99,41 @@ export function Shot03FullMotionCanvas({
   const hostRef = useRef<HTMLDivElement>(null);
   const surfaceRef = useRef<PixiFullMotionSurface | null>(null);
   const motionProfile = useMemo(resolveMotionProfile, []);
-  const motion = useMemo(
+  const recovery = isRecoveryProfile(motionProfile);
+  const resolvedSourceAssets = useMemo(
     () =>
-      motionProfile === SHOT03_SECONDARY_ISOLATION_PROFILE
-        ? buildShot03SecondaryMotionIsolationState(model.frame, fps, durationFrames)
-        : buildShot03FullMotionState(model.frame, fps, durationFrames),
-    [model.frame, fps, durationFrames, motionProfile],
+      sourceAssets ??
+      (recovery ? resolveRecoverySourceAssets() : SHOT03_FULL_MOTION_SOURCE_ASSETS),
+    [sourceAssets, recovery],
   );
+  const motion = useMemo(() => {
+    if (motionProfile === SHOT03_SECONDARY_ISOLATION_PROFILE) {
+      return buildShot03SecondaryMotionIsolationState(
+        model.frame,
+        fps,
+        durationFrames,
+      );
+    }
+    if (isRecoveryProfile(motionProfile)) {
+      return buildShot03RecoveryMotionState(
+        model.frame,
+        fps,
+        durationFrames,
+        motionProfile,
+      );
+    }
+    return buildShot03FullMotionState(model.frame, fps, durationFrames);
+  }, [model.frame, fps, durationFrames, motionProfile]);
   const frame = useMemo(
     () =>
       Object.freeze({
         frame: model.frame,
         width,
         height,
-        sourceAssets,
+        sourceAssets: resolvedSourceAssets,
         sourceLayerStates: motion.sourceLayerStates,
       }),
-    [model.frame, width, height, sourceAssets, motion.sourceLayerStates],
+    [model.frame, width, height, resolvedSourceAssets, motion.sourceLayerStates],
   );
   const frameRef = useRef(frame);
   const [status, setStatus] = useState<PixiMountStatus>('MOUNTING');
@@ -67,10 +142,13 @@ export function Shot03FullMotionCanvas({
 
   const sourceAssetSignature = useMemo(
     () =>
-      sourceAssets
-        .map((asset) => `${asset.id}:${asset.sha256}:${asset.width}x${asset.height}:${asset.registration}`)
+      resolvedSourceAssets
+        .map(
+          (asset) =>
+            `${asset.id}:${asset.sha256}:${asset.width}x${asset.height}:${asset.registration}`,
+        )
         .join('|'),
-    [sourceAssets],
+    [resolvedSourceAssets],
   );
 
   useEffect(() => {
@@ -88,7 +166,11 @@ export function Shot03FullMotionCanvas({
 
     void (async () => {
       try {
-        const surface = await createPixiFullMotionSurface(width, height, frameRef.current.sourceAssets);
+        const surface = await createPixiFullMotionSurface(
+          width,
+          height,
+          frameRef.current.sourceAssets,
+        );
         createdSurface = surface;
         if (disposed) {
           surface.destroy();
@@ -127,6 +209,7 @@ export function Shot03FullMotionCanvas({
   }, [frame]);
 
   const isolation = motionProfile === SHOT03_SECONDARY_ISOLATION_PROFILE;
+  const cameraOnly = motionProfile === SHOT03_RECOVERY_CAMERA_ONLY_PROFILE;
 
   return (
     <div className={previewStyles.pixiFrame}>
@@ -138,27 +221,49 @@ export function Shot03FullMotionCanvas({
         data-pixi-error={error ?? ''}
         data-pixi-frame={frame.frame}
         data-pixi-source-asset-count={frame.sourceAssets.length}
-        data-pixi-review-mode="full-motion"
-        data-pixi-review-composition="shot03-full-motion-layers"
+        data-pixi-review-mode={recovery ? 'recovered-primary-motion' : 'full-motion'}
+        data-pixi-review-composition={
+          recovery ? 'shot03-recovered-primary-layers' : 'shot03-full-motion-layers'
+        }
         data-shot03-motion-profile={motionProfile}
         data-shot03-camera={`x=${motion.camera.x.toFixed(3)},y=${motion.camera.y.toFixed(3)},scale=${motion.camera.scale.toFixed(6)}`}
         data-shot03-vessel={`heave=${motion.vessel.heaveY.toFixed(3)},roll=${motion.vessel.rollDegrees.toFixed(6)}`}
         data-shot03-rigging={`x=${motion.rigging.x.toFixed(3)},y=${motion.rigging.y.toFixed(3)},rot=${motion.rigging.rotationDegrees.toFixed(6)},lag=${motion.rigging.lagSeconds.toFixed(3)}`}
         data-shot03-blink-opacity={motion.blinkOpacity.toFixed(3)}
+        data-shot03-recovery-hidden-layers={
+          recovery ? 'shot03-water-v1,shot03-enki-eyes-v1,shot03-rigging-v1' : ''
+        }
+        data-shot03-recovery-control={cameraOnly ? 'camera-only' : recovery ? 'active' : ''}
         aria-label="Pixi Shot 3 full-motion renderer"
       />
       <div className={previewStyles.pixiStatus} aria-live="polite">
         <strong>PIXI {status}</strong>
-        <span>{isolation ? 'secondary-motion isolation review' : 'full 7-second motion review'}</span>
         <span>
-          {isolation
-            ? 'camera frozen + exaggerated vessel/rigging diagnostic'
-            : 'camera + vessel + delayed rigging + blink state'}
+          {recovery
+            ? cameraOnly
+              ? 'recovered primary-layer camera-only control'
+              : 'recovered primary-layer motion review'
+            : isolation
+              ? 'secondary-motion isolation review'
+              : 'full 7-second motion review'}
+        </span>
+        <span>
+          {recovery
+            ? cameraOnly
+              ? 'camera only; vessel/Enki remain locally frozen'
+              : 'camera + vessel/Enki rigid-group heave/roll'
+            : isolation
+              ? 'camera frozen + exaggerated vessel/rigging diagnostic'
+              : 'camera + vessel + delayed rigging + blink state'}
         </span>
         <span>manual-exact-frame</span>
         <span>ticker stopped</span>
         <span>{frame.sourceAssets.length} checksum-bound source assets</span>
-        <span>water held static for this proof</span>
+        <span>
+          {recovery
+            ? 'legacy water/rigging/blink layers hidden; repaired background remains source-baked'
+            : 'water held static for this proof'}
+        </span>
         {error ? <code>{error}</code> : null}
       </div>
     </div>
