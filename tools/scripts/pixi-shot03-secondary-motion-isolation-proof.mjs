@@ -3,6 +3,7 @@ import { spawnSync } from 'node:child_process';
 import { copyFile, mkdir, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { chromium } from '@playwright/test';
+import { maybeOpenReviewArtifacts } from './open-review-artifacts.mjs';
 
 const BASE_URL = process.env.ANIMATION_LAB_BASE_URL ?? 'http://localhost:4300';
 const OUTPUT_ROOT = resolve(
@@ -201,6 +202,7 @@ async function main() {
     console.log(
       'STATUS: TECHNICAL ISOLATION PASS — human answer must be an immediate YES/NO on visible secondary motion.',
     );
+    await maybeOpenReviewArtifacts([activeVideoPath, abVideoPath], { delayMs: 120 });
   } finally {
     await context.close();
     await browser.close();
