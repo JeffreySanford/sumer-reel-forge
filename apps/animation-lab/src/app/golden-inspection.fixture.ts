@@ -188,6 +188,9 @@ export const GOLDEN_INSPECTION_FIXTURE: ResolvedSceneInspectionInput = {
         id: 'actor-instance:enki:s03',
         actorDefinitionId: 'actor:enki',
         runtime: { id: 'runtime:fake:actor' },
+        transform: {
+          parentId: 'prop:stag-of-absu',
+        },
       },
     ],
     props: [
