@@ -69,7 +69,7 @@ describe('buildPixiPreviewPlan', () => {
     );
   });
 
-  it('projects the bounded Shot 3 water material from the same exact frame', () => {
+  it('projects bounded drift plus readable Shot 3 water ripple state from the same exact frame', () => {
     const adapter = new FakeRuntimePreviewAdapter();
     const inspection = buildSceneInspection(GOLDEN_INSPECTION_FIXTURE, 101);
     const model = adapter.evaluate({ fixture: GOLDEN_INSPECTION_FIXTURE, inspection });
@@ -91,13 +91,16 @@ describe('buildPixiPreviewPlan', () => {
       kind: 'contained-water-micro-drift',
       containment: 'source-alpha',
       timeSource: 'exact-frame',
-      maxOffsetX: 8,
-      maxOffsetY: 4,
-      maxScale: 1.012,
+      maxOffsetX: 2.4,
+      maxOffsetY: 1.2,
+      maxScale: 1.006,
       settle: 1,
+      readableRippleStrength: 1,
     });
-    expect(plan.materials[0]?.offsetX).toBeCloseTo(1.6666666667, 9);
-    expect(plan.materials[0]?.offsetY).toBeCloseTo(-3.7575757576, 9);
+    expect(plan.materials[0]?.offsetX).toBeCloseTo(0.5, 9);
+    expect(plan.materials[0]?.offsetY).toBeCloseTo(-1.1272727273, 9);
+    expect(plan.materials[0]?.ripples).toHaveLength(3);
+    expect(plan.materials[0]?.ripples[2]?.opacity).toBeCloseTo(0.4053866667, 9);
   });
 
   it('changes diagnostic geometry and material state only when the exact runtime frame changes', () => {
@@ -129,6 +132,8 @@ describe('buildPixiPreviewPlan', () => {
     expect(start.sourceAssets).toEqual(blink.sourceAssets);
     expect(start.materials[0]?.offsetX).toBe(0);
     expect(start.materials[0]?.offsetY).toBe(0);
+    expect(start.materials[0]?.readableRippleStrength).toBe(0);
+    expect(blink.materials[0]?.readableRippleStrength).toBe(1);
     expect(blink.materials).not.toEqual(start.materials);
   });
 
