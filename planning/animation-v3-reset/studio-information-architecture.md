@@ -1,10 +1,14 @@
 # Studio Information Architecture and Authoring Workflow
 
-Status: **planning contract**
+Status: **active architecture contract — Angular Studio + React Animation Lab roles now implemented at foundation level**
 
-This document defines how Studio should expose Scene V3, provenance, assets, runtimes, proofs and promotion without becoming an engine-specific control panel.
+Updated: **2026-08-26**
+
+This document defines how Studio should expose Scene V3, provenance, assets, runtimes, proofs and promotion without becoming an engine-specific control panel. It also records the now-explicit division of responsibility between the Angular Studio and the React Animation Lab.
 
 ## 1. Studio role
+
+The primary product Studio is the Angular application at `apps/web`.
 
 Studio is the orchestration and review surface for:
 
@@ -12,15 +16,81 @@ Studio is the orchestration and review surface for:
 - Scene V3 authoring data;
 - asset selection;
 - runtime configuration at declared boundaries;
-- exact-frame inspection;
 - proof invocation/results;
 - QA diagnostics;
 - human review;
-- explicit promotion.
+- explicit promotion;
+- project/chapter/reel/shot workflow;
+- eventually typed server-side execution of approved scripts/workflows.
 
 Studio does not directly own Rive, Pixi, Three, Rapier or Spine state. It edits validated Scene V3/runtime configuration and displays resolved runtime diagnostics.
 
-## 2. Primary information architecture
+The Angular Studio remains the application that operates Sumer Reel Forge. The React Animation Lab is a specialist companion tool, not a replacement UI.
+
+## 2. Dual-surface application architecture
+
+### Angular Studio — `apps/web`
+
+Primary responsibilities:
+
+```text
+project navigation
+chapter/reel/shot workflow
+manuscript/source context
+asset/candidate management
+render/generation job control
+QA/review/promotion
+production status
+safe workflow invocation through API methods
+```
+
+### React Animation Lab — `apps/animation-lab`
+
+Primary responsibilities:
+
+```text
+exact-frame Scene V3 inspection
+runtime adapter engineering
+Storybook benchmark states
+Pixi/Rive/Three/Rapier proofs
+local/composed transform diagnostics
+runtime capabilities
+visual/evidence diagnostics
+engine-specific debugging behind neutral contracts
+```
+
+### Shared rule
+
+Neither UI becomes semantic authority.
+
+```text
+Angular Studio                 React Animation Lab
+      │                                │
+      └──────────────┬─────────────────┘
+                     ↓
+          Scene V3 / resolved state
+                     ↓
+       compiler / frame / runtime / QA
+                     ↓
+              render infrastructure
+```
+
+The Lab may prove a runtime capability first. Once accepted, the normal production control should surface in Angular through an engine-neutral Scene V3/API contract.
+
+## 3. Local workstation URLs
+
+The intended persistent local workstation is:
+
+```text
+Angular Studio   http://localhost:4200
+Animation Lab    http://localhost:4300
+API              http://localhost:3000/api
+API docs         http://localhost:3000/api/docs
+```
+
+`pnpm start:all` manages these dev services in the current foundation branch, allowing the workstation to remain running while tests/render/scripts/Git work occur in another terminal.
+
+## 4. Primary information architecture
 
 ```text
 Project
@@ -36,7 +106,9 @@ Project
   └─ Evidence / Promotions
 ```
 
-## 3. Scene workspace layout
+The Animation Lab is reached from a relevant scene/shot/benchmark rather than becoming a competing project browser.
+
+## 5. Scene workspace layout
 
 Recommended desktop layout:
 
@@ -58,7 +130,7 @@ Recommended desktop layout:
 
 Responsive/zoom behavior must preserve inspectability rather than shrink everything into unreadable panels.
 
-## 4. Scene header
+## 6. Scene header
 
 Always visible:
 
@@ -76,9 +148,9 @@ human approval status
 
 Do not conflate `rendered` with `approved`.
 
-## 5. Hierarchy panel
+## 7. Hierarchy panel
 
-Logical hierarchy, not DOM/Three scene graph internals:
+Logical hierarchy, not DOM/Three/Pixi scene graph internals:
 
 ```text
 Camera
@@ -95,7 +167,7 @@ Montage
 
 Selecting a node opens the appropriate inspector.
 
-## 6. Timeline panel
+## 8. Timeline panel
 
 Canonical coordinate is frame.
 
@@ -114,9 +186,9 @@ Features:
 
 No engine-specific wall-clock timeline.
 
-## 7. Exact-frame control
+## 9. Exact-frame control
 
-Central control shared with Animation Lab.
+Central control shared semantically with Animation Lab.
 
 Keyboard requirements:
 
@@ -131,7 +203,9 @@ Current frame, seconds and proof-state name are visible.
 
 Unit, Storybook and E2E tests share frame fixture semantics.
 
-## 8. Preview modes
+The Lab already proves this model through its current exact-frame harness; Angular should reuse the semantic contract rather than reimplement time math.
+
+## 10. Preview modes
 
 ```text
 SOURCE
@@ -145,7 +219,9 @@ QA_OVERLAY
 
 `DEBUG` must be visually obvious and impossible to confuse with production preview.
 
-## 9. Inspector tabs
+The current Animation Lab Pixi canvas is a foundation/debug runtime surface, not final production output.
+
+## 11. Inspector tabs
 
 ### Properties
 
@@ -167,7 +243,9 @@ Resolved asset/runtime/seed/frame trace.
 
 Receipts and proof artifacts.
 
-## 10. Actor inspector
+These tab concepts already exist in the Animation Lab inspection shell and should inform Angular without forcing identical component implementations.
+
+## 12. Actor inspector
 
 Shows:
 
@@ -185,7 +263,7 @@ QA requirements
 
 Rive-specific implementation details may appear in an advanced runtime subpanel, but Scene V3 semantic controls remain primary.
 
-## 11. Material inspector
+## 13. Material inspector
 
 Shows:
 
@@ -200,7 +278,9 @@ safe zones
 proof states
 ```
 
-## 12. World/City inspector
+Pixi-specific object details belong in diagnostics, not in canonical material identity.
+
+## 14. World/City inspector
 
 Shows:
 
@@ -215,7 +295,7 @@ historical/visual evidence
 LOD/runtime budget
 ```
 
-## 13. Simulation inspector
+## 15. Simulation inspector
 
 Shows:
 
@@ -233,7 +313,7 @@ proof status
 
 Authoring simulation and playback bake are visibly distinct.
 
-## 14. QA dashboard
+## 16. QA dashboard
 
 Status categories:
 
@@ -258,7 +338,9 @@ Grouped by:
 - accessibility/motion safety;
 - human.
 
-## 15. Benchmark dashboard
+The Lab already preserves `NOT_RUN` rather than presenting unseen QA as passing. Angular must preserve the same principle.
+
+## 17. Benchmark dashboard
 
 Each platform benchmark shows:
 
@@ -275,7 +357,9 @@ last proof receipt
 
 This becomes the platform readiness board.
 
-## 16. Asset browser
+A benchmark may link directly to its Animation Lab scene/proof state.
+
+## 18. Asset browser
 
 Filter by:
 
@@ -292,7 +376,7 @@ staleness
 
 Debug/proof artifacts hidden by default in production asset selection.
 
-## 17. Candidate review mode
+## 19. Candidate review mode
 
 Dedicated review view should show:
 
@@ -309,7 +393,7 @@ approve / reject / request revision
 
 No editing candidate pixels here; revision produces new candidate.
 
-## 18. Promotion mode
+## 20. Promotion mode
 
 Promotion view displays exact target:
 
@@ -325,7 +409,9 @@ human review receipt
 
 Confirmation is explicit and keyboard accessible.
 
-## 19. Error/diagnostic mode
+No Lab preview, green unit suite or successful generation may substitute for human promotion evidence when the workflow requires human review.
+
+## 21. Error/diagnostic mode
 
 When render fails, Studio should classify failure:
 
@@ -343,7 +429,9 @@ promotion
 
 Show one coherent diagnostic bundle, not unrelated console snippets.
 
-## 20. Unsaved/edit state
+Animation Lab runtime errors should eventually be linkable from Studio diagnostics using scene/runtime/frame identity.
+
+## 22. Unsaved/edit state
 
 Studio authored changes must distinguish:
 
@@ -358,7 +446,7 @@ PROOF_STALE
 
 Changing an authoring field marks resolved/proof data stale until recomputed.
 
-## 21. Authoring workflow
+## 23. Authoring workflow
 
 ```text
 open scene
@@ -371,6 +459,8 @@ local validate/compile
   ↓
 inspect exact proof states
   ↓
+open Animation Lab when runtime-level inspection is needed
+  ↓
 run affected QA
   ↓
 render short proof if visual
@@ -380,7 +470,7 @@ human review
 promote if accepted
 ```
 
-## 22. Scene creation workflow
+## 24. Scene creation workflow
 
 New scene wizard should eventually require:
 
@@ -393,13 +483,65 @@ New scene wizard should eventually require:
 
 It should not begin by asking which npm animation library to use.
 
-## 23. Runtime selection UX
+## 25. Runtime selection UX
 
 Runtime ownership is usually inferred from asset/definition class.
 
 Advanced selection may exist for evaluated alternatives, but the UI should not encourage switching hero actors between Rive/Spine casually after proof binding.
 
-## 24. Storybook plan for Studio
+Pixi/Rive/Three package names are diagnostic implementation details, not the primary creative vocabulary.
+
+## 26. Studio → Animation Lab navigation
+
+Near-term planned Studio action:
+
+```text
+Open Animation Lab
+```
+
+The handoff should pass semantic identity, for example:
+
+```text
+scene ID
+scene revision
+resolved hash when known
+frame or proof-state ID
+selected node/runtime ID when useful
+```
+
+A possible future local URL shape:
+
+```text
+http://localhost:4300/scene/scene:ch01:r01:s03:foundation?revision=1&frame=101
+```
+
+The Lab should resolve authoritative data through shared/API state rather than trusting arbitrary query-string runtime data.
+
+## 27. Animation Lab → Studio navigation
+
+The Lab should provide a route back to the owning project/scene/shot in Angular Studio.
+
+This prevents the Lab from becoming a disconnected alternative project-management application.
+
+## 28. Current data-loading limitation
+
+The Lab currently uses a pinned reduced golden fixture for browser/runtime proof.
+
+That is appropriate for deterministic tests but not sufficient for normal production use.
+
+Planned transition:
+
+```text
+golden fixture remains for tests
+        +
+Lab can select/fetch resolved scene by semantic identity
+        +
+hash/revision validation prevents stale inspection
+```
+
+This removes the need to manually maintain copied semantic fields for ordinary use while retaining deterministic golden coverage.
+
+## 29. Storybook plan for Studio
 
 Major story groups:
 
@@ -421,7 +563,9 @@ Studio/BenchmarkDashboard
 
 Every state includes loading, empty, error, blocked and stale where relevant.
 
-## 25. Unit tests
+The React Lab retains its separate Storybook suite for runtime engineering proof states.
+
+## 30. Unit tests
 
 - view-model derivation;
 - frame controls;
@@ -433,7 +577,7 @@ Every state includes loading, empty, error, blocked and stale where relevant.
 - warning presentation;
 - no debug asset in production selector.
 
-## 26. Storybook interaction tests
+## 31. Storybook interaction tests
 
 - scrub frame;
 - select proof state;
@@ -445,7 +589,7 @@ Every state includes loading, empty, error, blocked and stale where relevant.
 - open promotion confirmation;
 - reduced-motion preview remains paused.
 
-## 27. E2E workflows
+## 32. E2E workflows
 
 ### E2E-STUDIO-001 scene inspection
 
@@ -475,7 +619,15 @@ Complete source inspection, frame navigation, QA inspection and review action wi
 
 Emulate reduced motion; verify autoplay/UI transitions follow policy.
 
-## 28. Accessibility requirements
+### E2E-STUDIO-008 open Animation Lab
+
+From a selected scene/shot, open the Lab and verify semantic scene/revision/frame identity matches.
+
+### E2E-STUDIO-009 workflow job
+
+Submit one safe typed workflow job, observe status/logs, and verify output identity without giving the browser arbitrary shell access.
+
+## 33. Accessibility requirements
 
 - semantic regions/headings;
 - accessible frame slider/control;
@@ -487,9 +639,11 @@ Emulate reduced motion; verify autoplay/UI transitions follow policy.
 - dialogs return focus;
 - large visual canvas has textual state/diagnostic alternative.
 
-## 29. Local-first gate
+The current Animation Lab intentionally pairs its Pixi canvas with textual transform/runtime/evidence diagnostics; this pattern should continue for inaccessible visual surfaces.
 
-Any Studio feature slice:
+## 34. Local-first gate
+
+Any Angular Studio feature slice:
 
 ```text
 Angular unit
@@ -499,8 +653,129 @@ Storybook build/interactions/a11y
 applicable Playwright E2E
 ```
 
-Then GitHub Actions repeats deterministic checks.
+Any Animation Lab runtime slice:
 
-## 30. Definition of successful Studio architecture
+```text
+adapter/foundation unit
+Animation Lab unit
+lint/build
+Storybook build
+browser E2E
+applicable V3 integration
+```
 
-Studio is successful if a reviewer can understand and control a complex Scene V3 without knowing which engine-specific object graph produced it, while still being able to drill into runtime diagnostics when something fails.
+Then GitHub Actions repeat deterministic checks when capacity is available. Local deterministic evidence remains the immediate development authority; known failures are never merged merely because CI is unavailable.
+
+## 35. UI-driven execution of scripts/workflows
+
+The long-term goal is to make common repository operations available from Angular Studio, but through typed methods/jobs rather than arbitrary shell commands.
+
+### Do not implement
+
+```text
+POST /shell
+{ command: "pnpm whatever" }
+```
+
+That would weaken security, reproducibility, input validation, quoting, auditability and promotion safety.
+
+### Preferred model
+
+```text
+Angular action
+    ↓
+typed API method/job request
+    ↓
+allowlisted server-side workflow service
+    ↓
+reusable domain function or existing CLI wrapper
+    ↓
+persisted job/output/evidence state
+    ↓
+structured status stream to Angular
+```
+
+### Candidate typed operations
+
+```text
+prepareShotAssets(shotId)
+generateCandidate(shotId, layerId, workflowId)
+verifyCandidate(candidateId)
+renderProof(sceneId, revision, profile)
+runMaterialQa(proofId)
+compileSceneV3(sceneId, revision)
+renderNamedProofState(sceneId, proofStateId)
+createPromotionPlan(candidateId)
+promoteReviewedCandidate(reviewReceiptId)
+```
+
+Initially, services may call the existing scripts. The architectural direction should be to move reusable logic into shared TypeScript services so CLI and API become two entrypoints into the same implementation.
+
+## 36. Job execution contract
+
+Future Studio jobs should carry:
+
+```text
+job ID
+operation type
+validated semantic inputs
+scene/shot/candidate IDs
+requested runtime/profile
+status/progress
+structured log/events
+output artifact IDs/hashes
+QA receipt links
+cancelability
+retryability
+human-review requirement
+```
+
+Operational timestamps may exist for observability but must not become animation semantic inputs.
+
+## 37. Promotion execution is stronger than ordinary jobs
+
+A promotion method must verify:
+
+- exact candidate hash;
+- expected current canonical revision;
+- required QA receipts;
+- required human review receipt;
+- staleness state;
+- transactional target update;
+- rollback/supersession metadata.
+
+No background render/generation completion may implicitly promote output.
+
+## 38. Current implementation checkpoint
+
+As of 2026-08-26:
+
+Implemented foundation:
+
+- Angular Studio remains active on 4200;
+- React Animation Lab exists and is moving to stable 4300 workstation service;
+- Scene V3 compiler/runtime/inspection foundation exists;
+- Lab exact-frame/fake-runtime diagnostics exist;
+- isolated Pixi exact-frame WebGL surface exists;
+- three-browser Pixi E2E is green before the 4300 startup update;
+- production Scene V2/Remotion remains authoritative for Reel 1.
+
+Still missing from the intended Studio architecture:
+
+- dynamic resolved Scene V3 loading in the Lab;
+- Studio ↔ Lab semantic deep links;
+- production source-backed Pixi material proof;
+- Rive/Three runtime proofs;
+- typed workflow API/job layer for many CLI operations;
+- complete V3 production migration;
+- full production provenance/QA/promotion UI.
+
+See [`current-implementation-status-and-roadmap.md`](./current-implementation-status-and-roadmap.md) and [`implementation-backlog.md`](./implementation-backlog.md) for the current execution order.
+
+## 39. Definition of successful Studio architecture
+
+Studio is successful if a reviewer can understand and control a complex Scene V3 without knowing which engine-specific object graph produced it, while still being able to drill into Animation Lab/runtime diagnostics when something fails.
+
+The overall product should feel like one system:
+
+> Angular Studio operates the work. Animation Lab explains and proves the animation machinery. Scene V3 and the shared runtime/compiler contracts keep both honest.
