@@ -1,0 +1,19 @@
+{
+  "name": "animation-compiler",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/animation-compiler/src",
+  "projectType": "library",
+  "tags": ["type:foundation", "scope:animation-v3"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/animation-compiler",
+        "main": "libs/animation-compiler/src/index.ts",
+        "tsConfig": "libs/animation-compiler/tsconfig.lib.json",
+        "assets": ["libs/animation-compiler/*.md"]
+      }
+    }
+  }
+}
