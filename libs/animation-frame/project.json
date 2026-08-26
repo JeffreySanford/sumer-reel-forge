@@ -1,0 +1,19 @@
+{
+  "name": "animation-frame",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/animation-frame/src",
+  "projectType": "library",
+  "tags": ["type:foundation", "scope:animation-v3"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/animation-frame",
+        "main": "libs/animation-frame/src/index.ts",
+        "tsConfig": "libs/animation-frame/tsconfig.lib.json",
+        "assets": ["libs/animation-frame/*.md"]
+      }
+    }
+  }
+}

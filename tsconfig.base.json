@@ -21,6 +21,9 @@
       ],
       "@sumer-reel-forge/animation-contracts": [
         "./libs/animation-contracts/src/index.ts"
+      ],
+      "@sumer-reel-forge/animation-frame": [
+        "./libs/animation-frame/src/index.ts"
       ]
     }
   },
