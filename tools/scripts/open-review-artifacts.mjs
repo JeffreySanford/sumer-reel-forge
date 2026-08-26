@@ -1,5 +1,6 @@
-import { access } from 'node:fs/promises';
-import { extname, resolve } from 'node:path';
+import { access, readFile, readdir } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { dirname, extname, join, resolve } from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
@@ -13,6 +14,9 @@ const SUPPORTED = new Set([
   '.webm',
   '.mov',
 ]);
+const SHOT03_ROI_ROOT = resolve(
+  'tmp/animation-assets/resegmentation/shot03-roi-search',
+);
 
 export function shouldOpenReviewArtifacts(args = process.argv.slice(2)) {
   return !args.includes('--no-open');
@@ -40,7 +44,7 @@ export async function openReviewArtifacts(paths, options = {}) {
         `Unsupported review artifact ${path}. Expected one of: ${[...SUPPORTED].join(', ')}`,
       );
     }
-    files.push(path);
+    if (!files.includes(path)) files.push(path);
   }
 
   if (!files.length) {
@@ -56,6 +60,63 @@ export async function openReviewArtifacts(paths, options = {}) {
   }
 
   return files;
+}
+
+export async function reviewArtifactsFromReport(reportPath) {
+  const absoluteReportPath = resolve(reportPath);
+  await access(absoluteReportPath);
+  const report = JSON.parse(await readFile(absoluteReportPath, 'utf8'));
+
+  if (report.type === 'shot03-roi-segmentation-autopilot' && report.finalReportPath) {
+    return reviewArtifactsFromReport(report.finalReportPath);
+  }
+
+  const candidates = [
+    report.artifacts?.alphaContactSheet,
+    report.ranked?.vessel?.[0]?.registeredPath,
+    report.ranked?.enki?.[0]?.registeredPath,
+    report.artifacts?.activeVideo,
+    report.artifacts?.abVideo,
+    report.artifacts?.frozenControlVideo,
+    report.artifacts?.frozenControlFrame,
+  ].filter(Boolean);
+
+  const media = [];
+  for (const value of candidates) {
+    const path = resolveReportArtifact(absoluteReportPath, value);
+    if (!existsSync(path)) continue;
+    if (!SUPPORTED.has(extname(path).toLowerCase())) continue;
+    if (!media.includes(path)) media.push(path);
+  }
+
+  if (!media.length) {
+    throw new Error(
+      `Report ${absoluteReportPath} did not reference any existing supported review artifacts.`,
+    );
+  }
+  return media;
+}
+
+export async function latestShot03RoiReport() {
+  let entries;
+  try {
+    entries = await readdir(SHOT03_ROI_ROOT, { withFileTypes: true });
+  } catch {
+    throw new Error(`No Shot 3 ROI review runs found under ${SHOT03_ROI_ROOT}.`);
+  }
+
+  const directories = entries
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => join(SHOT03_ROI_ROOT, entry.name))
+    .sort((a, b) => b.localeCompare(a));
+
+  for (const directory of directories) {
+    const autopilot = join(directory, 'shot03-roi-autopilot.json');
+    if (existsSync(autopilot)) return autopilot;
+    const search = join(directory, 'shot03-roi-segmentation-search.json');
+    if (existsSync(search)) return search;
+  }
+  throw new Error(`No completed Shot 3 ROI review report found under ${SHOT03_ROI_ROOT}.`);
 }
 
 async function openWithSystemViewer(path, options = {}) {
@@ -114,6 +175,14 @@ function openWithWindowsShell(path, options = {}) {
   return 'Windows ShellExecute';
 }
 
+function resolveReportArtifact(reportPath, value) {
+  const text = String(value);
+  if (/^[a-zA-Z]:[\\/]/.test(text) || text.startsWith('/') || text.startsWith('\\\\')) {
+    return resolve(text);
+  }
+  return resolve(dirname(reportPath), text);
+}
+
 function powershellSingleQuoted(value) {
   return `'${String(value).replaceAll("'", "''")}'`;
 }
@@ -141,14 +210,39 @@ async function main() {
     console.log('Open generated PNG/MP4 review artifacts in the OS-associated viewer.');
     console.log('Usage:');
     console.log('  node tools/scripts/open-review-artifacts.mjs <file> [file ...]');
+    console.log('  node tools/scripts/open-review-artifacts.mjs --latest-shot03-roi');
+    console.log('  node tools/scripts/open-review-artifacts.mjs --from-report=<report.json>');
     console.log('  node tools/scripts/open-review-artifacts.mjs --diagnose-open <file>');
     console.log('  node tools/scripts/open-review-artifacts.mjs --no-open <file> [file ...]');
     return;
   }
+
   const diagnose = args.includes('--diagnose-open');
-  const files = args.filter(
-    (arg) => arg !== '--no-open' && arg !== '--diagnose-open',
+  const reportArg = args.find((arg) => arg.startsWith('--from-report='));
+  let files = [];
+
+  if (args.includes('--latest-shot03-roi')) {
+    const reportPath = await latestShot03RoiReport();
+    console.log(`[OPEN] latest Shot 3 ROI report: ${reportPath}`);
+    files.push(...(await reviewArtifactsFromReport(reportPath)));
+  }
+  if (reportArg) {
+    const reportPath = reportArg.slice('--from-report='.length);
+    console.log(`[OPEN] report-driven review: ${resolve(reportPath)}`);
+    files.push(...(await reviewArtifactsFromReport(reportPath)));
+  }
+
+  files.push(
+    ...args.filter(
+      (arg) =>
+        arg !== '--no-open' &&
+        arg !== '--diagnose-open' &&
+        arg !== '--latest-shot03-roi' &&
+        !arg.startsWith('--from-report='),
+    ),
   );
+
+  files = [...new Set(files)];
   await maybeOpenReviewArtifacts(files, { args, diagnose, delayMs: 120 });
 }
 
