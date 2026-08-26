@@ -9,8 +9,9 @@ export const SHOT03_WATER_SOURCE_ASSET: PixiSourceAsset = Object.freeze({
   role: 'water',
   url: shot03WaterUrl,
   sha256: SHOT03_WATER_SHA256,
-  width: 1080,
-  height: 1920,
+  width: 941,
+  height: 1672,
+  registration: 'cover-center',
 });
 
 export const SHOT03_SOURCE_BACKED_ASSETS: readonly PixiSourceAsset[] = Object.freeze([
