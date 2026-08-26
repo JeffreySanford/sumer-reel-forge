@@ -137,11 +137,13 @@ export function PixiRuntimeCanvas({
         data-pixi-source-asset-count={plan.sourceAssets.length}
         data-pixi-material-count={plan.materials.length}
         data-pixi-review-mode="artwork"
+        data-pixi-review-composition="shot03-required-layers"
         aria-label="Pixi exact-frame renderer"
       />
       <div className={previewStyles.pixiStatus} aria-live="polite">
         <strong>PIXI {status}</strong>
         <span>artwork review</span>
+        <span>Shot 3 required layers</span>
         <span>{PIXI_PREVIEW_RENDER_MODE}</span>
         <span>ticker stopped</span>
         <span>
