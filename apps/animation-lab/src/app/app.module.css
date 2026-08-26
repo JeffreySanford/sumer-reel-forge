@@ -1,1 +1,373 @@
-/* Your styles goes here. */
+.shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  background: #0d1117;
+  color: #e6edf3;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #30363d;
+  background: #161b22;
+}
+
+.header h1,
+.header p,
+.hierarchy h2,
+.inspector h2,
+.hierarchy h3,
+.preview p,
+.card p,
+.keyboardHint {
+  margin: 0;
+}
+
+.header h1 {
+  margin-top: 0.15rem;
+  font-size: clamp(1.45rem, 2vw, 2rem);
+}
+
+.eyebrow {
+  color: #8b949e;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sceneId,
+.muted,
+.keyboardHint {
+  color: #8b949e;
+}
+
+.sceneId {
+  margin-top: 0.35rem !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.82rem;
+}
+
+.headerBadges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-content: center;
+  gap: 0.5rem;
+}
+
+.headerBadges span,
+.status,
+.previewBadge {
+  border: 1px solid #3d444d;
+  border-radius: 999px;
+  padding: 0.3rem 0.55rem;
+  background: #21262d;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.workspace {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(12rem, 0.8fr) minmax(24rem, 2fr) minmax(18rem, 1fr);
+}
+
+.hierarchy,
+.inspector {
+  min-width: 0;
+  overflow: auto;
+  padding: 1rem;
+  background: #0d1117;
+}
+
+.hierarchy {
+  border-right: 1px solid #30363d;
+}
+
+.inspector {
+  border-left: 1px solid #30363d;
+}
+
+.hierarchy h2,
+.inspector h2 {
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.hierarchyGroup {
+  margin-bottom: 1rem;
+}
+
+.hierarchyGroup h3 {
+  color: #8b949e;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.hierarchyGroup ul {
+  list-style: none;
+  margin: 0.4rem 0 0;
+  padding: 0;
+}
+
+.hierarchyGroup li {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid #21262d;
+  font-size: 0.82rem;
+}
+
+.hierarchyGroup code,
+.card code {
+  overflow-wrap: anywhere;
+  color: #a5d6ff;
+  font-size: 0.7rem;
+}
+
+.previewColumn {
+  min-width: 0;
+  display: grid;
+  grid-template-rows: minmax(20rem, 1fr) auto auto;
+  background: #010409;
+}
+
+.preview {
+  position: relative;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.65rem;
+  margin: 1rem;
+  border: 1px solid #30363d;
+  border-radius: 0.75rem;
+  background:
+    linear-gradient(145deg, rgba(46, 160, 67, 0.08), transparent 48%),
+    radial-gradient(circle at center, #161b22 0, #0d1117 62%, #010409 100%);
+  text-align: center;
+}
+
+.previewBadge {
+  position: absolute;
+  top: 0.85rem;
+  left: 0.85rem;
+}
+
+.frameNumber {
+  font-size: clamp(4rem, 10vw, 8rem);
+  font-weight: 800;
+  line-height: 0.9;
+  letter-spacing: -0.08em;
+}
+
+.preview strong {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 1.05rem;
+}
+
+.preview p {
+  max-width: 34rem;
+  color: #8b949e;
+}
+
+.frameControl {
+  margin: 0 1rem 1rem;
+  padding: 0.85rem;
+  border: 1px solid #30363d;
+  border-radius: 0.65rem;
+  background: #161b22;
+}
+
+.frameControl:focus-visible,
+button:focus-visible {
+  outline: 3px solid #58a6ff;
+  outline-offset: 2px;
+}
+
+.frameReadout,
+.frameButtons,
+.proofStates,
+.footer,
+.cardHeading {
+  display: flex;
+  align-items: center;
+}
+
+.frameReadout {
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.frameButtons {
+  gap: 0.5rem;
+  margin-top: 0.65rem;
+}
+
+button {
+  border: 1px solid #3d444d;
+  border-radius: 0.45rem;
+  padding: 0.5rem 0.7rem;
+  background: #21262d;
+  color: #e6edf3;
+  font: inherit;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #30363d;
+}
+
+.keyboardHint {
+  margin-top: 0.6rem;
+  font-size: 0.72rem;
+}
+
+.proofStates {
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0 1rem 1rem;
+}
+
+.proofStates button {
+  display: grid;
+  gap: 0.18rem;
+  text-align: left;
+}
+
+.proofStates button[aria-pressed="true"] {
+  border-color: #58a6ff;
+  background: #1f3a5f;
+}
+
+.proofStates small {
+  color: #8b949e;
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.9rem;
+}
+
+.tabs button {
+  padding: 0.4rem 0.55rem;
+  font-size: 0.78rem;
+}
+
+.tabs button[aria-selected="true"] {
+  border-color: #58a6ff;
+  background: #1f3a5f;
+}
+
+.inspectorContent {
+  min-width: 0;
+}
+
+.stack {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.card {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.7rem;
+  border: 1px solid #30363d;
+  border-radius: 0.55rem;
+  background: #161b22;
+  font-size: 0.78rem;
+}
+
+.cardHeading {
+  justify-content: space-between;
+  gap: 0.7rem;
+}
+
+.card span,
+.card p {
+  color: #b1bac4;
+}
+
+.status {
+  white-space: nowrap;
+  color: #d2a8ff;
+}
+
+.definitionList {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+}
+
+.definitionList div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.45rem;
+  border-bottom: 1px solid #21262d;
+}
+
+.definitionList dt {
+  color: #8b949e;
+}
+
+.definitionList dd {
+  margin: 0;
+  text-align: right;
+}
+
+.footer {
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 0.65rem 1.5rem;
+  border-top: 1px solid #30363d;
+  background: #161b22;
+  color: #8b949e;
+  font-size: 0.72rem;
+}
+
+@media (max-width: 1050px) {
+  .workspace {
+    grid-template-columns: 13rem minmax(20rem, 1fr);
+  }
+
+  .inspector {
+    grid-column: 1 / -1;
+    border-top: 1px solid #30363d;
+    border-left: 0;
+  }
+}
+
+@media (max-width: 720px) {
+  .header {
+    display: grid;
+  }
+
+  .headerBadges {
+    justify-content: flex-start;
+  }
+
+  .workspace {
+    display: block;
+  }
+
+  .hierarchy,
+  .inspector {
+    border: 0;
+    border-top: 1px solid #30363d;
+  }
+
+  .previewColumn {
+    min-height: 38rem;
+  }
+}
