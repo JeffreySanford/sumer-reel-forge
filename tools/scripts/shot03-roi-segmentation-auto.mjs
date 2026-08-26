@@ -44,7 +44,7 @@ async function main() {
   console.log(`Max attempts: ${options.maxAttempts}`);
   console.log(`Initial threshold: ${options.threshold.toFixed(2)}`);
   console.log(`Initial paddings: ${options.paddings.map((value) => value.toFixed(2)).join(', ')}`);
-  console.log('Policy: bounded parameter repair only; no canonical asset, manifest, or source-code mutation.');
+  console.log('Policy: bounded parameter repair only; deterministic QA is authoritative; no canonical asset, manifest, or source-code mutation.');
   console.log('');
 
   console.log('[PREFLIGHT]');
@@ -77,6 +77,8 @@ async function main() {
     finalReport = { path: reportPath, report };
     const survivors = (report.results ?? []).filter((item) => item.structuralRisk !== 'HIGH');
     const bestByTarget = bestPerTarget(report.ranked ?? {});
+    const aiContradictsDeterministic =
+      survivors.length === 0 && report.ai?.status === 'PASS_ADVISORY';
 
     attempts.push({
       attempt,
@@ -86,10 +88,14 @@ async function main() {
       survivorCount: survivors.length,
       bestByTarget: summarizeBest(bestByTarget),
       aiStatus: report.ai?.status ?? null,
+      aiContradictsDeterministic,
     });
 
     console.log(`[AUTO] structural survivors: ${survivors.length}`);
     if (report.ai?.status) console.log(`[AUTO] local vision status: ${report.ai.status}`);
+    if (aiContradictsDeterministic) {
+      console.log('[AUTO] WARNING: local vision PASS_ADVISORY contradicts deterministic structural failure; deterministic QA wins.');
+    }
 
     const hasTargetSurvivor = ['vessel', 'enki'].every((target) =>
       survivors.some((item) => item.target === target),
@@ -122,7 +128,12 @@ async function main() {
     console.log(`       plan: ${repairPath}`);
 
     if (repair.action === 'stop') {
-      console.log('[AUTO] Ollama recommends stopping parameter search rather than repeating an unproductive configuration family.');
+      if (survivors.length === 0) {
+        console.log('[AUTO] bounded parameter family exhausted with ZERO deterministic survivors.');
+        console.log('[AUTO] NO CANDIDATE ACCEPTED. A stop recommendation means escalate strategy, not proceed to integration.');
+      } else {
+        console.log('[AUTO] Ollama recommends stopping parameter search rather than repeating an unproductive configuration family.');
+      }
       break;
     }
 
@@ -133,13 +144,20 @@ async function main() {
   if (!finalReport) throw new Error('Autopilot did not produce a generation report.');
 
   const autopilotPath = join(resolve(finalReport.path, '..'), 'shot03-roi-autopilot.json');
+  const finalSurvivors = (finalReport.report.results ?? []).filter(
+    (item) => item.structuralRisk !== 'HIGH',
+  );
   const receipt = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     type: 'shot03-roi-segmentation-autopilot',
     generatedAt: new Date().toISOString(),
     maxAttempts: options.maxAttempts,
     attempts,
     finalReportPath: finalReport.path,
+    finalStructuralSurvivorCount: finalSurvivors.length,
+    deterministicGatePass: ['vessel', 'enki'].every((target) =>
+      finalSurvivors.some((item) => item.target === target),
+    ),
     canonicalAssetsMutated: false,
     canonicalManifestMutated: false,
     sourceCodeMutatedByOllama: false,
@@ -158,6 +176,7 @@ async function main() {
   console.log('');
   console.log(`[INFO] autopilot receipt: ${autopilotPath}`);
   console.log(`[INFO] final search report: ${finalReport.path}`);
+  console.log(`[INFO] deterministic gate: ${receipt.deterministicGatePass ? 'PASS' : 'FAIL'} · survivors ${receipt.finalStructuralSurvivorCount}`);
   await maybeOpenReviewArtifacts(reviewArtifacts, { enabled: !options.noOpen, delayMs: 120 });
 }
 
@@ -214,22 +233,29 @@ async function proposeRepair({ report, reportPath, attempt, threshold, paddings 
     cropEdge: item.cropAnalysis?.anyStrongTouchesEdge,
     bbox: item.registeredAnalysis?.largestComponentBbox,
   }));
+  const deterministicSurvivors = compactResults.filter((item) => item.risk !== 'HIGH');
 
   const system = [
     'You are the bounded segmentation tuning advisor for Sumer Reel Forge.',
     'Return only JSON conforming to the supplied schema.',
     'You may change only SAM threshold and ROI padding values.',
-    'You may recommend stop when the evidence indicates this parameter family is unlikely to improve the semantic masks.',
+    'DETERMINISTIC QA IS AUTHORITATIVE. A result marked HIGH risk is failed even if a prior vision review called it PASS_ADVISORY.',
+    'If deterministic survivor count is zero, never describe the masks as passing, clean, ready, accepted, or suitable for integration.',
+    'You may recommend stop only to mean this bounded threshold/padding parameter family appears exhausted; stop never means accept a failed candidate.',
     'Do not propose source-code edits, manifest edits, promotion, manual image editing, or arbitrary shell commands.',
     'Do not invent root causes. Base the next experiment only on visible alpha masks and deterministic measurements.',
     'Prefer changing spatial context before repeatedly nudging threshold when prior thresholds have plateaued.',
   ].join(' ');
 
   const user = {
-    task: 'Choose the next bounded ROI segmentation experiment, or stop if another retry is not justified.',
+    task: 'Choose the next bounded ROI segmentation experiment, or stop only if this parameter family is exhausted. Deterministic failures cannot be overridden by visual opinion.',
     attempt,
     current: { threshold, paddings },
     deterministicResults: compactResults,
+    deterministicSurvivorCount: deterministicSurvivors.length,
+    deterministicGatePass: ['vessel', 'enki'].every((target) =>
+      deterministicSurvivors.some((item) => item.target === target),
+    ),
     priorVisionReview: report.ai ?? null,
     imageOrder: [
       'approved Shot 3 editorial source',
@@ -238,6 +264,8 @@ async function proposeRepair({ report, reportPath, attempt, threshold, paddings 
     constraints: {
       threshold: { min: 0.05, max: 0.6 },
       padding: { min: 0.05, max: 0.9, maxValues: 4 },
+      deterministicQaOverridesVision: true,
+      stopDoesNotMeanAcceptance: true,
       noCodeMutation: true,
       noAutomaticPromotion: true,
     },
