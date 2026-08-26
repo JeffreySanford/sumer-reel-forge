@@ -45,6 +45,11 @@ function sortCanonicalArray(values: readonly CanonicalValue[]): readonly Canonic
   });
 }
 
+function isPlainObject(value: object): boolean {
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
+
 export function canonicalize(
   value: unknown,
   options: CanonicalizeOptions = {},
@@ -75,6 +80,9 @@ export function canonicalize(
   }
 
   if (typeof value === 'object') {
+    if (!isPlainObject(value)) {
+      throw new TypeError(`Only plain JSON objects are canonical at ${path || '/'}.`);
+    }
     const input = value as Record<string, unknown>;
     const output: Record<string, CanonicalValue> = {};
     for (const key of Object.keys(input).sort()) {
@@ -106,32 +114,43 @@ export function diffCanonicalPaths(left: unknown, right: unknown): readonly stri
   const b = canonicalize(right);
   const differences: string[] = [];
 
-  function walk(l: CanonicalValue | undefined, r: CanonicalValue | undefined, path: string): void {
-    if (JSON.stringify(l) === JSON.stringify(r)) return;
+  function walk(
+    leftValue: CanonicalValue | undefined,
+    rightValue: CanonicalValue | undefined,
+    path: string,
+  ): void {
+    if (JSON.stringify(leftValue) === JSON.stringify(rightValue)) return;
 
-    const lObject = l !== null && typeof l === 'object' && !Array.isArray(l);
-    const rObject = r !== null && typeof r === 'object' && !Array.isArray(r);
-    if (lObject && rObject) {
-      const keys = new Set([
-        ...Object.keys(l as Record<string, CanonicalValue>),
-        ...Object.keys(r as Record<string, CanonicalValue>),
-      ]);
+    const leftIsObject =
+      leftValue !== null &&
+      typeof leftValue === 'object' &&
+      !Array.isArray(leftValue);
+    const rightIsObject =
+      rightValue !== null &&
+      typeof rightValue === 'object' &&
+      !Array.isArray(rightValue);
+    if (leftIsObject && rightIsObject) {
+      const leftRecord = leftValue as Record<string, CanonicalValue>;
+      const rightRecord = rightValue as Record<string, CanonicalValue>;
+      const keys = new Set([...Object.keys(leftRecord), ...Object.keys(rightRecord)]);
       for (const key of [...keys].sort()) {
         walk(
-          (l as Record<string, CanonicalValue>)[key],
-          (r as Record<string, CanonicalValue>)[key],
+          leftRecord[key],
+          rightRecord[key],
           canonicalPath(path, key),
         );
       }
       return;
     }
 
-    const lArray = Array.isArray(l);
-    const rArray = Array.isArray(r);
-    if (lArray && rArray) {
-      const length = Math.max(l.length, r.length);
+    if (Array.isArray(leftValue) && Array.isArray(rightValue)) {
+      const length = Math.max(leftValue.length, rightValue.length);
       for (let index = 0; index < length; index += 1) {
-        walk(l[index], r[index], canonicalPath(path, index));
+        walk(
+          leftValue[index],
+          rightValue[index],
+          canonicalPath(path, index),
+        );
       }
       return;
     }
