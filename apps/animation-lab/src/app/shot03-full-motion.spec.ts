@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest';
 import { buildShot03FullMotionState } from './shot03-full-motion';
 
 const FPS = 30;
