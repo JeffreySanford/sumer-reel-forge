@@ -161,6 +161,15 @@ export const GOLDEN_INSPECTION_FIXTURE: ResolvedSceneInspectionInput = {
     humanReviewRequired: false,
   },
   semanticScene: {
+    seed: 31003,
+    story: {
+      projectId: 'project:blessings-of-sumer',
+      chapterId: 'chapter:01',
+      reelId: 'reel:01',
+      shotId: 'shot:03',
+      manuscriptRevision: 'original-pre-ai-manuscript',
+      narrativeThreadIds: ['ch1-eridu-nibru', 'ch1-world-order-canals'],
+    },
     camera: [
       {
         id: 'camera:main',
