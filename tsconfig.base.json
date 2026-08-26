@@ -30,6 +30,9 @@
       ],
       "@sumer-reel-forge/animation-compiler": [
         "./libs/animation-compiler/src/index.ts"
+      ],
+      "@sumer-reel-forge/scene-v2": [
+        "./tools/animation/src/scene-v2.ts"
       ]
     }
   },
