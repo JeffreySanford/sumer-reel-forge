@@ -12,21 +12,27 @@ import { SHOT03_WATER_MATERIAL_BINDINGS } from './shot03-water-material';
 const GOLDEN_TIMING = Object.freeze({ fps: 30, durationFrames: 210 });
 
 describe('buildPixiPreviewPlan', () => {
-  it('projects the exact-frame runtime model into the resolved viewport', () => {
+  it('builds an artwork-first visual-review plan from the approved Shot 3 layers', () => {
     const adapter = new FakeRuntimePreviewAdapter();
     const inspection = buildSceneInspection(GOLDEN_INSPECTION_FIXTURE, 101);
     const model = adapter.evaluate({ fixture: GOLDEN_INSPECTION_FIXTURE, inspection });
 
     const plan = buildPixiPreviewPlan(model, 1080, 1920, SHOT03_SOURCE_BACKED_ASSETS);
-    const enki = plan.nodes.find((node) => node.id === 'actor-instance:enki:s03');
+    const water = plan.sourceAssets.find((asset) => asset.id === 'shot03-water-v1');
 
     expect(plan.frame).toBe(101);
     expect(plan.width).toBe(1080);
     expect(plan.height).toBe(1920);
-    expect(plan.nodeCount).toBe(3);
+    expect(plan.nodeCount).toBe(0);
+    expect(plan.nodes).toEqual([]);
     expect(plan.materials).toEqual([]);
-    expect(plan.sourceAssets).toHaveLength(1);
-    expect(plan.sourceAssets[0]).toMatchObject({
+    expect(plan.sourceAssets.map((asset) => asset.id)).toEqual([
+      'shot03-background-v1',
+      'shot03-water-v1',
+      'shot03-vessel-v1',
+      'shot03-enki-body-v1',
+    ]);
+    expect(water).toMatchObject({
       id: 'shot03-water-v1',
       role: 'water',
       sha256: SHOT03_WATER_SHA256,
@@ -34,8 +40,32 @@ describe('buildPixiPreviewPlan', () => {
       height: 1672,
       registration: 'cover-center',
     });
+  });
+
+  it('can explicitly include projected diagnostic geometry without changing source identity', () => {
+    const adapter = new FakeRuntimePreviewAdapter();
+    const inspection = buildSceneInspection(GOLDEN_INSPECTION_FIXTURE, 101);
+    const model = adapter.evaluate({ fixture: GOLDEN_INSPECTION_FIXTURE, inspection });
+
+    const plan = buildPixiPreviewPlan(
+      model,
+      1080,
+      1920,
+      SHOT03_SOURCE_BACKED_ASSETS,
+      [],
+      undefined,
+      true,
+    );
+    const enki = plan.nodes.find((node) => node.id === 'actor-instance:enki:s03');
+
+    expect(plan.nodeCount).toBe(3);
     expect(enki?.x).toBeCloseTo(661.068);
     expect(enki?.y).toBeCloseTo(782.837);
+    expect(plan.sourceAssets).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'shot03-water-v1', sha256: SHOT03_WATER_SHA256 }),
+      ]),
+    );
   });
 
   it('projects the bounded Shot 3 water material from the same exact frame', () => {
@@ -52,6 +82,7 @@ describe('buildPixiPreviewPlan', () => {
       GOLDEN_TIMING,
     );
 
+    expect(plan.nodeCount).toBe(0);
     expect(plan.materials).toHaveLength(1);
     expect(plan.materials[0]).toMatchObject({
       id: 'shot03-water-micro-drift-v1',
@@ -68,7 +99,7 @@ describe('buildPixiPreviewPlan', () => {
     expect(plan.materials[0]?.offsetY).toBeCloseTo(-1.1272727273, 9);
   });
 
-  it('changes projected geometry and material state only when the exact runtime frame changes', () => {
+  it('changes diagnostic geometry and material state only when the exact runtime frame changes', () => {
     const adapter = new FakeRuntimePreviewAdapter();
     const frameZero = buildSceneInspection(GOLDEN_INSPECTION_FIXTURE, 0);
     const frame101 = buildSceneInspection(GOLDEN_INSPECTION_FIXTURE, 101);
@@ -80,6 +111,7 @@ describe('buildPixiPreviewPlan', () => {
       SHOT03_SOURCE_BACKED_ASSETS,
       SHOT03_WATER_MATERIAL_BINDINGS,
       GOLDEN_TIMING,
+      true,
     );
     const blink = buildPixiPreviewPlan(
       adapter.evaluate({ fixture: GOLDEN_INSPECTION_FIXTURE, inspection: frame101 }),
@@ -88,6 +120,7 @@ describe('buildPixiPreviewPlan', () => {
       SHOT03_SOURCE_BACKED_ASSETS,
       SHOT03_WATER_MATERIAL_BINDINGS,
       GOLDEN_TIMING,
+      true,
     );
 
     expect(start.nodes.find((node) => node.id === 'actor-instance:enki:s03')?.x).toBeCloseTo(432);
