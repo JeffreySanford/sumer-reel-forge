@@ -1,14 +1,26 @@
 export const PIXI_PREVIEW_RENDER_MODE = 'manual-exact-frame' as const;
 
 export type PixiRenderNodeKind = 'environment' | 'prop' | 'actor';
+export type PixiSourceAssetRegistration = 'cover-center';
 
 export interface PixiSourceAsset {
   readonly id: string;
   readonly role: string;
   readonly url: string;
   readonly sha256: string;
+  /** Intrinsic source-space pixel width, before output registration. */
+  readonly width: number;
+  /** Intrinsic source-space pixel height, before output registration. */
+  readonly height: number;
+  readonly registration: PixiSourceAssetRegistration;
+}
+
+export interface PixiSourceRegistrationRect {
+  readonly x: number;
+  readonly y: number;
   readonly width: number;
   readonly height: number;
+  readonly scale: number;
 }
 
 export interface PixiRenderNode {
@@ -115,6 +127,7 @@ type PreparedSourceAsset = {
   readonly asset: PixiSourceAsset;
   readonly normalizedSha256: string;
   readonly texture: PixiTextureLike;
+  readonly registrationRect: PixiSourceRegistrationRect;
 };
 
 function assertViewportDimension(value: number, label: string): number {
@@ -137,6 +150,33 @@ export function normalizePixiSourceAssetSha256(value: string): string {
     throw new Error('Pixi source asset sha256 must contain exactly 64 hexadecimal characters.');
   }
   return normalized.toLowerCase();
+}
+
+export function buildPixiSourceRegistration(
+  asset: Pick<PixiSourceAsset, 'id' | 'width' | 'height' | 'registration'>,
+  outputWidth: number,
+  outputHeight: number,
+): PixiSourceRegistrationRect {
+  const width = assertViewportDimension(outputWidth, 'registration output width');
+  const height = assertViewportDimension(outputHeight, 'registration output height');
+  const sourceWidth = assertViewportDimension(asset.width, `${asset.id} source width`);
+  const sourceHeight = assertViewportDimension(asset.height, `${asset.id} source height`);
+
+  if (asset.registration !== 'cover-center') {
+    throw new Error(`Unsupported Pixi source registration ${String(asset.registration)} for ${asset.id}.`);
+  }
+
+  const scale = Math.max(width / sourceWidth, height / sourceHeight);
+  const registeredWidth = sourceWidth * scale;
+  const registeredHeight = sourceHeight * scale;
+
+  return Object.freeze({
+    x: (width - registeredWidth) / 2,
+    y: (height - registeredHeight) / 2,
+    width: registeredWidth,
+    height: registeredHeight,
+    scale,
+  });
 }
 
 export function buildPixiApplicationOptions(
@@ -183,19 +223,15 @@ async function verifySourceAssetBytes(asset: PixiSourceAsset, bytes: ArrayBuffer
   return actual;
 }
 
-function assertSourceAssetRegistration(
+function assertSourceAssetIdentity(
   asset: PixiSourceAsset,
   width: number,
   height: number,
-): void {
+): PixiSourceRegistrationRect {
   if (!asset.id.trim()) throw new Error('Pixi source asset id must not be empty.');
   if (!asset.url.trim()) throw new Error(`Pixi source asset ${asset.id} URL must not be empty.`);
   normalizePixiSourceAssetSha256(asset.sha256);
-  if (asset.width !== width || asset.height !== height) {
-    throw new Error(
-      `Pixi source asset ${asset.id} registration ${asset.width}x${asset.height} does not match surface ${width}x${height}.`,
-    );
-  }
+  return buildPixiSourceRegistration(asset, width, height);
 }
 
 async function decodeVerifiedSourceAsset(
@@ -204,7 +240,7 @@ async function decodeVerifiedSourceAsset(
   width: number,
   height: number,
 ): Promise<PreparedSourceAsset> {
-  assertSourceAssetRegistration(asset, width, height);
+  const registrationRect = assertSourceAssetIdentity(asset, width, height);
 
   const response = await fetch(asset.url, { cache: 'no-store' });
   if (!response.ok) {
@@ -232,7 +268,7 @@ async function decodeVerifiedSourceAsset(
 
     if (image.naturalWidth !== asset.width || image.naturalHeight !== asset.height) {
       throw new Error(
-        `Pixi source asset ${asset.id} decoded as ${image.naturalWidth}x${image.naturalHeight}, expected ${asset.width}x${asset.height}.`,
+        `Pixi source asset ${asset.id} decoded as ${image.naturalWidth}x${image.naturalHeight}, expected source ${asset.width}x${asset.height}.`,
       );
     }
 
@@ -240,6 +276,7 @@ async function decodeVerifiedSourceAsset(
       asset: Object.freeze({ ...asset }),
       normalizedSha256,
       texture: Texture.from(image),
+      registrationRect,
     });
   } finally {
     URL.revokeObjectURL(blobUrl);
@@ -275,7 +312,8 @@ function assertCompatibleFrame(
       asset.id !== prepared.asset.id ||
       normalizePixiSourceAssetSha256(asset.sha256) !== prepared.normalizedSha256 ||
       asset.width !== prepared.asset.width ||
-      asset.height !== prepared.asset.height
+      asset.height !== prepared.asset.height ||
+      asset.registration !== prepared.asset.registration
     ) {
       throw new Error(`Pixi preview frame source asset ${asset.id} does not match prepared identity.`);
     }
@@ -293,10 +331,10 @@ function drawFrame(
 
   for (const prepared of preparedSourceAssets) {
     const sprite = new Sprite(prepared.texture);
-    sprite.x = 0;
-    sprite.y = 0;
-    sprite.width = frame.width;
-    sprite.height = frame.height;
+    sprite.x = prepared.registrationRect.x;
+    sprite.y = prepared.registrationRect.y;
+    sprite.width = prepared.registrationRect.width;
+    sprite.height = prepared.registrationRect.height;
     sprite.alpha = 1;
     app.stage.addChild(sprite);
   }
@@ -387,7 +425,9 @@ export async function createPixiPreviewSurface(
     for (const asset of sourceAssets) {
       if (seenIds.has(asset.id)) throw new Error(`Duplicate Pixi source asset id ${asset.id}.`);
       seenIds.add(asset.id);
-      preparedSourceAssets.push(await decodeVerifiedSourceAsset(asset, Texture, options.width, options.height));
+      preparedSourceAssets.push(
+        await decodeVerifiedSourceAsset(asset, Texture, options.width, options.height),
+      );
     }
   } catch (error) {
     for (const prepared of preparedSourceAssets) prepared.texture.destroy();
@@ -408,6 +448,27 @@ export async function createPixiPreviewSurface(
   app.canvas.setAttribute(
     'data-pixi-source-asset-sha256',
     preparedSourceAssets.map((prepared) => `sha256:${prepared.normalizedSha256}`).join(','),
+  );
+  app.canvas.setAttribute(
+    'data-pixi-source-asset-dimensions',
+    preparedSourceAssets
+      .map((prepared) => `${prepared.asset.id}:${prepared.asset.width}x${prepared.asset.height}`)
+      .join(','),
+  );
+  app.canvas.setAttribute(
+    'data-pixi-source-asset-registration',
+    preparedSourceAssets
+      .map((prepared) => `${prepared.asset.id}:${prepared.asset.registration}`)
+      .join(','),
+  );
+  app.canvas.setAttribute(
+    'data-pixi-source-asset-registration-rect',
+    preparedSourceAssets
+      .map(
+        (prepared) =>
+          `${prepared.asset.id}:${prepared.registrationRect.x.toFixed(3)},${prepared.registrationRect.y.toFixed(3)},${prepared.registrationRect.width.toFixed(3)},${prepared.registrationRect.height.toFixed(3)}`,
+      )
+      .join(','),
   );
   app.canvas.setAttribute('data-pixi-source-asset-verification', 'verified');
 
