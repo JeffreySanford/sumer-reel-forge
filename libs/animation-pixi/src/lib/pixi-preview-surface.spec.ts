@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  assertPixiSourceAssetDigest,
+  assertPixiSourceAssetHttpResponse,
   buildPixiApplicationOptions,
   buildPixiSourceRegistration,
   normalizePixiSourceAssetSha256,
@@ -30,6 +32,30 @@ describe('Pixi preview surface policy', () => {
     expect(normalizePixiSourceAssetSha256(`sha256:${digest}`)).toBe(digest);
     expect(normalizePixiSourceAssetSha256(digest.toUpperCase())).toBe(digest);
     expect(() => normalizePixiSourceAssetSha256('sha256:not-a-digest')).toThrow(/64 hexadecimal/i);
+  });
+
+  it('fails closed when a source asset is missing', () => {
+    expect(() =>
+      assertPixiSourceAssetHttpResponse({ id: 'shot03-water-v1' }, false, 404),
+    ).toThrow('Pixi source asset shot03-water-v1 failed to load with HTTP 404.');
+  });
+
+  it('fails closed when source bytes are stale relative to the approved hash', () => {
+    const approved = 'a'.repeat(64);
+    const stale = 'b'.repeat(64);
+
+    expect(() =>
+      assertPixiSourceAssetDigest(
+        { id: 'shot03-water-v1', sha256: `sha256:${approved}` },
+        stale,
+      ),
+    ).toThrow(/shot03-water-v1 checksum mismatch/i);
+    expect(
+      assertPixiSourceAssetDigest(
+        { id: 'shot03-water-v1', sha256: `sha256:${approved}` },
+        approved,
+      ),
+    ).toBe(approved);
   });
 
   it('registers the 941x1672 Shot 3 source into 1080x1920 like centered object-fit cover', () => {
