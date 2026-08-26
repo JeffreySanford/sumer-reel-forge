@@ -18,6 +18,9 @@
       "@sumer-reel-forge/reel-core": ["./libs/reel-core/src/index.ts"],
       "@sumer-reel-forge/historical-sources": [
         "./libs/historical-sources/src/index.ts"
+      ],
+      "@sumer-reel-forge/animation-contracts": [
+        "./libs/animation-contracts/src/index.ts"
       ]
     }
   },

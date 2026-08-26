@@ -1,0 +1,19 @@
+{
+  "name": "animation-contracts",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/animation-contracts/src",
+  "projectType": "library",
+  "tags": ["type:domain", "scope:animation-v3"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/animation-contracts",
+        "main": "libs/animation-contracts/src/index.ts",
+        "tsConfig": "libs/animation-contracts/tsconfig.lib.json",
+        "assets": ["libs/animation-contracts/*.md"]
+      }
+    }
+  }
+}
