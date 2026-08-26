@@ -1,6 +1,6 @@
 # PixiJS Adoption Record
 
-Status: **CONSTRAIN — foundation preview only, pending local install/audit proof**
+Status: **CONSTRAIN — foundation preview only, local adoption proof green**
 
 Recorded: 2026-08-26
 
@@ -13,7 +13,7 @@ The no-dependency alternative is the existing SVG diagnostic renderer. It remain
 ## Package authority and license
 
 - package: `pixi.js`
-- intended exact version: `8.20.0`
+- exact version: `8.20.0`
 - package source: official PixiJS npm package
 - project/docs: `https://pixijs.com/`
 - repository: `https://github.com/pixijs/pixijs`
@@ -51,6 +51,27 @@ Pixi is a renderer, not a clock:
 - Remotion compatibility: Pixi is preview-only in this slice and is not imported into the production Remotion renderer.
 - WebGL is the requested Pixi renderer preference for this benchmark.
 
+## Verified local evidence
+
+Verified on 2026-08-26 after installing the exact dependency with pnpm:
+
+- `pixi.js@8.20.0` is pinned in `package.json` and `pnpm-lock.yaml`;
+- `pnpm audit --prod --audit-level high` reported no known vulnerabilities;
+- `animation-pixi` unit/boundary tests: 4/4 passed;
+- Animation Lab tests: 20/20 passed;
+- Animation Lab production build passed;
+- Animation Lab ESLint passed with no warnings after the Pixi host-cleanup fix;
+- Storybook production build passed;
+- Playwright Pixi E2E passed in Chromium, Firefox and WebKit (3/3);
+- Scene V3 integration tests passed 10/10, with build and lint green;
+- workspace consistency passed;
+- full workspace lint passed across 14 projects;
+- full workspace build passed across 12 projects;
+- full workspace test target passed across 12 projects;
+- measured Animation Lab Pixi library chunk: approximately 467.72 kB minified / 132.82 kB gzip.
+
+Nx continued to report the pre-existing `api:build` / `api:test` flaky-task classifications; those targets succeeded in this verification run.
+
 ## Adoption checklist
 
 - [x] exact problem/benchmark named
@@ -58,14 +79,14 @@ Pixi is a renderer, not a clock:
 - [x] official package/repository authority identified
 - [x] runtime license reviewed as MIT
 - [x] commercial/publication implications separated from editor/export licensing
-- [x] current intended version recorded (`8.20.0`)
+- [x] exact version recorded (`8.20.0`)
 - [x] React/Remotion boundary checked architecturally
-- [ ] pnpm lockfile diff generated and reviewed locally
-- [ ] production security audit green after install
-- [ ] bundle/runtime size measured after production build
-- [ ] Storybook proof built with installed dependency
-- [ ] browser E2E green in Chromium / Firefox / WebKit
-- [ ] adapter/unit tests green with installed dependency
+- [x] pnpm lockfile diff generated and reviewed locally
+- [x] production security audit green after install
+- [x] bundle/runtime size measured after production build
+- [x] Storybook proof built with installed dependency
+- [x] browser E2E green in Chromium / Firefox / WebKit
+- [x] adapter/unit tests green with installed dependency
 - [x] uninstall/reject path documented
 - [x] ADR/adoption status set to CONSTRAIN
 
