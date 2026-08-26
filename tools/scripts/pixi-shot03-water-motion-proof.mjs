@@ -45,6 +45,7 @@ async function main() {
   console.log(
     `Capture: browser-composited viewport-origin clip ${EXPECTED_CANVAS_WIDTH}x${EXPECTED_CANVAS_HEIGHT}`,
   );
+  console.log('Material: restrained source drift + source-contained readable ripple');
 
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({
@@ -70,7 +71,7 @@ async function main() {
         await waitForCanvasFrame(canvas, frame);
       }
 
-      const materialState = await requiredAttribute(canvas, 'data-pixi-material-state');
+      const materialState = await combinedMaterialState(canvas);
       const screenshotPath = join(activeDirectory, `frame-${String(frame).padStart(4, '0')}.png`);
       const screenshot = await captureCanvasPng(page, canvas, screenshotPath);
       captures.push({
@@ -98,7 +99,7 @@ async function main() {
     const repeatability = [];
     for (const frame of SAMPLE_FRAMES) {
       await gotoFrame(frameControl, canvas, frame);
-      const repeatedMaterialState = await requiredAttribute(canvas, 'data-pixi-material-state');
+      const repeatedMaterialState = await combinedMaterialState(canvas);
       const repeatedPath = join(repeatDirectory, `frame-${String(frame).padStart(4, '0')}.png`);
       const repeated = await captureCanvasPng(page, canvas, repeatedPath);
       const repeatedHash = prefixedSha(repeated);
@@ -159,6 +160,7 @@ async function main() {
           width: EXPECTED_CANVAS_WIDTH,
           height: EXPECTED_CANVAS_HEIGHT,
         },
+        materialStateIncludes: ['micro-drift', 'readable-ripple'],
         capturedFrameCount: captures.length,
         uniqueMaterialStateCount: uniqueMaterialStates.size,
         uniqueRenderedFrameCount: uniqueScreenshotHashes.size,
@@ -178,22 +180,23 @@ async function main() {
         required: true,
         normalSpeedAbRequired: true,
         questions: [
-          'Does the active water feel alive at normal speed rather than merely numerically different?',
-          'Is the motion restrained enough to preserve the painterly source?',
-          'Do water highlights avoid obvious doubling, smearing, or synthetic wobble?',
+          'Is the readable crest plainly visible on the active side at normal speed?',
+          'Does the active water feel alive rather than merely numerically different?',
+          'Is the ripple restrained enough to preserve the painterly source?',
+          'Does the ripple remain inside the intended water area without touching vessel/shore boundaries?',
           'Do vessel and Enki remain perceptually stable against the moving water?',
           'Is the active side preferable to the frozen control?',
         ],
       },
       interpretation:
-        'The left A/B lane freezes the composed artwork at the first proof frame while the right lane advances only through exact Scene V3 frames. In the current artwork-review composition, background, vessel, and Enki artwork remain static; the bounded water material is therefore the intended perceptual difference. For each evidence capture, the existing Pixi canvas is temporarily pinned to viewport coordinate 0,0 at 1:1 1080x1920 CSS size, captured through the browser compositor with an explicit 0,0,1080,1920 clip, then restored. This removes responsive layout, fractional centering, and viewport-edge clipping from the evidence contract. Every PNG header is checked for exact dimensions before it can reach FFmpeg. Repeatability requires both the exact material-state evidence string and captured PNG bytes to match.',
+        'The left A/B lane freezes the composed artwork at the first proof frame while the right lane advances only through exact Scene V3 frames. Background, vessel, and Enki remain static. The active water combines restrained source-pixel drift with a low-frequency readable crest derived from the V2 water-material perceptual reference; both are resolved from exact frame state and remain source-alpha contained. For each evidence capture, the existing Pixi canvas is temporarily pinned to viewport coordinate 0,0 at 1:1 1080x1920 CSS size, captured through the browser compositor with an explicit 0,0,1080,1920 clip, then restored. Every PNG header is checked for exact dimensions before FFmpeg. Repeatability requires both the combined drift+ripple material-state evidence and captured PNG bytes to match.',
     };
     const reportPath = join(outputDirectory, 'pixi-shot03-water-motion-proof.json');
     await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
 
     console.log('');
     console.log(
-      `[PASS] ${captures.length} frames · ${uniqueMaterialStates.size} material states · ${uniqueScreenshotHashes.size} rendered images · ${repeatability.length}/${repeatability.length} repeatability samples`,
+      `[PASS] ${captures.length} frames · ${uniqueMaterialStates.size} combined material states · ${uniqueScreenshotHashes.size} rendered images · ${repeatability.length}/${repeatability.length} repeatability samples`,
     );
     console.log(`[REVIEW] normal-speed A/B: ${abVideoPath}`);
     console.log(`[INFO] active motion: ${activeVideoPath}`);
@@ -255,6 +258,11 @@ async function assertReviewContract(host, canvas) {
       throw new Error(`Expected ${name}=${expected}, received ${actual ?? '<missing>'}.`);
     }
   }
+
+  const rippleState = await requiredAttribute(canvas, 'data-pixi-material-ripple-state');
+  if (!rippleState.startsWith(`${EXPECTED_MATERIAL_ID}:strength=`)) {
+    throw new Error(`Pixi readable-ripple evidence is malformed: ${rippleState}.`);
+  }
 }
 
 async function gotoFrame(frameControl, canvas, frame) {
@@ -274,6 +282,12 @@ async function waitForCanvasFrame(canvas, frame) {
     await new Promise((resolvePromise) => setTimeout(resolvePromise, 20));
   }
   throw new Error(`Timed out waiting for Pixi canvas frame ${frame}.`);
+}
+
+async function combinedMaterialState(canvas) {
+  const driftState = await requiredAttribute(canvas, 'data-pixi-material-state');
+  const rippleState = await requiredAttribute(canvas, 'data-pixi-material-ripple-state');
+  return `${driftState} || ${rippleState}`;
 }
 
 async function captureCanvasPng(page, canvas, outputPath) {
