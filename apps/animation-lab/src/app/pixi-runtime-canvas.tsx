@@ -14,6 +14,10 @@ import { SHOT03_WATER_MATERIAL_BINDINGS } from './shot03-water-material';
 
 type PixiMountStatus = 'MOUNTING' | 'READY' | 'ERROR';
 
+function plural(count: number, singular: string, pluralValue = `${singular}s`): string {
+  return count === 1 ? singular : pluralValue;
+}
+
 export function PixiRuntimeCanvas({
   model,
   width,
@@ -132,14 +136,20 @@ export function PixiRuntimeCanvas({
         data-pixi-node-count={plan.nodeCount}
         data-pixi-source-asset-count={plan.sourceAssets.length}
         data-pixi-material-count={plan.materials.length}
+        data-pixi-review-mode="artwork"
         aria-label="Pixi exact-frame renderer"
       />
       <div className={previewStyles.pixiStatus} aria-live="polite">
         <strong>PIXI {status}</strong>
+        <span>artwork review</span>
         <span>{PIXI_PREVIEW_RENDER_MODE}</span>
         <span>ticker stopped</span>
-        <span>{plan.sourceAssets.length} checksum-bound source asset</span>
-        <span>{plan.materials.length} bounded exact-frame material</span>
+        <span>
+          {plan.sourceAssets.length} checksum-bound {plural(plan.sourceAssets.length, 'source asset')}
+        </span>
+        <span>
+          {plan.materials.length} bounded exact-frame {plural(plan.materials.length, 'material')}
+        </span>
         {error ? <code>{error}</code> : null}
       </div>
     </div>
