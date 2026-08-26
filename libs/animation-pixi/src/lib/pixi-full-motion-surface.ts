@@ -8,6 +8,23 @@ import {
   type PixiSourceRegistrationRect,
 } from './pixi-preview-surface';
 
+export const PIXI_SHOT03_TRANSFORM_MODEL = 'shot03-local-groups-v1' as const;
+
+const SHOT03_BACKGROUND_ID = 'shot03-background-v1';
+const SHOT03_WATER_ID = 'shot03-water-v1';
+const SHOT03_VESSEL_ID = 'shot03-vessel-v1';
+const SHOT03_ENKI_BODY_ID = 'shot03-enki-body-v1';
+const SHOT03_ENKI_EYES_ID = 'shot03-enki-eyes-v1';
+const SHOT03_RIGGING_ID = 'shot03-rigging-v1';
+const SHOT03_REQUIRED_IDS = Object.freeze([
+  SHOT03_BACKGROUND_ID,
+  SHOT03_WATER_ID,
+  SHOT03_VESSEL_ID,
+  SHOT03_ENKI_BODY_ID,
+  SHOT03_ENKI_EYES_ID,
+  SHOT03_RIGGING_ID,
+]);
+
 export interface PixiSourceLayerFrameState {
   readonly assetId: string;
   readonly offsetX: number;
@@ -26,6 +43,22 @@ export interface PixiFullMotionFrame {
   readonly sourceLayerStates: readonly PixiSourceLayerFrameState[];
 }
 
+export interface PixiLocalGroupTransform {
+  readonly id: 'camera-root' | 'vessel-root' | 'rigging-root';
+  readonly pivotX: number;
+  readonly pivotY: number;
+  readonly offsetX: number;
+  readonly offsetY: number;
+  readonly scale: number;
+  readonly rotationDegrees: number;
+}
+
+export interface PixiShot03LocalGroupState {
+  readonly camera: PixiLocalGroupTransform;
+  readonly vessel: PixiLocalGroupTransform;
+  readonly rigging: PixiLocalGroupTransform;
+}
+
 export interface PixiFullMotionSurface {
   readonly canvas: HTMLCanvasElement;
   readonly width: number;
@@ -35,10 +68,11 @@ export interface PixiFullMotionSurface {
   destroy(): void;
 }
 
-type DestroyableChild = { destroy(): void };
+type PixiDestroyOptions = { readonly children?: boolean };
+type DestroyableChild = { destroy(options?: PixiDestroyOptions): void };
 type PixiTextureLike = DestroyableChild;
 type PixiTextureFactory = { from(source: HTMLImageElement): PixiTextureLike };
-type PixiAnchorLike = { set(x: number, y?: number): void };
+type PixiPointLike = { set(x: number, y?: number): void };
 type PixiSpriteLike = DestroyableChild & {
   alpha: number;
   width: number;
@@ -46,13 +80,20 @@ type PixiSpriteLike = DestroyableChild & {
   x: number;
   y: number;
   rotation: number;
-  readonly anchor: PixiAnchorLike;
+  readonly anchor: PixiPointLike;
 };
 type PixiSpriteConstructor = new (texture: PixiTextureLike) => PixiSpriteLike;
-type PixiStageLike = {
+type PixiContainerLike = DestroyableChild & {
+  x: number;
+  y: number;
+  rotation: number;
+  readonly pivot: PixiPointLike;
+  readonly scale: PixiPointLike;
   addChild(...children: DestroyableChild[]): unknown;
   removeChildren(): DestroyableChild[];
 };
+type PixiContainerConstructor = new () => PixiContainerLike;
+type PixiStageLike = PixiContainerLike;
 type PixiApplicationLike = {
   readonly canvas: HTMLCanvasElement;
   readonly stage: PixiStageLike;
@@ -78,6 +119,7 @@ export async function createPixiFullMotionSurface(
   const options = buildPixiApplicationOptions(width, height);
   const pixi = await import('pixi.js');
   const Application = pixi.Application as unknown as PixiApplicationConstructor;
+  const Container = pixi.Container as unknown as PixiContainerConstructor;
   const Sprite = pixi.Sprite as unknown as PixiSpriteConstructor;
   const Texture = pixi.Texture as unknown as PixiTextureFactory;
   const app = new Application();
@@ -102,6 +144,7 @@ export async function createPixiFullMotionSurface(
   app.canvas.setAttribute('data-pixi-canvas', 'true');
   app.canvas.setAttribute('data-pixi-full-motion-surface', 'true');
   app.canvas.setAttribute('data-pixi-render-mode', 'manual-exact-frame');
+  app.canvas.setAttribute('data-pixi-transform-model', PIXI_SHOT03_TRANSFORM_MODEL);
   app.canvas.setAttribute('data-viewport-width', String(options.width));
   app.canvas.setAttribute('data-viewport-height', String(options.height));
   app.canvas.setAttribute('data-pixi-source-asset-count', String(prepared.length));
@@ -121,14 +164,51 @@ export async function createPixiFullMotionSurface(
     render(frame: PixiFullMotionFrame): void {
       if (destroyed) throw new Error('Pixi full-motion surface is already destroyed.');
       assertCompatibleFrame(frame, options.width, options.height, prepared);
+      const groups = resolvePixiShot03LocalGroupState(frame);
       destroyStageChildren(app.stage);
 
-      for (const item of prepared) {
-        const state = frame.sourceLayerStates.find((candidate) => candidate.assetId === item.asset.id);
-        const sprite = new Sprite(item.texture);
-        applySourceLayerState(sprite, item.registrationRect, state);
-        app.stage.addChild(sprite);
-      }
+      const cameraRoot = new Container();
+      const vesselRoot = new Container();
+      const riggingRoot = new Container();
+      applyGroupTransform(cameraRoot, groups.camera);
+      applyGroupTransform(vesselRoot, groups.vessel);
+      applyGroupTransform(riggingRoot, groups.rigging);
+
+      const background = createRegisteredSprite(
+        Sprite,
+        requiredPrepared(prepared, SHOT03_BACKGROUND_ID),
+        requiredState(frame.sourceLayerStates, SHOT03_BACKGROUND_ID).opacity,
+      );
+      const water = createRegisteredSprite(
+        Sprite,
+        requiredPrepared(prepared, SHOT03_WATER_ID),
+        requiredState(frame.sourceLayerStates, SHOT03_WATER_ID).opacity,
+      );
+      const vessel = createRegisteredSprite(
+        Sprite,
+        requiredPrepared(prepared, SHOT03_VESSEL_ID),
+        requiredState(frame.sourceLayerStates, SHOT03_VESSEL_ID).opacity,
+      );
+      const enkiBody = createRegisteredSprite(
+        Sprite,
+        requiredPrepared(prepared, SHOT03_ENKI_BODY_ID),
+        requiredState(frame.sourceLayerStates, SHOT03_ENKI_BODY_ID).opacity,
+      );
+      const enkiEyes = createRegisteredSprite(
+        Sprite,
+        requiredPrepared(prepared, SHOT03_ENKI_EYES_ID),
+        requiredState(frame.sourceLayerStates, SHOT03_ENKI_EYES_ID).opacity,
+      );
+      const rigging = createRegisteredSprite(
+        Sprite,
+        requiredPrepared(prepared, SHOT03_RIGGING_ID),
+        requiredState(frame.sourceLayerStates, SHOT03_RIGGING_ID).opacity,
+      );
+
+      vesselRoot.addChild(vessel, enkiBody, enkiEyes);
+      riggingRoot.addChild(rigging);
+      cameraRoot.addChild(background, water, vesselRoot, riggingRoot);
+      app.stage.addChild(cameraRoot);
 
       app.renderer.render({ container: app.stage });
       app.canvas.setAttribute('aria-label', `Pixi Shot 3 full-motion preview at frame ${frame.frame}`);
@@ -146,6 +226,7 @@ export async function createPixiFullMotionSurface(
         'data-pixi-source-layer-time-source',
         frame.sourceLayerStates.map((state) => `${state.assetId}:${state.timeSource}`).join(','),
       );
+      app.canvas.setAttribute('data-pixi-local-group-state', serializeLocalGroups(groups));
     },
     destroy(): void {
       if (destroyed) return;
@@ -157,29 +238,121 @@ export async function createPixiFullMotionSurface(
   });
 }
 
-function applySourceLayerState(
-  sprite: PixiSpriteLike,
-  rect: PixiSourceRegistrationRect,
-  state: PixiSourceLayerFrameState | undefined,
+export function resolvePixiShot03LocalGroupState(
+  frame: Pick<PixiFullMotionFrame, 'width' | 'height' | 'sourceLayerStates'>,
+): PixiShot03LocalGroupState {
+  const cameraState = requiredState(frame.sourceLayerStates, SHOT03_BACKGROUND_ID);
+  const waterState = requiredState(frame.sourceLayerStates, SHOT03_WATER_ID);
+  const vesselState = requiredState(frame.sourceLayerStates, SHOT03_VESSEL_ID);
+  const enkiBodyState = requiredState(frame.sourceLayerStates, SHOT03_ENKI_BODY_ID);
+  const enkiEyesState = requiredState(frame.sourceLayerStates, SHOT03_ENKI_EYES_ID);
+  const riggingState = requiredState(frame.sourceLayerStates, SHOT03_RIGGING_ID);
+
+  assertSameTransform(cameraState, waterState, 'water must remain camera-carried');
+  assertSameTransform(vesselState, enkiBodyState, 'Enki body must remain vessel-carried');
+  assertSameTransform(vesselState, enkiEyesState, 'Enki eye state must remain vessel-carried');
+
+  const camera = Object.freeze({
+    id: 'camera-root' as const,
+    pivotX: frame.width * 0.5,
+    pivotY: frame.height * 0.48,
+    offsetX: cameraState.offsetX,
+    offsetY: cameraState.offsetY,
+    scale: cameraState.scale,
+    rotationDegrees: cameraState.rotationDegrees,
+  });
+
+  const vessel = Object.freeze({
+    id: 'vessel-root' as const,
+    pivotX: frame.width * 0.5,
+    pivotY: frame.height * 0.62,
+    offsetX: vesselState.offsetX - cameraState.offsetX,
+    offsetY: vesselState.offsetY - cameraState.offsetY,
+    scale: vesselState.scale / cameraState.scale,
+    rotationDegrees: vesselState.rotationDegrees - cameraState.rotationDegrees,
+  });
+
+  const rigging = Object.freeze({
+    id: 'rigging-root' as const,
+    pivotX: frame.width * 0.5,
+    pivotY: frame.height * 0.18,
+    offsetX: riggingState.offsetX - cameraState.offsetX,
+    offsetY: riggingState.offsetY - cameraState.offsetY,
+    scale: riggingState.scale / cameraState.scale,
+    rotationDegrees: riggingState.rotationDegrees - cameraState.rotationDegrees,
+  });
+
+  return Object.freeze({ camera, vessel, rigging });
+}
+
+function createRegisteredSprite(
+  Sprite: PixiSpriteConstructor,
+  item: PreparedSourceAsset,
+  opacity: number,
+): PixiSpriteLike {
+  const sprite = new Sprite(item.texture);
+  sprite.anchor.set(0, 0);
+  sprite.x = item.registrationRect.x;
+  sprite.y = item.registrationRect.y;
+  sprite.width = item.registrationRect.width;
+  sprite.height = item.registrationRect.height;
+  sprite.rotation = 0;
+  sprite.alpha = opacity;
+  return sprite;
+}
+
+function applyGroupTransform(
+  container: PixiContainerLike,
+  transform: PixiLocalGroupTransform,
 ): void {
-  const resolved =
-    state ??
-    ({
-      assetId: '',
-      offsetX: 0,
-      offsetY: 0,
-      scale: 1,
-      rotationDegrees: 0,
-      opacity: 1,
-      timeSource: 'exact-frame',
-    } as const);
-  sprite.anchor.set(0.5, 0.5);
-  sprite.x = rect.x + rect.width / 2 + resolved.offsetX;
-  sprite.y = rect.y + rect.height / 2 + resolved.offsetY;
-  sprite.width = rect.width * resolved.scale;
-  sprite.height = rect.height * resolved.scale;
-  sprite.rotation = (resolved.rotationDegrees * Math.PI) / 180;
-  sprite.alpha = resolved.opacity;
+  container.pivot.set(transform.pivotX, transform.pivotY);
+  container.x = transform.pivotX + transform.offsetX;
+  container.y = transform.pivotY + transform.offsetY;
+  container.scale.set(transform.scale, transform.scale);
+  container.rotation = (transform.rotationDegrees * Math.PI) / 180;
+}
+
+function requiredPrepared(
+  prepared: readonly PreparedSourceAsset[],
+  assetId: string,
+): PreparedSourceAsset {
+  const item = prepared.find((candidate) => candidate.asset.id === assetId);
+  if (!item) throw new Error(`Pixi Shot 3 local-group renderer is missing source asset ${assetId}.`);
+  return item;
+}
+
+function requiredState(
+  states: readonly PixiSourceLayerFrameState[],
+  assetId: string,
+): PixiSourceLayerFrameState {
+  const state = states.find((candidate) => candidate.assetId === assetId);
+  if (!state) throw new Error(`Pixi Shot 3 local-group renderer is missing state ${assetId}.`);
+  return state;
+}
+
+function assertSameTransform(
+  expected: PixiSourceLayerFrameState,
+  actual: PixiSourceLayerFrameState,
+  message: string,
+): void {
+  const epsilon = 1e-9;
+  if (
+    Math.abs(expected.offsetX - actual.offsetX) > epsilon ||
+    Math.abs(expected.offsetY - actual.offsetY) > epsilon ||
+    Math.abs(expected.scale - actual.scale) > epsilon ||
+    Math.abs(expected.rotationDegrees - actual.rotationDegrees) > epsilon
+  ) {
+    throw new Error(`${message}: ${actual.assetId} diverged from ${expected.assetId}.`);
+  }
+}
+
+function serializeLocalGroups(groups: PixiShot03LocalGroupState): string {
+  return [groups.camera, groups.vessel, groups.rigging]
+    .map(
+      (group) =>
+        `${group.id}:pivot=${group.pivotX.toFixed(3)}/${group.pivotY.toFixed(3)},x=${group.offsetX.toFixed(3)},y=${group.offsetY.toFixed(3)},scale=${group.scale.toFixed(6)},rot=${group.rotationDegrees.toFixed(6)}`,
+    )
+    .join('|');
 }
 
 function assertCompatibleFrame(
@@ -212,6 +385,12 @@ function assertCompatibleFrame(
   });
 
   const assetIds = new Set(prepared.map((item) => item.asset.id));
+  for (const requiredId of SHOT03_REQUIRED_IDS) {
+    if (!assetIds.has(requiredId)) {
+      throw new Error(`Pixi Shot 3 local-group renderer requires source asset ${requiredId}.`);
+    }
+  }
+
   const stateIds = new Set<string>();
   for (const state of frame.sourceLayerStates) {
     if (!assetIds.has(state.assetId)) {
@@ -294,5 +473,5 @@ async function verifySourceAssetBytes(asset: PixiSourceAsset, bytes: ArrayBuffer
 }
 
 function destroyStageChildren(stage: PixiStageLike): void {
-  for (const child of stage.removeChildren()) child.destroy();
+  for (const child of stage.removeChildren()) child.destroy({ children: true });
 }
