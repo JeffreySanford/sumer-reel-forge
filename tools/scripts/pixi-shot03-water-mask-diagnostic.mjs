@@ -117,6 +117,74 @@ async function main() {
           return diagnostic.toDataURL('image/png');
         }
 
+        function renderDilatedMask(threshold, radius) {
+          const diagnostic = document.createElement('canvas');
+          diagnostic.width = expectedWidth;
+          diagnostic.height = expectedHeight;
+          const diagnosticContext = diagnostic.getContext('2d');
+          if (!diagnosticContext) throw new Error('Dilated-mask 2D canvas context is unavailable.');
+
+          diagnosticContext.fillStyle = '#000000';
+          diagnosticContext.fillRect(0, 0, expectedWidth, expectedHeight);
+          diagnosticContext.fillStyle = '#ffffff';
+
+          const diameter = radius * 2 + 1;
+          for (let pixelIndex = 0; pixelIndex < totalPixels; pixelIndex += 1) {
+            const alpha = pixels[pixelIndex * 4 + 3] ?? 0;
+            if (alpha <= threshold) continue;
+            const x = pixelIndex % expectedWidth;
+            const y = Math.floor(pixelIndex / expectedWidth);
+            diagnosticContext.fillRect(x - radius, y - radius, diameter, diameter);
+          }
+
+          return diagnostic.toDataURL('image/png');
+        }
+
+        function renderFalseColorOverlay(threshold, radius) {
+          const diagnostic = document.createElement('canvas');
+          diagnostic.width = expectedWidth;
+          diagnostic.height = expectedHeight;
+          const diagnosticContext = diagnostic.getContext('2d');
+          if (!diagnosticContext) throw new Error('False-color 2D canvas context is unavailable.');
+
+          const tile = 32;
+          for (let y = 0; y < expectedHeight; y += tile) {
+            for (let x = 0; x < expectedWidth; x += tile) {
+              const even = ((x / tile) + (y / tile)) % 2 === 0;
+              diagnosticContext.fillStyle = even ? '#10141a' : '#20262e';
+              diagnosticContext.fillRect(x, y, tile, tile);
+            }
+          }
+
+          diagnosticContext.save();
+          diagnosticContext.globalAlpha = 0.24;
+          diagnosticContext.drawImage(image, 0, 0);
+          diagnosticContext.restore();
+
+          diagnosticContext.fillStyle = '#ff2bd6';
+          const diameter = radius * 2 + 1;
+          for (let pixelIndex = 0; pixelIndex < totalPixels; pixelIndex += 1) {
+            const alpha = pixels[pixelIndex * 4 + 3] ?? 0;
+            if (alpha <= threshold) continue;
+            const x = pixelIndex % expectedWidth;
+            const y = Math.floor(pixelIndex / expectedWidth);
+            diagnosticContext.fillRect(x - radius, y - radius, diameter, diameter);
+          }
+
+          if (alphaBounds) {
+            diagnosticContext.strokeStyle = '#00ffe1';
+            diagnosticContext.lineWidth = 3;
+            diagnosticContext.strokeRect(
+              alphaBounds.x,
+              alphaBounds.y,
+              alphaBounds.width,
+              alphaBounds.height,
+            );
+          }
+
+          return diagnostic.toDataURL('image/png');
+        }
+
         const percent = (count) => (count / totalPixels) * 100;
         const meaningfulCoveragePercent = percent(counts[16]);
         const coverageClass = meaningfulCoveragePercent < 25
@@ -142,6 +210,8 @@ async function main() {
           grayscalePng: renderAlphaDiagnostic(null),
           binary16Png: renderAlphaDiagnostic(16),
           binary128Png: renderAlphaDiagnostic(128),
+          amplified16Png: renderDilatedMask(16, 5),
+          falseColor16Png: renderFalseColorOverlay(16, 4),
         };
       },
       {
@@ -154,16 +224,20 @@ async function main() {
     const grayscalePath = join(outputDirectory, 'shot03-water-alpha-grayscale.png');
     const binary16Path = join(outputDirectory, 'shot03-water-alpha-binary-gt16.png');
     const binary128Path = join(outputDirectory, 'shot03-water-alpha-binary-gt128.png');
+    const amplified16Path = join(outputDirectory, 'shot03-water-alpha-amplified-gt16.png');
+    const falseColor16Path = join(outputDirectory, 'shot03-water-alpha-false-color-gt16.png');
     const reportPath = join(outputDirectory, 'pixi-shot03-water-mask-diagnostic.json');
 
     await Promise.all([
       writeFile(grayscalePath, dataUrlBuffer(result.grayscalePng)),
       writeFile(binary16Path, dataUrlBuffer(result.binary16Png)),
       writeFile(binary128Path, dataUrlBuffer(result.binary128Png)),
+      writeFile(amplified16Path, dataUrlBuffer(result.amplified16Png)),
+      writeFile(falseColor16Path, dataUrlBuffer(result.falseColor16Png)),
     ]);
 
     const report = {
-      schemaVersion: 1,
+      schemaVersion: 2,
       diagnosticType: 'shot03-water-source-alpha-mask',
       generatedAt: new Date().toISOString(),
       source: {
@@ -190,10 +264,14 @@ async function main() {
         grayscaleAlpha: grayscalePath,
         binaryMeaningfulAlphaGt16: binary16Path,
         binaryStrongAlphaGt128: binary128Path,
+        amplifiedMeaningfulAlphaGt16: amplified16Path,
+        falseColorMeaningfulAlphaGt16: falseColor16Path,
       },
       interpretation: {
         rule:
           'Coverage class is diagnostic only: <25% meaningful alpha is labeled sparse-alpha-overlay, 25-65% partial-region-alpha, and >=65% broad-region-alpha.',
+        visualizationNote:
+          'Amplified and false-color images deliberately dilate sparse alpha marks for human inspection. They are not masks for production use and do not alter the measured source alpha coverage.',
         nextStep:
           result.coverageClass === 'sparse-alpha-overlay'
             ? 'Do not treat water.png as the basin deformation mask. Preserve it as approved painted water detail and derive a separate hash-bound basin mask before displacement/refraction work.'
@@ -213,7 +291,9 @@ async function main() {
       `[RESULT] meaningful-alpha bounding box area: ${formatPercent(result.alphaBoundsAreaPercent)}`,
     );
     console.log(`[CLASS] ${result.coverageClass}`);
-    console.log(`[REVIEW] binary mask: ${binary16Path}`);
+    console.log(`[REVIEW] amplified mask: ${amplified16Path}`);
+    console.log(`[REVIEW] false-color overlay: ${falseColor16Path}`);
+    console.log(`[INFO] raw binary mask: ${binary16Path}`);
     console.log(`[INFO] grayscale alpha: ${grayscalePath}`);
     console.log(`[INFO] receipt: ${reportPath}`);
     console.log(`[NEXT] ${report.interpretation.nextStep}`);
