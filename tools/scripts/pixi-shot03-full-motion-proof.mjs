@@ -3,6 +3,7 @@ import { spawnSync } from 'node:child_process';
 import { copyFile, mkdir, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { chromium } from '@playwright/test';
+import { maybeOpenReviewArtifacts } from './open-review-artifacts.mjs';
 
 const ROOT = resolve('.');
 const BASE_URL = process.env.ANIMATION_LAB_BASE_URL ?? 'http://localhost:4300';
@@ -204,6 +205,7 @@ async function main() {
     console.log(`[REVIEW] frozen vs active A/B: ${abVideoPath}`);
     console.log(`[INFO] proof receipt: ${reportPath}`);
     console.log('STATUS: TECHNICAL FULL-SHOT PROOF PASS — human normal-speed cinematic review remains required.');
+    await maybeOpenReviewArtifacts([activeVideoPath, abVideoPath], { delayMs: 120 });
   } finally {
     await context.close();
     await browser.close();
