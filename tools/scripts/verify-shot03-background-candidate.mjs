@@ -1,7 +1,12 @@
-import 'dotenv/config';
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { basename, isAbsolute, join, relative, resolve } from 'node:path';
+
+try {
+  process.loadEnvFile?.();
+} catch (error) {
+  if (error?.code !== 'ENOENT') throw error;
+}
 
 const CANDIDATE_ROOT = resolve(
   'tmp/animation-assets/candidates/chapter-01-reel-01-animation-v1',
