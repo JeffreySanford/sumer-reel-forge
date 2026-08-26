@@ -9,14 +9,14 @@ const BINDING: PixiContainedWaterMaterialBinding = Object.freeze({
   id: 'shot03-water-micro-drift-v1',
   assetId: 'shot03-water-v1',
   kind: PIXI_CONTAINED_WATER_MATERIAL_KIND,
-  amplitudeX: 2.4,
-  amplitudeY: 1.2,
+  amplitudeX: 8,
+  amplitudeY: 4,
   periodSecondsX: 3.2,
   periodSecondsY: 4.4,
   phaseX: 0.25,
   phaseY: 0.25,
-  overscanScale: 1.006,
-  movingOpacity: 0.24,
+  overscanScale: 1.012,
+  movingOpacity: 0.42,
   settleStartProgress: 0.88,
   settleFloor: 0.55,
 });
@@ -36,11 +36,11 @@ describe('Pixi contained water material state', () => {
       offsetX: 0,
       offsetY: 0,
       settle: 1,
-      scale: 1.006,
-      movingOpacity: 0.24,
-      maxOffsetX: 2.4,
-      maxOffsetY: 1.2,
-      maxScale: 1.006,
+      scale: 1.012,
+      movingOpacity: 0.42,
+      maxOffsetX: 8,
+      maxOffsetY: 4,
+      maxScale: 1.012,
       containment: 'source-alpha',
       timeSource: 'exact-frame',
     });
@@ -59,8 +59,8 @@ describe('Pixi contained water material state', () => {
     });
 
     expect(second).toEqual(first);
-    expect(first.offsetX).toBeCloseTo(0.5, 9);
-    expect(first.offsetY).toBeCloseTo(-1.1272727273, 9);
+    expect(first.offsetX).toBeCloseTo(1.6666666667, 9);
+    expect(first.offsetY).toBeCloseTo(-3.7575757576, 9);
     expect(Math.abs(first.offsetX)).toBeLessThanOrEqual(first.maxOffsetX);
     expect(Math.abs(first.offsetY)).toBeLessThanOrEqual(first.maxOffsetY);
     expect(first.scale).toBeLessThanOrEqual(first.maxScale);
@@ -74,10 +74,10 @@ describe('Pixi contained water material state', () => {
     });
 
     expect(state.settle).toBe(0.55);
-    expect(state.offsetX).toBeCloseTo(0.935, 9);
-    expect(state.offsetY).toBeCloseTo(-0.22, 9);
-    expect(state.scale).toBeCloseTo(1.0033, 9);
-    expect(state.movingOpacity).toBeCloseTo(0.132, 9);
+    expect(state.offsetX).toBeCloseTo(3.1166666667, 9);
+    expect(state.offsetY).toBeCloseTo(-0.7333333333, 9);
+    expect(state.scale).toBeCloseTo(1.0066, 9);
+    expect(state.movingOpacity).toBeCloseTo(0.231, 9);
     expect(state.timeSource).toBe('exact-frame');
   });
 
