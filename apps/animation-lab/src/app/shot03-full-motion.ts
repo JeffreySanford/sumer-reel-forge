@@ -9,10 +9,13 @@ const CAMERA_Y_TO = -7;
 const CAMERA_SETTLE_FROM_PROGRESS = 0.82;
 
 const HEAVY_PHYSICAL_FREQUENCY_HZ = 0.54;
-const HEAVE_AMPLITUDE_PX = 1.7;
-const ROLL_AMPLITUDE_DEGREES = 0.045;
+const HEAVE_AMPLITUDE_PX = 4.5;
+const ROLL_AMPLITUDE_DEGREES = 0.1;
 const ROLL_PHASE_CYCLES = 0.18;
 const RIGGING_LAG_SECONDS = 0.24;
+const RIGGING_X_HEAVE_GAIN = 0.85;
+const RIGGING_X_ROLL_GAIN = 9;
+const RIGGING_MAX_X_PX = 3.6;
 
 const BLINK_START_PROGRESS = 0.46;
 const BLINK_END_PROGRESS = 0.51;
@@ -72,6 +75,8 @@ export function buildShot03FullMotionState(
     durationFrames / fps,
   );
   const blinkOpacity = blinkOnceOpacity(progress);
+  const vesselCarriedY = camera.y + vesselDriver.heaveY;
+  const vesselCarriedRotation = vesselDriver.rollDegrees;
 
   const sourceLayerStates = Object.freeze([
     sourceState('shot03-background-v1', camera.x, camera.y, camera.scale, 0, 1),
@@ -79,13 +84,27 @@ export function buildShot03FullMotionState(
     sourceState(
       'shot03-vessel-v1',
       camera.x,
-      camera.y + vesselDriver.heaveY,
+      vesselCarriedY,
       camera.scale,
-      vesselDriver.rollDegrees,
+      vesselCarriedRotation,
       1,
     ),
-    sourceState('shot03-enki-body-v1', camera.x, camera.y, camera.scale, 0, 1),
-    sourceState('shot03-enki-eyes-v1', camera.x, camera.y, camera.scale, 0, blinkOpacity),
+    sourceState(
+      'shot03-enki-body-v1',
+      camera.x,
+      vesselCarriedY,
+      camera.scale,
+      vesselCarriedRotation,
+      1,
+    ),
+    sourceState(
+      'shot03-enki-eyes-v1',
+      camera.x,
+      vesselCarriedY,
+      camera.scale,
+      vesselCarriedRotation,
+      blinkOpacity,
+    ),
     sourceState(
       'shot03-rigging-v1',
       camera.x + rigging.x,
@@ -179,7 +198,11 @@ function riggingTensionResponse(
   const lagRoll = delayedDriver.rollDegrees - currentDriver.rollDegrees;
 
   return {
-    x: clamp(lagHeave * 0.62 + lagRoll * 7.5, -1.35, 1.35),
+    x: clamp(
+      lagHeave * RIGGING_X_HEAVE_GAIN + lagRoll * RIGGING_X_ROLL_GAIN,
+      -RIGGING_MAX_X_PX,
+      RIGGING_MAX_X_PX,
+    ),
     y: currentDriver.heaveY * 0.92 + lagHeave * 0.18,
     rotationDegrees: currentDriver.rollDegrees * 0.72 + lagRoll * 2.15,
   };
