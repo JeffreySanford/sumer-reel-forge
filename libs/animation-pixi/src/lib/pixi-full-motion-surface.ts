@@ -44,7 +44,7 @@ export interface PixiFullMotionFrame {
 }
 
 export interface PixiLocalGroupTransform {
-  readonly id: 'camera-root' | 'vessel-root' | 'rigging-root';
+  readonly id: 'camera-root' | 'vessel-root' | 'enki-root' | 'rigging-root';
   readonly pivotX: number;
   readonly pivotY: number;
   readonly offsetX: number;
@@ -56,6 +56,7 @@ export interface PixiLocalGroupTransform {
 export interface PixiShot03LocalGroupState {
   readonly camera: PixiLocalGroupTransform;
   readonly vessel: PixiLocalGroupTransform;
+  readonly enki: PixiLocalGroupTransform;
   readonly rigging: PixiLocalGroupTransform;
 }
 
@@ -169,9 +170,11 @@ export async function createPixiFullMotionSurface(
 
       const cameraRoot = new Container();
       const vesselRoot = new Container();
+      const enkiRoot = new Container();
       const riggingRoot = new Container();
       applyGroupTransform(cameraRoot, groups.camera);
       applyGroupTransform(vesselRoot, groups.vessel);
+      applyGroupTransform(enkiRoot, groups.enki);
       applyGroupTransform(riggingRoot, groups.rigging);
 
       const background = createRegisteredSprite(
@@ -205,7 +208,8 @@ export async function createPixiFullMotionSurface(
         requiredState(frame.sourceLayerStates, SHOT03_RIGGING_ID).opacity,
       );
 
-      vesselRoot.addChild(vessel, enkiBody, enkiEyes);
+      enkiRoot.addChild(enkiBody, enkiEyes);
+      vesselRoot.addChild(vessel, enkiRoot);
       riggingRoot.addChild(rigging);
       cameraRoot.addChild(background, water, vesselRoot, riggingRoot);
       app.stage.addChild(cameraRoot);
@@ -249,8 +253,7 @@ export function resolvePixiShot03LocalGroupState(
   const riggingState = requiredState(frame.sourceLayerStates, SHOT03_RIGGING_ID);
 
   assertSameTransform(cameraState, waterState, 'water must remain camera-carried');
-  assertSameTransform(vesselState, enkiBodyState, 'Enki body must remain vessel-carried');
-  assertSameTransform(vesselState, enkiEyesState, 'Enki eye state must remain vessel-carried');
+  assertSameTransform(enkiBodyState, enkiEyesState, 'Enki eye state must remain character-carried');
 
   const camera = Object.freeze({
     id: 'camera-root' as const,
@@ -272,6 +275,16 @@ export function resolvePixiShot03LocalGroupState(
     rotationDegrees: vesselState.rotationDegrees - cameraState.rotationDegrees,
   });
 
+  const enki = Object.freeze({
+    id: 'enki-root' as const,
+    pivotX: frame.width * 0.5,
+    pivotY: frame.height * 0.46,
+    offsetX: enkiBodyState.offsetX - vesselState.offsetX,
+    offsetY: enkiBodyState.offsetY - vesselState.offsetY,
+    scale: enkiBodyState.scale / vesselState.scale,
+    rotationDegrees: enkiBodyState.rotationDegrees - vesselState.rotationDegrees,
+  });
+
   const rigging = Object.freeze({
     id: 'rigging-root' as const,
     pivotX: frame.width * 0.5,
@@ -282,7 +295,7 @@ export function resolvePixiShot03LocalGroupState(
     rotationDegrees: riggingState.rotationDegrees - cameraState.rotationDegrees,
   });
 
-  return Object.freeze({ camera, vessel, rigging });
+  return Object.freeze({ camera, vessel, enki, rigging });
 }
 
 function createRegisteredSprite(
@@ -347,7 +360,7 @@ function assertSameTransform(
 }
 
 function serializeLocalGroups(groups: PixiShot03LocalGroupState): string {
-  return [groups.camera, groups.vessel, groups.rigging]
+  return [groups.camera, groups.vessel, groups.enki, groups.rigging]
     .map(
       (group) =>
         `${group.id}:pivot=${group.pivotX.toFixed(3)}/${group.pivotY.toFixed(3)},x=${group.offsetX.toFixed(3)},y=${group.offsetY.toFixed(3)},scale=${group.scale.toFixed(6)},rot=${group.rotationDegrees.toFixed(6)}`,
