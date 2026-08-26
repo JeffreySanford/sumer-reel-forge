@@ -34,6 +34,9 @@
       "@sumer-reel-forge/animation-inspection": [
         "./libs/animation-inspection/src/index.ts"
       ],
+      "@sumer-reel-forge/animation-pixi": [
+        "./libs/animation-pixi/src/index.ts"
+      ],
       "@sumer-reel-forge/scene-v2": [
         "./tools/animation/src/scene-v2.ts"
       ]

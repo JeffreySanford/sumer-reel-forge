@@ -1,0 +1,19 @@
+{
+  "name": "animation-pixi",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/animation-pixi/src",
+  "projectType": "library",
+  "tags": ["type:adapter", "scope:animation-v3", "scope:animation-lab", "engine:pixi"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/animation-pixi",
+        "main": "libs/animation-pixi/src/index.ts",
+        "tsConfig": "libs/animation-pixi/tsconfig.lib.json",
+        "assets": ["libs/animation-pixi/*.md"]
+      }
+    }
+  }
+}

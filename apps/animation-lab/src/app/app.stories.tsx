@@ -34,6 +34,13 @@ export const EndSettled: Story = {
   },
 };
 
+export const DiagnosticFallback: Story = {
+  args: {
+    initialFrame: 101,
+    previewRenderer: 'diagnostic',
+  },
+};
+
 const failingAdapter: RuntimePreviewAdapter = {
   id: 'storybook-failure@1',
   evaluate() {

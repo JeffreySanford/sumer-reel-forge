@@ -7,7 +7,10 @@ import {
 } from '@sumer-reel-forge/animation-inspection';
 import styles from './app.module.css';
 import { GOLDEN_INSPECTION_FIXTURE } from './golden-inspection.fixture';
-import { RuntimePreviewPanel } from './runtime-preview-panel';
+import {
+  RuntimePreviewPanel,
+  type RuntimePreviewRenderer,
+} from './runtime-preview-panel';
 import {
   GOLDEN_FAKE_RUNTIME_PREVIEW_ADAPTER,
   type RuntimePreviewAdapter,
@@ -41,6 +44,7 @@ export interface AppProps {
   readonly fixture?: ResolvedSceneInspectionInput;
   readonly initialFrame?: number;
   readonly previewAdapter?: RuntimePreviewAdapter;
+  readonly previewRenderer?: RuntimePreviewRenderer;
 }
 
 function shortHash(value: string): string {
@@ -152,6 +156,7 @@ export function App({
   fixture = GOLDEN_INSPECTION_FIXTURE,
   initialFrame = 101,
   previewAdapter = GOLDEN_FAKE_RUNTIME_PREVIEW_ADAPTER,
+  previewRenderer = 'pixi',
 }: AppProps) {
   const [frame, setFrame] = useState(initialFrame);
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>('Provenance');
@@ -221,6 +226,7 @@ export function App({
             fixture={fixture}
             inspection={inspection}
             adapter={previewAdapter}
+            renderer={previewRenderer}
           />
 
           <section

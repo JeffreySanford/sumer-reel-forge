@@ -4,8 +4,11 @@ import type {
   SceneInspectionViewModel,
 } from '@sumer-reel-forge/animation-inspection';
 import appStyles from './app.module.css';
+import { PixiRuntimeCanvas } from './pixi-runtime-canvas';
 import previewStyles from './runtime-preview-panel.module.css';
 import type { RuntimePreviewAdapter, RuntimePreviewNode } from './runtime-preview';
+
+export type RuntimePreviewRenderer = 'pixi' | 'diagnostic';
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
@@ -35,10 +38,12 @@ export function RuntimePreviewPanel({
   fixture,
   inspection,
   adapter,
+  renderer = 'pixi',
 }: {
   readonly fixture: ResolvedSceneInspectionInput;
   readonly inspection: SceneInspectionViewModel;
   readonly adapter: RuntimePreviewAdapter;
+  readonly renderer?: RuntimePreviewRenderer;
 }) {
   const result = useMemo(() => {
     try {
@@ -68,7 +73,7 @@ export function RuntimePreviewPanel({
   if (!model || model.nodes.length === 0) {
     return (
       <section className={appStyles.preview} aria-label="Runtime preview">
-        <div className={appStyles.previewBadge}>FAKE RUNTIME PREVIEW</div>
+        <div className={appStyles.previewBadge}>RUNTIME PREVIEW</div>
         <div className={previewStyles.previewState}>
           <strong>No drawable runtime nodes</strong>
           <p>Frame {inspection.exactFrame.frame} resolved successfully.</p>
@@ -88,8 +93,11 @@ export function RuntimePreviewPanel({
       className={appStyles.preview}
       aria-label="Runtime preview"
       data-evidence-status={evidenceStatus}
+      data-preview-renderer={renderer}
     >
-      <div className={appStyles.previewBadge}>FAKE RUNTIME PREVIEW</div>
+      <div className={appStyles.previewBadge}>
+        {renderer === 'pixi' ? 'PIXI RUNTIME PREVIEW' : 'DIAGNOSTIC RUNTIME PREVIEW'}
+      </div>
       <div className={previewStyles.diagnosticSummary} aria-label="Preview diagnostics summary">
         <strong data-preview-evidence={evidenceStatus}>EVIDENCE {evidenceStatus}</strong>
         <span>
@@ -102,71 +110,77 @@ export function RuntimePreviewPanel({
           </code>
         ) : null}
       </div>
-      <svg
-        className={previewStyles.runtimeCanvas}
-        viewBox={`0 0 100 ${normalizedHeight}`}
-        style={{ aspectRatio: `${viewportWidth} / ${viewportHeight}` }}
-        role="img"
-        aria-label={`Fake runtime preview at frame ${model.frame}`}
-        data-viewport-width={viewportWidth}
-        data-viewport-height={viewportHeight}
-      >
-        <title>{`Deterministic fake runtime preview at frame ${model.frame}`}</title>
-        <rect
-          className={previewStyles.cameraFrame}
-          x="4"
-          y="4"
-          width="92"
-          height={normalizedHeight - 8}
-          rx="2"
-        />
-        {model.nodes.map((node) => {
-          const x = previewX(node);
-          const y = previewY(node, normalizedHeight);
-          const common = {
-            'data-runtime-node': node.id,
-            'data-runtime-x': node.x.toFixed(3),
-            'data-runtime-y': node.y.toFixed(3),
-            'data-local-x': node.localX.toFixed(3),
-            'data-local-y': node.localY.toFixed(3),
-            'data-composed-x': node.x.toFixed(3),
-            'data-composed-y': node.y.toFixed(3),
-            'data-parent-id': node.parentId ?? '',
-            'data-parent-chain': node.parentChain.join('>'),
-            'data-capabilities': node.capabilities.join(','),
-            opacity: node.opacity,
-          };
 
-          if (node.kind === 'environment') {
-            return (
-              <g key={node.id} {...common}>
-                <title>{`${node.label} · ${node.runtimeId}`}</title>
-                <rect className={previewStyles.environmentShape} x="6" y={y} width="88" height="44" rx="3" />
-                <path className={previewStyles.environmentLine} d={`M8 ${y + 8} C 28 ${y + 2}, 48 ${y + 14}, 92 ${y + 7}`} />
-              </g>
-            );
-          }
+      {renderer === 'pixi' ? (
+        <PixiRuntimeCanvas model={model} width={viewportWidth} height={viewportHeight} />
+      ) : (
+        <svg
+          className={previewStyles.runtimeCanvas}
+          viewBox={`0 0 100 ${normalizedHeight}`}
+          style={{ aspectRatio: `${viewportWidth} / ${viewportHeight}` }}
+          role="img"
+          aria-label={`Diagnostic runtime preview at frame ${model.frame}`}
+          data-viewport-width={viewportWidth}
+          data-viewport-height={viewportHeight}
+        >
+          <title>{`Deterministic diagnostic runtime preview at frame ${model.frame}`}</title>
+          <rect
+            className={previewStyles.cameraFrame}
+            x="4"
+            y="4"
+            width="92"
+            height={normalizedHeight - 8}
+            rx="2"
+          />
+          {model.nodes.map((node) => {
+            const x = previewX(node);
+            const y = previewY(node, normalizedHeight);
+            const common = {
+              'data-runtime-node': node.id,
+              'data-runtime-x': node.x.toFixed(3),
+              'data-runtime-y': node.y.toFixed(3),
+              'data-local-x': node.localX.toFixed(3),
+              'data-local-y': node.localY.toFixed(3),
+              'data-composed-x': node.x.toFixed(3),
+              'data-composed-y': node.y.toFixed(3),
+              'data-parent-id': node.parentId ?? '',
+              'data-parent-chain': node.parentChain.join('>'),
+              'data-capabilities': node.capabilities.join(','),
+              opacity: node.opacity,
+            };
 
-          if (node.kind === 'prop') {
+            if (node.kind === 'environment') {
+              return (
+                <g key={node.id} {...common}>
+                  <title>{`${node.label} · ${node.runtimeId}`}</title>
+                  <rect className={previewStyles.environmentShape} x="6" y={y} width="88" height="44" rx="3" />
+                  <path className={previewStyles.environmentLine} d={`M8 ${y + 8} C 28 ${y + 2}, 48 ${y + 14}, 92 ${y + 7}`} />
+                </g>
+              );
+            }
+
+            if (node.kind === 'prop') {
+              return (
+                <g key={node.id} {...common} transform={`translate(${x} ${y})`}>
+                  <title>{`${node.label} · ${node.runtimeId}`}</title>
+                  <rect className={previewStyles.propShape} x="-12" y="-4" width="24" height="8" rx="3" />
+                  <line className={previewStyles.propAxis} x1="-15" y1="6" x2="15" y2="6" />
+                </g>
+              );
+            }
+
             return (
               <g key={node.id} {...common} transform={`translate(${x} ${y})`}>
                 <title>{`${node.label} · ${node.runtimeId}`}</title>
-                <rect className={previewStyles.propShape} x="-12" y="-4" width="24" height="8" rx="3" />
-                <line className={previewStyles.propAxis} x1="-15" y1="6" x2="15" y2="6" />
+                <circle className={previewStyles.actorShape} r="4.5" />
+                <line className={previewStyles.actorAxis} x1="0" y1="5" x2="0" y2="14" />
+                {node.proofState ? <circle className={previewStyles.proofPulse} r="8" /> : null}
               </g>
             );
-          }
+          })}
+        </svg>
+      )}
 
-          return (
-            <g key={node.id} {...common} transform={`translate(${x} ${y})`}>
-              <title>{`${node.label} · ${node.runtimeId}`}</title>
-              <circle className={previewStyles.actorShape} r="4.5" />
-              <line className={previewStyles.actorAxis} x1="0" y1="5" x2="0" y2="14" />
-              {node.proofState ? <circle className={previewStyles.proofPulse} r="8" /> : null}
-            </g>
-          );
-        })}
-      </svg>
       <div className={previewStyles.previewMeta} aria-live="polite">
         <strong>{model.proofState ?? 'UNNAMED FRAME'}</strong>
         <span>frame {model.frame}</span>
@@ -202,7 +216,7 @@ export function RuntimePreviewPanel({
                     {node.parentChain.length > 0 ? node.parentChain.join(' → ') : 'root'}
                   </td>
                   <td>
-                    <div className={previewStyles.capabilities}>
+                    <div className={previewStyles.capabilities} data-capabilities-row={node.id}>
                       {node.capabilities.length > 0
                         ? node.capabilities.map((capability) => (
                             <code key={capability}>{capability}</code>
@@ -223,7 +237,9 @@ export function RuntimePreviewPanel({
         </p>
       ) : null}
       <p className={previewStyles.previewDisclaimer}>
-        Diagnostic geometry only. Runtime values are real; artwork and final rendering are not mounted.
+        {renderer === 'pixi'
+          ? 'Pixi draws the resolved exact frame manually; its ticker is stopped and does not own story time.'
+          : 'Diagnostic geometry only. Runtime values are real; artwork and final rendering are not mounted.'}
       </p>
     </section>
   );
