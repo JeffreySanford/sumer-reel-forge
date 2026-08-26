@@ -1,7 +1,12 @@
 import type { AnimationRuntimeAdapter } from './adapter';
 import type { RuntimeEvidence } from './evidence';
 import type { PrepareContext } from './prepare-context';
-import type { RuntimeFrameContext, RuntimeFrameState, RuntimeType, RuntimeValidationResult } from './runtime-types';
+import type {
+  RuntimeFrameContext,
+  RuntimeFrameState,
+  RuntimeType,
+  RuntimeValidationResult,
+} from './runtime-types';
 
 export interface UnsupportedRuntimeDefinition {
   readonly id: string;
@@ -30,8 +35,9 @@ export class UnsupportedRuntimeAdapter
 
   async prepare(
     definition: UnsupportedRuntimeDefinition,
-    _ctx: PrepareContext,
+    ctx: PrepareContext,
   ): Promise<UnsupportedRuntimeDefinition> {
+    void ctx;
     throw new Error(this.validate(definition).issues[0]?.message ?? 'Unsupported runtime.');
   }
 
@@ -39,17 +45,22 @@ export class UnsupportedRuntimeAdapter
     definition: UnsupportedRuntimeDefinition,
     frame: RuntimeFrameContext,
   ): RuntimeFrameState {
-    throw new Error(`Cannot evaluate unsupported runtime ${definition.requestedRuntime} at frame ${frame.frame}.`);
+    throw new Error(
+      `Cannot evaluate unsupported runtime ${definition.requestedRuntime} at frame ${frame.frame}.`,
+    );
   }
 
   collectEvidence(
     definition: UnsupportedRuntimeDefinition,
     frame: RuntimeFrameContext,
   ): RuntimeEvidence {
-    throw new Error(`Cannot collect evidence for unsupported runtime ${definition.requestedRuntime} at frame ${frame.frame}.`);
+    throw new Error(
+      `Cannot collect evidence for unsupported runtime ${definition.requestedRuntime} at frame ${frame.frame}.`,
+    );
   }
 
-  dispose(_definition: UnsupportedRuntimeDefinition): void {
+  dispose(definition: UnsupportedRuntimeDefinition): void {
+    void definition;
     // Nothing was prepared, so there is nothing to dispose.
   }
 }
