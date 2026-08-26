@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { basename, join, resolve } from 'node:path';
+import { maybeOpenReviewArtifacts } from './open-review-artifacts.mjs';
 
 const ROOT = resolve('.');
 const REVIEW_ROOT = resolve('tmp/animation-assets/resegmentation/shot03');
@@ -78,6 +79,7 @@ async function main() {
   console.log(`[REVIEW] alpha contact sheet: ${maskSheetPath}`);
   console.log(`[INFO] structural report: ${reportPath}`);
   console.log('[STOP] Do not rebuild the background until the dominant vessel and Enki silhouettes are visually confirmed complete.');
+  await maybeOpenReviewArtifacts([maskSheetPath], { delayMs: 120 });
 }
 
 async function latestGeneratedRun() {
