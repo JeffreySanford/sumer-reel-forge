@@ -68,20 +68,23 @@ export function buildPixiPreviewPlan(
   sourceAssets: readonly PixiSourceAsset[] = [],
   materialBindings: readonly PixiContainedWaterMaterialBinding[] = [],
   timing?: PixiPreviewTiming,
+  includeDiagnosticNodes = false,
 ): PixiRenderFrame {
   const resolvedWidth = assertViewportDimension(width, 'width');
   const resolvedHeight = assertViewportDimension(height, 'height');
-  const nodes = model.nodes.map((node) =>
-    Object.freeze({
-      id: node.id,
-      label: node.label,
-      kind: node.kind,
-      x: projectX(node, resolvedWidth),
-      y: projectY(node, resolvedHeight),
-      opacity: node.opacity,
-      ...(node.proofState ? { proofState: node.proofState } : {}),
-    }),
-  );
+  const nodes = includeDiagnosticNodes
+    ? model.nodes.map((node) =>
+        Object.freeze({
+          id: node.id,
+          label: node.label,
+          kind: node.kind,
+          x: projectX(node, resolvedWidth),
+          y: projectY(node, resolvedHeight),
+          opacity: node.opacity,
+          ...(node.proofState ? { proofState: node.proofState } : {}),
+        }),
+      )
+    : [];
 
   return Object.freeze({
     frame: model.frame,
