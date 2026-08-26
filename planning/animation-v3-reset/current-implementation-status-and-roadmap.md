@@ -1,42 +1,26 @@
 # Animation V3 Current Implementation Status and Roadmap
 
-Status: **living implementation record**
+Status: **living implementation record / automation-first actor policy active**
 
 Updated: **2026-08-26**
 
-This document records what the Animation V3 reset has actually implemented, what remains experimental, what is still production-authoritative in the existing Reel 1 pipeline, and the recommended execution order from the current foundation to a reusable production animation platform.
-
-It is intentionally more concrete than the original planning documents. The original V3 reset began as an architectural plan. Enough of that architecture now exists in code that the repository needs a reliable distinction between:
-
-- **implemented and locally verified**;
-- **implemented but still foundation/preview-only**;
-- **planned but not yet implemented**;
-- **existing Scene V2/Angular/Remotion production behavior that remains authoritative**;
-- **future Studio orchestration that should replace manual command-line workflows without weakening safety or provenance**.
-
----
+This is the current implementation authority for the Animation V3 reset. Read it together with [`automation-first-character-performance.md`](./automation-first-character-performance.md). Older documents may discuss Rive as an early candidate; Rive is no longer the required/default hero-character path.
 
 ## 1. Executive status
 
-The V3 reset has moved beyond architecture-only planning.
-
-The repository now has a real deterministic Scene V3 foundation, a compatibility path from the existing Scene V2 Shot 3 work, an engine-independent exact-frame inspection model, a React Animation Lab, a deterministic fake runtime preview, and the first real visual-engine surface through an isolated PixiJS adapter.
-
-The current major state is:
-
 ```text
-Phase 0  Planning lock                         COMPLETE
-Phase 1  Historical-source foundation          PARTIAL / FOUNDATION WORKING
-Phase 2  Scene V3 contracts/compiler/runtime   CORE COMPLETE
-Phase 3  Animation Lab foundation               CORE COMPLETE
-Phase 4  Pixi material runtime                  FOUNDATION STARTED
-Phase 5  Rive performance runtime               NOT STARTED
-Phase 6  Three/R3F spatial runtime              NOT STARTED
-Phase 7  Combined Reel 1 V3 proof               NOT STARTED
-Phase 8+ Physics/crowds/herds/cities/etc.       NOT STARTED
+Phase 0  Planning lock                               COMPLETE
+Phase 1  Historical-source foundation                PARTIAL / FOUNDATION WORKING
+Phase 2  Scene V3 contracts/compiler/runtime         CORE COMPLETE
+Phase 3  Animation Lab foundation                     CORE COMPLETE
+Phase 4  Pixi / Shot 3 source-backed proof            PARTIAL — ACCEPTED BASELINE EXISTS
+Phase 5  Automated actor-prep/performance pipeline    STARTED
+Phase 6  Three/R3F spatial runtime                    NOT STARTED
+Phase 7  Combined Reel 1 V3 proof                     NOT STARTED
+Phase 8+ Physics/crowds/herds/cities/etc.             NOT STARTED
 ```
 
-The critical architectural milestone already proven is:
+The current production architecture is:
 
 ```text
 Scene V3 semantic state
@@ -45,905 +29,182 @@ resolved deterministic runtime state
         ↓
 exact FrameContext
         ↓
-RuntimePreviewModel
+engine-neutral actor/material/spatial state
         ↓
-engine-neutral PixiRenderFrame
+approved adapter or baked candidate
         ↓
-libs/animation-pixi
-        ↓
-PixiJS 8.20.0
-        ↓
-real browser WebGL canvas
+Remotion production frame/render authority
 ```
 
-Pixi does **not** own story time. React does **not** own story time. Remotion remains the eventual production render/frame authority. Scene V3 remains the semantic source of truth.
+React, Pixi, Rive, ML backends and future adapters do not own story time.
 
----
+## 2. Automation doctrine
 
-## 2. Product/UI architecture is intentionally dual-surface
+Sumer Reel Forge is intended to produce many reels. The production critical path therefore must be headless and scriptable.
 
-The repository now has two UI applications with different responsibilities. They are complementary; one is not replacing the other.
-
-### 2.1 Angular Studio — `apps/web`
-
-Angular remains the main Sumer Reel Forge product/workflow application.
-
-Its role is to become the durable orchestration and review surface for:
-
-- projects, chapters, reels, scenes and shots;
-- manuscript/narrative context;
-- source/provenance review;
-- assets and candidate generation;
-- render job submission;
-- review and approval;
-- promotion and rollback;
-- production status;
-- eventually typed animation authoring controls;
-- eventually typed execution of approved workflows through API methods.
-
-Angular is the application a user should normally consider **Sumer Reel Forge Studio**.
-
-It should not become a low-level Pixi/Rive/Three object editor.
-
-### 2.2 React Animation Lab — `apps/animation-lab`
-
-The React Animation Lab is the animation-runtime engineering and inspection workbench.
-
-Its role is:
-
-- exact-frame Scene V3 inspection;
-- runtime diagnostics;
-- engine-adapter experiments;
-- Storybook proof states;
-- visual/runtime debugging;
-- local-vs-composed transform inspection;
-- evidence-binding diagnostics;
-- capability inspection;
-- deterministic runtime benchmark work;
-- Pixi/Rive/Three/Rapier specialist integration proofs.
-
-It is deliberately allowed to be more technical than the Angular Studio.
-
-### 2.3 Shared foundation
-
-Both applications should converge on shared contracts rather than duplicate animation semantics:
+Default rule:
 
 ```text
-Angular Studio                         React Animation Lab
-      │                                        │
-      ├────────── API / shared state ──────────┤
-      │                                        │
-      └──────── Scene V3 / receipts ───────────┘
-                         │
-                 animation-contracts
-                 animation-frame
-                 animation-runtime
-                 animation-compiler
-                 animation-inspection
-                         │
-              runtime-specific adapters
-                         │
-            Remotion / render infrastructure
+source → automated preparation → deterministic/baked performance → QA → human review → promotion
 ```
 
-The Animation Lab may lead implementation of runtime features, but production controls should eventually surface in Angular through engine-neutral methods and view models.
+Human review remains mandatory for visual claims, but humans should not be required to open Rive, Photoshop, GIMP or another GUI for every actor, shot or reel.
 
----
+If an automated extraction/performance lane fails, preserve the accepted lower-capability baseline and reject/fallback. Do not convert the failure into recurring manual work.
 
-## 3. Local workstation topology
+## 3. Existing foundation
 
-The preferred day-to-day workflow is now a persistent local workstation process plus one or more secondary terminals for implementation/test commands.
+### Phase 1 — historical sources
 
-### 3.1 `pnpm start:all`
+Implemented foundations include `libs/historical-sources`, stable literary/visual evidence identities, source hashing, adaptation classes and resolved-scene source binding. Corpus breadth and full Angular provenance UX remain incomplete.
 
-`pnpm start:all` remains the primary long-running local entrypoint.
+### Phase 2 — Scene V3
 
-Its current responsibilities include the existing local workstation orchestration plus the Animation Lab:
+Core Scene V3 contracts/compiler/runtime are working: deterministic integer-frame evaluation, runtime registry, source/evidence binding, canonical serialization, resolved hashes and the Enki-at-the-Helm golden fixture.
+
+### Phase 3 — Animation Lab
+
+`apps/animation-lab` is the specialist exact-frame workbench on port 4300. It supports deterministic inspection, Pixi proof surfaces, Storybook/browser tests and source/runtime diagnostics. Angular Studio remains the product/orchestration surface.
+
+## 4. Phase 4 — current Shot 3 Pixi evidence
+
+Phase 4 progressed far beyond the original diagnostic-geometry foundation.
+
+### Accepted proof-lane baseline
+
+The current human-accepted Shot 3 composition is:
 
 ```text
-Postgres                 managed Docker infrastructure
-API                      http://localhost:3000/api
-API docs                 http://localhost:3000/api/docs
-Angular Studio           http://localhost:4200
-Animation Lab            http://localhost:4300
-Renderer worker          managed by outer local startup
-ComfyUI                  optional/local managed service
-Ollama planning          optional/configured planning provider
-hardware profile         startup profiling/recommendations
-Prisma                    generated/prepared as required
+recovered repaired background
++ recovered vessel
++ recovered Enki
++ cinematic camera drift
++ vessel heave/roll
++ nested Enki counter-sway/body-settle
 ```
 
-The 4300 Animation Lab integration is implemented and locally verified on Windows. During the 2026-08-26 workstation smoke test, Studio 4200, Animation Lab 4300 and API docs 3000 all returned HTTP 200 while `start:all` was running, and Ctrl+C released all three listeners.
+The accepted motion is exact-frame, checksum-bound and repeatable. It is the visual baseline for further experiments.
 
-### 3.2 Why Animation Lab belongs in `start:all`
+### Rejected/disabled lanes
 
-The Lab began as specialist scaffolding, but it is now used frequently enough that treating it as a normal workstation service is justified.
+- canonical blink: technically isolated, human-invisible at normal speed;
+- stronger replacement blink: technically stronger, still human-invisible;
+- legacy water extraction: sparse painted-detail alpha, not a valid water basin;
+- legacy rigging extraction: sparse fragments;
+- fresh bounded rigging ROI recovery: no trustworthy survivor after exact-locator expanded confirmation;
+- whole-cutout `breathe-calm`: technical proof green, human reviewer preferred the control.
 
-Benefits:
+These failures are retained as evidence. Do not restart amplitude-tuning loops or promote technically green but visually worse results.
 
-- one command establishes the complete interactive development environment;
-- Angular remains on its established 4200 port;
-- Animation Lab gets a stable 4300 port;
-- developers can keep `start:all` running in terminal A;
-- terminal B can run tests, scripts, render commands and Git operations;
-- Studio and Lab can later deep-link to each other without unpredictable ports;
-- Playwright can reuse an already-running Lab when appropriate.
+### Phase 4 status
 
-### 3.3 Port contract
+Pixi remains a useful exact-frame/source-backed 2D adapter. Shot 3 does **not** yet satisfy the full Level 2 target merely because camera/vessel/counter-sway are accepted. Additional channels must be source-supported and human-readable; they are not mandatory if this source cannot safely provide them.
 
-Current local port intent:
+## 5. Phase 5 — automated actor preparation/performance
+
+Status: **STARTED — THIS IS THE NEXT ACTIVE LANE**
+
+### Evidence already completed
+
+A bounded Rive-neutral experiment created:
+
+- `libs/animation-rive` neutral contracts;
+- no-autoplay/no-autonomous-clock tests;
+- a byte-identical recovered Enki source-prep packet;
+- source SHA and registration receipts;
+- candidate handoff checks.
+
+Local proof was green, but creating the actual `.riv` requires manual editor authoring. That conflicts with production-scale automation. Therefore:
 
 ```text
-3000  API
-4200  Angular Studio
-4300  Animation Lab
-5432  Postgres default
-8188  ComfyUI default when locally managed
-11434 Ollama default
+Rive runtime installation: DEFERRED
+manual .riv authoring handoff: CANCELLED AS CRITICAL PATH
+libs/animation-rive: retained as architectural evidence / optional future adapter
 ```
 
-Storybook and test-only servers should remain independently configurable.
-
-### 3.4 E2E behavior while `start:all` is running
-
-Animation Lab Playwright currently permits `reuseExistingServer: true` and uses its own `ANIMATION_LAB_BASE_URL` endpoint, defaulting to 4300. Angular Studio retains the generic `BASE_URL` defaulting to 4200.
-
-Therefore, with `start:all` already running on port 4300, E2E can target that live development server instead of spawning a second preview server.
-
-This is desirable for the normal workstation workflow.
-
-When a future gate specifically needs to prove the production preview bundle rather than the dev server, that test should use an explicit alternate port/`ANIMATION_LAB_BASE_URL` or disable server reuse rather than taking 4300 away from the workstation.
-
----
-
-## 4. Phase 1 — historical-source/provenance foundation
-
-### Implemented
-
-The repository has:
-
-- `libs/historical-sources`;
-- typed literary/historical source records;
-- ETCSL-oriented source identity;
-- adaptation classifications;
-- visual-evidence contracts;
-- stable source IDs;
-- source hashing/receipt use in the V3 compiler path;
-- golden-scene source binding;
-- at least one real visual-evidence record used by the golden fixture (Standard of Ur context);
-- Animation Lab display of historical source counts, visual evidence counts and evidence-binding state.
-
-The golden resolved Scene V3 currently binds literary sources and visual evidence into immutable compiled identity.
-
-### Still required
-
-Phase 1 is not considered fully finished because source breadth and Studio UX remain incomplete.
-
-Still needed:
-
-- expand the real museum/archaeological evidence registry;
-- add Met/Penn/site records as production needs demand;
-- strengthen direct/contextual/analogical classification coverage;
-- source-validation CLI/reporting;
-- period mismatch warnings;
-- missing license/date metadata warnings;
-- Angular Studio provenance cards and filters;
-- Storybook/Playwright coverage for the Angular provenance workflow;
-- production research packet completion for scenes beyond the current golden benchmark.
-
-The source architecture is working. The research corpus and production UX are not yet complete.
-
----
-
-## 5. Phase 2 — Scene V3 contracts, compiler and deterministic runtime
-
-Phase 2 core foundation is implemented.
-
-### 5.1 `animation-contracts`
-
-Implemented contracts include the real `SceneV3` model and its major semantic collections:
-
-- story/source identity;
-- historical sources;
-- visual evidence;
-- assets;
-- frame/fps/resolution/seed;
-- cameras;
-- actors;
-- props;
-- environments;
-- performances;
-- materials;
-- effects;
-- simulations;
-- crowds;
-- herds;
-- world states;
-- montage;
-- QA.
-
-These are contracts, not claims that all later runtime implementations already exist.
-
-### 5.2 `animation-frame`
-
-The deterministic frame foundation is implemented sufficiently for V3 compiler/runtime tests and exact-frame preview.
-
-Current key invariant:
+Accepted recovered Enki actor-prep source:
 
 ```text
-integer frame → deterministic context/state
+941x1672
+sha256:d19ff6b4810a6fad5b8ce41232e07d7fc0f72923799e195df1596f53f4239f07
 ```
 
-No child runtime is allowed to reinterpret story time using its own wall clock.
+### Next implementation sequence
 
-### 5.3 `animation-runtime`
+1. define engine-neutral `ActorPrepDefinition` / backend evidence contracts;
+2. generate an automated Enki actor-prep workspace from the accepted source receipt;
+3. discover semantic regions/landmarks/anchors headlessly;
+4. verify source fidelity and failure behavior;
+5. create reusable performance-template/bake contracts;
+6. run a bounded facial-performance backend spike;
+7. only then map approved results into Scene V3 clips/Remotion.
 
-Implemented:
+### LivePortrait candidate
 
-- runtime adapter contract;
-- runtime registry;
-- deterministic fake runtime adapter;
-- prepare/evaluate behavior;
-- unsupported-runtime handling;
-- failure behavior;
-- deterministic repeated evaluation assertions;
-- runtime capabilities.
+LivePortrait may be evaluated because it supports headless inference and reusable motion templates. It is not adopted. Its upstream license notes a commercial-use problem with bundled InsightFace models, so production use is blocked until those models are replaced/resolved and a license receipt is green.
 
-### 5.4 `animation-compiler`
+### Rive candidate
 
-Implemented:
+Rive is now **optional/deferred specialist tooling**. Reconsider only if a one-time reusable rig demonstrates enough visual/production value to justify manual editor cost without becoming per-shot work.
 
-- Scene V3 validation/compilation path;
-- source resolution;
-- evidence resolution;
-- asset binding;
-- runtime resolution;
-- semantic seed resolution;
-- canonical serialization;
-- stable resolved identity/hash;
-- compiler tests;
-- canonical hash hardening.
+## 6. Phase 6 — spatial runtime
 
-### 5.5 Resolved Scene V3 golden fixture
+Three/R3F remains a future bounded spike for painted depth cards, spatial camera, architecture and world placement. It must preserve the painted source and may not expose invented geometry.
 
-The Enki-at-the-Helm golden fixture provides a pinned integration reference including:
+## 7. Phase 7 — combined Reel 1 proof
 
-- Scene V3 identity;
-- source scene hash;
-- resolved scene hash;
-- 30 fps;
-- 210 frames;
-- 1080×1920 viewport;
-- scene seed `31003`;
-- camera/environment/prop/actor runtime bindings;
-- Enki parent relationship to `prop:stag-of-absu`;
-- semantic seeds;
-- QA contracts;
-- named proof frames `START`, `BLINK_CLOSED`, `END_SETTLED`.
+The combined benchmark is backend-neutral. It requires:
 
-### 5.6 V2 → V3 compatibility
+- one accepted actor-performance path;
+- accepted vessel/environment/material/spatial behavior as the source supports;
+- exact Scene V3 timing and receipts;
+- multiple meaningful non-camera contributions;
+- no source-fidelity regression;
+- normal-speed human preference over the lower-level baseline.
 
-A real compatibility adapter exists for the current Shot 3 Scene V2 benchmark.
+It does **not** require Rive specifically, nor does it require resurrecting failed water/rigging masks merely to fill a channel count.
 
-This is important because V3 is not allowed to throw away production work merely to obtain a clean new schema.
+## 8. Product/UI boundary
 
-The compatibility path preserves:
+Angular Studio should orchestrate projects, candidate generation, QA, review, promotion and rollback. Animation Lab remains the technical runtime workbench. Neither should become a mandatory manual bone/mesh editor.
 
-- timing;
-- source binding;
-- camera semantics;
-- immutable asset expectations;
-- story mutation restrictions.
-
-### 5.7 Current integration proof
-
-The latest verified V3 integration suite is green with 10/10 integration tests.
-
----
-
-## 6. Animation inspection foundation
-
-`libs/animation-inspection` now forms the engine-neutral bridge between resolved Scene V3 and UI inspection.
-
-Implemented:
-
-- exact-frame view model;
-- frame stepping/jumps/home/end;
-- scene header;
-- proof-state activation;
-- logical hierarchy;
-- historical source projection;
-- visual evidence projection;
-- QA gate projection;
-- runtime diagnostics;
-- asset diagnostics;
-- semantic-seed diagnostics;
-- source/resolved hash diagnostics.
-
-Boundary policy deliberately forbids UI frameworks, animation engines, browser clocks and global randomness from this foundation.
-
-This means Angular and React can eventually consume the same inspection semantics without moving authority into either UI framework.
-
----
-
-## 7. Phase 3 — Animation Lab foundation
-
-Phase 3 core is now implemented.
-
-### 7.1 React/Vite application
-
-Implemented:
-
-- `apps/animation-lab`;
-- React/Vite runtime;
-- Vitest;
-- Storybook;
-- Playwright E2E project;
-- engine-neutral inspection consumption;
-- production build;
-- stable local dev port 4300, now part of the verified `start:all` workstation profile.
-
-### 7.2 Exact-frame controls
-
-Implemented:
-
-- exact integer frame state;
-- previous/next frame;
-- home/end;
-- keyboard stepping;
-- named proof-state buttons;
-- visible frame/time/progress state;
-- no autonomous playback authority.
-
-Future authoring controls such as editable seed/fps are not yet promoted into the Lab; current fixture data remains authoritative.
-
-### 7.3 Deterministic fake runtime preview
-
-Implemented:
-
-- fake runtime evaluation at exact frame;
-- environment/prop/actor preview nodes;
-- parent transform composition;
-- local vs composed transform diagnostics;
-- recursive parent chain;
-- missing-parent failure;
-- cycle failure policy;
-- runtime capability display;
-- explicit error state;
-- explicit empty state;
-- unsupported-runtime failure;
-- deterministic same-frame equality.
-
-### 7.4 Evidence/viewport diagnostics
-
-Implemented:
-
-- resolved viewport width/height;
-- aspect ratio derived from the Scene V3 frame contract;
-- golden 1080×1920 / 9:16 display;
-- source/resolved evidence binding;
-- `BOUND` vs `STALE` state;
-- evidence counts;
-- resolved hash visibility.
-
-### 7.5 Storybook
-
-Current Lab stories cover important proof states and failure modes, including:
-
-- frame 0 START;
-- frame 101 BLINK_CLOSED;
-- end frame;
-- runtime error;
-- empty runtime preview;
-- stale evidence;
-- diagnostic fallback renderer;
-- Pixi-backed default runtime view.
-
-### 7.6 Browser verification
-
-The current foundation has verified the Lab across:
-
-- Chromium;
-- Firefox;
-- WebKit.
-
-Playwright checks the real Pixi canvas as well as exact-frame/diagnostic state. After the 4200/4300 endpoint split, the focused Animation Lab E2E suite again passed 3/3 locally.
-
----
-
-## 8. Phase 4 — Pixi runtime status
-
-Phase 4 has started, but only the **engine foundation**, not the intended material system, is complete.
-
-### 8.1 Dependency/adoption work complete
-
-Implemented and locally verified:
-
-- exact `pixi.js` version `8.20.0`;
-- root lockfile pin;
-- MIT runtime license review;
-- dedicated `libs/animation-pixi` boundary;
-- boundary test preventing direct Pixi imports from sibling app/libraries;
-- `pnpm audit --prod --audit-level high` with no known vulnerabilities at verification time;
-- production bundle measurement;
-- Storybook build;
-- three-browser E2E;
-- adapter/unit tests.
-
-Measured production Lab Pixi-related library chunk at the current foundation proof:
+Long-term Studio goal:
 
 ```text
-~467.72 kB minified
-~132.82 kB gzip
+choose project/reel
+→ generate/reuse actor prep automatically
+→ render candidate
+→ inspect deterministic + semantic evidence
+→ human accept/reject
+→ promote
 ```
 
-This is acceptable for an internal specialist Lab but remains a reason to keep Pixi isolated from unrelated product bundles.
+## 9. Immediate next gate
 
-### 8.2 Exact-frame Pixi surface complete
+The next code milestone is an automated Enki actor-prep packet generated from the accepted recovered source with:
 
-Implemented:
+- source SHA/dimensions;
+- zero manual-editor dependency;
+- semantic region/anchor intent;
+- backend compatibility and license state;
+- explicit proof requirements;
+- candidate-only output under `tmp/`.
 
-- framework-neutral `PixiPreviewSurface` contract;
-- asynchronous Pixi v8 application initialization;
-- WebGL preference for current benchmark;
-- `autoStart: false`;
-- `sharedTicker: false`;
-- ticker explicitly stopped;
-- explicit one-pass render calls;
-- no adapter `requestAnimationFrame` loop;
-- exact frame metadata on the canvas;
-- deterministic projection from `RuntimePreviewModel`;
-- surface lifecycle/destroy behavior;
-- viewport mismatch rejection;
-- node-count consistency check.
+Do not install LivePortrait or another ML backend before that contract and license boundary exist.
 
-### 8.3 What Pixi is currently drawing
+## 10. Universal stop conditions
 
-The current Pixi proof intentionally draws diagnostic geometry:
-
-- camera frame;
-- environment shape;
-- vessel/prop shape;
-- actor shape/proof pulse.
-
-This proves engine ownership and exact-frame behavior.
-
-It is **not yet the production visual treatment**.
-
-### 8.4 Next Pixi work
-
-Still required:
-
-- load a real source-backed Shot 3 asset into the Pixi proof;
-- immutable asset-hash binding at visual load time;
-- texture/sprite registration;
-- source-space → output-space registration proof;
-- water material proof;
-- bounded displacement/deformation;
-- vessel/rigging proof;
-- rope/mesh approach only where justified by benchmark;
-- material driver channels;
-- painterly preservation boundaries;
-- fixed-frame screenshot evidence;
-- short motion proof using the same exact-frame model;
-- QA metrics for containment/deformation;
-- human comparison before any production claim.
-
-The next Pixi milestone should therefore be a **source-backed visual/material benchmark**, not another diagnostic-geometry refinement.
-
----
-
-## 9. Production Reel 1 authority has not moved to V3 yet
-
-This distinction is critical.
-
-The existing production Reel 1 pipeline still relies on the current approved/canonical Scene V2 and Remotion infrastructure.
-
-V3 currently provides:
-
-- contracts;
-- compiler;
-- compatibility;
-- fixtures;
-- inspection;
-- preview/runtime proofs.
-
-V3 does **not** yet automatically replace canonical Reel 1 rendering.
-
-Do not describe the Pixi Lab as final rendering or production animation output.
-
-The migration plan remains proof-first and reversible.
-
----
-
-## 10. Human acceptance remains independent
-
-Automated tests, runtime evidence and browser success do not manufacture human approval.
-
-The existing renderer suite correctly preserves the distinction:
-
-- deterministic/structural tests can pass;
-- human acceptance can remain absent;
-- milestone tests may intentionally skip when human evidence does not exist;
-- promotion must not infer approval from a green build.
-
-This rule applies equally to future V3/Pixi/Rive/Three work.
-
----
-
-## 11. Current verified quality evidence
-
-As of the workstation-startup verification layered on top of the Pixi foundation:
+Stop and diagnose when:
 
 ```text
-animation-pixi unit/boundary tests      4/4 pass
-animation-lab tests                    20/20 pass
-animation-lab browser E2E               3/3 pass
-animation-v3-integration               10/10 pass
-renderer tests                        128 pass / 2 intentional skips / 0 fail
-workspace lint                         14 projects successful
-workspace build                        12 projects successful
-workspace test                         12 projects successful
-production dependency audit            no known vulnerabilities
-start:all workstation health            3000/4200/4300 reachable
-start:all Ctrl+C cleanup                no listeners on 3000/4200/4300
+same exact frame is nondeterministic
+source hashes drift
+backend gains autonomous time ownership
+manual GUI authoring becomes recurring production work
+model/license status is unresolved for intended use
+technical green output is human-rejected
+identity or painterly source fidelity drifts
+thresholds must be weakened merely to obtain a survivor
 ```
 
-The 128 renderer passes include four workstation/startup regression checks. The two skips remain the existing human-acceptance/milestone gates and are intentionally not promoted to automated approval.
-
-Known nonblocking tooling notices:
-
-- Nx Vite tsconfig-path plugin deprecation;
-- Nx copy-assets plugin deprecation;
-- Storybook/Vite large-chunk warning;
-- Nx historical flaky-task classification for API build/test.
-
-These should be handled as dedicated tooling maintenance rather than mixed into animation behavior branches unless they become blocking.
-
----
-
-## 12. Phase 5 — Rive performance runtime: not started
-
-Rive remains the planned leading candidate for reusable hero-character performance where it earns its complexity.
-
-Required before adoption:
-
-- runtime/editor licensing review;
-- exact version pin;
-- low-level deterministic/host-driven seek or advance proof;
-- no autonomous story-time ownership;
-- source-backed Enki identity preservation;
-- reusable semantic performance channels;
-- blink/gaze/breath/head/torso/arm controls;
-- Storybook proof states;
-- fixed-frame and motion evidence;
-- human review.
-
-The goal is not "use Rive because it exists." The goal is to prove a reusable hero performance system that is materially better than bespoke PNG-state animation.
-
----
-
-## 13. Phase 6 — Three/R3F spatial runtime: not started
-
-The spatial runtime remains planned for scenes that genuinely need 2.5D/3D placement, depth, fog, camera motion or spatial lighting.
-
-Required proof:
-
-- dependency/version compatibility;
-- Remotion compatibility;
-- exact-frame camera state;
-- source-backed painterly cards;
-- no hidden geometry exposure;
-- deterministic transforms;
-- fixed-frame visual regression;
-- performance budget.
-
-Do not put ordinary 2D layer work into Three merely because Three is available.
-
----
-
-## 14. Phase 7 — combined V3 Reel 1 proof: not started
-
-The first combined proof is still expected to be Enki at the Helm.
-
-Target composition:
-
-```text
-Scene V3             semantic/time authority
-Rive                  hero performance, if accepted
-Pixi                  water/rigging/material behavior
-Three/R3F             only if spatial proof justifies it
-Remotion              production frame/render authority
-```
-
-Required controls must make component value measurable:
-
-- Level 1 baseline;
-- character frozen;
-- material frozen;
-- vessel/camera controls;
-- normal-speed A/B;
-- exact-frame evidence;
-- no source-fidelity loss.
-
-The architecture only earns production complexity if the combined result is visibly better and operationally maintainable.
-
----
-
-## 15. Later platform phases still open
-
-### Physics / Rapier
-
-Not started:
-
-- fixed-step harness;
-- construction-order hashing;
-- deterministic bake format;
-- bake receipts;
-- playback adapter;
-- storm benchmark.
-
-### Crowds/work crews
-
-Contracts exist at Scene V3 level; actual reusable crowd runtime remains pending.
-
-Need:
-
-- stable agent IDs;
-- schedules;
-- paths/regions;
-- role variation;
-- anti-synchronization metrics;
-- LOD/performance.
-
-### Herd/animals
-
-Pending runtime evaluation and licensing/authoring decision.
-
-### CityKit/world state
-
-Contracts/planning exist; production implementation remains pending.
-
-### Montage/long-time-span system
-
-Planning exists; runtime implementation remains pending.
-
-### Theatre authoring bridge
-
-Authoring-only policy remains. No production dependency should be introduced until export-to-Scene-V3 value is proven.
-
-### Unified evidence/QA
-
-A substantial foundation exists, but complete runtime-independent proof receipts and production promotion integration remain future work.
-
----
-
-## 16. Recommended near-term execution order
-
-The next implementation sequence should optimize for usable production capability, not package count.
-
-### Step A — merge verified workstation startup/documentation slice
-
-The local exit gate is complete:
-
-- Animation Lab E2E passed 3/3 on Chromium, Firefox and WebKit after the endpoint-variable split;
-- `pnpm start:all` exposed API 3000, Angular Studio 4200 and Animation Lab 4300 successfully;
-- all three health checks returned HTTP 200;
-- Ctrl+C released all three repo-owned listeners;
-- renderer/tool regression coverage passed with 128 passes, 2 intentional human-gate skips and 0 failures;
-- existing untracked local files remain outside the tracked startup/documentation work.
-
-### Step B — source-backed Pixi visual proof
-
-Use a real existing Shot 3 source/approved asset.
-
-Prove:
-
-- checksum-bound asset load;
-- deterministic registration;
-- exact-frame transform;
-- same source identity as Scene/receipt;
-- browser rendering;
-- diagnostic fallback parity.
-
-### Step C — first real material behavior
-
-Select one bounded, production-relevant behavior—preferably Shot 3 water or rigging.
-
-Do not attempt water + cloth + rope + particles simultaneously.
-
-### Step D — load resolved Scene V3 dynamically
-
-The Lab currently relies heavily on a pinned golden browser fixture.
-
-Next architecture improvement:
-
-- fetch/select a resolved scene by ID/revision/hash;
-- verify receipt identity;
-- keep golden fixture for tests;
-- stop requiring hand-maintained reduced fixture copies for normal use.
-
-### Step E — Angular Studio ↔ Animation Lab navigation
-
-Add an engine-neutral Studio action such as:
-
-```text
-Open Animation Lab
-```
-
-The link should carry semantic identity rather than local object state, for example:
-
-```text
-/scene/scene:ch01:r01:s03:foundation?revision=1&frame=101
-```
-
-The Lab should resolve the scene from API/shared state and verify the expected hash.
-
-### Step F — safe workflow execution from Angular UI
-
-Begin moving common CLI operations behind typed API methods/jobs.
-
-This should happen incrementally, not through a generic browser shell.
-
-### Step G — Rive benchmark
-
-Only after the exact-frame/runtime/asset path is stable enough that Rive debugging is about Rive rather than about missing platform plumbing.
-
-### Step H — spatial benchmark if needed
-
-Introduce Three/R3F only when the chosen shot demonstrates a genuine spatial need.
-
----
-
-## 17. Future UI-driven script execution
-
-The long-term goal of running common workflows from Angular Studio is sound, but the implementation should not expose arbitrary shell execution to the browser.
-
-The preferred architecture is:
-
-```text
-Angular button/action
-       ↓
-typed API command
-       ↓
-validated command/job definition
-       ↓
-server-side allowlisted workflow service
-       ↓
-existing script/library/runtime operation
-       ↓
-persisted job state + logs + receipts
-       ↓
-SSE/WebSocket/polling status back to Studio
-```
-
-### 17.1 Why not a generic shell endpoint
-
-Avoid:
-
-```text
-POST /run-shell { command: "..." }
-```
-
-That would create security, quoting, reproducibility, auditability and accidental-mutation problems.
-
-### 17.2 Preferred command model
-
-Each Studio operation should map to a typed method/job, for example:
-
-```text
-prepareShotAssets(shotId)
-generateCandidate(shotId, layerId, workflowId)
-verifyCandidate(candidateId)
-renderProof(sceneId, revision, profile)
-runMaterialQa(proofId)
-openPromotionPlan(candidateId)
-promoteReviewedCandidate(reviewReceiptId)
-compileSceneV3(sceneId, revision)
-renderNamedProofState(sceneId, proofStateId)
-```
-
-Internally, the first implementation may still invoke existing scripts.
-
-Over time, logic should move from CLI wrappers into reusable TypeScript services so both CLI and API call the same domain method.
-
-### 17.3 Required job behavior
-
-UI-driven operations should eventually support:
-
-- stable job ID;
-- operation type;
-- validated inputs;
-- scene/shot/candidate identity;
-- start/end timestamps as operational metadata only;
-- stdout/stderr or structured log capture;
-- progress/status;
-- cancel where safe;
-- retry policy where safe;
-- output artifact IDs/hashes;
-- QA receipt references;
-- human review requirement;
-- no implicit promotion.
-
-### 17.4 Promotion remains special
-
-Promotion commands require stronger controls than ordinary rendering/generation:
-
-- exact candidate hash;
-- current canonical revision check;
-- current QA/evidence receipts;
-- human approval evidence;
-- explicit confirmation;
-- transactional update;
-- rollback metadata.
-
-The Angular UI should make safe workflows easier, not bypass the repository's existing safety model.
-
----
-
-## 18. Testing strategy going forward
-
-### Pure foundation
-
-Keep fast tests engine/browser independent:
-
-- contracts;
-- compiler;
-- frame math;
-- inspection;
-- projection plans;
-- policy/boundary tests.
-
-### Engine adapter
-
-Test:
-
-- config/time authority;
-- invalid frame/viewport rejection;
-- lifecycle;
-- deterministic projection;
-- import boundaries.
-
-### Browser
-
-Use Playwright for actual engine initialization and DOM/canvas integration.
-
-### Visual evidence
-
-Add fixed-frame screenshots only when the visual output has stable meaning. Diagnostic geometry screenshot churn is less valuable than source-backed material/actor benchmarks.
-
-### Motion proof
-
-Short deterministic motion proofs should come from the same exact-frame evaluator used by Storybook/Lab, not a second animation clock.
-
-### Human
-
-Human A/B remains required for subjective production-value claims.
-
----
-
-## 19. Documentation maintenance rule
-
-From this point forward, implementation branches that materially complete a planned V3 item should update this status record and the relevant phase backlog before merge.
-
-Checklist states should mean:
-
-```text
-[x] implemented and backed by repository evidence/local verification
-[~] partial/foundation exists but phase capability is not complete
-[ ] planned/not yet implemented
-```
-
-Do not mark a planned feature complete merely because its TypeScript interface exists.
-
-Do not mark human acceptance complete from automated evidence.
-
----
-
-## 20. Current next milestone
-
-After merging the verified workstation startup/documentation slice, the highest-value next milestone is:
-
-> **Render a real, checksum-bound Shot 3 visual asset through the deterministic Pixi surface at exact Scene V3 frames, then add one bounded material behavior without allowing Pixi to own time.**
-
-That milestone moves the platform from "real engine rendering diagnostic primitives" to "real engine rendering production-authoritative source material" while preserving every architectural invariant already proven.
+The automation platform is successful when failures become bounded receipts/fallbacks rather than manual cleanup queues.
