@@ -152,6 +152,30 @@ export function normalizePixiSourceAssetSha256(value: string): string {
   return normalized.toLowerCase();
 }
 
+export function assertPixiSourceAssetHttpResponse(
+  asset: Pick<PixiSourceAsset, 'id'>,
+  ok: boolean,
+  status: number,
+): void {
+  if (!ok) {
+    throw new Error(`Pixi source asset ${asset.id} failed to load with HTTP ${status}.`);
+  }
+}
+
+export function assertPixiSourceAssetDigest(
+  asset: Pick<PixiSourceAsset, 'id' | 'sha256'>,
+  actualSha256: string,
+): string {
+  const expected = normalizePixiSourceAssetSha256(asset.sha256);
+  const actual = normalizePixiSourceAssetSha256(actualSha256);
+  if (actual !== expected) {
+    throw new Error(
+      `Pixi source asset ${asset.id} checksum mismatch: expected ${expected}, received ${actual}.`,
+    );
+  }
+  return actual;
+}
+
 export function buildPixiSourceRegistration(
   asset: Pick<PixiSourceAsset, 'id' | 'width' | 'height' | 'registration'>,
   outputWidth: number,
@@ -212,15 +236,8 @@ async function verifySourceAssetBytes(asset: PixiSourceAsset, bytes: ArrayBuffer
   if (!globalThis.crypto?.subtle) {
     throw new Error(`Pixi source asset ${asset.id} cannot be verified because Web Crypto is unavailable.`);
   }
-  const expected = normalizePixiSourceAssetSha256(asset.sha256);
   const digest = await globalThis.crypto.subtle.digest('SHA-256', bytes);
-  const actual = bytesToHex(digest);
-  if (actual !== expected) {
-    throw new Error(
-      `Pixi source asset ${asset.id} checksum mismatch: expected ${expected}, received ${actual}.`,
-    );
-  }
-  return actual;
+  return assertPixiSourceAssetDigest(asset, bytesToHex(digest));
 }
 
 function assertSourceAssetIdentity(
@@ -243,9 +260,7 @@ async function decodeVerifiedSourceAsset(
   const registrationRect = assertSourceAssetIdentity(asset, width, height);
 
   const response = await fetch(asset.url, { cache: 'no-store' });
-  if (!response.ok) {
-    throw new Error(`Pixi source asset ${asset.id} failed to load with HTTP ${response.status}.`);
-  }
+  assertPixiSourceAssetHttpResponse(asset, response.ok, response.status);
 
   const bytes = await response.arrayBuffer();
   const normalizedSha256 = await verifySourceAssetBytes(asset, bytes);
