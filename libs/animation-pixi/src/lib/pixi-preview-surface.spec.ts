@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildPixiApplicationOptions,
+  normalizePixiSourceAssetSha256,
   PIXI_PREVIEW_RENDER_MODE,
 } from './pixi-preview-surface';
 
@@ -20,6 +21,14 @@ describe('Pixi preview surface policy', () => {
       resolution: 1,
       preference: 'webgl',
     });
+  });
+
+  it('normalizes canonical sha256 identities without weakening validation', () => {
+    const digest = 'a'.repeat(64);
+
+    expect(normalizePixiSourceAssetSha256(`sha256:${digest}`)).toBe(digest);
+    expect(normalizePixiSourceAssetSha256(digest.toUpperCase())).toBe(digest);
+    expect(() => normalizePixiSourceAssetSha256('sha256:not-a-digest')).toThrow(/64 hexadecimal/i);
   });
 
   it('rejects invalid viewport dimensions before Pixi initialization', () => {
