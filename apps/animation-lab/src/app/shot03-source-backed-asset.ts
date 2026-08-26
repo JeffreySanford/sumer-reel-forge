@@ -58,8 +58,9 @@ export const SHOT03_ENKI_BODY_SOURCE_ASSET = shot03Asset(
   SHOT03_ENKI_BODY_SHA256,
 );
 
-// Manifest depth order: background -> water -> vessel -> Enki.
-// Only water receives a material state in the current Phase 4.4 proof.
+// This is deliberately the manifest-required review composition, in depth
+// order: background -> water -> vessel -> Enki. Optional rigging and closed-eye
+// state stay out of this material proof so only water motion is under review.
 export const SHOT03_SOURCE_BACKED_ASSETS: readonly PixiSourceAsset[] = Object.freeze([
   SHOT03_BACKGROUND_SOURCE_ASSET,
   SHOT03_WATER_SOURCE_ASSET,
