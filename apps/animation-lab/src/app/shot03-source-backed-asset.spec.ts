@@ -6,6 +6,11 @@ import {
   SHOT03_BACKGROUND_SOURCE_ASSET,
   SHOT03_ENKI_BODY_SHA256,
   SHOT03_ENKI_BODY_SOURCE_ASSET,
+  SHOT03_ENKI_EYES_SHA256,
+  SHOT03_ENKI_EYES_SOURCE_ASSET,
+  SHOT03_FULL_MOTION_SOURCE_ASSETS,
+  SHOT03_RIGGING_SHA256,
+  SHOT03_RIGGING_SOURCE_ASSET,
   SHOT03_SOURCE_BACKED_ASSETS,
   SHOT03_VESSEL_SHA256,
   SHOT03_VESSEL_SOURCE_ASSET,
@@ -37,9 +42,7 @@ function findRepositoryRoot(start: string): string {
       return current;
     }
     const parent = dirname(current);
-    if (parent === current) {
-      throw new Error(`Could not locate repository root from ${start}.`);
-    }
+    if (parent === current) throw new Error(`Could not locate repository root from ${start}.`);
     current = parent;
   }
 }
@@ -68,7 +71,7 @@ const manifestPath = join(
   'assets/blessings-of-sumer/chapter-01/reel-01/animation-v1/manifest.json',
 );
 
-const reviewLayers = [
+const allReviewLayers = [
   {
     asset: SHOT03_BACKGROUND_SOURCE_ASSET,
     sha256: SHOT03_BACKGROUND_SHA256,
@@ -89,22 +92,43 @@ const reviewLayers = [
     sha256: SHOT03_ENKI_BODY_SHA256,
     relativePath: 'blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-03/character/enki-body.png',
   },
+  {
+    asset: SHOT03_ENKI_EYES_SOURCE_ASSET,
+    sha256: SHOT03_ENKI_EYES_SHA256,
+    relativePath: 'blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-03/character/enki-eyes-closed.png',
+  },
+  {
+    asset: SHOT03_RIGGING_SOURCE_ASSET,
+    sha256: SHOT03_RIGGING_SHA256,
+    relativePath: 'blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-03/foreground/rigging.png',
+  },
 ] as const;
 
 describe('Shot 3 source-backed Pixi review composition', () => {
-  it('matches the exact approved canonical bytes and source-space identity for all required layers', () => {
-    const editorialDimensions = readPngDimensions(readFileSync(editorialSourcePath));
-    const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as AnimationManifest;
-    const shot = manifest.shots.find((candidate) => candidate.shotId === 'enki-at-the-helm');
-
+  it('keeps the accepted four-layer material baseline unchanged', () => {
     expect(SHOT03_SOURCE_BACKED_ASSETS.map((asset) => asset.id)).toEqual([
       'shot03-background-v1',
       'shot03-water-v1',
       'shot03-vessel-v1',
       'shot03-enki-body-v1',
     ]);
+  });
 
-    for (const reviewLayer of reviewLayers) {
+  it('binds the six approved canonical layers used by the full-motion proof', () => {
+    const editorialDimensions = readPngDimensions(readFileSync(editorialSourcePath));
+    const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as AnimationManifest;
+    const shot = manifest.shots.find((candidate) => candidate.shotId === 'enki-at-the-helm');
+
+    expect(SHOT03_FULL_MOTION_SOURCE_ASSETS.map((asset) => asset.id)).toEqual([
+      'shot03-background-v1',
+      'shot03-water-v1',
+      'shot03-vessel-v1',
+      'shot03-enki-body-v1',
+      'shot03-enki-eyes-v1',
+      'shot03-rigging-v1',
+    ]);
+
+    for (const reviewLayer of allReviewLayers) {
       const bytes = readFileSync(join(repositoryRoot, 'assets', reviewLayer.relativePath));
       const actualSha256 = `sha256:${createHash('sha256').update(bytes).digest('hex')}`;
       const dimensions = readPngDimensions(bytes);
