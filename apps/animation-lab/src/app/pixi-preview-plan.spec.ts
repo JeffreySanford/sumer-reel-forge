@@ -6,6 +6,7 @@ import {
 import { GOLDEN_INSPECTION_FIXTURE } from './golden-inspection.fixture';
 import { buildPixiPreviewPlan } from './pixi-preview-plan';
 import { FakeRuntimePreviewAdapter } from './runtime-preview';
+import { SHOT03_SOURCE_BACKED_ASSETS, SHOT03_WATER_SHA256 } from './shot03-source-backed-asset';
 
 describe('buildPixiPreviewPlan', () => {
   it('projects the exact-frame runtime model into the resolved viewport', () => {
@@ -13,13 +14,21 @@ describe('buildPixiPreviewPlan', () => {
     const inspection = buildSceneInspection(GOLDEN_INSPECTION_FIXTURE, 101);
     const model = adapter.evaluate({ fixture: GOLDEN_INSPECTION_FIXTURE, inspection });
 
-    const plan = buildPixiPreviewPlan(model, 1080, 1920);
+    const plan = buildPixiPreviewPlan(model, 1080, 1920, SHOT03_SOURCE_BACKED_ASSETS);
     const enki = plan.nodes.find((node) => node.id === 'actor-instance:enki:s03');
 
     expect(plan.frame).toBe(101);
     expect(plan.width).toBe(1080);
     expect(plan.height).toBe(1920);
     expect(plan.nodeCount).toBe(3);
+    expect(plan.sourceAssets).toHaveLength(1);
+    expect(plan.sourceAssets[0]).toMatchObject({
+      id: 'shot03-water-v1',
+      role: 'water',
+      sha256: SHOT03_WATER_SHA256,
+      width: 1080,
+      height: 1920,
+    });
     expect(enki?.x).toBeCloseTo(661.068);
     expect(enki?.y).toBeCloseTo(782.837);
   });
@@ -33,15 +42,18 @@ describe('buildPixiPreviewPlan', () => {
       adapter.evaluate({ fixture: GOLDEN_INSPECTION_FIXTURE, inspection: frameZero }),
       1080,
       1920,
+      SHOT03_SOURCE_BACKED_ASSETS,
     );
     const blink = buildPixiPreviewPlan(
       adapter.evaluate({ fixture: GOLDEN_INSPECTION_FIXTURE, inspection: frame101 }),
       1080,
       1920,
+      SHOT03_SOURCE_BACKED_ASSETS,
     );
 
     expect(start.nodes.find((node) => node.id === 'actor-instance:enki:s03')?.x).toBeCloseTo(432);
     expect(blink.nodes.find((node) => node.id === 'actor-instance:enki:s03')?.x).toBeCloseTo(661.068);
+    expect(start.sourceAssets).toEqual(blink.sourceAssets);
   });
 
   it('is deterministic for repeated projection of the same runtime model', () => {
@@ -49,8 +61,8 @@ describe('buildPixiPreviewPlan', () => {
     const inspection = buildSceneInspection(GOLDEN_INSPECTION_FIXTURE, 101);
     const model = adapter.evaluate({ fixture: GOLDEN_INSPECTION_FIXTURE, inspection });
 
-    expect(buildPixiPreviewPlan(model, 1080, 1920)).toEqual(
-      buildPixiPreviewPlan(model, 1080, 1920),
+    expect(buildPixiPreviewPlan(model, 1080, 1920, SHOT03_SOURCE_BACKED_ASSETS)).toEqual(
+      buildPixiPreviewPlan(model, 1080, 1920, SHOT03_SOURCE_BACKED_ASSETS),
     );
   });
 
