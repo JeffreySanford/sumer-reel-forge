@@ -48,16 +48,41 @@ async function main() {
 
   console.log('');
   console.log('[1/5] Static decomposition fidelity gate...');
-  const decompositionArgs = ['--no-open'];
-  if (options.noAiReview) decompositionArgs.push('--no-ai-review');
-  if (options.requireAiReview) decompositionArgs.push('--require-ai-review');
-  runNode(DECOMPOSITION_SCRIPT, decompositionArgs);
-
-  const decompositionReceiptPath = join(resolve(roiReportPath, '..'), 'decomposition-proof', 'shot03-decomposition-proof.json');
-  if (!existsSync(decompositionReceiptPath)) {
-    throw new Error(`Decomposition receipt was not produced: ${decompositionReceiptPath}`);
+  const decompositionReceiptPath = join(
+    resolve(roiReportPath, '..'),
+    'decomposition-proof',
+    'shot03-decomposition-proof.json',
+  );
+  let decomposition = null;
+  if (!options.forceDecomposition && existsSync(decompositionReceiptPath)) {
+    try {
+      const cached = JSON.parse(await readFile(decompositionReceiptPath, 'utf8'));
+      const sameSourceReport = resolve(cached.sourceSearchReportPath ?? '') === resolve(roiReportPath);
+      const technicalPass = cached.technicalSourceFidelityPass === true;
+      const aiNonBlocking = !cached.ai?.status || cached.ai.status === 'PASS_ADVISORY';
+      if (sameSourceReport && technicalPass && aiNonBlocking) {
+        decomposition = cached;
+        console.log(
+          `[REUSE] existing decomposition PASS: ${decompositionReceiptPath}`,
+        );
+        if (cached.ai?.status) console.log(`[REUSE] local vision status: ${cached.ai.status}`);
+      }
+    } catch {
+      decomposition = null;
+    }
   }
-  const decomposition = JSON.parse(await readFile(decompositionReceiptPath, 'utf8'));
+
+  if (!decomposition) {
+    const decompositionArgs = ['--no-open'];
+    if (options.noAiReview) decompositionArgs.push('--no-ai-review');
+    if (options.requireAiReview) decompositionArgs.push('--require-ai-review');
+    runNode(DECOMPOSITION_SCRIPT, decompositionArgs);
+    if (!existsSync(decompositionReceiptPath)) {
+      throw new Error(`Decomposition receipt was not produced: ${decompositionReceiptPath}`);
+    }
+    decomposition = JSON.parse(await readFile(decompositionReceiptPath, 'utf8'));
+  }
+
   if (decomposition.technicalSourceFidelityPass !== true) {
     console.log('[STOP] deterministic decomposition source-fidelity gate failed; background generation is blocked.');
     process.exitCode = 2;
@@ -187,6 +212,7 @@ async function main() {
     generatedAt: new Date().toISOString(),
     sourceRoiReportPath: roiReportPath,
     sourceDecompositionReceiptPath: decompositionReceiptPath,
+    decompositionReused: !options.forceDecomposition,
     bridgeDirectory,
     bridgeReceiptPath,
     backgroundOutput,
@@ -249,6 +275,7 @@ function parseOptions(args) {
     noOpen: false,
     noAiReview: false,
     requireAiReview: false,
+    forceDecomposition: false,
     seed: undefined,
     padding: undefined,
   };
@@ -256,6 +283,7 @@ function parseOptions(args) {
     if (arg === '--no-open') result.noOpen = true;
     else if (arg === '--no-ai-review') result.noAiReview = true;
     else if (arg === '--require-ai-review') result.requireAiReview = true;
+    else if (arg === '--force-decomposition') result.forceDecomposition = true;
     else if (arg.startsWith('--seed=')) {
       const value = Number(arg.slice('--seed='.length));
       if (!Number.isSafeInteger(value) || value < 0) throw new Error('--seed must be a non-negative safe integer.');
