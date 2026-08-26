@@ -1,12 +1,21 @@
-import type {
-  ValidationIssue,
-  ValidationResult,
-} from '@sumer-reel-forge/historical-sources';
 import type { RuntimeReference } from './runtime-reference';
 import type { SceneV3 } from './scene-v3';
 import { isSemanticId } from './ids';
 import type { FrameRange, TransformDefinition } from './track';
 import { SCENE_V3_SCHEMA_VERSION } from './versioning';
+
+export type ValidationSeverity = 'error' | 'warning';
+
+export interface ValidationIssue {
+  severity: ValidationSeverity;
+  code: string;
+  message: string;
+}
+
+export interface ValidationResult {
+  valid: boolean;
+  issues: ValidationIssue[];
+}
 
 const SHA256_PATTERN = /^(?:sha256:)?[a-f0-9]{64}$/i;
 const VALID_QA_CATEGORIES = new Set([
