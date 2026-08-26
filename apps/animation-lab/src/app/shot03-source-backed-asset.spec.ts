@@ -1,7 +1,17 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
-import { SHOT03_WATER_SHA256, SHOT03_WATER_SOURCE_ASSET } from './shot03-source-backed-asset';
+import {
+  SHOT03_BACKGROUND_SHA256,
+  SHOT03_BACKGROUND_SOURCE_ASSET,
+  SHOT03_ENKI_BODY_SHA256,
+  SHOT03_ENKI_BODY_SOURCE_ASSET,
+  SHOT03_SOURCE_BACKED_ASSETS,
+  SHOT03_VESSEL_SHA256,
+  SHOT03_VESSEL_SOURCE_ASSET,
+  SHOT03_WATER_SHA256,
+  SHOT03_WATER_SOURCE_ASSET,
+} from './shot03-source-backed-asset';
 
 type ManifestLayer = {
   readonly id: string;
@@ -49,10 +59,6 @@ function readPngDimensions(buffer: Buffer): { readonly width: number; readonly h
 }
 
 const repositoryRoot = findRepositoryRoot(process.cwd());
-const waterPath = join(
-  repositoryRoot,
-  'assets/blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-03/water.png',
-);
 const editorialSourcePath = join(
   repositoryRoot,
   'assets/blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-03.png',
@@ -62,30 +68,62 @@ const manifestPath = join(
   'assets/blessings-of-sumer/chapter-01/reel-01/animation-v1/manifest.json',
 );
 
-describe('Shot 3 source-backed Pixi asset', () => {
-  it('matches the exact approved canonical water bytes and source-space identity', () => {
-    const bytes = readFileSync(waterPath);
-    const editorialBytes = readFileSync(editorialSourcePath);
-    const actualSha256 = `sha256:${createHash('sha256').update(bytes).digest('hex')}`;
-    const waterDimensions = readPngDimensions(bytes);
-    const editorialDimensions = readPngDimensions(editorialBytes);
+const reviewLayers = [
+  {
+    asset: SHOT03_BACKGROUND_SOURCE_ASSET,
+    sha256: SHOT03_BACKGROUND_SHA256,
+    relativePath: 'blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-03/background.png',
+  },
+  {
+    asset: SHOT03_WATER_SOURCE_ASSET,
+    sha256: SHOT03_WATER_SHA256,
+    relativePath: 'blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-03/water.png',
+  },
+  {
+    asset: SHOT03_VESSEL_SOURCE_ASSET,
+    sha256: SHOT03_VESSEL_SHA256,
+    relativePath: 'blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-03/vessel.png',
+  },
+  {
+    asset: SHOT03_ENKI_BODY_SOURCE_ASSET,
+    sha256: SHOT03_ENKI_BODY_SHA256,
+    relativePath: 'blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-03/character/enki-body.png',
+  },
+] as const;
+
+describe('Shot 3 source-backed Pixi assets', () => {
+  it('matches the exact approved canonical bytes and source-space identity for the required visual-review layers', () => {
+    const editorialDimensions = readPngDimensions(readFileSync(editorialSourcePath));
     const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as AnimationManifest;
     const shot = manifest.shots.find((candidate) => candidate.shotId === 'enki-at-the-helm');
-    const layer = shot?.layers.find((candidate) => candidate.id === 'shot03-water-v1');
 
-    expect(actualSha256).toBe(SHOT03_WATER_SHA256);
-    expect(waterDimensions).toEqual({ width: 941, height: 1672 });
-    expect(waterDimensions).toEqual(editorialDimensions);
-    expect(SHOT03_WATER_SOURCE_ASSET.sha256).toBe(SHOT03_WATER_SHA256);
-    expect(SHOT03_WATER_SOURCE_ASSET.width).toBe(waterDimensions.width);
-    expect(SHOT03_WATER_SOURCE_ASSET.height).toBe(waterDimensions.height);
-    expect(SHOT03_WATER_SOURCE_ASSET.registration).toBe('cover-center');
-    expect(layer).toMatchObject({
-      id: 'shot03-water-v1',
-      path: 'blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-03/water.png',
-      state: 'approved',
-      sha256: SHOT03_WATER_SHA256,
-      review: { status: 'approved' },
-    });
+    expect(SHOT03_SOURCE_BACKED_ASSETS.map((asset) => asset.id)).toEqual([
+      'shot03-background-v1',
+      'shot03-water-v1',
+      'shot03-vessel-v1',
+      'shot03-enki-body-v1',
+    ]);
+
+    for (const reviewLayer of reviewLayers) {
+      const bytes = readFileSync(join(repositoryRoot, 'assets', reviewLayer.relativePath));
+      const actualSha256 = `sha256:${createHash('sha256').update(bytes).digest('hex')}`;
+      const dimensions = readPngDimensions(bytes);
+      const layer = shot?.layers.find((candidate) => candidate.id === reviewLayer.asset.id);
+
+      expect(actualSha256).toBe(reviewLayer.sha256);
+      expect(dimensions).toEqual({ width: 941, height: 1672 });
+      expect(dimensions).toEqual(editorialDimensions);
+      expect(reviewLayer.asset.sha256).toBe(reviewLayer.sha256);
+      expect(reviewLayer.asset.width).toBe(dimensions.width);
+      expect(reviewLayer.asset.height).toBe(dimensions.height);
+      expect(reviewLayer.asset.registration).toBe('cover-center');
+      expect(layer).toMatchObject({
+        id: reviewLayer.asset.id,
+        path: reviewLayer.relativePath,
+        state: 'approved',
+        sha256: reviewLayer.sha256,
+        review: { status: 'approved' },
+      });
+    }
   });
 });
