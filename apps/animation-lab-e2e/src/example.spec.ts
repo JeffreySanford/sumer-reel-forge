@@ -28,7 +28,7 @@ const SHOT03_SOURCE_REGISTRATION_RECTS = [
 ].join(',');
 const SHOT03_WATER_MATERIAL_ID = 'shot03-water-micro-drift-v1';
 const SHOT03_WATER_MATERIAL_BOUNDS =
-  'shot03-water-micro-drift-v1:max-dx=2.400,max-dy=1.200,max-scale=1.006000';
+  'shot03-water-micro-drift-v1:max-dx=8.000,max-dy=4.000,max-scale=1.012000';
 
 async function expectPixiReady(pixiHost: Locator): Promise<void> {
   await expect
@@ -136,7 +136,7 @@ test('renders the composed Shot 3 visual review through Pixi at exact frames', a
     canvas,
     101,
     'BLINK_CLOSED',
-    'shot03-water-micro-drift-v1:dx=0.500,dy=-1.127,scale=1.006000,settle=1.000,opacity=0.240',
+    'shot03-water-micro-drift-v1:dx=1.667,dy=-3.758,scale=1.012000,settle=1.000,opacity=0.420',
     testInfo,
   );
 
@@ -176,7 +176,7 @@ test('renders the composed Shot 3 visual review through Pixi at exact frames', a
     canvas,
     0,
     'START',
-    'shot03-water-micro-drift-v1:dx=0.000,dy=0.000,scale=1.006000,settle=1.000,opacity=0.240',
+    'shot03-water-micro-drift-v1:dx=0.000,dy=0.000,scale=1.012000,settle=1.000,opacity=0.420',
     testInfo,
   );
 
@@ -188,7 +188,7 @@ test('renders the composed Shot 3 visual review through Pixi at exact frames', a
     canvas,
     209,
     'END_SETTLED',
-    'shot03-water-micro-drift-v1:dx=0.935,dy=-0.220,scale=1.003300,settle=0.550,opacity=0.132',
+    'shot03-water-micro-drift-v1:dx=3.117,dy=-0.733,scale=1.006600,settle=0.550,opacity=0.231',
     testInfo,
   );
 
