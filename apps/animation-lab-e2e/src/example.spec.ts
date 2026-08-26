@@ -106,6 +106,10 @@ test('renders the composed Shot 3 visual review through Pixi at exact frames', a
   await expect(pixiHost).toHaveAttribute('data-pixi-source-asset-count', '4');
   await expect(pixiHost).toHaveAttribute('data-pixi-material-count', '1');
   await expect(pixiHost).toHaveAttribute('data-pixi-review-mode', 'artwork');
+  await expect(pixiHost).toHaveAttribute(
+    'data-pixi-review-composition',
+    'shot03-required-layers',
+  );
 
   const canvas = page.locator('canvas[data-pixi-canvas="true"]');
   await expect(canvas).toBeVisible();
@@ -140,6 +144,7 @@ test('renders the composed Shot 3 visual review through Pixi at exact frames', a
   await expect(page.getByText('EVIDENCE BOUND')).toBeVisible();
   await expect(page.getByText('9:16')).toBeVisible();
   await expect(page.getByText('artwork review')).toBeVisible();
+  await expect(page.getByText('Shot 3 required layers')).toBeVisible();
   await expect(page.getByText('ticker stopped')).toBeVisible();
   await expect(page.getByText('4 checksum-bound source assets')).toBeVisible();
   await expect(page.getByText('1 bounded exact-frame material')).toBeVisible();
