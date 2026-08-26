@@ -26,6 +26,7 @@ import {
 import {
   buildShot03RecoverySourceAssets,
   SHOT03_FULL_MOTION_SOURCE_ASSETS,
+  SHOT03_RECOVERY_EYES_URL,
 } from './shot03-source-backed-asset';
 
 type PixiMountStatus = 'MOUNTING' | 'READY' | 'ERROR';
@@ -94,10 +95,12 @@ function resolveRecoverySourceAssets(): readonly PixiSourceAsset[] {
     'shot03-recovery-vessel-sha256',
   );
   const enkiSha256 = requiredQueryParam(params, 'shot03-recovery-enki-sha256');
+  const eyesSha256 = params.get('shot03-recovery-eyes-sha256')?.trim() || undefined;
   return buildShot03RecoverySourceAssets({
     backgroundSha256,
     vesselSha256,
     enkiSha256,
+    eyesSha256,
   });
 }
 
@@ -182,6 +185,14 @@ export function Shot03FullMotionCanvas({
             `${asset.id}:${asset.sha256}:${asset.width}x${asset.height}:${asset.registration}`,
         )
         .join('|'),
+    [resolvedSourceAssets],
+  );
+  const recoveryEyeCandidate = useMemo(
+    () =>
+      resolvedSourceAssets.some(
+        (asset) =>
+          asset.id === 'shot03-enki-eyes-v1' && asset.url === SHOT03_RECOVERY_EYES_URL,
+      ),
     [resolvedSourceAssets],
   );
 
@@ -282,6 +293,9 @@ export function Shot03FullMotionCanvas({
         data-shot03-rigging={`x=${motion.rigging.x.toFixed(3)},y=${motion.rigging.y.toFixed(3)},rot=${motion.rigging.rotationDegrees.toFixed(6)},lag=${motion.rigging.lagSeconds.toFixed(3)}`}
         data-shot03-blink-opacity={motion.blinkOpacity.toFixed(3)}
         data-shot03-recovery-hidden-layers={hiddenRecoveryLayers}
+        data-shot03-recovery-eye-source={
+          recovery ? (recoveryEyeCandidate ? 'candidate' : 'canonical') : ''
+        }
         data-shot03-recovery-control={
           cameraOnly
             ? 'camera-only'
@@ -328,7 +342,9 @@ export function Shot03FullMotionCanvas({
         <span>{frame.sourceAssets.length} checksum-bound source assets</span>
         <span>
           {blinkReview
-            ? 'legacy water/rigging hidden; blink is the only added secondary channel'
+            ? recoveryEyeCandidate
+              ? 'replacement blink candidate; legacy water/rigging hidden'
+              : 'canonical blink; legacy water/rigging hidden'
             : recovery
               ? 'legacy water/rigging/blink layers hidden; repaired background remains source-baked'
               : 'water held static for this proof'}
