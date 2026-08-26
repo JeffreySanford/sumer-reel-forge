@@ -177,7 +177,7 @@ ComfyUI when locally managed/available
 Ollama planning when configured
 ```
 
-The current feature branch adds Animation Lab to the managed core dev-server process. Local startup/shutdown smoke verification is required before merge.
+Animation Lab is now part of the managed core dev-server process. The 3000/4200/4300 startup and Ctrl+C cleanup lifecycle was verified locally on Windows on 2026-08-26.
 
 ## 12. Why the Lab is part of the persistent workstation
 
@@ -606,7 +606,7 @@ Future Studio workflow execution must use typed/allowlisted API methods or jobs 
 
 ## 40. Immediate local environment exit gate
 
-Before the current workstation-startup branch merges:
+The workstation-startup slice is locally verified on Windows:
 
 - [x] Animation Lab configured for stable port 4300;
 - [x] Playwright web server aligned to 4300;
@@ -615,9 +615,22 @@ Before the current workstation-startup branch merges:
 - [x] `start:all` code launches and waits for Animation Lab;
 - [x] Windows cleanup includes 4300/Animation Lab;
 - [x] source-level workstation regression tests cover the 3000/4200/4300 contract;
-- [ ] focused Lab E2E is green locally after the endpoint-variable split;
-- [ ] local `pnpm start:all` reaches API 3000, Studio 4200 and Lab 4300;
-- [ ] Ctrl+C releases all three repo-owned dev listeners.
+- [x] focused Lab E2E is green locally after the endpoint-variable split — Chromium, Firefox and WebKit all passed;
+- [x] local `pnpm start:all` reached API 3000, Studio 4200 and Lab 4300 — all three returned HTTP 200 during the smoke check;
+- [x] Ctrl+C released all three repo-owned dev listeners — no listeners remained on 3000/4200/4300 after shutdown.
+
+Verification evidence from 2026-08-26:
+
+```text
+Animation Lab Playwright: 3 passed / 0 failed
+renderer:test:             130 tests, 128 passed, 2 intentional skips, 0 failed
+Studio health:             http://localhost:4200/ -> 200
+Animation Lab health:      http://localhost:4300/ -> 200
+API docs health:           http://localhost:3000/api/docs -> 200
+post-shutdown listeners:   none on 3000, 4200, 4300
+```
+
+The two renderer skips remain the existing human-acceptance/milestone gates; this workstation verification does not manufacture or imply human approval.
 
 Longer-term environment work still includes:
 
