@@ -17,6 +17,9 @@ const SUPPORTED = new Set([
 const SHOT03_ROI_ROOT = resolve(
   'tmp/animation-assets/resegmentation/shot03-roi-search',
 );
+const SHOT03_RECOVERED_MOTION_ROOT = resolve(
+  'tmp/animation-previews/pixi-shot03-recovered-motion-proof',
+);
 
 export function shouldOpenReviewArtifacts(args = process.argv.slice(2)) {
   return !args.includes('--no-open');
@@ -77,6 +80,9 @@ export async function reviewArtifactsFromReport(reportPath) {
     report.ranked?.enki?.[0]?.registeredPath,
     report.artifacts?.activeVideo,
     report.artifacts?.abVideo,
+    report.artifacts?.exposureAbVideo,
+    report.artifacts?.cameraOnlyControlVideo,
+    report.artifacts?.maxExposurePair,
     report.artifacts?.frozenControlVideo,
     report.artifacts?.frozenControlFrame,
   ].filter(Boolean);
@@ -119,6 +125,30 @@ export async function latestShot03RoiReport() {
   throw new Error(`No completed Shot 3 ROI review report found under ${SHOT03_ROI_ROOT}.`);
 }
 
+export async function latestShot03RecoveredMotionReport() {
+  let entries;
+  try {
+    entries = await readdir(SHOT03_RECOVERED_MOTION_ROOT, { withFileTypes: true });
+  } catch {
+    throw new Error(
+      `No Shot 3 recovered-motion review runs found under ${SHOT03_RECOVERED_MOTION_ROOT}.`,
+    );
+  }
+
+  const directories = entries
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => join(SHOT03_RECOVERED_MOTION_ROOT, entry.name))
+    .sort((a, b) => b.localeCompare(a));
+
+  for (const directory of directories) {
+    const report = join(directory, 'pixi-shot03-recovered-motion-proof.json');
+    if (existsSync(report)) return report;
+  }
+  throw new Error(
+    `No completed Shot 3 recovered-motion proof found under ${SHOT03_RECOVERED_MOTION_ROOT}.`,
+  );
+}
+
 async function openWithSystemViewer(path, options = {}) {
   if (process.platform === 'win32') {
     return openWithWindowsShell(path, options);
@@ -131,16 +161,19 @@ async function openWithSystemViewer(path, options = {}) {
 
 function openWithWindowsShell(path, options = {}) {
   // UseShellExecute=true asks Windows itself to resolve the registered handler
-  // for the artifact. This avoids cmd.exe `start` quoting/association behavior,
-  // which can emit a system beep while still returning a successful spawn.
+  // for the artifact. Some handlers (notably UWP/media apps) successfully accept
+  // the shell launch but do not return a Process handle. Treat that as delegated
+  // success rather than a launch failure.
   const powershell = process.env.POWERSHELL_COMMAND ?? 'powershell.exe';
   const script = [
+    "$ProgressPreference = 'SilentlyContinue'",
+    "$ErrorActionPreference = 'Stop'",
     `$path = ${powershellSingleQuoted(path)}`,
     '$psi = New-Object System.Diagnostics.ProcessStartInfo',
     '$psi.FileName = $path',
     '$psi.UseShellExecute = $true',
     '$process = [System.Diagnostics.Process]::Start($psi)',
-    'if ($null -eq $process) { throw "Windows ShellExecute returned no process." }',
+    'if ($null -eq $process) { Write-Output "SHELL_DELEGATED" } else { Write-Output ("PID=" + $process.Id) }',
   ].join('; ');
   const encoded = Buffer.from(script, 'utf16le').toString('base64');
   const result = spawnSync(
@@ -172,7 +205,9 @@ function openWithWindowsShell(path, options = {}) {
       `Windows ShellExecute failed with exit ${result.status ?? 'unknown'} for ${path}: ${result.stderr?.trim() || result.stdout?.trim() || 'no diagnostic output'}`,
     );
   }
-  return 'Windows ShellExecute';
+  return result.stdout?.includes('SHELL_DELEGATED')
+    ? 'Windows ShellExecute (delegated)'
+    : 'Windows ShellExecute';
 }
 
 function resolveReportArtifact(reportPath, value) {
@@ -211,6 +246,7 @@ async function main() {
     console.log('Usage:');
     console.log('  node tools/scripts/open-review-artifacts.mjs <file> [file ...]');
     console.log('  node tools/scripts/open-review-artifacts.mjs --latest-shot03-roi');
+    console.log('  node tools/scripts/open-review-artifacts.mjs --latest-shot03-recovered-motion');
     console.log('  node tools/scripts/open-review-artifacts.mjs --from-report=<report.json>');
     console.log('  node tools/scripts/open-review-artifacts.mjs --diagnose-open <file>');
     console.log('  node tools/scripts/open-review-artifacts.mjs --no-open <file> [file ...]');
@@ -226,6 +262,11 @@ async function main() {
     console.log(`[OPEN] latest Shot 3 ROI report: ${reportPath}`);
     files.push(...(await reviewArtifactsFromReport(reportPath)));
   }
+  if (args.includes('--latest-shot03-recovered-motion')) {
+    const reportPath = await latestShot03RecoveredMotionReport();
+    console.log(`[OPEN] latest Shot 3 recovered-motion report: ${reportPath}`);
+    files.push(...(await reviewArtifactsFromReport(reportPath)));
+  }
   if (reportArg) {
     const reportPath = reportArg.slice('--from-report='.length);
     console.log(`[OPEN] report-driven review: ${resolve(reportPath)}`);
@@ -238,6 +279,7 @@ async function main() {
         arg !== '--no-open' &&
         arg !== '--diagnose-open' &&
         arg !== '--latest-shot03-roi' &&
+        arg !== '--latest-shot03-recovered-motion' &&
         !arg.startsWith('--from-report='),
     ),
   );
