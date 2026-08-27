@@ -56,6 +56,9 @@ test('semantic discovery requests exact anatomy semantics without hidden reconst
   }
   assert.match(text, /do not infer a hidden point/i);
   assert.match(text, /anatomical left\/right, not the viewer/i);
+  assert.match(text, /fully contained inside the image/i);
+  assert.match(text, /partly cropped hands or limbs/i);
+  assert.match(text, /partialEdgeAnatomyUsesVisibleInFramePixelsOnly: true/);
 });
 
 test('semantic discovery emits a standalone review overlay and stops before segmentation', async () => {

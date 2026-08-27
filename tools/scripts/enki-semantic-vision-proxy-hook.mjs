@@ -1,4 +1,5 @@
-import { readFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import {
   evaluateProxyDiscoveryGeometry,
   isEnkiSemanticDiscoveryRequest,
@@ -23,6 +24,7 @@ const REPAIR_TIMEOUT_MS = positiveInteger(
   process.env.SEMANTIC_COORDINATE_REPAIR_TIMEOUT_MS ?? process.env.PLANNING_TIMEOUT_MS,
   300_000,
 );
+let semanticRequestCount = 0;
 
 globalThis.fetch = async function enkiSemanticVisionProxyFetch(input, init = {}) {
   const requestUrl = typeof input === 'string' ? input : input?.url;
@@ -40,6 +42,8 @@ globalThis.fetch = async function enkiSemanticVisionProxyFetch(input, init = {})
   if (!isEnkiSemanticDiscoveryRequest(body)) {
     return originalFetch(input, init);
   }
+  semanticRequestCount += 1;
+  const requestLabel = semanticRequestCount === 1 ? 'pass-a' : semanticRequestCount === 2 ? 'pass-b' : `pass-${semanticRequestCount}`;
 
   const messages = attachProxyImage(body.messages ?? []);
   const first = await originalFetch(input, {
@@ -56,6 +60,12 @@ globalThis.fetch = async function enkiSemanticVisionProxyFetch(input, init = {})
   let response = first;
 
   if (!evaluation.ok) {
+    writeDiagnostic(`${requestLabel}-invalid-before-repair`, {
+      stage: 'invalid-before-repair',
+      requestLabel,
+      evaluation,
+      discovery: parsed.discovery,
+    });
     console.warn(
       `[vision-proxy] invalid crop-normalized semantic geometry: ${evaluation.issues.join(' | ')}. Running ${MAX_COORDINATE_REPAIR_ATTEMPTS} bounded coordinate correction attempt with a fresh ${Math.round(REPAIR_TIMEOUT_MS / 1000)}s timeout.`,
     );
@@ -66,6 +76,8 @@ globalThis.fetch = async function enkiSemanticVisionProxyFetch(input, init = {})
       'This is a geometry-only correction. The prior response already contains the semantic findings; no image re-evaluation is required.',
       'Preserve every region/anchor id and status exactly. Correct only invalid bbox/point numeric geometry. Do not change found/uncertain/not-visible decisions.',
       'For every found/uncertain region: x,y,width,height are decimal fractions in 0..1 relative to the attached crop; width>0; height>0; x+width<=1; y+height<=1.',
+      'If a box extends past the crop edge, shrink or move the box to the visible in-crop pixels only; never preserve an imagined off-crop extent.',
+      'A valid repaired box must pass these arithmetic checks: x <= 1 - width and y <= 1 - height.',
       'For every found/uncertain anchor: x and y are decimal fractions in 0..1 relative to the attached crop.',
       'For not-visible items, use all-zero bbox/point geometry.',
       'Do not use pixel coordinates, percentages, or a 0..1000 coordinate system.',
@@ -99,6 +111,12 @@ globalThis.fetch = async function enkiSemanticVisionProxyFetch(input, init = {})
 
     evaluation = evaluateProxyDiscoveryGeometry(parsed.discovery);
     if (!evaluation.ok) {
+      writeDiagnostic(`${requestLabel}-invalid-after-repair`, {
+        stage: 'invalid-after-repair',
+        requestLabel,
+        evaluation,
+        discovery: parsed.discovery,
+      });
       throw new Error(
         `Proxy semantic locator coordinate repair still invalid after ${MAX_COORDINATE_REPAIR_ATTEMPTS} attempt: ${evaluation.issues.join(' | ')}`,
       );
@@ -188,6 +206,22 @@ function cloneResponse(response, bodyText) {
     statusText: response.statusText,
     headers: response.headers,
   });
+}
+
+function writeDiagnostic(name, value) {
+  const directory = join(dirname(metadataPath), 'semantic-vision-proxy-diagnostics');
+  mkdirSync(directory, { recursive: true });
+  const diagnostic = {
+    schemaVersion: 1,
+    type: 'actor-semantic-vision-proxy-diagnostic',
+    proxyMetadataPath: metadataPath,
+    proxyImagePath: imagePath,
+    metadata,
+    sourcePixelsMutated: false,
+    canonicalAssetsMutated: false,
+    ...value,
+  };
+  writeFileSync(join(directory, `${name}.json`), `${JSON.stringify(diagnostic, null, 2)}\n`, 'utf8');
 }
 
 function positiveInteger(value, fallback) {

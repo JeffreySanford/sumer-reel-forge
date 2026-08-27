@@ -344,6 +344,8 @@ async function invokeDiscovery({ baseUrl, model, timeoutMs, imageBase64, seed })
     'Use uncertain when a plausible location exists but boundaries/identity are ambiguous.',
     'Use not-visible when source pixels do not support the requested region; for not-visible use zero bbox/point values.',
     'Tight boxes should contain the visible semantic part without surrounding vessel/background.',
+    'Every found or uncertain box must be fully contained inside the image: x + width <= 1 and y + height <= 1.',
+    'For partly cropped hands or limbs, box only the visible in-frame pixels; if the visible pixels cannot support a bounded box, use uncertain or not-visible rather than extending outside the image.',
   ].join(' ');
 
   const user = JSON.stringify(
@@ -357,6 +359,8 @@ async function invokeDiscovery({ baseUrl, model, timeoutMs, imageBase64, seed })
         noPixelGeneration: true,
         noBackgroundOrVesselInclusion: true,
         normalizedCoordinates: true,
+        fullyContainedBoxes: true,
+        partialEdgeAnatomyUsesVisibleInFramePixelsOnly: true,
       },
     },
     null,

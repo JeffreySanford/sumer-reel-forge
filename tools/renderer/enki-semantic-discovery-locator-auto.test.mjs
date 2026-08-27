@@ -48,6 +48,8 @@ test('semantic proxy allows exactly one bounded coordinate correction without cl
   assert.match(hook, /bounded coordinate correction attempt/);
   assert.match(hook, /x\+width<=1/);
   assert.match(hook, /y\+height<=1/);
+  assert.match(hook, /x <= 1 - width/);
+  assert.match(hook, /visible in-crop pixels only/);
   assert.match(hook, /Do not use pixel coordinates, percentages, or a 0\.\.1000 coordinate system/);
   assert.doesNotMatch(hook, /clamp.*discovery|repair.*clamp/i);
 });
@@ -63,4 +65,12 @@ test('coordinate repair is text-only and cannot change semantic statuses', () =>
   assert.match(hook, /geometry-only correction/i);
   assert.match(hook, /compareSemanticAuthority/);
   assert.match(hook, /status changed/);
+});
+
+test('semantic proxy persists invalid geometry diagnostics before failing', () => {
+  assert.match(hook, /writeDiagnostic\(`\$\{requestLabel\}-invalid-before-repair`/);
+  assert.match(hook, /writeDiagnostic\(`\$\{requestLabel\}-invalid-after-repair`/);
+  assert.match(hook, /semantic-vision-proxy-diagnostics/);
+  assert.match(hook, /sourcePixelsMutated: false/);
+  assert.match(hook, /canonicalAssetsMutated: false/);
 });

@@ -93,6 +93,8 @@ Status: **PARTIAL — ACCEPTED BASELINE, SECONDARY LIMITS DISCOVERED**
 
 ### Remaining Phase 4
 
+- [~] recovered Shot 3 motion decision packet compares primary, counter-sway and breathe-calm stacks using technical receipts plus built-in AI advisory reviews;
+- [ ] human accept/reject one recovered Shot 3 motion stack from the decision packet;
 - [ ] reusable source-backed material/deformation primitive on a source that actually supports it;
 - [ ] fixed-frame visual regression for an accepted source-backed benchmark;
 - [ ] broader material proof only where source decomposition is trustworthy.
@@ -101,7 +103,7 @@ Phase exit is **not** achieved merely by increasing motion-channel count.
 
 ## Phase 5 — Automated actor preparation/performance
 
-Status: **ACTIVE — SOURCE IDENTITY VERIFIED; SEMANTIC DISCOVERY NEXT**
+Status: **ACTIVE — SOURCE IDENTITY VERIFIED; SEMANTIC DISCOVERY GEOMETRY STOP**
 
 ### 5.0 Rive boundary experiment
 
@@ -147,14 +149,16 @@ model invocations 0
 - [~] head/face/torso/arm/hand region discovery implemented with two Qwen3-VL locator passes;
 - [~] landmark/anchor proposal with confidence and two-pass spatial agreement;
 - [~] deterministic normalized geometry validation: bounds, containment, crown/head attachment and anchor ownership;
+- [~] invalid proxy-geometry diagnostics preserved before/after the single bounded coordinate repair;
 - [~] standalone semantic review SVG + consensus/QA/receipt artifacts;
 - [~] reject/disqualify unstable or unsupported semantic locations instead of manual coordinate repair;
-- [~] human review is the next gate before any extraction/segmentation;
-- [ ] local run/receipt verification of semantic discovery;
+- [~] local run reached real Enki anatomy detection, then stopped on invalid crop-normalized hand geometry;
+- [ ] successful local run/receipt verification of structurally contained semantic discovery;
+- [~] human review is the next gate after a structurally contained run, before any extraction/segmentation;
 - [ ] source-pixel fidelity checks for extracted semantic region assets;
 - [ ] region extraction/segmentation only after accepted semantic locations.
 
-Semantic discovery is localization only. It must not mutate source pixels, actor-prep identity or canonical assets, and it cannot promote itself.
+Semantic discovery is localization only. It must not mutate source pixels, actor-prep identity or canonical assets, and it cannot promote itself. Missing or unsupported hands should disable hand/contact capability rather than block facial/torso capability; invalid geometry still blocks remap and must be diagnosed.
 
 ### 5.4 Performance template/bake contract
 

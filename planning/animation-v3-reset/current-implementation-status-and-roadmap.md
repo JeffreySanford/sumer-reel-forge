@@ -96,9 +96,13 @@ These failures are retained as evidence. Do not restart amplitude-tuning loops o
 
 Pixi remains a useful exact-frame/source-backed 2D adapter. Shot 3 does **not** yet satisfy the full Level 2 target merely because camera/vessel/counter-sway are accepted. Additional channels must be source-supported and human-readable.
 
+The immediate active line is semantic localization for source-backed actor articulation. Qwen3-VL now returns Enki anatomy on the exact locator crop, but the current local run stops correctly when hand boxes extend past crop-normalized bounds. Invalid proxy geometry is diagnostic evidence, not promotable evidence; do not proceed to segmentation, rigging or additional motion until the semantic locator produces contained geometry or marks unsupported hands as unavailable capability.
+
+For Reel 1 progress, the practical Shot 3 path is now a recovered-motion decision packet rather than another broad improvement pass. Run `pnpm animation:shot3:motion-decision-packet` to compare the three current review-ready stacks: primary recovered motion, primary plus Enki counter-sway, and counter-sway plus breathe-calm. Then run `pnpm animation:shot3:motion-review-montage` to generate one labeled three-up normal-speed review video plus a contact sheet and A/B index. Blink, water extraction, and rigging extraction remain deferred unless new source-supported evidence changes their status.
+
 ## 5. Phase 5 — automated actor preparation/performance
 
-Status: **ACTIVE — SOURCE IDENTITY GATE VERIFIED; SEMANTIC DISCOVERY IMPLEMENTED PENDING LOCAL RUN**
+Status: **ACTIVE — SOURCE IDENTITY GATE VERIFIED; SEMANTIC DISCOVERY IMPLEMENTED WITH GEOMETRY-CONTRACT STOP**
 
 ### Rive boundary experiment evidence
 

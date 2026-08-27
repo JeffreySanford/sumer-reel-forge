@@ -99,6 +99,38 @@ test('two-pass disagreement becomes uncertain instead of silently accepted', () 
   assert.equal(qa.humanReviewRequired, true);
 });
 
+test('missing hands disable hand capability without blocking core semantic structure', () => {
+  const run = healthyRun();
+  run.regions = run.regions.map((item) =>
+    item.id === 'region:enki:hand-left' || item.id === 'region:enki:hand-right'
+      ? {
+          id: item.id,
+          status: 'not-visible',
+          confidence: 0.2,
+          bbox: { x: 0, y: 0, width: 0, height: 0 },
+          notes: 'fixture hidden hand',
+        }
+      : item,
+  );
+  run.anchors = run.anchors.map((item) =>
+    item.id === 'anchor:enki:hand-left' || item.id === 'anchor:enki:hand-right'
+      ? {
+          id: item.id,
+          status: 'not-visible',
+          confidence: 0.2,
+          point: { x: 0, y: 0 },
+          notes: 'fixture hidden hand',
+        }
+      : item,
+  );
+  const qa = evaluateSemanticDiscovery(buildSemanticConsensus(run, run));
+  assert.equal(qa.structuralPass, true);
+  assert.equal(qa.capabilities.facialLocalizationReady, true);
+  assert.equal(qa.capabilities.torsoLocalizationReady, true);
+  assert.equal(qa.capabilities.handContactLocalizationReady, false);
+  assert.match(qa.advisories.join('\n'), /region:enki:hand-left is not-visible/);
+});
+
 test('box IoU reports exact identity and disjoint boxes', () => {
   assert.equal(boxIou({ x: 0.1, y: 0.1, width: 0.2, height: 0.2 }, { x: 0.1, y: 0.1, width: 0.2, height: 0.2 }), 1);
   assert.equal(boxIou({ x: 0.1, y: 0.1, width: 0.2, height: 0.2 }, { x: 0.6, y: 0.6, width: 0.2, height: 0.2 }), 0);
