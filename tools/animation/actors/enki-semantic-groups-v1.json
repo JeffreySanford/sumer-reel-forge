@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "actorId": "enki",
+  "definitionId": "actor-semantic-groups:enki:v1",
+  "groups": [
+    {
+      "id": "face-head",
+      "regions": [
+        "region:enki:head",
+        "region:enki:face",
+        "region:enki:hair-beard",
+        "region:enki:eye-left",
+        "region:enki:eye-right",
+        "region:enki:crown"
+      ],
+      "anchors": [
+        "anchor:enki:gaze-origin",
+        "anchor:enki:head-center"
+      ]
+    },
+    {
+      "id": "body-arms",
+      "regions": [
+        "region:enki:torso-robe",
+        "region:enki:upper-arm-left",
+        "region:enki:upper-arm-right",
+        "region:enki:forearm-left",
+        "region:enki:forearm-right"
+      ],
+      "anchors": [
+        "anchor:enki:torso-root",
+        "anchor:enki:seat-or-stance-root"
+      ]
+    },
+    {
+      "id": "hands-contact",
+      "regions": [
+        "region:enki:hand-left",
+        "region:enki:hand-right"
+      ],
+      "anchors": [
+        "anchor:enki:hand-left",
+        "anchor:enki:hand-right"
+      ],
+      "capability": "hand-contact",
+      "optionalForCoreStructure": true
+    }
+  ],
+  "policy": {
+    "smallerTaskForLocalVisionModel": true,
+    "doNotInferOtherGroups": true,
+    "maxCoordinateRepairAttemptsPerGroup": 1,
+    "humanReviewRequired": true,
+    "automaticPromotionAllowed": false
+  }
+}
