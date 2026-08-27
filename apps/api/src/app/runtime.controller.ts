@@ -8,6 +8,7 @@ import {
 import { AnimationProductionStatusService } from './animation-production-status.service';
 import { ComfyUiInventoryService } from './comfyui-inventory.service';
 import { RuntimeCapabilitiesService } from './runtime-capabilities.service';
+import { RuntimeGpuStatusService } from './runtime-gpu-status.service';
 
 @Controller('runtime')
 @ApiTags('runtime')
@@ -17,6 +18,7 @@ export class RuntimeController {
     private readonly comfyUiInventory: ComfyUiInventoryService,
     private readonly animationProductionStatus: AnimationProductionStatusService,
     private readonly animationProductionEvidence: AnimationProductionEvidenceService,
+    private readonly runtimeGpuStatus: RuntimeGpuStatusService,
   ) {}
 
   @Get('capabilities')
@@ -25,6 +27,15 @@ export class RuntimeController {
   })
   getCapabilities() {
     return this.runtimeCapabilities.getCapabilities();
+  }
+
+  @Get('gpu-status')
+  @ApiOperation({
+    summary:
+      'Return live GPU execution lease, NVIDIA memory, Ollama residency, and ComfyUI allocator telemetry.',
+  })
+  getGpuStatus() {
+    return this.runtimeGpuStatus.getStatus();
   }
 
   @Get('comfyui-inventory')

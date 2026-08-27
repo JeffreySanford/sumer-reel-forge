@@ -13,6 +13,7 @@ import { PrismaReelRepository, REEL_REPOSITORY } from './reel.repository';
 import { RequestLoggingMiddleware } from './request-logging.middleware';
 import { RuntimeCapabilitiesService } from './runtime-capabilities.service';
 import { RuntimeController } from './runtime.controller';
+import { RuntimeGpuStatusService } from './runtime-gpu-status.service';
 
 @Module({
   imports: [],
@@ -23,6 +24,7 @@ import { RuntimeController } from './runtime.controller';
     DeterministicPlanningProvider,
     OllamaPlanningProvider,
     RuntimeCapabilitiesService,
+    RuntimeGpuStatusService,
     ComfyUiInventoryService,
     AnimationProductionStatusService,
     AnimationProductionEvidenceService,

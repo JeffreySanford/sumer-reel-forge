@@ -41,6 +41,9 @@
 .runtime-card p { display: block; margin-bottom: var(--md-sys-space-1); }
 
 .section-block { margin-top: var(--md-sys-space-5); }
+.live-gpu-block .runtime-card[data-lease='FREE'] h3 { color: var(--md-sys-color-success); }
+.live-gpu-block .runtime-card[data-lease='HELD'] h3 { color: var(--md-sys-color-warning); }
+.live-gpu-block .runtime-card[data-lease='STALE'] h3 { color: var(--md-sys-color-error); }
 .runtime-card h3 { color: var(--md-sys-color-primary); }
 .runtime-card p { margin-top: var(--md-sys-space-2); }
 
