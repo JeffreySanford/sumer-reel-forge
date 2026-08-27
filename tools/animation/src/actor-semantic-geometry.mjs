@@ -207,7 +207,7 @@ export function boxIou(a, b) {
   const y2 = Math.min(a.y + a.height, b.y + b.height);
   const intersection = Math.max(0, x2 - x1) * Math.max(0, y2 - y1);
   const union = a.width * a.height + b.width * b.height - intersection;
-  return union > 0 ? intersection / union : 0;
+  return union > 0 ? boundedRatio(intersection / union) : 0;
 }
 
 function safeIou(a, b) {
@@ -259,7 +259,7 @@ function containmentRatio(inner, outer) {
   const y2 = Math.min(inner.y + inner.height, outer.y + outer.height);
   const intersection = Math.max(0, x2 - x1) * Math.max(0, y2 - y1);
   const area = inner.width * inner.height;
-  return area > 0 ? intersection / area : 0;
+  return area > 0 ? boundedRatio(intersection / area) : 0;
 }
 
 function foundBox(regions, id) {
@@ -328,6 +328,11 @@ function missingAnchor(id, notes, confidence = 0) {
     agreement: { distance: null, stable: false },
     notes,
   };
+}
+
+function boundedRatio(value) {
+  if (!finite(value)) return 0;
+  return Math.min(1, Math.max(0, value));
 }
 
 function unitInterval(value) {
