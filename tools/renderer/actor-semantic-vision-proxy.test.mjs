@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  evaluateProxyDiscoveryGeometry,
   expandPixelBounds,
   isEnkiSemanticDiscoveryRequest,
   mapDiscoveryFromProxyToSource,
@@ -43,6 +44,39 @@ test('preserves not-visible zero geometry while mapping found items', () => {
   assert.deepEqual(mapped.anchors[1].point, { x: 0, y: 0 });
   assert.ok(mapped.regions[0].bbox.x > 0.2);
   assert.ok(mapped.anchors[0].point.y > 0.2);
+});
+
+test('rejects individually normalized bbox fields that extend beyond the proxy crop', () => {
+  const evaluation = evaluateProxyDiscoveryGeometry({
+    regions: [
+      {
+        id: 'region:enki:head',
+        status: 'found',
+        bbox: { x: 0.82, y: 0.1, width: 0.25, height: 0.3 },
+      },
+    ],
+    anchors: [],
+  });
+  assert.equal(evaluation.ok, false);
+  assert.match(evaluation.issues[0], /region:enki:head/);
+  assert.throws(
+    () => mapProxyBoxToSource({ x: 0.82, y: 0.1, width: 0.25, height: 0.3 }, metadata),
+    /fully contained/,
+  );
+});
+
+test('accepts fully contained found geometry and ignores not-visible zero geometry', () => {
+  const evaluation = evaluateProxyDiscoveryGeometry({
+    regions: [
+      { id: 'region:enki:face', status: 'found', bbox: { x: 0.2, y: 0.15, width: 0.3, height: 0.25 } },
+      { id: 'region:enki:hand-left', status: 'not-visible', bbox: { x: 0, y: 0, width: 0, height: 0 } },
+    ],
+    anchors: [
+      { id: 'anchor:enki:gaze-origin', status: 'found', point: { x: 0.35, y: 0.25 } },
+      { id: 'anchor:enki:hand-left', status: 'not-visible', point: { x: 0, y: 0 } },
+    ],
+  });
+  assert.deepEqual(evaluation, { ok: true, issues: [] });
 });
 
 test('expands alpha bounds with bounded padding and clamps to source edges', () => {
