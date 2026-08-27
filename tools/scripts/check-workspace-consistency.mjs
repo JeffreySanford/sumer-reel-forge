@@ -71,6 +71,7 @@ const renderEntrypoints = [
   'tools/scripts/render-canonical-reel1-scene-v2.ts',
   'tools/scripts/finalize-canonical-reel1.mjs',
 ];
+const e2eEntrypoints = ['tools/scripts/e2e-api.mjs'];
 
 const invalidStartupImports = await findDotenvBootstrapImports(startupEntrypoints);
 if (invalidStartupImports.length > 0) {
@@ -108,6 +109,18 @@ if (invalidRenderImports.length > 0) {
   process.exit(1);
 }
 
+const invalidE2eImports = await findDotenvBootstrapImports(e2eEntrypoints);
+if (invalidE2eImports.length > 0) {
+  console.error('Workspace API E2E bootstrap consistency check failed.');
+  console.error(
+    'API E2E entrypoints must use Node native .env loading and must not depend on undeclared dotenv/config bootstrap imports:',
+  );
+  for (const path of invalidE2eImports) {
+    console.error(`  - ${path}`);
+  }
+  process.exit(1);
+}
+
 console.log(
   `Workspace dependency consistency OK: ${configuredPlugins.length} Nx plugins resolve to explicitly declared packages.`,
 );
@@ -122,6 +135,9 @@ console.log(
 );
 console.log(
   `Workspace animation render consistency OK: ${renderEntrypoints.length} Reel 1 render entrypoints are dependency-free for .env loading.`,
+);
+console.log(
+  `Workspace API E2E consistency OK: ${e2eEntrypoints.length} API E2E entrypoint is dependency-free for .env loading.`,
 );
 
 async function findDotenvBootstrapImports(paths) {
