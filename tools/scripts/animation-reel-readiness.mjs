@@ -1,5 +1,5 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { evaluateReelAnimationReadiness } from '../animation/src/reel-animation-readiness.mjs';
 import { loadReviewSet } from '../animation/src/animation-review-set.mjs';
 
