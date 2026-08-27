@@ -19,6 +19,7 @@ test('GPU AI task wrapper holds one heartbeat-backed lease for the full task', a
   const result = await withGpuAiTask(
     {
       leaseDirectory,
+      telemetry: false,
       owner: 'animation-shot-review',
       task: 'delta-vision-review',
       backend: 'ollama',
@@ -50,6 +51,7 @@ test('GPU AI task wrapper honors lease timing environment overrides', async (t) 
     SRF_GPU_LEASE_TIMEOUT_MS: '125',
     SRF_GPU_LEASE_DURATION_MS: '7000',
     SRF_GPU_LEASE_POLL_MS: '7',
+    SRF_GPU_TASK_TELEMETRY: 'false',
   };
 
   await withGpuAiTask(
@@ -67,4 +69,78 @@ test('GPU AI task wrapper honors lease timing environment overrides', async (t) 
   );
 
   assert.equal(await inspectGpuLease(leaseDirectory), null);
+});
+
+test('GPU AI task captures before and after telemetry without changing the task result', async (t) => {
+  const leaseDirectory = await withTempLease(t);
+  const captures = [];
+  const receipts = [];
+
+  const result = await withGpuAiTask(
+    {
+      leaseDirectory,
+      owner: 'telemetry-owner',
+      task: 'telemetry-task',
+      backend: 'ollama',
+      model: 'vision-model',
+      timeoutMs: 100,
+      leaseMs: 5_000,
+      pollMs: 5,
+      collectTelemetry: async () => {
+        const sample = {
+          schemaVersion: 1,
+          capturedAt: `capture-${captures.length + 1}`,
+          nvidia: { available: true, devices: [{ memoryUsedMb: captures.length + 1 }] },
+          ollama: { reachable: true, loadedModels: [] },
+          comfyui: { reachable: true, devices: [] },
+        };
+        captures.push(sample);
+        return sample;
+      },
+      persistTelemetry: async (receipt) => {
+        receipts.push(receipt);
+        return '/tmp/fake-gpu-task-receipt.json';
+      },
+    },
+    async () => 'telemetry-complete',
+  );
+
+  assert.equal(result, 'telemetry-complete');
+  assert.equal(captures.length, 2);
+  assert.equal(receipts.length, 1);
+  assert.equal(receipts[0].outcome, 'completed');
+  assert.equal(receipts[0].lease.owner, 'telemetry-owner');
+  assert.equal(receipts[0].lease.task, 'telemetry-task');
+  assert.equal(receipts[0].before.capturedAt, 'capture-1');
+  assert.equal(receipts[0].after.capturedAt, 'capture-2');
+  assert.equal(await inspectGpuLease(leaseDirectory), null);
+});
+
+test('telemetry capture failure stays advisory and cannot fail GPU work', async (t) => {
+  const leaseDirectory = await withTempLease(t);
+  let receipt;
+
+  const result = await withGpuAiTask(
+    {
+      leaseDirectory,
+      owner: 'advisory-owner',
+      task: 'advisory-task',
+      backend: 'comfyui',
+      timeoutMs: 100,
+      leaseMs: 5_000,
+      pollMs: 5,
+      collectTelemetry: async () => {
+        throw new Error('probe unavailable');
+      },
+      persistTelemetry: async (value) => {
+        receipt = value;
+      },
+    },
+    async () => 42,
+  );
+
+  assert.equal(result, 42);
+  assert.match(receipt.before.captureError, /probe unavailable/);
+  assert.match(receipt.after.captureError, /probe unavailable/);
+  assert.equal(receipt.outcome, 'completed');
 });
