@@ -5,7 +5,6 @@ import { join, resolve } from 'node:path';
 import { checkWorkflowHostCompatibility } from '../renderer/comfyui-workflow-doctor.mjs';
 import {
   analyzeGrayMask,
-  deriveEnkiUpperFaceRoi,
   dilateEyeMaskWithinConstraints,
 } from '../animation/src/level2-character-state-localization.mjs';
 import { analyzeEyeStateAsset } from '../animation/src/level2-eye-state-proof.mjs';
@@ -33,6 +32,8 @@ const BODY_ID = 'shot03-enki-body-v1';
 const TARGET_EYE_BAND_FILL = 0.015;
 const INPAINT_PADDING = 40;
 const CROP_ALIGNMENT = 8;
+const MAX_TRUSTED_EYE_BAND_WIDTH = 220;
+const MAX_TRUSTED_EYE_BAND_HEIGHT = 96;
 
 const command = process.argv[2] ?? 'preflight';
 
@@ -110,13 +111,19 @@ async function loadContext() {
     LAYER_ID,
   );
 
-  const bodyRgba = decodeRgba(bodyPath, dimensions);
   const currentStateRgba = decodeRgba(currentStatePath, dimensions);
-  const roi = deriveEnkiUpperFaceRoi({ bodyRgba, dimensions });
+  const seedMask = alphaMaskFromRgba(currentStateRgba, dimensions);
+  const seedAnalysis = analyzeGrayMask(seedMask, dimensions);
+  if (!seedAnalysis.bounds || !seedAnalysis.selected) {
+    throw new Error('Current approved closed-eye alpha is empty; cannot derive trusted eye band.');
+  }
+  const eyeBand = deriveTrustedEyeBand(seedAnalysis.bounds, dimensions);
+  const constraintRgba = opaqueConstraintRgba(dimensions, eyeBand);
   const currentProof = analyzeEyeStateAsset({
     bodyPath,
     statePath: currentStatePath,
     referencePath: editorialPath,
+    eyeBandOverride: eyeBand,
   });
 
   return {
@@ -131,9 +138,10 @@ async function loadContext() {
     currentStatePath,
     currentStateChecksum: prefixedSha(currentStateBytes),
     dimensions,
-    bodyRgba,
     currentStateRgba,
-    roi,
+    eyeBand,
+    constraintRgba,
+    seedAnalysis,
     currentProof,
   };
 }
@@ -142,7 +150,7 @@ async function runPreflight(context) {
   const fileChecks = [
     ['animation manifest', MANIFEST_PATH],
     ['editorial source', context.editorialPath],
-    ['approved Enki body', context.bodyPath],
+    ['approved Enki body identity anchor', context.bodyPath],
     ['current approved eye state', context.currentStatePath],
     ['blink inpaint workflow', INPAINT_WORKFLOW_PATH],
   ].map(([name, path]) => ({ name, path, ok: true }));
@@ -186,9 +194,14 @@ async function runPreflight(context) {
 }
 
 function printPreflight(result, context) {
+  const eyeBandWidth = context.eyeBand.maxX - context.eyeBand.minX + 1;
+  const eyeBandHeight = context.eyeBand.maxY - context.eyeBand.minY + 1;
   console.log('Shot 3 Level 2 blink replacement-candidate preflight');
   console.log(
     `[${result.trustedSeedPass ? 'ok' : 'blocked'}] current alpha is a trusted localization seed: ${(context.currentProof.metrics.inEyeBandAlphaRatio * 100).toFixed(2)}% in eye band`,
+  );
+  console.log(
+    `[info] trusted local eye band: ${eyeBandWidth}x${eyeBandHeight} @ (${context.eyeBand.minX}, ${context.eyeBand.minY})`,
   );
   console.log(
     `[info] current eye-band fill: ${(context.currentProof.metrics.eyeBandFillRatio * 100).toFixed(3)}% (replacement target ${(TARGET_EYE_BAND_FILL * 100).toFixed(2)}%)`,
@@ -200,7 +213,7 @@ function printPreflight(result, context) {
     `[${result.compatibility.ok ? 'ok' : 'blocked'}] inpaint workflow compatibility: ${result.compatibility.nodeCount ?? 0} nodes`,
   );
   console.log(
-    '[info] canonical eye asset and manifest remain read-only; output is candidate-only under tmp/.',
+    '[info] canonical eye/body assets and manifest remain read-only; the approved eye alpha only defines the local editing band.',
   );
 }
 
@@ -217,9 +230,9 @@ async function generateReplacementCandidate(context) {
   const seedMask = alphaMaskFromRgba(context.currentStateRgba, context.dimensions);
   const expandedMask = dilateEyeMaskWithinConstraints({
     mask: seedMask,
-    bodyRgba: context.bodyRgba,
+    bodyRgba: context.constraintRgba,
     dimensions: context.dimensions,
-    eyeBand: context.roi.eyeBand,
+    eyeBand: context.eyeBand,
     radius: 1,
     minEyeBandFill: TARGET_EYE_BAND_FILL,
     maxAdaptiveRadius: 3,
@@ -227,8 +240,8 @@ async function generateReplacementCandidate(context) {
   });
   const maskAnalysis = analyzeGrayMask(expandedMask, context.dimensions);
   const eyeBandArea =
-    (context.roi.eyeBand.maxX - context.roi.eyeBand.minX + 1) *
-    (context.roi.eyeBand.maxY - context.roi.eyeBand.minY + 1);
+    (context.eyeBand.maxX - context.eyeBand.minX + 1) *
+    (context.eyeBand.maxY - context.eyeBand.minY + 1);
   const expandedFill = maskAnalysis.selected / eyeBandArea;
   if (expandedFill < 0.01) {
     throw new Error(
@@ -301,6 +314,7 @@ async function generateReplacementCandidate(context) {
     bodyPath: context.bodyPath,
     statePath: candidatePath,
     referencePath: context.editorialPath,
+    eyeBandOverride: context.eyeBand,
   });
   const compositePath = join(inputDirectory, 'replacement-blink-on-editorial.png');
   composeOverlay(context.editorialPath, candidatePath, compositePath);
@@ -324,6 +338,9 @@ async function generateReplacementCandidate(context) {
       inEyeBandAlphaRatio: context.currentProof.metrics.inEyeBandAlphaRatio,
       originalEyeBandFillRatio: context.currentProof.metrics.eyeBandFillRatio,
       expandedEyeBandFillRatio: expandedFill,
+      eyeBand: context.eyeBand,
+      seedBounds: context.seedAnalysis.bounds,
+      constraintPolicy: 'trusted-eye-alpha padded local band; canonical sparse body does not limit eyelid growth',
     },
     inputs: {
       editorialPath: context.editorialPath,
@@ -401,6 +418,37 @@ function printResult(result) {
       ? 'STATUS: CANDIDATE QA PASS — human visual review required before any replacement promotion.'
       : 'STATUS: CANDIDATE BLOCKED — do not promote or alter the canonical asset.',
   );
+}
+
+function deriveTrustedEyeBand(bounds, dimensions) {
+  const seedWidth = bounds.maxX - bounds.minX + 1;
+  const seedHeight = bounds.maxY - bounds.minY + 1;
+  const paddingX = Math.max(10, Math.round(seedWidth * 0.1));
+  const paddingY = Math.max(8, Math.round(seedHeight * 0.45));
+  const eyeBand = {
+    minX: Math.max(0, bounds.minX - paddingX),
+    minY: Math.max(0, bounds.minY - paddingY),
+    maxX: Math.min(dimensions.width - 1, bounds.maxX + paddingX),
+    maxY: Math.min(dimensions.height - 1, bounds.maxY + paddingY),
+  };
+  const width = eyeBand.maxX - eyeBand.minX + 1;
+  const height = eyeBand.maxY - eyeBand.minY + 1;
+  if (width > MAX_TRUSTED_EYE_BAND_WIDTH || height > MAX_TRUSTED_EYE_BAND_HEIGHT) {
+    throw new Error(
+      `Trusted eye alpha expands to an unsafe edit band ${width}x${height}; expected <=${MAX_TRUSTED_EYE_BAND_WIDTH}x${MAX_TRUSTED_EYE_BAND_HEIGHT}.`,
+    );
+  }
+  return Object.freeze(eyeBand);
+}
+
+function opaqueConstraintRgba(dimensions, eyeBand) {
+  const rgba = new Uint8Array(dimensions.width * dimensions.height * 4);
+  for (let y = eyeBand.minY; y <= eyeBand.maxY; y += 1) {
+    for (let x = eyeBand.minX; x <= eyeBand.maxX; x += 1) {
+      rgba[(y * dimensions.width + x) * 4 + 3] = 255;
+    }
+  }
+  return rgba;
 }
 
 function alphaMaskFromRgba(rgba, dimensions) {

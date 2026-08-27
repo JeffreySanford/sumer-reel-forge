@@ -33,12 +33,26 @@ test('replacement lane reuses only approved eye alpha as localization and expand
   assert.match(text, /expanded replacement mask is still too sparse/i);
 });
 
+test('replacement lane derives a small trusted eye band instead of constraining growth to the sparse canonical body alpha', async () => {
+  const text = await source();
+
+  assert.match(text, /deriveTrustedEyeBand\(seedAnalysis\.bounds, dimensions\)/);
+  assert.match(text, /MAX_TRUSTED_EYE_BAND_WIDTH = 220/);
+  assert.match(text, /MAX_TRUSTED_EYE_BAND_HEIGHT = 96/);
+  assert.match(text, /opaqueConstraintRgba\(dimensions, eyeBand\)/);
+  assert.match(text, /bodyRgba: context\.constraintRgba/);
+  assert.match(text, /eyeBandOverride: context\.eyeBand/);
+  assert.match(text, /canonical sparse body does not limit eyelid growth/);
+  assert.doesNotMatch(text, /bodyRgba: context\.bodyRgba/);
+});
+
 test('replacement candidate must pass the stronger eye-state proof before promotion can be considered', async () => {
   const text = await source();
 
   assert.match(text, /analyzeEyeStateAsset/);
   assert.match(text, /statePath: candidatePath/);
   assert.match(text, /referencePath: context\.editorialPath/);
+  assert.match(text, /eyeBandOverride: context\.eyeBand/);
   assert.match(text, /CANDIDATE QA PASS — human visual review required before any replacement promotion/);
   assert.match(text, /CANDIDATE BLOCKED — do not promote or alter the canonical asset/);
 });

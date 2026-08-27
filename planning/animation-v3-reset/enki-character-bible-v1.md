@@ -1,29 +1,29 @@
 # Enki Character Bible v1 — Production Packet
 
-Status: **concrete continuity packet / rig source planning**
+Status: **concrete continuity packet / automation-first actor preparation**
+
+Updated: **2026-08-26**
 
 Character ID: `actor:enki`
 
-This document instantiates the generic character/costume/rig bible for the first production hero. It binds Enki to the already-approved Blessings of Sumer visual baseline and the current Shot 3 source/derived assets without making the existing blink-PNG implementation the future rig architecture.
+This packet defines Enki independently from any animation backend. Rive, LivePortrait, Pixi, a baked template or a future rig may implement performance, but none of them defines Enki's identity.
 
 ## 1. Authority order
-
-For visual identity decisions, use this order:
 
 ```text
 1. Blessings of Sumer visual bible v1
 2. approved Reel 1 editorial source frame(s)
 3. approved source-faithful derived layers
-4. approved future Enki character-source sheet
-5. runtime rig implementation
+4. approved reusable Enki source sheet / actor-prep packet
+5. approved performance backend output
 6. scene-specific performance clips
 ```
 
-A `.riv`, generated pose, segmented layer or character-state patch never outranks the visual bible/editorial source automatically.
+A `.riv`, ML-generated frame, segmented layer, motion template or character-state patch never outranks the approved visual source.
 
-## 2. Canonical project identity
+## 2. Canonical visual identity
 
-The current visual bible establishes Enki as:
+Enki remains:
 
 - mature Mesopotamian man;
 - warm brown skin;
@@ -36,237 +36,160 @@ The current visual bible establishes Enki as:
 - leather sandals;
 - calm, observant authority;
 - traveler/builder rather than warrior in Reel 1;
-- compact horned divine crown, restrained rather than theatrical.
+- compact restrained horned divine crown.
 
-Visual-direction palette references already established by the project:
+Continuity palette anchors remain deep water, lapis, copper, reed gold, clay, limestone, woven cream and bitumen as defined by the visual bible.
 
-```text
-deep water  #082f42
-lapis       #1d5f82
-copper      #a6653a
-reed gold   #c9a65b
-clay        #9a6047
-limestone   #d8c9aa
-woven cream #e5d8bd
-bitumen     #171918
-```
+## 3. Source authority
 
-These are continuity anchors, not a claim that every ancient source specifies these exact colors.
-
-## 3. Current canonical visual sources
-
-### Master visual baseline
+Master visual baseline:
 
 ```text
 assets/visual-bible/blessings-of-sumer-master-v1.png
 ```
 
-Project authority: production baseline for Reel 1 editorial continuity.
-
-### Primary Reel 1 Enki source
+Primary Reel 1 Shot 3 editorial source:
 
 ```text
 assets/blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-03.png
 ```
 
-Shot identity:
+Previously approved derived assets remain provenance/history, including the body and closed-eye overlays. The closed-eye asset is **not** the future definition of blinking.
+
+## 4. Current accepted Shot 3 proof-lane actor source
+
+The source currently used for automated actor-prep experiments is the human-accepted recovered Enki cutout:
 
 ```text
-scene concept: Enki at the helm
-manifest shotId: enki-at-the-helm
-source shot number: 3
+941x1672
+sha256:d19ff6b4810a6fad5b8ce41232e07d7fc0f72923799e195df1596f53f4239f07
 ```
 
-This remains the authoritative shot-local visual source until a dedicated approved Enki character-source sheet is promoted.
+This hash is proof-lane evidence. It does not silently promote the recovered candidate into canonical production assets.
 
-## 4. Approved derived Shot 3 assets
+## 5. Current Shot 3 motion evidence
 
-Current manifest evidence binds these source-faithful derivatives to Shot 3:
+Accepted:
 
 ```text
-asset: shot03-enki-body-v1
-path: blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-03/character/enki-body.png
-sha256: 3c7cdfdbde7776f91cf4b3f81908443b56194931a74654ecdbdb5798917aa6f5
-state: approved
-
-asset: shot03-enki-eyes-v1
-path: blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-03/character/enki-eyes-closed.png
-sha256: b1d40abaaa8a8d29d368f5063eab35d172f6e70158e97b4facba7142d407d9e7
-state: approved
+camera drift
+vessel heave/roll
+Enki vessel carry
+Enki local counter-sway/body-settle
 ```
 
-The closed-eye image is **historical implementation evidence**, not the future definition of a blink. Once a real character rig proves source-faithful eye deformation, the V3 rig should own the blink and the generated/derived character-state overlay can be retired from the active performance path while remaining retained for provenance/regression evidence.
-
-## 5. Proposed CharacterDefinition v1
-
-Conceptual record:
-
-```ts
-{
-  id: 'actor:enki',
-  revision: 1,
-  displayName: 'Enki',
-  narrativeRole: 'water, knowledge, craft, travel and civilizing work',
-  chapterThreads: [
-    'ch1-dilmun-water',
-    'ch1-world-order-canals',
-    'ch1-eridu-nibru',
-    'ch1-martu-journey',
-    'ch1-kutu-storm',
-    'ch3-city-functions',
-    'ch3-ninhursag-enki',
-    'ch3-enki-ninmah'
-  ],
-  literarySourceIds: [
-    'etcsl-1.1.1',
-    'etcsl-1.1.2',
-    'etcsl-1.1.3',
-    'etcsl-1.1.4'
-  ],
-  iconographicEvidenceIds: [],
-  costumeProfileIds: ['costume:enki:voyage:v1'],
-  rigProfileIds: [],
-  performanceVocabularyIds: ['performance-vocab:enki:calm-authority:v1']
-}
-```
-
-`iconographicEvidenceIds` intentionally remains empty until Phase 1 visual-evidence research establishes defensible named/type analogues. Project character continuity does not require pretending archaeology gives us a portrait of Enki.
-
-## 6. Costume profile — voyage v1
-
-ID:
+Rejected/disabled:
 
 ```text
-costume:enki:voyage:v1
+canonical blink overlay
+stronger replacement blink overlay
+whole-cutout breathe-calm
+legacy water extraction
+legacy/fresh rigging extraction
 ```
 
-Required continuity:
+Technical green does not override those human normal-speed rejections.
 
-- cream woven robe remains dominant garment mass;
-- lapis/copper trim stays narrow and practical;
-- copper belt remains broad enough to read at reel scale;
-- jewelry supports status without becoming fantasy armor;
-- crown remains compact;
-- footwear remains practical;
-- clothing must permit believable helm/arm movement.
+## 6. Automation-first actor-prep package
 
-Disallowed silent mutations:
+The default Enki source-preparation package is generated headlessly from an approved source receipt.
 
-- Egyptian crown silhouette;
-- oversized fantasy horns;
-- armor plates;
-- bright synthetic-blue fabric;
-- weapon-centered silhouette;
-- unexplained jewelry count/placement changes between adjacent shots.
-
-## 7. Rig-source preparation v1
-
-The first Rive spike should derive from a **rig-prep source package**, not directly mutilate the canonical editorial PNG.
-
-Proposed package:
+Conceptual output:
 
 ```text
-source:actor:enki:rig-prep:v1/
+actor:enki:prep:v1/
   reference-full.png
-  head-base.png
-  beard-hair.png
-  eye-left.png
-  eye-right.png
-  eyelid-left.png          optional if source-faithful mesh solution does not need it
-  eyelid-right.png         optional
-  torso-robe.png
-  upper-arm-left.png
-  forearm-left.png
-  hand-left.png
-  upper-arm-right.png
-  forearm-right.png
-  hand-right.png
-  crown.png                only if independent deformation is necessary
-  jewelry-accessories.png  only if secondary response is necessary
-  registration.json
+  actor-prep.json
   source-receipt.json
+  regions.json
+  landmarks.json
+  backend-compatibility.json
+  evidence/
 ```
 
-Every region must record:
+Semantic regions are discovered/validated automatically when source evidence supports them:
 
-- source asset ID/hash;
-- source-pixel crop/registration;
-- alpha-generation method;
-- whether pixels were copied, inpainted or generated;
-- reviewer approval.
+```text
+head
+face
+hair-beard
+eye-left
+eye-right
+crown
+torso-robe
+upper-arm-left/right
+forearm-left/right
+hand-left/right
+```
 
-Invisible debug masks are never production regions.
+Unsupported regions remain explicit `UNAVAILABLE`/`REJECTED`; they are not manually painted into existence merely to satisfy a rig schema.
 
-## 8. Identity-sensitive regions
+Every region records source hash, registration, extraction method, source-pixel fidelity, confidence and review state.
 
-Highest-risk regions for visual QA:
+Invisible/debug masks cannot become production regions.
+
+## 7. Identity-sensitive regions
+
+Highest-risk QA regions:
 
 ```text
 face silhouette
-left/right eye shapes
+eye shapes
 brow/upper cheek transition
 nose
 beard/cheek boundary
 crown/head silhouette
-lapis/copper trim near shoulders
+lapis/copper shoulder trim
 hands during tiller contact
 ```
 
-The rig may deform robe mass more freely than face identity.
+Face/crown identity has a stricter deformation tolerance than robe mass.
 
-## 9. Rive spike capability ladder
+## 8. Automated capability ladder
 
-### Gate ENKI-RIG-0 — neutral identity
+### ENKI-ACTOR-0 — source identity
 
-Prove import/render with no intended motion.
+- source bytes/hash/dimensions verified;
+- registration recorded;
+- no backend-specific animation required.
 
-Required result: the rigged neutral frame is visually indistinguishable in identity from the approved reference within the accepted rig-preparation tolerance.
+Current status: **foundation proven for recovered Shot 3 source**.
 
-### Gate ENKI-RIG-1 — blink
+### ENKI-ACTOR-1 — automated regions/landmarks
 
-Channels:
+- face/head/torso/arm/hand regions proposed headlessly;
+- semantic anchors proposed with confidence;
+- source-fidelity/contamination checks;
+- no manual GUI authoring required.
+
+### ENKI-ACTOR-2 — facial performance
+
+Target semantic channels:
 
 ```text
 face.eye-left-open
 face.eye-right-open
-```
-
-States:
-
-```text
-OPEN
-CLOSING
-CLOSED
-OPENING
-RETURNED_OPEN
-```
-
-No generated closed-eye patch should be required in the final candidate.
-
-### Gate ENKI-RIG-2 — gaze
-
-Channels:
-
-```text
 face.gaze-x
 face.gaze-y
 ```
 
-Gaze must not translate the whole head or face.
+Backend may be deterministic source-region logic or an approved baked facial-motion backend. OPEN/CLOSED/RETURNED_OPEN and gaze states must preserve identity.
 
-### Gate ENKI-RIG-3 — breath
+### ENKI-ACTOR-3 — body/secondary performance
 
-Channel:
+Examples:
 
 ```text
 body.breath
+body.head-turn
+body.shoulder-settle
 ```
 
-Must preserve crown/face stability and remain subtle at normal speed.
+Only source-supported local regions may deform. The rejected whole-cutout breathe-calm proof must not be recreated as a global zoom/pulse.
 
-### Gate ENKI-RIG-4 — helm gesture
+### ENKI-ACTOR-4 — helm/contact performance
 
-Channels/contact:
+Semantic channels/contacts:
 
 ```text
 body.arm-left/body.arm-right
@@ -274,11 +197,11 @@ body.hand-left/body.hand-right
 contact:tiller-grip
 ```
 
-Only after facial identity is green.
+Requires trustworthy separate regions/anchors and must preserve hand/prop contact.
 
-## 10. Semantic contact anchors
+## 9. Semantic contact anchors
 
-Required for the helm benchmark:
+Required intent:
 
 ```text
 anchor:enki:hand-left
@@ -289,13 +212,9 @@ anchor:enki:torso-root
 anchor:enki:seat-or-stance-root
 ```
 
-The Stag defines corresponding prop anchors such as `anchor:stag:tiller-grip`.
+A scene binds these semantic anchors. It does not know Rive bone names, ML landmark indices or Pixi container IDs.
 
-A scene binds semantic anchors; it does not know Rive bone names.
-
-## 11. Performance vocabulary v1
-
-Initial reusable clips:
+## 10. Performance vocabulary
 
 ```text
 clip:enki:blink-natural:v1
@@ -306,115 +225,110 @@ clip:enki:helm-adjust:v1
 clip:enki:reflective-stillness:v1
 ```
 
-Do not start with dozens of emotional clips. Reel 1 needs controlled subtle performance first.
+Clip semantics remain stable across backend changes.
 
-## 12. Storybook contract
+## 11. Backend policy
 
-Minimum stories:
+### Native/source-preserving
+
+Preferred first. Use source-backed regions and deterministic exact-frame transforms/deformation where visually sufficient.
+
+### LivePortrait candidate
+
+Optional bounded **baked facial-performance** candidate because its workflow can be headless and motion-template driven. It is not adopted until identity, determinism/bake and commercial-license gates pass. Production must not use bundled model components with unresolved commercial restrictions.
+
+### Rive
+
+**DEFERRED / OPTIONAL SPECIALIST.** The existing neutral-contract/prep work is retained as evidence. Manual `.riv` authoring is not the production critical path. Reconsider only if a reusable one-time rig clearly earns its authoring cost across many scenes.
+
+## 12. Storybook / Animation Lab contract
+
+Backend-neutral stories should expose:
 
 ```text
 Characters/Enki/IdentityReference
-Characters/Enki/VoyageCostume
-Characters/Enki/RigNeutral
+Characters/Enki/PrepRegions
+Characters/Enki/Neutral
 Characters/Enki/BlinkOpen
 Characters/Enki/BlinkClosed
 Characters/Enki/BlinkReturnedOpen
 Characters/Enki/GazeLeftRight
-Characters/Enki/Breath
 Characters/Enki/ContactAnchors
-Characters/Enki/DebugMesh
+Characters/Enki/BackendEvidence
 ```
 
-The DebugMesh story must be unmistakably debug-only and impossible to promote as a production render source.
+Debug masks/landmarks must be visibly debug-only and impossible to promote as production output.
 
 ## 13. Stable acceptance IDs
 
-Planned minimum:
-
 ```text
-CONTRACT-RIVE-001-enki-channel-map
-STORY-RIVE-001-enki-neutral
-STORY-RIVE-002-enki-open
-STORY-RIVE-003-enki-closed
+CONTRACT-ACTOR-001-enki-prep
+CONTRACT-ACTOR-002-enki-channel-map
 VISUAL-ENKI-001-neutral
 VISUAL-ENKI-002-blink-closed
 VISUAL-ENKI-003-returned-open
 MOTION-ENKI-001-natural-blink
-MOTION-ENKI-002-breathe-calm
 SEMANTIC-ENKI-001-blink-readable
 SEMANTIC-ENKI-002-identity-stable
 FAILURE-ENKI-001-open-at-closed-frame
-FAILURE-ENKI-002-cyan-eye-debug-leak
+FAILURE-ENKI-002-debug-mask-leak
 FAILURE-ENKI-003-one-eye-only
 FAILURE-ENKI-004-no-return-open
-PERF-RIVE-001-hero-preview
+FAILURE-ENKI-005-source-identity-drift
+FAILURE-ENKI-006-manual-editor-required
 HUMAN-ENKI-001-facial-performance
 ```
 
-## 14. Negative fixtures are part of Enki identity
+Historical `RIVE-*` test IDs may remain in old evidence for traceability but are no longer the production capability namespace.
 
-Required failures:
+## 14. Negative fixtures
 
-- eyes remain open at `CLOSED`;
-- cyan/localization mask reaches final output;
-- only one eye closes when two are required;
-- closed state uses a visibly pasted rectangular patch;
-- eye state changes skin tone/lighting unexpectedly;
-- face identity drifts during blink;
-- reopen frame does not return to approved open identity;
-- breath moves camera instead of actor torso;
-- helm gesture breaks hand/tiller contact;
-- generated rig-prep source silently replaces editorial identity.
+Reject when:
+
+- CLOSED still visibly contains open eyes;
+- debug/localization masks leak;
+- one eye changes unexpectedly;
+- generated rectangular patches appear;
+- skin tone/lighting/identity drifts;
+- neutral/open state does not return cleanly;
+- breath moves camera/whole actor rather than supported torso region;
+- helm gesture breaks contact;
+- source receipt/hash changes silently;
+- backend needs recurring manual editor correction to produce a usable reel.
 
 ## 15. Promotion rule
 
-A future Enki Rive rig may become `production-capable` only when:
+An Enki actor-performance profile becomes `production-capable` only when:
 
 ```text
 source receipt valid
+automated prep repeatable
+backend/model/version/license evidence valid
 neutral identity proof green
-blink proof green
-gaze proof green
-breath proof green
+required semantic states green
 negative fixtures fail correctly
-Storybook green
 rendered motion proof green
-performance budget green
-human identity approval green
-runtime/license/version receipt current
+normal-speed human approval green
+reuse demonstrated without per-shot GUI authoring
 ```
 
-The first accepted rig becomes a new runtime implementation of `actor:enki`; it does **not** rewrite who Enki is.
+An accepted backend implements `actor:enki`; it never rewrites Enki's identity.
 
-## 16. Migration from current Shot 3 blink
+## 16. Migration rule
 
-Migration should be A/B, not destructive:
+A new Enki backend is evaluated A/B against the current accepted source-backed baseline at identical timing/camera/source conditions.
 
-```text
-A = current approved layered V2/V2-style Shot 3
-B = same source scene with Enki Rive facial rig
-```
+If it wins, old overlays/candidates remain historical provenance. If it loses, preserve the accepted baseline and record the backend as rejected/deferred. No destructive migration occurs before human approval.
 
-Compare at identical timing/camera/source conditions.
+## 17. Open items
 
-If B wins:
+- automate semantic region/landmark discovery for the accepted Enki source;
+- establish actor-prep JSON/receipt contracts;
+- decide commercially valid face/landmark detection dependencies;
+- build reusable baked-performance template format;
+- test a headless facial backend only after the license boundary is explicit;
+- create multi-shot reuse proof before declaring the actor-performance pipeline production-ready.
 
-- retain old `enki-eyes-closed.png` and receipts as historical proof;
-- remove it from the active V3 blink path;
-- do not delete regression history;
-- update Shot 3 V3 fixture/promotion receipt explicitly.
+## 18. Definition of readiness
 
-If B loses, Rive remains a failed/deferred spike and the source architecture remains untouched.
-
-## 17. Open items before rigging
-
-- produce/approve a dedicated Enki neutral character-source sheet independent of one shot if needed for multi-shot reuse;
-- classify any archaeological/iconographic analogues without overclaiming identity;
-- decide whether beard/hair needs independent mesh deformation in the first spike;
-- decide whether arms are required for the facial benchmark or held for Enki-at-Helm benchmark;
-- capture source-pixel anatomical landmarks and registration data;
-- establish exact visual-delta thresholds after real Rive render evidence exists rather than inventing them now.
-
-## 18. Definition of Enki v1 readiness
-
-Enki Character Bible v1 is ready for implementation when a developer can build the first rig spike without choosing Enki's identity, costume, source authority, semantic channels, contacts, proof states or negative cases ad hoc inside a component.
+Enki v1 is ready for scalable production when a new scene can request semantic performance from the approved Enki actor profile without knowing backend-local controls and without requiring a person to rebuild or repair the actor in a GUI editor.

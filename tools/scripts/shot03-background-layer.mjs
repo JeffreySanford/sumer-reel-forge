@@ -1,9 +1,14 @@
-import 'dotenv/config';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { access, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { basename, isAbsolute, join, relative, resolve } from 'node:path';
 import { checkWorkflowHostCompatibility } from '../renderer/comfyui-workflow-doctor.mjs';
+
+try {
+  process.loadEnvFile?.();
+} catch (error) {
+  if (error?.code !== 'ENOENT') throw error;
+}
 
 const MANIFEST_PATH = resolve(
   'assets/blessings-of-sumer/chapter-01/reel-01/animation-v1/manifest.json',
@@ -469,9 +474,6 @@ function paddedAlignedCrop(bounds, padding, frameWidth, frameHeight) {
     alignUp(bounds.y + bounds.height + padding, CROP_ALIGNMENT),
   );
 
-  // Diffusion inputs need dimensions aligned to the latent grid. If the source
-  // edge is not aligned, move the crop origin inward rather than resizing the
-  // editorial image.
   let width = right - left;
   let height = bottom - top;
   let x = left;
@@ -622,7 +624,7 @@ async function resolveLayerCandidate(layerId, configuredDirectory) {
         }
       }
     } catch {
-      // Older candidate runs remain discoverable from the conventional path.
+      // Ignore unreadable/stale candidate runs and continue searching older evidence.
     }
   }
   throw new Error(

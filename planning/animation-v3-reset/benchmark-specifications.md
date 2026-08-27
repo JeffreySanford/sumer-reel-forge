@@ -1,54 +1,49 @@
 # Animation V3 Benchmark Specifications
 
-Status: **planning contract**
+Status: **planning contract / automation-first revision**
 
-The V3 reset succeeds only if reusable platform proofs demonstrate the capabilities Chapters 1–3 require. These are not promotional demos. Each benchmark exists to validate an architectural subsystem under deterministic QA, Storybook inspection, rendered motion proof and human review.
+Updated: **2026-08-26**
+
+Benchmarks validate reusable capabilities, not predetermined packages. Character benchmarks follow [`automation-first-character-performance.md`](./automation-first-character-performance.md).
 
 ## 1. Benchmark policy
 
-Each benchmark must provide:
+Every benchmark records narrative/source bindings, exact fps/frame range, deterministic seed, backend/runtime ownership, named proof states, unit/render evidence, negative controls, provenance/license evidence and normal-speed human acceptance.
 
-- narrative/manuscript link;
-- historical source classification;
-- visual-evidence notes;
-- exact scene duration/fps;
-- deterministic seed;
-- runtime ownership map;
-- named animation key states;
-- unit-test coverage;
-- Storybook stories;
-- fixed-frame visual proofs;
-- short rendered motion proof;
-- semantic QA where applicable;
-- human acceptance criteria;
-- negative/control variant.
+For default production capabilities, add:
 
-A benchmark is not complete because it renders.
+```text
+manual authoring required per new shot/reel: NO
+actor/source prep reusable: YES
+```
 
-## 2. Benchmark A — Enki Facial Performance
+A benchmark is not complete because pixels changed or a model rendered something.
+
+## 2. Benchmark A — Enki Automated Facial Performance
 
 ### Purpose
 
-Prove the hero-character performance system before Reel 1 resumes.
+Prove reusable hero-character facial performance without per-shot manual rig authoring.
 
-### Narrative need
+### Runtime/backend
 
-Enki appears repeatedly across Chapter 1 and later material. A reusable face rig prevents blink/gaze/expression from becoming per-shot generated-image work.
+- Scene V3: semantic performance + exact time authority;
+- automated ActorPrepDefinition: source/regions/anchors/backend evidence;
+- preferred source-preserving procedural adapter where sufficient;
+- optional baked facial backend (LivePortrait candidate) behind identity/license gates;
+- Remotion: production frame/render authority;
+- Rive: optional/deferred comparison only, not required.
 
-### Runtime
+### Required semantic channels
 
-- Rive primary;
-- Remotion frame authority;
-- optional Three placement only after 2D proof.
+```text
+face.eye-left-open
+face.eye-right-open
+face.gaze-x
+face.gaze-y
+```
 
-### Required channels
-
-- `face.eyeLeftOpen`;
-- `face.eyeRightOpen`;
-- `face.gazeX`;
-- `face.gazeY`;
-- `body.breath`;
-- optional brow/soft head motion.
+Body breathing is a separate source-supported capability and is not forced by this facial benchmark.
 
 ### Named states
 
@@ -57,446 +52,182 @@ OPEN
 CLOSING
 CLOSED
 OPENING
-OPEN
+RETURNED_OPEN
 GAZE_LEFT
 GAZE_CENTER
-BREATH_PEAK
 ```
 
 ### Machine acceptance
 
-- eyes close semantically at CLOSED;
-- no iris/pupil/sclera at CLOSED;
-- open state returns cleanly;
-- no cyan/debug/mask artifact;
-- left/right eye closure timing within 1 frame unless intentionally offset;
-- gaze channel changes without moving the entire actor;
-- breath channel changes torso independently from camera;
-- same frame/seed produces same rig parameter state.
+- source/actor-prep hashes bound;
+- both eyes semantically/readably close at CLOSED;
+- open identity returns cleanly;
+- no debug masks/patch rectangles;
+- gaze does not translate the whole actor/camera;
+- same approved deterministic/baked evidence maps to the same frame state;
+- model/workflow/license evidence complete for ML backend;
+- no GUI editor required for another shot using the same actor profile.
 
 ### Human acceptance
 
-- blink visible but natural at normal speed;
-- actor identity preserved;
-- no puppet or sticker-patch appearance;
-- gaze reads as gaze rather than face translation;
-- breathing is subtle.
-
-### Negative controls
-
-- blink channel disabled;
-- gaze disabled;
-- deliberately wrong eye state fixture must fail semantic proof.
+- blink/gaze visible and natural at normal speed;
+- identity preserved;
+- no puppet/sticker/model-drift appearance;
+- preferred to current rejected blink-overlay experiments.
 
 ## 3. Benchmark B — Enki at the Helm
 
 ### Purpose
 
-Prove Level 2 composition of hero performance + rigid vessel + material systems.
+Prove Level 2 composition around the accepted Shot 3 source without forcing unsupported decompositions.
 
-### Runtime ownership
+### Ownership
 
-- Rive: Enki body/face articulation;
-- Pixi: rigging/reeds/water detail;
+- accepted actor-performance backend: Enki performance;
+- Pixi/native 2D: source-backed composition/local material behavior where valid;
 - Scene V3: timing/drivers;
-- Remotion: render.
+- Remotion: render;
+- optional Three later for spatial proof.
 
-### Required channels
+### Current accepted evidence
 
-At least:
+```text
+camera drift
+vessel heave/roll
+Enki vessel carry
+Enki local counter-sway/body-settle
+```
 
-1. blink/gaze;
-2. breath/body shift;
-3. arm/tiller gesture;
-4. vessel roll/heave;
-5. rigging lag;
-6. water motion;
-7. camera.
+### Current rejected Shot 3 channels
 
-### Acceptance
+```text
+blink overlays
+whole-cutout breathing
+legacy/fresh rigging extraction
+legacy water extraction
+```
 
-- at least four non-camera channels visibly contribute;
-- vessel motion independent from camera;
-- rigging causally trails vessel;
-- Enki maintains hand/tiller contact where intended;
-- subject remains source-faithful;
-- no layer leaks or mask artifacts;
-- normal-speed human preference over Level 1.
+These are not silently re-enabled to satisfy a checklist.
 
-### Control renders
+### Target acceptance
 
-- Level 1 baseline;
-- character frozen;
-- vessel frozen;
-- rigging frozen;
-- camera frozen.
+The mature benchmark still aims for multiple meaningful non-camera contributions (normally four or more for Level 2 hero work), but channels must be **source-supported, independently meaningful and human-readable**. A different valid channel/backend may replace a failed water/rigging/blink attempt.
+
+Controls include accepted lower-capability baseline, actor-performance disabled, vessel disabled and camera disabled as applicable.
 
 ## 4. Benchmark C — Enlil Council Address
 
-### Purpose
+Prove formal acting and crowd reaction without assuming a specific rig package.
 
-Prove formal acting, speech-like body performance and crowd reaction without lip-sync dependency.
+Runtime ownership:
 
-### Narrative need
+- automated actor-prep/performance backend for Enlil;
+- deterministic crowd runtime for council members;
+- optional Three for blocking;
+- optional Pixi/source-backed secondary materials.
 
-Chapter 2 contains council confrontation, formal speech and public authority.
-
-### Runtime ownership
-
-- Rive: Enlil;
-- crowd runtime: council members;
-- Three/R3F optional for room blocking;
-- Pixi for cloth/banner secondary motion.
-
-### Required performance
-
-- formal address gesture;
-- listening/rest state;
-- anger/emphasis state;
-- turn/exit or physical response;
-- crowd reaction waves rather than synchronized clones.
-
-### Acceptance
-
-- Enlil reads as the focal speaker;
-- crowd reactions are temporally staggered;
-- no identical loop synchronization across all council members;
-- camera supports but does not manufacture performance;
-- gesture timing aligns with narration/dialogue markers.
+Acceptance includes reusable actor prep, visible focal-speaker performance, staggered crowd reaction and no per-shot GUI rig construction.
 
 ## 5. Benchmark D — Sud / Nisaba / Haia Three-Actor Scene
 
-### Purpose
+Prove three independently prepared actors, eyelines/listening/speaker states, emotional change, contact-safe spacing and deterministic blocking. Actor backends may differ internally but Scene V3 semantics remain common.
 
-Prove close multi-actor emotional blocking.
-
-### Requirements
-
-- three independently rigged actors;
-- eyelines/gaze targets;
-- listening states;
-- speaker state;
-- emotional change;
-- contact-safe spacing;
-- deterministic shot/reverse-shot or single spatial composition.
-
-### Acceptance
-
-- current speaker is visually legible;
-- listeners remain alive without competing;
-- gaze directions make interpersonal sense;
-- no identity or layer ordering drift;
-- human reviewer can follow conversation with audio muted from body language alone at key moments.
+Human acceptance: conversation can be followed from body/gaze state at key moments, while identities remain stable.
 
 ## 6. Benchmark E — Stag on Water Spatial Proof
 
-### Purpose
+Ownership:
 
-Prove Level 3 2.5D spatial world.
+- Three/R3F: camera/depth cards/world placement;
+- Pixi/native: source-backed water/material detail where valid;
+- accepted actor-performance output/card for Enki if visible;
+- Remotion: frame/render authority.
 
-### Runtime ownership
-
-- Three/R3F: camera, spatial placement, depth cards, boat placement;
-- Pixi: water material/rigging detail;
-- Rive: Enki if visible;
-- Remotion: frame authority.
-
-### Required spatial layers
-
-At minimum:
-
-```text
-sky
-far horizon
-coast/mountains
-far water
-boat
-hero
-foreground reeds/mist
-```
-
-### Acceptance
-
-- real perspective/depth effect visible;
-- no hidden/unpainted geometry exposed;
-- painted style preserved;
-- camera path reproducible;
-- no depth-card edge exposure in approved crop;
-- water and boat occupy coherent spatial relation.
+No Rive assumption.
 
 ## 7. Benchmark F — Nammu Underwater
 
-### Purpose
-
-Prove numinous environmental animation distinct from ordinary surface physics.
-
-### Runtime ownership
-
-- Three: depth/fog/light volumes;
-- Pixi: refraction/local distortion;
-- Rive or source-safe actor treatment for Nammu;
-- selective generative effect only if bounded.
-
-### Acceptance
-
-- underwater depth readable;
-- Nammu remains coherent and not puppet-like;
-- particles/refraction do not obscure face/identity;
-- movement feels slow/otherworldly;
-- supernatural departure from ordinary physics is deliberate, not random.
+Use source-safe actor treatment or an approved automated actor backend. Generative treatment is allowed only as bounded baked evidence with identity/source QA.
 
 ## 8. Benchmark G — Kutu Hail Storm
 
-### Purpose
-
-Prove fixed-step/baked physics plus weather.
-
-### Runtime ownership
-
-- Three: world/camera/particles;
-- Rapier: hail/debris/boat secondary response;
-- Pixi optional for rain/water surface;
-- Remotion: bake playback/render.
-
-### Required controls
-
-- no-hail control;
-- vessel-fixed control;
-- same-seed repeat;
-- different-seed comparison.
-
-### Acceptance
-
-- repeated supported-environment simulation yields same bake hash;
-- hail trajectories/collisions are plausible;
-- boat response remains bounded;
-- no impossible tunneling through primary hull at benchmark scale;
-- storm remains readable at normal speed;
-- baked render equals approved simulation state.
+Three/world + fixed-step/baked physics + source-backed weather/materials. Requires repeat bake hash, bounded vessel response and human storm readability.
 
 ## 9. Benchmark H — Igigi Canal Crew
 
-### Purpose
-
-Prove deterministic crowd/work runtime.
-
-### Narrative need
-
-Chapter 3 contains sustained collective canal labor and civilization-scale work.
-
-### Required scales
-
-Stories/tests at:
-
-```text
-1 worker
-5 workers
-20 workers
-100 workers benchmark mode
-```
-
-### Behaviors
-
-- dig;
-- lift/carry silt;
-- walk-load;
-- rest;
-- tool adjustment.
-
-### Acceptance
-
-- same seed gives same role/phase/path schedule;
-- different seed produces meaningful variation;
-- synchronization metric below agreed clone threshold;
-- density does not create obvious overlapping bodies at benchmark camera;
-- 100-agent benchmark fits performance budget.
+Deterministic crowd/work scheduling at 1/5/20/100 scales. Workers may use reusable source/actor archetypes; no default manual rig requirement per worker.
 
 ## 10. Benchmark I — Marriage Herd Procession
 
-### Purpose
+Runtime candidates:
 
-Prove animals, procession paths, instancing/repeated rigs and dust.
+- data-driven/native repeated animal path;
+- Three instancing for distance;
+- optional Spine/other skeletal backend only if benchmark proves value;
+- deterministic path/crowd scheduler.
 
-### Runtime candidates
-
-- Spine evaluation;
-- Rive alternative;
-- Three instancing for distant animals;
-- crowd/path runtime;
-- Pixi/Three dust.
-
-### Required classes
-
-At minimum:
-
-- cattle/oxen;
-- sheep/goats;
-- one visually distinct large animal class;
-- human attendants.
-
-### Acceptance
-
-- animals do not move in perfect synchronization;
-- gait speed matches path movement;
-- herd density readable;
-- distant animals may simplify without distracting pops;
-- procession direction remains coherent;
-- dust supports movement rather than hiding rig flaws.
+No Rive prerequisite.
 
 ## 11. Benchmark J — City Growth
 
-### Purpose
-
-Prove CityKit and world-state transitions.
-
-### Candidate city
-
-Eridu is preferred because it connects water, quays, reeds, fisheries, settlement and E-Absu.
-
-### Required states
-
-```text
-STATE 0 — terrain/water only
-STATE 1 — sparse habitation
-STATE 2 — organized water access
-STATE 3 — agricultural/working settlement
-STATE 4 — civic/temple expansion
-STATE 5 — mature city identity
-```
-
-### Acceptance
-
-- every state is deterministic;
-- development is additive/traceable rather than prompt-regenerated;
-- visual identity persists across states;
-- source/evidence associations remain inspectable;
-- montage between states reads as growth, not six unrelated images.
+CityKit deterministic development states, source/evidence binding and visual identity persistence.
 
 ## 12. Benchmark K — Long Journey Montage
 
-### Purpose
-
-Prove mythic temporal compression and continuity.
-
-### Requirements
-
-- continuity subject(s) persist;
-- landscapes/cultures change;
-- time scale explicit;
-- transitions authored;
-- no implication that every depicted stop is a literal ancient-source event unless sourced.
-
-### Acceptance
-
-- viewer understands substantial time/distance passes;
-- continuity survives transitions;
-- source/adaptation labels remain distinct;
-- no single clip is unnaturally stretched to represent millennia.
+Explicit continuity subjects, authored transitions and time-scale metadata. Do not stretch a single opaque generated clip to represent long historical time.
 
 ## 13. Benchmark L — E-Absu Architectural Reveal
 
-### Purpose
+2.5D/modest spatial reconstruction with explicit literary-vs-archaeological evidence and no unapproved geometry exposure.
 
-Prove architecture + historical visual evidence + numinous reveal.
+## 14. Proof artifact bundle
 
-### Requirements
-
-- 2.5D or modest 3D architectural reconstruction;
-- water-edge context;
-- reeds/fish/environment;
-- precious-material visual language as literary interpretation;
-- source/evidence panel documenting literary vs archaeological inputs.
-
-### Acceptance
-
-- building feels spatial;
-- camera does not expose unmodeled geometry;
-- literary ornament is clearly distinguished from archaeological reconstruction confidence;
-- reveal retains painterly series identity.
-
-## 14. Storybook requirements for every benchmark
-
-Each benchmark has:
-
-- `Overview` story;
-- five named proof-state stories;
-- `Debug` story;
-- `Control` story;
-- `Stress` story where applicable;
-- source/evidence story or panel.
-
-Example:
+Each benchmark produces conceptually:
 
 ```text
-Benchmarks/EnkiFacial/Overview
-Benchmarks/EnkiFacial/Open
-Benchmarks/EnkiFacial/Closing
-Benchmarks/EnkiFacial/Closed
-Benchmarks/EnkiFacial/Opening
-Benchmarks/EnkiFacial/ReturnedOpen
-Benchmarks/EnkiFacial/Debug
-Benchmarks/EnkiFacial/NoBlinkControl
+resolved-scene.json
+runtime-backend-versions.json
+source-receipt.json
+actor-prep-receipt.json        when actors are involved
+license-evidence.json           when external code/models are involved
+frame-start.png
+frame-peak.png
+frame-settle.png
+motion-proof.mp4
+deterministic-qa.json
+semantic-qa.json
+human-review.json
+benchmark-receipt.json
 ```
 
-## 15. Required proof artifact bundle
+## 15. Promotion rule
 
-Each benchmark produces:
+A benchmark capability becomes `production-capable` only when:
 
-```text
-benchmark-id/
-  resolved-scene.json
-  runtime-versions.json
-  source-receipt.json
-  frame-start.png
-  frame-anticipation.png
-  frame-peak.png
-  frame-settle.png
-  frame-end.png
-  motion-proof.mp4
-  deterministic-qa.json
-  semantic-qa.json
-  human-review.json
-  benchmark-receipt.json
-```
+- contract/unit tests green;
+- exact/baked evidence reproducible;
+- source/identity proof accepted;
+- negative controls behave correctly;
+- model/runtime licenses resolved;
+- performance/iteration cost acceptable;
+- human normal-speed review approves;
+- default workflow is reusable without recurring GUI authoring.
 
-Large MP4s may remain local/temporary unless deliberately retained; compact receipts and selected evidence frames may be tracked.
+## 16. Platform readiness before broad Reel 1 migration
 
-## 16. Promotion rule
+At minimum prove:
 
-A benchmark runtime can be marked `production-capable` only when:
-
-- unit/contract tests green;
-- Storybook interaction tests green;
-- fixed-frame visual proof accepted;
-- rendered motion proof accepted;
-- negative/control tests behave correctly;
-- semantic QA passes where required;
-- human review explicitly approves;
-- runtime/version/license evidence recorded.
-
-## 17. Platform readiness gate before Reel 1
-
-Reel 1 production does not resume until at minimum these are green:
-
-1. Enki Facial Performance;
-2. Enki at the Helm;
-3. Stag on Water;
-4. Kutu Hail or equivalent physics proof;
+1. Enki actor-prep/facial performance or an explicitly accepted lower-capability substitute;
+2. Enki-at-the-Helm combined source-backed proof;
+3. one spatial world proof;
+4. one physics/weather proof;
 5. one crowd/work proof;
 6. one city/world-state proof.
 
-Enlil/Sud/procession/montage benchmarks may continue in parallel before Chapter 2 production, but the first six establish the core platform.
+These are capability gates, not package-adoption gates.
 
-## 18. Benchmark failure philosophy
+## 17. Failure philosophy
 
-A failed benchmark is useful evidence.
+Do not lower thresholds to make a milestone green, silently replace source artwork, hide failures behind camera motion, allow AI semantic review to override deterministic leakage, or add recurring manual repair because automation failed.
 
-Do not:
-
-- lower thresholds merely to make the milestone green;
-- silently replace the source artwork;
-- hide failures behind camera motion;
-- allow semantic QA to override deterministic artifact leakage;
-- promote a runtime because another benchmark happens to look good.
-
-The purpose of the benchmark suite is to discover architectural limits early, before those limits become dozens of bespoke shot implementations.
+A rejected backend/extraction is valuable evidence and should leave the lower accepted baseline intact.

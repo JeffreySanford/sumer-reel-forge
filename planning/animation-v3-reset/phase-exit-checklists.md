@@ -1,10 +1,12 @@
 # Animation V3 Phase Exit Checklists
 
-Status: **planning contract**
+Status: **planning contract / automation-first revision**
 
-This document converts the V3 implementation roadmap into explicit exit gates. A phase is not complete because code exists. It is complete only when its applicable local tests, GitHub Actions checks, render proofs and human reviews are green.
+Updated: **2026-08-26**
 
-Common status fields:
+A phase is complete only when applicable local/CI/render/human evidence is green. Character phases also require a scalable automation gate: normal production may not depend on recurring GUI rig authoring.
+
+Common evidence:
 
 ```text
 LOCAL_FOCUSED_GREEN
@@ -12,251 +14,40 @@ LOCAL_PHASE_GREEN
 CI_GREEN
 RENDER_PROOF_GREEN
 HUMAN_APPROVED
+AUTOMATION_REUSE_GREEN
+LICENSE_GREEN
 ```
 
-Not every phase requires render/human approval, but every code phase requires local + CI green.
+## Phase 0 — architecture/planning
 
-## Phase 0 — Architecture / planning
+Exit requires authority, provenance, testing, promotion and automation doctrine to be explicit. Current planning lock is complete; later architecture changes update the same authority docs rather than preserving contradictory package assumptions.
 
-Deliverables:
+## Phase 1 — historical sources
 
-- narrative-source map;
-- Level 2 specification;
-- Level 3 architecture;
-- testing/provenance roadmap;
-- package adoption matrix;
-- Scene V3 contract design;
-- benchmark specifications;
-- Storybook contract;
-- migration/release strategy;
-- performance/render budget;
-- implementation backlog;
-- ADRs;
-- chapter capability matrix;
-- local/CI quality contract;
-- test fixture catalog;
-- risk register;
-- phase exit checklists.
+Exit: source library/build/tests + production-relevant evidence corpus + Angular provenance UX + local/CI green.
 
-Exit:
+## Phase 2 — Scene V3/frame/compiler
+
+Exit: deterministic frame/context, schema positives/negatives, runtime registry, resolved-scene hashes and V2 compatibility all green. No visual runtime is required for this phase.
+
+## Phase 3 — Animation Lab
+
+Exit: exact-frame controls, shared fixtures, Storybook/unit/E2E, inspection fallback and browser proof green. Lab does not gain story-time authority.
+
+## Phase 4 — Pixi/source-backed 2D proof
+
+Deliverables include exact-frame Pixi ownership, source/hash registration, source-backed visual proof and at least one material/local-deformation capability that passes its own source and human gates.
+
+Current Shot 3 evidence:
 
 ```text
-[ ] planning index references all contracts
-[ ] no contradictory runtime ownership remains
-[ ] every foundation package has a benchmark
-[ ] testing responsibilities are explicit
-[ ] local-first + CI-second rule accepted
+ACCEPT: camera + vessel heave/roll + Enki counter-sway
+REJECT: blink overlays, water extraction, rigging extraction, whole-cutout breathing
 ```
 
-No CI/render gate required for documentation-only phase.
+Rejected channels do not become phase requirements simply because they were in the original plan.
 
-## Phase 1 — Historical-source foundation
-
-Deliverables:
-
-- `libs/historical-sources`;
-- ETCSL composition records;
-- non-ETCSL source support;
-- adaptation classifications;
-- visual evidence contract;
-- Chapter 1–3 initial narrative bindings;
-- source validation/reporting;
-- read-only Studio provenance surface;
-- Storybook provenance stories.
-
-Local focused gate:
-
-```bash
-pnpm nx test historical-sources
-pnpm nx build historical-sources
-```
-
-Expanded local phase gate:
-
-```text
-[ ] historical-sources lint
-[ ] historical-sources tests
-[ ] historical-sources build
-[ ] Studio unit tests
-[ ] provenance Storybook stories/tests
-[ ] Storybook build
-[ ] focused provenance E2E
-[ ] workspace check
-```
-
-CI gate:
-
-```text
-[ ] frozen install
-[ ] workspace check
-[ ] lint
-[ ] unit
-[ ] build
-[ ] Storybook build/test
-[ ] focused/full browser E2E
-```
-
-Exit evidence:
-
-```text
-LOCAL_PHASE_GREEN
-CI_GREEN
-```
-
-No render proof required.
-
-## Phase 2 — FrameContext / Scene V3 contracts
-
-Deliverables:
-
-- `animation-frame`;
-- `animation-contracts`;
-- semantic-channel RNG;
-- runtime registry;
-- resolved scene contract;
-- Scene V2 compatibility adapter contract;
-- schema/version migration scaffolding.
-
-Unit requirements:
-
-```text
-frame → seconds
-clip-local frame
-progress boundaries
-semantic seed stability
-same-seed repeat
-unrelated-channel stability
-Scene V3 schema positives/negatives
-runtime capability validation
-resolved-scene immutability
-V2 timing preservation
-```
-
-Storybook:
-
-```text
-Foundation/FrameContext
-Foundation/SeedChannels
-Foundation/SceneV3Resolved
-Foundation/SceneV2Compatibility
-```
-
-E2E:
-
-- load a V2 fixture through V3 compatibility;
-- scrub exact frame;
-- confirm resolved values displayed by Studio/fixture shell.
-
-Local exit:
-
-```text
-[ ] lint
-[ ] unit
-[ ] build
-[ ] Storybook build/tests
-[ ] focused E2E
-[ ] no runtime dependency required yet
-```
-
-CI exit:
-
-same deterministic categories repeated.
-
-## Phase 3 — Animation Lab / Storybook harness
-
-Deliverables:
-
-- React/Vite Animation Lab app;
-- Storybook config;
-- exact-frame controls;
-- seed/debug/source overlays;
-- shared proof-state fixture loader;
-- browser Storybook tests;
-- pinned screenshot environment config.
-
-Required stories:
-
-```text
-Foundation/FrameContext
-Foundation/SeedChannels
-Historical/ETCSLBinding
-Historical/FictionalBridge
-```
-
-Unit:
-
-- control/frame mapping;
-- fixture loader;
-- proof-state selection.
-
-Storybook:
-
-- interaction tests green;
-- build green;
-- first pinned Chromium screenshot fixture.
-
-E2E:
-
-- launch lab;
-- choose fixture;
-- change frame/seed;
-- reload stable state.
-
-Exit:
-
-```text
-LOCAL_PHASE_GREEN
-CI_GREEN
-```
-
-No production animation proof required yet.
-
-## Phase 4 — Pixi material runtime
-
-Deliverables:
-
-- Pixi adapter;
-- explicit frame advancement/manual ticker policy;
-- mesh plane primitive;
-- rope/rigging primitive;
-- displacement/water primitive;
-- material evidence hooks.
-
-Unit:
-
-- deterministic vertex state;
-- anchor bounds;
-- rope causality;
-- lag/settle math;
-- same-frame repeat;
-- production ticker disabled.
-
-Storybook:
-
-```text
-Materials/Water/Calm
-Materials/Water/Current
-Materials/Rigging/VesselDriven
-Materials/Rigging/Negative/Detached
-```
-
-Visual goldens:
-
-- water calm/current proof frames;
-- rigging response peak.
-
-Motion proof:
-
-- water current;
-- vessel-driven rigging.
-
-E2E:
-
-- open material story/proof;
-- scrub frame;
-- render/inspect compact proof receipt.
-
-Exit:
+Exit requires:
 
 ```text
 LOCAL_PHASE_GREEN
@@ -265,60 +56,59 @@ RENDER_PROOF_GREEN
 HUMAN_APPROVED
 ```
 
-Human approval verifies material motion improves on bespoke V2 behavior.
+and a source-backed Pixi capability that visibly earns its use.
 
-## Phase 5 — Rive hero runtime
+## Phase 5 — automated hero actor preparation/performance
 
-Deliverables:
+This replaces the old mandatory Rive hero-runtime phase.
 
-- Rive adapter;
-- Enki minimal rig;
-- explicit frame/state advancement;
-- blink/gaze/breath performance clips;
-- identity/source evidence.
+### Deliverables
 
-Unit:
+- engine-neutral `ActorPrepDefinition`/evidence contract;
+- automated source/hash/dimension preparation;
+- semantic regions/landmarks/anchors with confidence/failure states;
+- backend mapping independent of Scene V3 semantics;
+- reusable performance template/bake contract;
+- one Enki facial-performance benchmark or explicitly accepted lower-capability fallback;
+- provenance/license receipts for any ML backend;
+- no recurring GUI editor requirement.
 
-- channel mapping;
-- explicit advancement;
-- no autonomous production playback;
-- clip blend boundaries;
-- asset/version binding.
+### Unit/contract
 
-Storybook:
+- source hash stability;
+- actor-prep schema validation;
+- region/anchor bounds/confidence;
+- backend capability compatibility;
+- no autonomous timing;
+- bake/template hash validation;
+- stale evidence rejection;
+- unresolved model-license rejection.
+
+### Visual/motion
+
+- neutral/source identity;
+- facial control vs active A/B when facial backend is tested;
+- OPEN/CLOSED/RETURNED_OPEN semantic proof for blink candidate;
+- normal-speed motion proof;
+- no camera/background/body-root contamination.
+
+### Human
+
+- identity preserved;
+- performance readable/natural;
+- preferred to accepted lower-capability baseline when promotion claims improvement.
+
+### Automation
 
 ```text
-Actors/Enki/Neutral
-Actors/Enki/Blink
-Actors/Enki/GazeLeft
-Actors/Enki/GazeRight
-Actors/Enki/Breath
-Actors/Enki/BlinkAndGaze
-Actors/Enki/Negative/OpenAsClosed
-Actors/Enki/Negative/CyanEyePatch
+[ ] no per-shot Rive/Photoshop/manual rig step
+[ ] same actor-prep packet reusable in a second scene
+[ ] failed automation produces rejection/fallback, not required hand repair
 ```
 
-Visual goldens:
+### License
 
-- OPEN;
-- CLOSED;
-- RETURNED_OPEN.
-
-Motion proof:
-
-- natural blink;
-- blink+gaze+breath composition.
-
-Semantic QA:
-
-- both eyes visibly close;
-- identity stable;
-- reopen clean.
-
-Human:
-
-- obvious natural blink at normal speed;
-- preferred to PNG-state workaround.
+If LivePortrait or another model backend is evaluated, all code/weights/auxiliary-model licensing must be green for intended production. LivePortrait remains production-blocked until the bundled InsightFace non-commercial model issue is replaced/resolved.
 
 Exit:
 
@@ -327,101 +117,31 @@ LOCAL_PHASE_GREEN
 CI_GREEN
 RENDER_PROOF_GREEN
 HUMAN_APPROVED
+AUTOMATION_REUSE_GREEN
+LICENSE_GREEN    # when external model/backend is part of accepted path
 ```
 
-If Rive cannot pass, stop and record reject/alternate plan before proceeding.
+### Rive optional subgate
+
+Rive is not required. Existing neutral contract/prep evidence may be reused if Rive is revisited. A Rive spike can pass only if one-time authoring is reusable and production after authoring is fully headless.
 
 ## Phase 6 — Three/R3F spatial runtime
 
-Deliverables:
+Exit requires painted-depth-card/source-safe spatial proof, exact camera state, no unapproved geometry exposure and human preference.
 
-- Three/R3F adapter;
-- matching `@remotion/three` version;
-- depth-card primitive;
-- spatial camera;
-- actor billboard/card placement;
-- spatial fog/light baseline.
+## Phase 7 — combined Enki-at-Helm V3 proof
 
-Unit:
+Deliverables are backend-neutral:
 
-- scene graph transforms;
-- camera track evaluation;
-- depth ordering;
-- approved camera travel bounds;
-- same frame/seed state.
-
-Storybook:
-
-```text
-World/DepthCards/Basic
-World/Camera/Dolly
-World/Camera/Parallax
-Actors/SpatialPlacement
-```
-
-Visual:
-
-- pinned proof frames.
-
-Motion:
-
-- Stag spatial camera proof.
-
-Human:
-
-- retains painted look;
-- no invented geometry reveal;
-- spatial motion adds value.
-
-Exit:
-
-```text
-LOCAL_PHASE_GREEN
-CI_GREEN
-RENDER_PROOF_GREEN
-HUMAN_APPROVED
-```
-
-## Phase 7 — Combined Enki-at-helm V3 proof
-
-Deliverables:
-
-- Rive Enki;
-- Pixi water/rigging;
-- Three spatial boat/world;
+- accepted actor state/performance backend;
+- accepted vessel/environment/material/spatial capabilities as source supports;
 - shared Scene V3;
-- exact asset/runtime receipt.
+- exact source/runtime/backend receipts;
+- multiple meaningful non-camera contributions.
 
-Unit/integration:
+Do not force a failed Shot 3 water/rigging extraction or Rive merely to satisfy an old ownership map.
 
-- transform ownership;
-- actor/world mapping;
-- rigging vessel driver;
-- camera contribution separation;
-- resolved asset hashes.
-
-Storybook:
-
-```text
-Benchmarks/EnkiAtHelm/Start
-Benchmarks/EnkiAtHelm/CharacterPeak
-Benchmarks/EnkiAtHelm/RiggingPeak
-Benchmarks/EnkiAtHelm/Settle
-```
-
-Motion proof:
-
-- combined 5–7 second benchmark.
-
-Required A/B:
-
-- approved V2 Level 1/2 baseline vs V3.
-
-Human acceptance:
-
-- at least three meaningful improvements;
-- no compensating source-fidelity loss;
-- unmistakably animated at normal speed.
+Required A/B: accepted lower-capability baseline vs combined candidate.
 
 Exit:
 
@@ -432,371 +152,54 @@ RENDER_PROOF_GREEN
 HUMAN_APPROVED
 ```
 
-This is a major gate before broad Reel 1 return.
+## Phase 8 — fixed-step/baked physics
 
-## Phase 8 — Rapier fixed-step/baked physics
+Exit requires fixed timestep, repeatable bake checksum, source/runtime receipt, bounded/art-directable physical response and human proof.
 
-Deliverables:
+## Phase 9 — crowd/work runtime
 
-- physics adapter;
-- fixed-step runner;
-- bake format;
-- receipt/hash format;
-- hail/boat compact benchmark.
+Exit requires deterministic scheduling, anti-clone variation, performance budget and human readability.
 
-Unit:
+## Phase 10 — animal/herd strategy
 
-- timestep enforcement;
-- construction-order hash;
-- repeated bake checksum;
-- collision event schedule;
-- invalid variable-step rejection.
+Start with data-driven/native/instanced strategy; optional skeletal package only if benchmark value and automation/license cost justify it.
 
-Storybook:
+## Phase 11 — CityKit/world states
 
-```text
-Physics/Boat/Roll
-Physics/Hail/Impact
-Physics/Hail/StormSequence
-Physics/Negative/VariableTimestep
-```
+Exit requires deterministic topology/development state, source/evidence bindings and persistent city identity.
 
-Motion proof:
+## Phase 12 — montage
 
-- Kutu hail compact sequence.
+Exit requires explicit segments, continuity, deterministic transitions and no hidden real-time stretching.
 
-Human:
+## Phase 13 — optional visual-authoring bridge
 
-- physical response believable and art-directable.
+Any Theatre/GUI authoring path must export deterministic Scene V3 data and demonstrate enough reusable benefit to justify manual work. It cannot be required for routine reel generation.
 
-Exit:
+## Phase 14 — unified QA/evidence
 
-```text
-LOCAL_PHASE_GREEN
-CI_GREEN
-RENDER_PROOF_GREEN
-HUMAN_APPROVED
-```
-
-## Phase 9 — Crowd/work runtime
-
-Deliverables:
-
-- deterministic crowd scheduler;
-- role/clip/path assignment;
-- synchronization score;
-- canal worker fixture.
-
-Unit:
-
-- 1/20/100 count;
-- same-seed repeat;
-- different-seed variation;
-- role distribution;
-- phase distribution;
-- path occupancy;
-- synchronized negative rejection.
-
-Storybook:
-
-```text
-Crowds/CanalCrew/One
-Crowds/CanalCrew/Twenty
-Crowds/CanalCrew/OneHundred
-Crowds/CanalCrew/Negative/Synchronized
-```
-
-Performance:
-
-- target workstation preview budget met.
-
-Motion/human:
-
-- workers read as purposeful varied labor, not dancing clones.
-
-Exit:
-
-```text
-LOCAL_PHASE_GREEN
-CI_GREEN
-RENDER_PROOF_GREEN
-HUMAN_APPROVED
-```
-
-## Phase 10 — Animal/herd strategy
-
-Deliverables:
-
-- baseline animal rig strategy;
-- Rive/native instancing evaluation;
-- Spine spike only if justified;
-- mixed herd/procession fixture.
-
-Tests:
-
-- species/rig mapping;
-- deterministic herd population;
-- phase/path variation;
-- LOD/count budgets;
-- clone-sync negative;
-- licensing/adoption ADR updated if Spine chosen.
-
-Storybook:
-
-```text
-Animals/Ox/Walk
-Animals/Sheep/Graze
-Animals/Herd/Twenty
-Animals/Procession/MixedSpecies
-```
-
-Benchmark:
-
-- Chapter 2 marriage herd procession.
-
-Exit:
-
-```text
-LOCAL_PHASE_GREEN
-CI_GREEN
-RENDER_PROOF_GREEN
-HUMAN_APPROVED
-PACKAGE_DECISION_RECORDED
-```
-
-## Phase 11 — CityKit / world states
-
-Deliverables:
-
-- CityDefinition;
-- development states;
-- terrain/water/architecture/industry/population profiles;
-- initial Eridu/Dilmun + one Chapter 3 city profile.
-
-Unit:
-
-- schema;
-- deterministic placement;
-- water graph;
-- state activation;
-- historical/visual evidence bindings;
-- city identity persistence.
-
-Storybook:
-
-```text
-World/Dilmun/Barren
-World/Dilmun/Watered
-World/Dilmun/Cultivated
-World/Eridu/Early
-World/Eridu/Mature
-```
-
-E2E:
-
-- load city;
-- change development state;
-- save/reload;
-- same seed stable.
-
-Benchmark:
-
-- settlement → functioning city.
-
-Exit:
-
-```text
-LOCAL_PHASE_GREEN
-CI_GREEN
-RENDER_PROOF_GREEN
-HUMAN_APPROVED
-```
-
-## Phase 12 — Montage runtime
-
-Deliverables:
-
-- MontageDefinition;
-- continuity subjects;
-- segment transitions;
-- temporal scale metadata;
-- long journey fixture.
-
-Unit:
-
-- segment ordering;
-- timing;
-- continuity identity;
-- deterministic transitions;
-- no hidden real-time stretching.
-
-Storybook:
-
-```text
-Montage/Journey/ThreeSegments
-Montage/Journey/LongContinuity
-Montage/CityGrowth
-```
-
-Benchmark:
-
-- Chapter 2 long journey.
-
-Exit:
-
-```text
-LOCAL_PHASE_GREEN
-CI_GREEN
-RENDER_PROOF_GREEN
-HUMAN_APPROVED
-```
-
-## Phase 13 — Theatre authoring bridge
-
-Deliverables:
-
-- authoring spike;
-- export format;
-- compiler to Scene V3 tracks;
-- round-trip fixture.
-
-Unit:
-
-- exported track validation;
-- conversion determinism;
-- unsupported hidden state rejection.
-
-Storybook/E2E:
-
-- load exported camera track;
-- compare baked Scene V3 evaluation.
-
-Render proof:
-
-- camera path before/after export equivalent within tolerance.
-
-Exit:
-
-```text
-LOCAL_PHASE_GREEN
-CI_GREEN
-RENDER_PROOF_GREEN
-```
-
-Human approval only if authoring changes visual result rather than workflow.
-
-## Phase 14 — Unified QA/evidence system
-
-Deliverables:
-
-- common proof receipt;
-- runtime/source hashes;
-- proof-state schedule;
-- deterministic metrics;
-- semantic-review attachment;
-- human decision record;
-- stale-evidence detection.
-
-Unit:
-
-- receipt schema;
-- stale hash rejection;
-- runtime-version mismatch;
-- missing required proof state;
-- negative fixture binding.
-
-Storybook:
-
-- evidence inspector stories.
-
-E2E:
-
-- create proof;
-- reject;
-- promote;
-- stale proof blocked.
-
-Exit:
-
-```text
-LOCAL_PHASE_GREEN
-CI_GREEN
-```
-
-Then replay foundation benchmark receipts through unified system.
+Common receipts cover source/runtime/backend/model/bake identities, proof states, deterministic metrics, semantic review, human decision and stale evidence.
 
 ## Phase 15 — Reel 1 V3 migration
 
-Rules:
+Shot-by-shot A/B, no timing/source drift without explicit editorial change, per-shot receipts, and human review. Repeated actor preparation should reuse approved actor profiles automatically.
 
-- shot-by-shot only;
-- V2 baseline retained;
-- A/B required;
-- no timing drift without editorial change;
-- each migrated shot gets source/runtime receipt.
+## Phase 16/17 — Chapters 2/3 production readiness
 
-Per-shot local gate:
+All actor/crowd/world capabilities inherit the automation doctrine. Production readiness includes throughput/reuse, not merely one successful manually-authored demo.
+
+## Universal stop conditions
 
 ```text
-unit/adapter tests
-lint
-build
-Storybook relevant states
-focused E2E if Studio behavior changed
-short rendered proof
-human A/B
-```
-
-CI:
-
-- deterministic contracts/workflow tests repeated.
-
-Reel exit:
-
-- all selected shots promoted;
-- canonical 60-second assembly green;
-- full-reel normal-speed human review;
-- rollback path retained.
-
-## Phase 16 — Chapter 2 production readiness
-
-Required benchmark green:
-
-- Enlil Council Address;
-- Sud/Nisaba/Haia three-actor conversation;
-- marriage herd procession;
-- long journey montage;
-- ceremony/interior environment.
-
-All require local + CI + render + human where visual.
-
-## Phase 17 — Chapter 3 production readiness
-
-Required benchmark green:
-
-- Igigi canal crew;
-- CityKit city growth;
-- agriculture work system;
-- construction work system;
-- animal population;
-- multiple historically bound city profiles;
-- montage/time compression.
-
-All require local + CI + render + human where visual.
-
-## Universal phase-stop conditions
-
-Stop implementation and return to planning when:
-
-```text
-runtime ownership becomes ambiguous
-same proof differs between Storybook and Remotion
-local/CI commands diverge semantically
-new dependency has unresolved license issue
-benchmark requires invented geometry beyond approved boundary
-performance misses iteration budget by >2x
+runtime/backend ownership ambiguous
+same exact frame/evidence resolves differently
+local/CI semantic commands drift
+source or bake hashes stale
+unresolved license/model rights
+manual GUI work becomes recurring default production dependency
+performance exceeds iteration budget by >2x
 visual quality repeatedly fails despite technical green
-new failure class bypasses existing test layers
+new failure class bypasses existing gates
 ```
 
-A stop condition is not project failure. It is the mechanism that prevents sunk-cost architecture from becoming permanent.
+A stop condition preserves the accepted baseline and produces evidence; it does not trigger a manual cleanup obligation.

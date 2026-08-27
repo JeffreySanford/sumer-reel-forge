@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "policy": {
+    "pullOnlyWhenExplicit": true,
+    "autoLoadOnStartup": false,
+    "humanAuthority": "AI proposes; rules constrain; human review remains authoritative.",
+    "gpuCoordination": "Large Ollama and ComfyUI workloads must acquire the shared GPU lease before integration is enabled."
+  },
+  "models": [
+    {
+      "role": "text-planner",
+      "tier": "core",
+      "envVar": "OLLAMA_TEXT_MODEL",
+      "defaultModel": "qwen3:8b",
+      "purpose": "Structured shot planning and production-direction proposals.",
+      "workload": "gpu-preferred",
+      "defaultKeepAlive": "10m"
+    },
+    {
+      "role": "vision-review",
+      "tier": "core",
+      "envVar": "OLLAMA_VISION_MODEL",
+      "defaultModel": "qwen3-vl:4b-instruct",
+      "purpose": "Contact-sheet, keyframe, semantic-location, and motion-review advisory evidence.",
+      "workload": "gpu-exclusive",
+      "defaultKeepAlive": "0"
+    },
+    {
+      "role": "retrieval-embedding",
+      "tier": "retrieval",
+      "envVar": "OLLAMA_EMBED_MODEL",
+      "defaultModel": "nomic-embed-text:latest",
+      "purpose": "Local embeddings for future source, style-decision, QA, and provenance retrieval.",
+      "workload": "cpu-or-gpu-light",
+      "defaultKeepAlive": "0"
+    }
+  ]
+}

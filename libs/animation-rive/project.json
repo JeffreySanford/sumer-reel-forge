@@ -1,0 +1,19 @@
+{
+  "name": "animation-rive",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/animation-rive/src",
+  "projectType": "library",
+  "tags": ["type:adapter", "scope:animation-v3", "scope:animation-lab", "engine:rive"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/animation-rive",
+        "main": "libs/animation-rive/src/index.ts",
+        "tsConfig": "libs/animation-rive/tsconfig.lib.json",
+        "assets": ["libs/animation-rive/*.md"]
+      }
+    }
+  }
+}

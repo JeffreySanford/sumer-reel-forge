@@ -1,11 +1,14 @@
-import 'dotenv/config';
 import { spawn, spawnSync } from 'node:child_process';
-import { dirname } from 'node:path';
+import { existsSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pg from 'pg';
 
 const { Client } = pg;
 const root = dirname(dirname(dirname(fileURLToPath(import.meta.url))));
+
+loadLocalEnvFile();
+
 const pnpmCommand = 'pnpm';
 const port = Number(process.env.E2E_API_PORT ?? 3100);
 const sourceDatabaseUrl = new URL(
@@ -31,6 +34,20 @@ if (!e2eDatabaseName.endsWith('_e2e')) {
 const e2eDatabaseUrl = new URL(sourceDatabaseUrl);
 e2eDatabaseUrl.pathname = `/${e2eDatabaseName}`;
 let apiProcess;
+
+function loadLocalEnvFile() {
+  const envPath = join(root, '.env');
+  if (!existsSync(envPath)) return;
+  if (typeof process.loadEnvFile !== 'function') {
+    throw new Error(
+      'Native .env loading requires Node 20.12 or newer. This workspace targets Node 22.',
+    );
+  }
+
+  const inheritedEnvironment = { ...process.env };
+  process.loadEnvFile(envPath);
+  Object.assign(process.env, inheritedEnvironment);
+}
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {

@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "reviewSetId": "shot03-recovered-motion-v1",
+  "title": "Shot 3 recovered motion stack",
+  "shot": 3,
+  "currentBaselineId": "counter-sway",
+  "humanSelectionRequired": false,
+  "policy": {
+    "normalSpeedHumanAuthority": true,
+    "technicalGreenDoesNotOverrideHumanRejection": true,
+    "rejectedReferencesAreNotSelectable": true,
+    "automaticPromotionAllowed": false
+  },
+  "candidates": [
+    {
+      "id": "primary",
+      "label": "Primary recovered motion",
+      "role": "accepted-reference",
+      "humanStatus": "accepted-earlier",
+      "selectable": false,
+      "includeInMontage": true,
+      "proofRoot": "tmp/animation-previews/pixi-shot03-recovered-motion-proof",
+      "reportFile": "pixi-shot03-recovered-motion-proof.json",
+      "proofType": "pixi-shot03-recovered-primary-motion-proof",
+      "videoArtifactKey": "activeVideo",
+      "notes": "Accepted camera plus vessel/Enki rigid-group motion; retained as the baseline reference below counter-sway."
+    },
+    {
+      "id": "counter-sway",
+      "label": "Primary + Enki counter-sway",
+      "role": "current-baseline",
+      "humanStatus": "accepted",
+      "selectable": true,
+      "includeInMontage": true,
+      "proofRoot": "tmp/animation-previews/pixi-shot03-recovered-character-motion-proof",
+      "reportFile": "pixi-shot03-recovered-character-motion-proof.json",
+      "proofType": "pixi-shot03-recovered-character-motion-proof",
+      "videoArtifactKey": "characterActiveVideo",
+      "notes": "Current accepted Shot 3 motion baseline: exact camera/vessel motion plus bounded delayed Enki local counter-sway/body-settle."
+    },
+    {
+      "id": "breath",
+      "label": "Counter-sway + breathe-calm",
+      "role": "rejected-reference",
+      "humanStatus": "rejected",
+      "selectable": false,
+      "includeInMontage": true,
+      "proofRoot": "tmp/animation-previews/pixi-shot03-recovered-breath-motion-proof",
+      "reportFile": "pixi-shot03-recovered-breath-motion-proof.json",
+      "proofType": "pixi-shot03-recovered-breath-motion-proof",
+      "videoArtifactKey": "breathActiveVideo",
+      "notes": "Technically green historical reference only. Human normal-speed review preferred the counter-sway control; do not reopen by default."
+    }
+  ],
+  "deferredOrRejectedChannels": [
+    "blink",
+    "water extraction",
+    "rigging extraction",
+    "whole-cutout breathe-calm"
+  ]
+}

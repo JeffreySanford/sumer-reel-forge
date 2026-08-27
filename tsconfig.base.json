@@ -37,6 +37,9 @@
       "@sumer-reel-forge/animation-pixi": [
         "./libs/animation-pixi/src/index.ts"
       ],
+      "@sumer-reel-forge/animation-rive": [
+        "./libs/animation-rive/src/index.ts"
+      ],
       "@sumer-reel-forge/scene-v2": [
         "./tools/animation/src/scene-v2.ts"
       ]

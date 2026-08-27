@@ -12,7 +12,7 @@ Generated material never becomes production art automatically. Editorial sources
 
 The current Reel 1 pipeline supports two complementary cinematic benchmark grammars:
 
-- **Shot 3 — Enki at the Helm:** physical motion, shared vessel/character inertia, restrained character micro-performance, material-aware water motion, masked background repair.
+- **Shot 3 — Enki at the Helm:** source-recovered background/vessel/Enki composition, exact-frame camera motion, restrained vessel heave/roll, and an accepted nested Enki counter-sway/body-settle baseline. Blink, legacy water extraction, rigging extraction, and whole-cutout breathing are not part of the current accepted motion stack. Semantic face/body/hand localization continues as non-blocking actor-articulation R&D.
 - **Shot 4 — Nammu Under Water:** near-static composition, current/refraction motion, environmental coherence, numinous recognition and dissolution without treating Nammu as a conventional animated cutout.
 
 The production system now includes:
@@ -25,10 +25,11 @@ The production system now includes:
 - checksum-identical source-preservation lanes;
 - structural QA for dimensions, alpha coverage, source-RGB preservation, and candidate provenance;
 - layered Remotion audition renders with review markers and contact sheets;
+- exact-frame V3 proof contracts for actor preparation, semantic discovery, runtime state and review evidence;
 - motion QA on assembled shots;
 - explicit human approval gates;
 - checksum-verified, atomic promotion into `animation-v1`;
-- Scene V2 production resolver validation after promotion.
+- current Scene V2 production-resolver validation after promotion while V3 proof/runtime contracts are hardened.
 
 ## Production Flow
 
@@ -47,7 +48,7 @@ candidate layers under tmp/
         ↓
 structural QA + diagnostics
         ↓
-layered Remotion audition
+exact-frame proof / layered Remotion audition
         ↓
 motion QA + human cinematic review
         ↓
@@ -55,10 +56,13 @@ explicit promotion confirmation
         ↓
 approved animation-v1 assets
         ↓
-Scene V2 production render
+current Scene V2 production resolver
++ V3 proof/runtime contracts
+        ↓
+Remotion production render
 ```
 
-The automation handles repeatable mechanics—lane selection, workflows, registration, checksums, diagnostics, provenance, QA reports, and promotion safety. Human review still owns semantic and cinematic judgment: whether a mask is meaningful, whether motion feels physical, whether a reveal is beautiful, and whether a shot is publishable.
+The automation handles repeatable mechanics—lane selection, workflows, registration, checksums, diagnostics, provenance, QA reports, review packets, readiness reports, and promotion safety. Human review still owns semantic and cinematic judgment: whether a mask is meaningful, whether motion feels physical, whether a reveal is beautiful, and whether a shot is publishable.
 
 ## Quick Benchmark Demo
 
@@ -80,6 +84,19 @@ Plan a shot from the manifest and inherited production knowledge:
 ```sh
 node tools/scripts/plan-animation-shot.mjs --shot=3 --approved-only
 node tools/scripts/plan-animation-shot.mjs --shot=4
+```
+
+Review the current Shot 3 motion evidence without reopening rejected channels:
+
+```sh
+pnpm animation:shot3:motion-decision-packet
+pnpm animation:shot3:motion-review-montage
+```
+
+Generate a Reel 1 readiness matrix that separates required production assets from optional/R&D work:
+
+```sh
+node tools/scripts/animation-reel-readiness.mjs
 ```
 
 Run the Shot 4 candidate audition after its candidate layers have passed structural QA:
@@ -109,12 +126,30 @@ The key production-render signal is:
 Assets: layered via .../animation-v1/manifest.json
 ```
 
+## Reel 1 Focus
+
+Shot 3 is a platform benchmark, not the platform itself. Its accepted counter-sway stack is allowed to remain stable while semantic face/body/hand localization continues as capability R&D. The project should use the readiness report to move across Reel 1 rather than making every optional Shot 3 experiment a release blocker.
+
+Current Shot 3 review policy:
+
+```txt
+accepted primary motion reference
+        ↓
+accepted counter-sway/body-settle CURRENT BASELINE
+        ↓
+breathe-calm REJECTED REFERENCE
+blink / water extraction / rigging extraction DEFERRED OR REJECTED
+semantic actor articulation R&D NON-BLOCKING
+```
+
+Technical green and AI advisory results never override a normal-speed human rejection.
+
 ## Projects
 
 - `web`: Angular storyboard/review dashboard.
 - `api`: NestJS API for reel metadata and render-job orchestration.
 - `reel-core`: shared TypeScript contracts and seed data.
-- `tools/animation`: Scene V2 compositions, motion presets, production asset resolution, and benchmark rendering.
+- `tools/animation`: current Scene V2 production compositions plus V3 exact-frame proof/runtime contracts, motion presets, production asset resolution, and benchmark rendering.
 - `tools/renderer`: local visual-AI workflows, candidate generation, renderer configuration, and artifact utilities.
 - `tools/creative`: reusable creative-quality rules and the Style Decision Library.
 

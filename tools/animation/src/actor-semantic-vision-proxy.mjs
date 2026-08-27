@@ -1,0 +1,208 @@
+export function isEnkiSemanticDiscoveryRequest(body) {
+  const messages = Array.isArray(body?.messages) ? body.messages : [];
+  const text = messages.map((message) => String(message?.content ?? '')).join('\n');
+  return text.includes('semantic actor locator for Sumer Reel Forge') &&
+    text.includes('Locate exactly the requested Enki semantic regions and anchors');
+}
+
+export function expandPixelBounds(bounds, source, paddingFraction = 0.18) {
+  if (!validPixelBounds(bounds) || !validSource(source)) {
+    throw new Error('Valid alpha bounds and source dimensions are required.');
+  }
+  if (!Number.isFinite(paddingFraction) || paddingFraction < 0 || paddingFraction > 1) {
+    throw new Error('paddingFraction must be in 0..1.');
+  }
+
+  const padX = Math.max(8, Math.round(bounds.width * paddingFraction));
+  const padY = Math.max(8, Math.round(bounds.height * paddingFraction));
+  const x = Math.max(0, bounds.x - padX);
+  const y = Math.max(0, bounds.y - padY);
+  const right = Math.min(source.width, bounds.x + bounds.width + padX);
+  const bottom = Math.min(source.height, bounds.y + bounds.height + padY);
+
+  return {
+    x,
+    y,
+    width: Math.max(1, right - x),
+    height: Math.max(1, bottom - y),
+  };
+}
+
+export function evaluateProxyDiscoveryGeometry(discovery) {
+  const issues = [];
+  for (const region of discovery?.regions ?? []) {
+    if (region?.status === 'not-visible') continue;
+    if (!validNormalizedBox(region?.bbox)) {
+      issues.push(`${String(region?.id ?? '<unknown-region>')} bbox is not fully contained in normalized crop space: ${JSON.stringify(region?.bbox ?? null)}`);
+    }
+  }
+  for (const anchor of discovery?.anchors ?? []) {
+    if (anchor?.status === 'not-visible') continue;
+    if (!validNormalizedPoint(anchor?.point)) {
+      issues.push(`${String(anchor?.id ?? '<unknown-anchor>')} point is not normalized to crop space: ${JSON.stringify(anchor?.point ?? null)}`);
+    }
+  }
+  return { ok: issues.length === 0, issues };
+}
+
+export function mapProxyBoxToSource(box, metadata) {
+  if (isZeroBox(box)) return zeroBox();
+  if (!validNormalizedBox(box)) throw new Error('Proxy bbox must be normalized to 0..1 and fully contained in the proxy crop.');
+  const { source, crop } = validateMetadata(metadata);
+  return clampNormalizedBox({
+    x: (crop.x + box.x * crop.width) / source.width,
+    y: (crop.y + box.y * crop.height) / source.height,
+    width: (box.width * crop.width) / source.width,
+    height: (box.height * crop.height) / source.height,
+  });
+}
+
+export function mapProxyPointToSource(point, metadata) {
+  if (isZeroPoint(point)) return zeroPoint();
+  if (!validNormalizedPoint(point)) throw new Error('Proxy point must be normalized to 0..1.');
+  const { source, crop } = validateMetadata(metadata);
+  return {
+    x: canonicalNormalized((crop.x + point.x * crop.width) / source.width),
+    y: canonicalNormalized((crop.y + point.y * crop.height) / source.height),
+  };
+}
+
+export function mapDiscoveryFromProxyToSource(discovery, metadata) {
+  const evaluation = evaluateProxyDiscoveryGeometry(discovery);
+  if (!evaluation.ok) {
+    throw new Error(`Proxy semantic geometry is invalid: ${evaluation.issues.join(' | ')}`);
+  }
+  const provenance = metadata?.proxyKind === 'locator-crop'
+    ? 'localized on exact pre-padding Enki locator crop; coordinates remapped to registered source frame'
+    : 'localized on deterministic alpha-crop vision proxy; coordinates remapped to registered source frame';
+  const regions = (discovery?.regions ?? []).map((region) => ({
+    ...region,
+    bbox: region?.status === 'not-visible'
+      ? zeroBox()
+      : mapProxyBoxToSource(region?.bbox, metadata),
+    notes: appendNote(region?.notes, provenance),
+  }));
+  const anchors = (discovery?.anchors ?? []).map((anchor) => ({
+    ...anchor,
+    point: anchor?.status === 'not-visible'
+      ? zeroPoint()
+      : mapProxyPointToSource(anchor?.point, metadata),
+    notes: appendNote(anchor?.notes, provenance),
+  }));
+  return { ...discovery, regions, anchors };
+}
+
+export function proxyInstruction(metadata) {
+  const { source, crop } = validateMetadata(metadata);
+  const coordinateRules = [
+    'For every found/uncertain bbox, x/y/width/height are decimal fractions in 0..1 relative to the attached crop.',
+    'A bbox must be fully contained: x + width <= 1 and y + height <= 1.',
+    'For every found/uncertain anchor, x/y are decimal fractions in 0..1.',
+    'For not-visible items, use all-zero bbox/point geometry.',
+    'Never use pixels, percentages, or a 0..1000 coordinate system.',
+  ].join(' ');
+  if (metadata?.proxyKind === 'locator-crop') {
+    return [
+      'VISION-PROXY CONTRACT:',
+      'The attached image is an exact source-pixel crop using the previously recorded pre-padding Enki locator box. No SAM mask, alpha inference, repaint, resize, or manual correction was used.',
+      'Return all bbox/point coordinates normalized to THIS ATTACHED CROP, not the original source frame.',
+      coordinateRules,
+      'Do not compensate for the crop yourself; the host will map crop coordinates back to the original registered source frame.',
+      `Original source is ${source.width}x${source.height}; locator crop in source pixels is x=${crop.x}, y=${crop.y}, width=${crop.width}, height=${crop.height}.`,
+      'The crop may still contain boat/background context. Locate only the visible Enki anatomy requested by the schema.',
+    ].join(' ');
+  }
+  return [
+    'VISION-PROXY CONTRACT:',
+    'The attached image is a deterministic crop of the accepted registered Enki RGBA source, composited onto a neutral matte only to make visible source pixels easier to inspect.',
+    'Return all bbox/point coordinates normalized to THIS ATTACHED PROXY IMAGE, not the original source frame.',
+    coordinateRules,
+    'Do not compensate for the crop yourself; the host will map proxy coordinates back to the original registered source frame.',
+    `Original source is ${source.width}x${source.height}; proxy crop in source pixels is x=${crop.x}, y=${crop.y}, width=${crop.width}, height=${crop.height}.`,
+    'The matte contains no semantic content. Locate only Enki pixels; do not include matte background.',
+  ].join(' ');
+}
+
+function validateMetadata(metadata) {
+  const source = metadata?.source;
+  const crop = metadata?.crop;
+  if (!validSource(source) || !validPixelBounds(crop)) {
+    throw new Error('Vision-proxy metadata requires valid source and crop dimensions.');
+  }
+  if (crop.x + crop.width > source.width || crop.y + crop.height > source.height) {
+    throw new Error('Vision-proxy crop exceeds source bounds.');
+  }
+  return { source, crop };
+}
+
+function validSource(source) {
+  return Boolean(source && Number.isInteger(source.width) && Number.isInteger(source.height) && source.width > 0 && source.height > 0);
+}
+
+function validPixelBounds(bounds) {
+  return Boolean(
+    bounds &&
+    Number.isInteger(bounds.x) && Number.isInteger(bounds.y) &&
+    Number.isInteger(bounds.width) && Number.isInteger(bounds.height) &&
+    bounds.x >= 0 && bounds.y >= 0 && bounds.width > 0 && bounds.height > 0,
+  );
+}
+
+function validNormalizedBox(box) {
+  return Boolean(
+    box && [box.x, box.y, box.width, box.height].every(Number.isFinite) &&
+    box.x >= 0 && box.y >= 0 && box.width > 0 && box.height > 0 &&
+    box.x <= 1 && box.y <= 1 && box.x + box.width <= 1.000001 && box.y + box.height <= 1.000001,
+  );
+}
+
+function validNormalizedPoint(point) {
+  return Boolean(point && Number.isFinite(point.x) && Number.isFinite(point.y) && point.x >= 0 && point.x <= 1 && point.y >= 0 && point.y <= 1);
+}
+
+function clampNormalizedBox(box) {
+  const x = canonicalNormalized(box.x);
+  const y = canonicalNormalized(box.y);
+  const right = canonicalNormalized(box.x + box.width);
+  const bottom = canonicalNormalized(box.y + box.height);
+  return {
+    x,
+    y,
+    width: canonicalNormalized(Math.max(0, right - x)),
+    height: canonicalNormalized(Math.max(0, bottom - y)),
+  };
+}
+
+function canonicalNormalized(value) {
+  const clamped = clamp01(value);
+  // Proxy/source remapping is evidence data, so collapse non-semantic IEEE-754
+  // noise at the boundary instead of letting equivalent coordinates serialize
+  // differently across otherwise identical runs.
+  const rounded = Number(clamped.toFixed(12));
+  return Object.is(rounded, -0) ? 0 : rounded;
+}
+
+function clamp01(value) {
+  return Math.max(0, Math.min(1, value));
+}
+
+function isZeroBox(box) {
+  return Boolean(box && box.x === 0 && box.y === 0 && box.width === 0 && box.height === 0);
+}
+
+function isZeroPoint(point) {
+  return Boolean(point && point.x === 0 && point.y === 0);
+}
+
+function zeroBox() {
+  return { x: 0, y: 0, width: 0, height: 0 };
+}
+
+function zeroPoint() {
+  return { x: 0, y: 0 };
+}
+
+function appendNote(note, suffix) {
+  const base = String(note ?? '').trim();
+  return base ? `${base} [${suffix}]` : `[${suffix}]`;
+}

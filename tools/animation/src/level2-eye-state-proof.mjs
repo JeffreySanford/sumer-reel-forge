@@ -24,6 +24,7 @@ export function analyzeEyeStateAsset({
   referencePath,
   ffmpeg = process.env.FFMPEG_COMMAND ?? 'ffmpeg',
   thresholds = DEFAULT_EYE_STATE_THRESHOLDS,
+  eyeBandOverride = null,
 }) {
   const bodyBytes = readFileSync(bodyPath);
   const stateBytes = readFileSync(statePath);
@@ -43,7 +44,13 @@ export function analyzeEyeStateAsset({
   const bodyRgba = extractRgba(bodyPath, dimensions, ffmpeg);
   const stateRgba = extractRgba(statePath, dimensions, ffmpeg);
   const referenceRgba = extractRgba(referencePath, dimensions, ffmpeg);
-  const roi = deriveEnkiUpperFaceRoi({ bodyRgba, dimensions });
+  const derivedRoi = deriveEnkiUpperFaceRoi({ bodyRgba, dimensions });
+  const roi = eyeBandOverride
+    ? {
+        ...derivedRoi,
+        eyeBand: normalizeEyeBand(eyeBandOverride, dimensions),
+      }
+    : derivedRoi;
   const alphaMask = new Uint8Array(dimensions.width * dimensions.height);
 
   let selectedAlphaPixels = 0;
@@ -268,6 +275,33 @@ function assertSameDimensions(expected, actual, label) {
       `${label} is ${actual.width}x${actual.height}; expected ${expected.width}x${expected.height}.`,
     );
   }
+}
+
+function normalizeEyeBand(value, dimensions) {
+  const band = {
+    minX: Number(value?.minX),
+    minY: Number(value?.minY),
+    maxX: Number(value?.maxX),
+    maxY: Number(value?.maxY),
+  };
+  for (const [name, coordinate] of Object.entries(band)) {
+    if (!Number.isInteger(coordinate)) {
+      throw new Error(`Eye-band override ${name} must be an integer.`);
+    }
+  }
+  if (
+    band.minX < 0 ||
+    band.minY < 0 ||
+    band.maxX >= dimensions.width ||
+    band.maxY >= dimensions.height ||
+    band.minX > band.maxX ||
+    band.minY > band.maxY
+  ) {
+    throw new Error(
+      `Eye-band override is outside ${dimensions.width}x${dimensions.height}: ${JSON.stringify(band)}.`,
+    );
+  }
+  return band;
 }
 
 function insideBounds(x, y, bounds) {
