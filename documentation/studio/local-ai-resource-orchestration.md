@@ -1,6 +1,6 @@
 # Local AI resource orchestration
 
-Status: **CALLER INTEGRATION STARTED**
+Status: **CALLER INTEGRATION ACTIVE**
 
 Sumer Reel Forge uses local Ollama planning/vision and local ComfyUI generation on the same workstation. The system must coordinate those workloads without weakening deterministic rendering, source-preservation QA, or human approval authority.
 
@@ -83,7 +83,7 @@ node tools/scripts/gpu-resource-status.mjs
 
 It reports lease ownership, `nvidia-smi` memory totals/used/free values when available, and currently loaded Ollama models.
 
-## First managed caller: delta vision review
+## Managed caller: delta vision review
 
 The managed shot-review runtime now acquires one shared GPU lease for the complete heavy Ollama vision phase:
 
@@ -105,6 +105,27 @@ The managed caller records:
 
 Text planning remains outside this lease policy for now. The planner may remain warm when the GPU is otherwise free.
 
+## Managed caller: generic ComfyUI layer candidates
+
+The generic `animation-layer-candidates.mjs generate` path now acquires one lease around the entire generation call:
+
+```text
+preflight + workflow compatibility
+  -> acquire GPU lease
+  -> generate candidate batch with configured internal ComfyUI concurrency
+  -> release GPU lease
+```
+
+The lease intentionally wraps the batch rather than each candidate. Internal ComfyUI concurrency remains controlled by the existing hardware profile while external Reel Forge GPU consumers remain serialized. Acquiring a separate lease per parallel candidate would cause same-process contention and is explicitly avoided.
+
+The managed caller records:
+
+- owner: `animation-layer-candidates`;
+- task: `shot-<n>-layer-candidate-generation` or `reel-layer-candidate-generation`;
+- backend: `comfyui`.
+
+Specialized legacy/direct ComfyUI generation scripts still require an audit before the ComfyUI integration phase can be called complete.
+
 ## Integration boundary
 
 Caller integration is deliberately incremental.
@@ -112,8 +133,8 @@ Caller integration is deliberately incremental.
 Current state:
 
 1. **DONE:** wrap the managed GPU-heavy Ollama delta-vision phase with the shared lease;
-2. **NEXT:** wrap ComfyUI candidate-generation calls with the same lease;
-3. expose lease owner and live VRAM in runtime capabilities / Studio;
+2. **PARTIAL:** generic ComfyUI candidate generation is wrapped; specialized/direct generation lanes still need audit/migration;
+3. **NEXT:** persist lease-aware GPU/runtime telemetry and expose it through runtime capabilities / Studio;
 4. add explicit model release behavior for one-shot vision workloads;
 5. benchmark planner warm retention against ComfyUI contention before changing the existing `OLLAMA_KEEP_ALIVE` default;
 6. only then add bounded AI retry/advisory orchestration.
