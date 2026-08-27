@@ -107,8 +107,12 @@ export function deriveRuntimePlan(profile, env = {}) {
     positiveInteger(env.ANIMATION_RENDER_CONCURRENCY) ??
     automaticRemotionConcurrency;
 
+  // A single local vision model can consume most of a 10-12 GB card once model,
+  // KV/cache, desktop/WDDM, and ComfyUI/PyTorch residency are included. Keep
+  // automatic Ollama review concurrency at one below 16 GB; higher parallelism
+  // remains available as an explicit environment override after measurement.
   const automaticOllamaReviewConcurrency =
-    maxVramGb >= 20 ? 3 : maxVramGb >= 8 ? 2 : 1;
+    maxVramGb >= 24 ? 3 : maxVramGb >= 16 ? 2 : 1;
   const ollamaReviewConcurrency =
     positiveInteger(env.ANIMATION_OLLAMA_REVIEW_CONCURRENCY) ??
     automaticOllamaReviewConcurrency;
@@ -202,47 +206,32 @@ export function applyHardwareProfileEnvironment(
     'SRF_PREFERRED_H264_ENCODER',
     plan.encoding.preferredH264Encoder,
   );
-  if (!env.CHATTERBOX_DEVICE || env.CHATTERBOX_DEVICE === 'auto') {
-    env.CHATTERBOX_DEVICE = plan.ai.chatterboxDevice;
-  }
+  setDefault(env, 'CHATTERBOX_DEVICE', plan.ai.chatterboxDevice);
   return env;
 }
 
 export function formatHardwareProfile(profile, outputPath) {
-  const gpuText = profile.gpu.devices.length
-    ? profile.gpu.devices
-        .map((gpu) => {
-          const memory = gpu.memoryTotalMb
-            ? ` ${(gpu.memoryTotalMb / 1024).toFixed(1)} GB VRAM`
-            : '';
-          return `${gpu.name}${memory}`;
-        })
-        .join('; ')
-    : 'no GPU detected';
-  const models = profile.ollama.online
-    ? profile.ollama.models.slice(0, 5).join(', ') ||
-      'online / no models reported'
-    : 'offline';
+  const gpu = profile.gpu?.devices?.[0];
   const plan = profile.runtimePlan;
-  const diskText =
-    Number.isFinite(profile.disk?.freeGb) &&
-    Number.isFinite(profile.disk?.totalGb)
-      ? `${profile.disk.freeGb} GB free / ${profile.disk.totalGb} GB total`
-      : 'unavailable';
+  const cudaDetail = profile.gpu?.nvidiaSmiAvailable
+    ? profile.gpu?.cudaToolkit
+      ? `available through NVIDIA driver / toolkit ${profile.gpu.cudaToolkit}`
+      : 'available through NVIDIA driver'
+    : 'not detected';
   return [
     'Hardware profile',
     `  CPU: ${profile.cpu.model} / ${profile.cpu.logicalCount} logical`,
     `  RAM: ${profile.memory.totalGb} GB total / ${profile.memory.freeGb} GB free`,
-    `  Disk: ${diskText}`,
-    `  GPU: ${gpuText}`,
-    `  CUDA: ${plan.ai.nvidiaCudaAvailable ? 'available through NVIDIA driver' : 'not detected'}${profile.gpu.cudaToolkit ? ` / toolkit ${profile.gpu.cudaToolkit}` : ''}`,
-    `  FFmpeg: ${profile.media.ffmpegAvailable ? 'available' : 'not detected'} / NVENC ${plan.encoding.nvencAvailable ? 'available' : 'not detected'}`,
-    `  Ollama: ${models}`,
+    `  Disk: ${profile.disk.freeGb ?? 'unknown'} GB free / ${profile.disk.totalGb ?? 'unknown'} GB total`,
+    `  GPU: ${gpu ? `${gpu.name} ${(Number(gpu.memoryTotalMb ?? 0) / 1024).toFixed(1)} GB VRAM` : 'none detected'}`,
+    `  CUDA: ${cudaDetail}`,
+    `  FFmpeg: ${profile.media.ffmpegAvailable ? 'available' : 'unavailable'} / NVENC ${profile.media.encoders.h264Nvenc ? 'available' : 'unavailable'}`,
+    `  Ollama: ${profile.ollama.online ? profile.ollama.models.join(', ') || 'reachable / no models listed' : 'offline'}`,
     `  Runtime tier: ${plan.tier}`,
-    `  Remotion: ${plan.remotion.parallelRenders} parallel render(s) × ${plan.remotion.concurrencyPerRender} worker(s)${plan.remotion.gl ? ` / GL ${plan.remotion.gl}` : ''}`,
+    `  Remotion: ${plan.remotion.parallelRenders} parallel render(s) × ${plan.remotion.concurrencyPerRender} worker(s) / GL ${plan.remotion.gl ?? 'default'}`,
     `  AI: Ollama review concurrency ${plan.ai.ollamaReviewConcurrency} / ComfyUI concurrency ${plan.ai.comfyConcurrency} / ${plan.ai.comfyVramMode}`,
     `  H.264 preference: ${plan.encoding.preferredH264Encoder}`,
-    ...(outputPath ? [`  Profile: ${outputPath}`] : []),
+    `  Profile: ${outputPath}`,
   ].join('\n');
 }
 
@@ -257,76 +246,44 @@ function detectNvidia(runCommand) {
     .map((line) => line.trim())
     .filter(Boolean)
     .map((line) => {
-      const parts = line.split(',').map((part) => part.trim());
+      const [index, name, memoryTotalMb, driverVersion] = line
+        .split(',')
+        .map((value) => value.trim());
       return {
         vendor: 'NVIDIA',
-        index: Number(parts[0]),
-        name: parts[1] || 'NVIDIA GPU',
-        memoryTotalMb: Number(parts[2]) || undefined,
-        driverVersion: parts[3] || undefined,
+        index: Number(index),
+        name,
+        memoryTotalMb: Number(memoryTotalMb),
+        driverVersion,
       };
     });
   return { available: true, gpus };
 }
 
 function detectGenericGpu(runCommand) {
-  if (platform() === 'win32') {
+  if (process.platform === 'win32') {
     const result = runCommand('powershell.exe', [
       '-NoProfile',
       '-Command',
-      'Get-CimInstance Win32_VideoController | Select-Object Name,DriverVersion | ConvertTo-Json -Compress',
+      'Get-CimInstance Win32_VideoController | Select-Object -ExpandProperty Name',
     ]);
-    if (!result.ok || !result.stdout.trim()) return [];
-    try {
-      const parsed = JSON.parse(result.stdout);
-      const entries = Array.isArray(parsed) ? parsed : [parsed];
-      return entries
-        .filter((entry) => entry?.Name)
-        .map((entry, index) => ({
-          vendor: inferVendor(entry.Name),
-          index,
-          name: entry.Name,
-          driverVersion: entry.DriverVersion,
-        }));
-    } catch {
-      return [];
+    if (result.ok) {
+      return result.stdout
+        .split(/\r?\n/)
+        .map((name) => name.trim())
+        .filter(Boolean)
+        .map((name) => ({ vendor: inferVendor(name), name }));
     }
   }
-  if (platform() === 'linux') {
-    const result = runCommand('lspci', []);
-    if (!result.ok) return [];
-    return result.stdout
-      .split(/\r?\n/)
-      .filter((line) =>
-        /(VGA compatible controller|3D controller|Display controller)/i.test(
-          line,
-        ),
-      )
-      .map((line, index) => ({
-        vendor: inferVendor(line),
-        index,
-        name: line.trim(),
-      }));
-  }
-  if (platform() === 'darwin') {
-    const result = runCommand('system_profiler', [
-      'SPDisplaysDataType',
-      '-json',
-    ]);
-    if (!result.ok) return [];
-    try {
-      const parsed = JSON.parse(result.stdout);
-      const entries = parsed.SPDisplaysDataType ?? [];
-      return entries.map((entry, index) => ({
-        vendor: inferVendor(entry.sppci_model ?? entry._name ?? 'Apple GPU'),
-        index,
-        name: entry.sppci_model ?? entry._name ?? 'Apple GPU',
-      }));
-    } catch {
-      return [];
-    }
-  }
-  return [];
+  const result = runCommand('lspci', []);
+  if (!result.ok) return [];
+  return result.stdout
+    .split(/\r?\n/)
+    .filter((line) => /vga|3d controller/i.test(line))
+    .map((line) => {
+      const name = line.replace(/^.*?:\s*/, '').trim();
+      return { vendor: inferVendor(name), name };
+    });
 }
 
 function detectFfmpeg(runCommand, ffmpegCommand) {

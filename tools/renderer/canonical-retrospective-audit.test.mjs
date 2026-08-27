@@ -27,6 +27,7 @@ test('canonical approved audit renderer is syntactically valid and read-only by 
   assert.match(source, /automaticDowngradeAllowed: false/);
   assert.match(source, /animationV1Modified: false/);
   assert.doesNotMatch(source, /writeJson\(MANIFEST_PATH/);
+  assert.doesNotMatch(source, /dotenv\/config/);
 });
 
 test('retrospective audit stages approved canonical assets before modern review', async () => {
@@ -39,6 +40,19 @@ test('retrospective audit stages approved canonical assets before modern review'
   assert.match(source, /--preview-dir=\$\{previewDirectory\}/);
   assert.match(source, /automaticDowngradeAllowed: false/);
   assert.match(source, /manifestMutationAllowed: false/);
+});
+
+test('managed shot review uses canonical staging for already-approved required layers', async () => {
+  const source = await readFile(
+    resolve('tools/scripts/review-animation-shot-runtime.mjs'),
+    'utf8',
+  );
+  assert.match(source, /shouldUseCanonicalApprovedPreview/);
+  assert.match(source, /render-approved-shot-audit-preview\.ts/);
+  assert.match(source, /staging canonical animation-v1 assets instead of searching ephemeral candidate runs/);
+  assert.match(source, /canonicalPreviewStaged/);
+  assert.match(source, /--skip-render/);
+  assert.match(source, /effectivePreviewArg/);
 });
 
 test('canonical staging verifies approval, dimensions, and checksum provenance', async () => {

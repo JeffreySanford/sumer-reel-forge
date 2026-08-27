@@ -1,7 +1,9 @@
 import { spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { createInterface } from 'node:readline';
+import { withGpuAiTask } from '../runtime/gpu-ai-task.mjs';
+import { newestCompletePreviewDirectory } from './verify-material-local-motion.mjs';
 
 loadLocalEnvFile();
 
@@ -9,6 +11,11 @@ process.env.OLLAMA_VISION_MODEL ??= 'qwen3-vl:4b-instruct';
 process.env.OLLAMA_TEXT_MODEL ??= 'qwen3:8b';
 process.env.OLLAMA_BASE_URL ??= 'http://localhost:11434';
 process.env.OLLAMA_KEEP_ALIVE ??= '10m';
+
+const ANIMATION_MANIFEST = resolve(
+  'assets/blessings-of-sumer/chapter-01/reel-01/animation-v1/manifest.json',
+);
+const PREVIEW_BASE = resolve('tmp/animation-previews');
 
 const visionTimeoutMs = positiveInteger(
   process.env.OLLAMA_VISION_TIMEOUT_MS,
@@ -22,6 +29,10 @@ const requireAi = args.includes('--require-ai');
 const shotArg = args.find((arg) => arg.startsWith('--shot='));
 const previewArg = args.find((arg) => arg.startsWith('--preview-dir='));
 if (!shotArg) throw new Error('--shot=<number> is required.');
+const shotNumber = Number(shotArg.slice('--shot='.length));
+if (!Number.isInteger(shotNumber) || shotNumber < 1) {
+  throw new Error(`Invalid ${shotArg}`);
+}
 
 const model = process.env.OLLAMA_VISION_MODEL;
 const baseUrl = (process.env.OLLAMA_BASE_URL ?? 'http://localhost:11434').replace(
@@ -34,10 +45,41 @@ const loadTimeoutMs = positiveInteger(
   180000,
 );
 
+let effectivePreviewArg = previewArg;
+let canonicalPreviewStaged = false;
+
+if (!effectivePreviewArg && shouldUseCanonicalApprovedPreview(shotNumber)) {
+  console.log(
+    `[review-runtime] Shot ${shotNumber} is already approved; staging canonical animation-v1 assets instead of searching ephemeral candidate runs.`,
+  );
+  const stagingArgs = [shotArg];
+  if (args.includes('--review-guides')) stagingArgs.push('--review-guides');
+  const stagingExit = await runPnpmTsx(
+    'tools/scripts/render-approved-shot-audit-preview.ts',
+    stagingArgs,
+  );
+  if (stagingExit !== 0) {
+    throw new Error(
+      `Canonical approved Shot ${shotNumber} staging failed with exit code ${stagingExit}.`,
+    );
+  }
+  const shotLabel = String(shotNumber).padStart(2, '0');
+  const previewRoot = resolve(PREVIEW_BASE, `shot${shotLabel}-layered-preview`);
+  const previewDirectory = newestCompletePreviewDirectory(previewRoot, shotNumber);
+  effectivePreviewArg = `--preview-dir=${previewDirectory}`;
+  canonicalPreviewStaged = true;
+}
+
 console.log('[review-runtime] Phase 1/4 · deterministic scene + material review');
 const deterministicArgs = args.filter(
   (arg) => arg !== '--require-ai' && arg !== '--skip-ai',
 );
+if (canonicalPreviewStaged && effectivePreviewArg) {
+  deterministicArgs.push(effectivePreviewArg);
+}
+if (effectivePreviewArg && !deterministicArgs.includes('--skip-render')) {
+  deterministicArgs.push('--skip-render');
+}
 deterministicArgs.push('--skip-ai');
 const deterministicExit = await runNode(
   'tools/scripts/review-animation-shot.mjs',
@@ -58,7 +100,7 @@ if (deterministicExit === 1) {
   console.log('');
   console.log('[review-runtime] Phase 2/4 · contained-material boundary review');
   const containmentArgs = [shotArg];
-  if (previewArg) containmentArgs.push(previewArg);
+  if (effectivePreviewArg) containmentArgs.push(effectivePreviewArg);
   const containmentExit = await runNode(
     'tools/scripts/verify-contained-material-boundary.mjs',
     containmentArgs,
@@ -84,22 +126,43 @@ if (deterministicExit === 1) {
     } else {
       console.log('');
       console.log('[review-runtime] Phase 3/4 · evidence-aware source delta vision review');
-      if (model) {
-        await warmVisionModel().catch((error) => {
-          console.warn(
-            `[review-runtime] Vision warm-up did not complete: ${errorMessage(error)}`,
-          );
-        });
-      }
 
-      const deltaArgs = [shotArg];
-      if (previewArg) deltaArgs.push(previewArg);
-      if (requireAi) deltaArgs.push('--require-ai');
-      deltaExit = await runNode(
-        'tools/scripts/review-animation-shot-delta-vision-evidence.mjs',
-        deltaArgs,
-        { suppressTerminalState: true },
+      deltaExit = await withGpuAiTask(
+        {
+          owner: 'animation-shot-review',
+          task: `shot-${shotNumber}-delta-vision-review`,
+          backend: 'ollama',
+          model,
+          timeoutMs: positiveInteger(
+            process.env.SRF_GPU_LEASE_TIMEOUT_MS,
+            visionTimeoutMs,
+          ),
+          cleanup: async () => unloadVisionModel(),
+        },
+        async (lease) => {
+          console.log(
+            `[review-runtime] GPU lease acquired for ${lease.metadata.task} · model ${model ?? 'default'} · expires ${lease.metadata.expiresAt}.`,
+          );
+
+          if (model) {
+            await warmVisionModel().catch((error) => {
+              console.warn(
+                `[review-runtime] Vision warm-up did not complete: ${errorMessage(error)}`,
+              );
+            });
+          }
+
+          const deltaArgs = [shotArg];
+          if (effectivePreviewArg) deltaArgs.push(effectivePreviewArg);
+          if (requireAi) deltaArgs.push('--require-ai');
+          return runNode(
+            'tools/scripts/review-animation-shot-delta-vision-evidence.mjs',
+            deltaArgs,
+            { suppressTerminalState: true },
+          );
+        },
       );
+
       if (deltaExit === 1) {
         console.log('');
         console.log('FINAL STATE: REVIEW ERROR');
@@ -117,7 +180,7 @@ if (deterministicExit === 1) {
         '[review-runtime] Phase 4/4 · deterministic-evidence reconciliation + final state',
       );
       const reconciliationArgs = [shotArg];
-      if (previewArg) reconciliationArgs.push(previewArg);
+      if (effectivePreviewArg) reconciliationArgs.push(effectivePreviewArg);
       if (requireAi) reconciliationArgs.push('--require-ai');
       const reconciliationExit = await runNode(
         'tools/scripts/reconcile-animation-review-evidence.mjs',
@@ -126,6 +189,27 @@ if (deterministicExit === 1) {
       process.exitCode = deltaExit === 3 ? 3 : reconciliationExit;
     }
   }
+}
+
+function shouldUseCanonicalApprovedPreview(sourceShotNumber) {
+  const manifest = JSON.parse(readFileSync(ANIMATION_MANIFEST, 'utf8'));
+  const shot = manifest.shots?.find(
+    (item) => Number(item.sourceShotNumber) === sourceShotNumber,
+  );
+  if (!shot || shot.status !== 'approved') return false;
+
+  const requiredIds = shot.activationPolicy?.requiredLayerIds ?? [];
+  if (!requiredIds.length) return false;
+
+  return requiredIds.every((layerId) => {
+    const layer = shot.layers?.find((item) => item.id === layerId);
+    return (
+      layer?.state === 'approved' &&
+      layer?.review?.status === 'approved' &&
+      typeof layer?.path === 'string' &&
+      layer.path.length > 0
+    );
+  });
 }
 
 async function warmVisionModel() {
@@ -154,6 +238,51 @@ async function warmVisionModel() {
   console.log(
     `[review-runtime] ${model} loaded and kept alive for ${keepAlive} (${elapsedSeconds}s).`,
   );
+}
+
+async function unloadVisionModel() {
+  if (!model) return;
+
+  console.log(`[review-runtime] Releasing ${model} residency after delta vision review...`);
+  const response = await fetch(`${baseUrl}/api/generate`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      model,
+      prompt: '',
+      stream: false,
+      keep_alive: 0,
+    }),
+    signal: AbortSignal.timeout(loadTimeoutMs),
+  });
+
+  const text = await response.text();
+  if (!response.ok) {
+    throw new Error(`Ollama unload HTTP ${response.status}: ${text}`);
+  }
+
+  console.log(`[review-runtime] ${model} unload request completed.`);
+}
+
+async function runPnpmTsx(scriptPath, scriptArgs) {
+  return await new Promise((resolvePromise, rejectPromise) => {
+    const child = spawn('pnpm', ['exec', 'tsx', scriptPath, ...scriptArgs], {
+      cwd: resolve('.'),
+      env: process.env,
+      shell: process.platform === 'win32',
+      stdio: 'inherit',
+      windowsHide: true,
+    });
+    child.once('error', rejectPromise);
+    child.once('close', (code, signal) => {
+      if (signal) {
+        console.error(`[review-runtime] ${scriptPath} exited with signal ${signal}.`);
+        resolvePromise(1);
+        return;
+      }
+      resolvePromise(code ?? 1);
+    });
+  });
 }
 
 async function runNode(

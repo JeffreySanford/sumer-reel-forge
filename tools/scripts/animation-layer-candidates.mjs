@@ -3,6 +3,7 @@ import {
   preflightLayerCandidates,
 } from '../renderer/comfyui-layer-candidates.mjs';
 import { checkWorkflowHostCompatibility } from '../renderer/comfyui-workflow-doctor.mjs';
+import { withGpuAiTask } from '../runtime/gpu-ai-task.mjs';
 
 const command = process.argv[2] ?? 'preflight';
 const options = parseOptions(process.argv.slice(3));
@@ -36,7 +37,26 @@ async function main() {
   console.log(
     `Generating ${preflight.selected.length} candidate layer(s) with ComfyUI concurrency ${preflight.concurrency}...`,
   );
-  const run = await generateLayerCandidates({ ...options, preflight });
+  const task = options.shotNumber
+    ? `shot-${options.shotNumber}-layer-candidate-generation`
+    : 'reel-layer-candidate-generation';
+  const run = await withGpuAiTask(
+    {
+      owner: 'animation-layer-candidates',
+      task,
+      backend: 'comfyui',
+      timeoutMs: positiveInteger(
+        process.env.SRF_GPU_LEASE_TIMEOUT_MS,
+        600_000,
+      ),
+    },
+    async (lease) => {
+      console.log(
+        `[gpu] Lease acquired for ${lease.metadata.task} · ComfyUI concurrency ${preflight.concurrency} · expires ${lease.metadata.expiresAt}.`,
+      );
+      return generateLayerCandidates({ ...options, preflight });
+    },
+  );
   console.log('');
   console.log(`Generated ${run.candidates.length} candidate(s).`);
   console.log(`Candidate workspace: ${run.outputRoot}`);
@@ -107,6 +127,11 @@ function printPreflight(preflight, compatibility) {
     );
   }
   console.log('* required for animation-v1 activation');
+}
+
+function positiveInteger(value, fallback) {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
 main().catch((error) => {

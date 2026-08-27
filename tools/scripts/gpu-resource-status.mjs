@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-import { spawnSync } from 'node:child_process';
 import { inspectGpuLease } from '../runtime/gpu-resource-lease.mjs';
+import { collectGpuRuntimeTelemetry } from '../runtime/gpu-runtime-telemetry.mjs';
 
 void main().catch((error) => {
   console.error(error instanceof Error ? error.stack ?? error.message : String(error));
@@ -8,10 +8,14 @@ void main().catch((error) => {
 });
 
 async function main() {
-  const lease = await inspectGpuLease();
+  const [lease, telemetry] = await Promise.all([
+    inspectGpuLease(),
+    collectGpuRuntimeTelemetry(),
+  ]);
+
   console.log('Sumer Reel Forge GPU resource status');
   if (!lease) {
-    console.log('Lease: FREE');
+    console.log('Lease: FREE (execution lease only; resident models may still consume VRAM)');
   } else {
     const owner = lease.metadata;
     console.log(
@@ -21,32 +25,63 @@ async function main() {
     if (owner?.expiresAt) console.log(`Expires: ${owner.expiresAt}`);
   }
 
-  const nvidia = spawnSync(
-    process.env.NVIDIA_SMI_COMMAND ?? 'nvidia-smi',
-    [
-      '--query-gpu=name,memory.total,memory.used,memory.free',
-      '--format=csv,noheader,nounits',
-    ],
-    { encoding: 'utf8', windowsHide: true },
-  );
-  if (!nvidia.error && nvidia.status === 0) {
-    for (const line of nvidia.stdout.trim().split(/\r?\n/).filter(Boolean)) {
-      const [name, total, used, free] = line.split(',').map((part) => part.trim());
-      console.log(`GPU: ${name} · total=${total}MB · used=${used}MB · free=${free}MB`);
+  if (telemetry.nvidia.available && telemetry.nvidia.devices.length) {
+    for (const device of telemetry.nvidia.devices) {
+      console.log(
+        `GPU: ${device.name} · total=${formatMb(device.memoryTotalMb)} · used=${formatMb(device.memoryUsedMb)} · free=${formatMb(device.memoryFreeMb)}`,
+      );
     }
   } else {
     console.log('GPU: nvidia-smi unavailable');
   }
 
-  const ollama = spawnSync('ollama', ['ps'], {
-    encoding: 'utf8',
-    windowsHide: true,
-  });
-  if (!ollama.error && ollama.status === 0) {
-    const lines = ollama.stdout.trim().split(/\r?\n/).filter(Boolean);
-    console.log(`Ollama loaded: ${Math.max(0, lines.length - 1)} model(s)`);
-    if (lines.length > 1) console.log(lines.slice(1).join('\n'));
+  if (telemetry.ollama.reachable) {
+    const loaded = telemetry.ollama.loadedModels ?? [];
+    console.log(`Ollama loaded: ${loaded.length} model(s)`);
+    for (const model of loaded) {
+      const vram = bytesToMb(model.sizeVramBytes);
+      const expiry = model.expiresAt ? ` · expires=${model.expiresAt}` : '';
+      console.log(
+        `  - ${model.name}${vram === undefined ? '' : ` · VRAM=${vram}MB`}${expiry}`,
+      );
+    }
   } else {
-    console.log('Ollama loaded: unavailable');
+    const detail = telemetry.ollama.error
+      ? ` · ${telemetry.ollama.error}`
+      : telemetry.ollama.httpStatus
+        ? ` · HTTP ${telemetry.ollama.httpStatus}`
+        : '';
+    console.log(`Ollama loaded: unavailable${detail}`);
   }
+
+  if (telemetry.comfyui.reachable) {
+    const devices = telemetry.comfyui.devices ?? [];
+    console.log(`ComfyUI: reachable · ${devices.length} device(s)`);
+    for (const device of devices) {
+      const total = bytesToMb(device.vramTotalBytes);
+      const free = bytesToMb(device.vramFreeBytes);
+      const torchTotal = bytesToMb(device.torchVramTotalBytes);
+      const torchFree = bytesToMb(device.torchVramFreeBytes);
+      console.log(
+        `  - ${device.name ?? device.type ?? 'device'}${total === undefined ? '' : ` · VRAM total=${total}MB`}${free === undefined ? '' : ` · free=${free}MB`}${torchTotal === undefined ? '' : ` · torch total=${torchTotal}MB`}${torchFree === undefined ? '' : ` · torch free=${torchFree}MB`}`,
+      );
+    }
+  } else {
+    const detail = telemetry.comfyui.error
+      ? ` · ${telemetry.comfyui.error}`
+      : telemetry.comfyui.httpStatus
+        ? ` · HTTP ${telemetry.comfyui.httpStatus}`
+        : '';
+    console.log(`ComfyUI: unavailable${detail}`);
+  }
+}
+
+function bytesToMb(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.round(parsed / 1024 / 1024) : undefined;
+}
+
+function formatMb(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? `${Math.round(parsed)}MB` : 'unknown';
 }

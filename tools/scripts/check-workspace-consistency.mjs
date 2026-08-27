@@ -62,6 +62,7 @@ const reviewEntrypoints = [
   'tools/scripts/verify-layered-candidate-scene-v2.mjs',
   'tools/scripts/verify-material-local-motion.mjs',
   'tools/scripts/verify-contained-material-boundary.mjs',
+  'tools/scripts/render-approved-shot-audit-preview.ts',
   'tools/scripts/promote-reviewed-shot.mjs',
   'tools/scripts/audit-animation-reel.mjs',
 ];
