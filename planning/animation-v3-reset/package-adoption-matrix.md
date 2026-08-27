@@ -1,336 +1,200 @@
 # Animation V3 Package Adoption and Compatibility Matrix
 
-Status: **planning contract**
+Status: **planning contract / automation-first revision**
 
-This document defines how Sumer Reel Forge adopts animation/runtime dependencies for Levels 2 and 3. The purpose is to prevent a package from becoming architectural authority merely because a proof of concept looks impressive.
+Updated: **2026-08-26**
 
-## 1. Adoption principle
+No package becomes architectural authority merely because it can animate. Character production additionally follows [`automation-first-character-performance.md`](./automation-first-character-performance.md): recurring manual GUI authoring is not an acceptable default reel-production dependency.
 
-Every new runtime must answer five questions before production use:
+## 1. Adoption questions
 
-1. What problem does it own?
-2. What problem does it explicitly not own?
-3. Can Scene V3 and Remotion remain timing authority?
-4. Can the runtime be tested deterministically enough for evidence and regression?
-5. Can we preserve source/provenance/human-approval rules around it?
+Every dependency/backend must answer:
 
-No package is adopted only because it can animate.
+1. What capability does it own?
+2. What does it explicitly not own?
+3. Do Scene V3 and Remotion remain semantic/frame authority?
+4. Is its output deterministic or safely baked/hash-bound?
+5. Can source/provenance/human-approval rules be preserved?
+6. Does it reduce rather than create recurring manual work?
+7. Are code, model weights and auxiliary-model licenses valid for intended commercial use?
 
-## 2. Package ownership map
+## 2. Ownership map
 
-| Package/runtime | Primary ownership | Secondary use | Must not own |
+| Package/backend | Primary ownership | Status | Must not own |
 | --- | --- | --- | --- |
-| Remotion | production frame/render authority | composition, encoding | character semantics, physics intent |
-| Rive | hero-character deformation/performance | reusable props with rigs | global scene timing, historical truth |
-| PixiJS | 2D mesh/material deformation | particles, ropes, water textures | world camera authority |
-| React Three Fiber / Three.js | spatial world, camera, geometry | particles, depth cards | character rig semantics |
-| @remotion/three | Remotion/R3F bridge | production integration | independent timeline |
-| Rapier | fixed-step physical simulation | joints, secondary motion | authored acting/performance |
-| Spine | optional repeated skeletal rigs | animals, background actors | hero-character default unless proven superior |
-| Theatre.js | visual authoring | camera/light/object keyframes | production state authority |
-| ComfyUI | candidate asset preparation | segmentation, repair, selective generation | production timing, approval |
-| I2V adapter | selective baked motion | one-off difficult organic motion | default Level 3 renderer |
-| Qwen3-VL | semantic/perceptual QA | localization assistance | promotion authority |
+| Scene V3 + actor-prep/performance contracts | semantic actor/performance intent | **DEFAULT** | pixels, wall-clock playback |
+| Remotion | production frame/render authority | **DEFAULT** | character semantics, physics intent |
+| PixiJS | source-backed 2D composition/material/local deformation | **ADOPTED / CONSTRAINED BY BENCHMARK** | story time, historical truth |
+| automated actor-prep pipeline | semantic regions/anchors/backend evidence | **ACTIVE NEXT PATH** | human promotion, story time |
+| baked facial-performance adapter | optional headless facial candidate generation | **EXPERIMENTAL** | live timeline authority, automatic promotion |
+| LivePortrait | candidate baked facial backend | **EVALUATE ONLY AFTER LICENSE PREFLIGHT** | production authority, unresolved model licensing |
+| Rive | optional reusable vector/skeletal rig | **DEFERRED SPECIALIST** | default hero path, recurring per-shot editor work, story time |
+| React Three Fiber / Three.js | spatial world/camera/depth | PLANNED | character semantics |
+| Rapier | fixed-step/baked secondary physics | PLANNED | acting/performance |
+| Spine | optional repeated skeletal rigs | DEFERRED | default hero/animal path without benchmark |
+| Theatre.js | optional visual authoring/export | DEFERRED | production state authority |
+| ComfyUI | candidate source preparation | AVAILABLE | timing, approval |
+| Qwen3-VL/Ollama | localization/semantic review assistance | AVAILABLE | deterministic/promotion authority |
 
-## 3. Required package spike format
+## 3. Actor-performance default
 
-Every dependency gets a bounded spike branch and one canonical proof.
+Actor performance is a **capability contract**, not a package choice.
 
-A spike must include:
+```text
+ActorPrepDefinition
+→ semantic regions / landmarks / anchors
+→ PerformanceClipDefinition
+→ chosen backend mapping
+→ deterministic state or baked candidate
+→ Scene V3 exact-frame composition
+```
 
-- exact version;
-- license note;
-- bundle/runtime cost;
-- deterministic timing strategy;
-- Storybook story;
-- unit tests;
-- one rendered proof;
-- one negative test;
-- evidence receipt;
-- written keep/reject decision.
+Backend-specific bone names, prompts, state-machine inputs and editor object IDs do not enter scene authoring data.
 
-The spike does not migrate Reel 1.
+## 4. Native/source-preserving actor path
 
-## 4. Rive adoption gate
+Preferred first because it maximizes source identity and reproducibility.
 
-### Intended ownership
+Candidate responsibilities:
 
-- blink;
-- gaze;
-- brows;
-- breathing;
-- head movement;
-- torso/arm/hand articulation;
-- reusable facial/body performance clips;
-- selected cloth/hair deformation attached to actors.
+- source-backed actor regions;
+- deterministic local transforms/deformation;
+- semantic contact anchors;
+- exact-frame mapping;
+- source hash/registration proof.
 
-### Required benchmark
+Reject a region/deformation if it requires manual cleanup to become production-safe.
 
-**Enki Facial Performance**
+## 5. Baked ML facial-performance gate
 
-Must demonstrate:
-
-- OPEN → CLOSED → OPEN blink;
-- left/right eyes synchronized within approved tolerance;
-- gaze shift independent from blink;
-- breathing independent from face;
-- source identity visually preserved;
-- explicit frame control from the host;
-- repeatable same-frame output state.
-
-### Reject Rive as hero default if
-
-- host cannot reliably seek/evaluate exact frames;
-- raster art cannot be preserved without unacceptable repainting;
-- authoring workflow requires excessive proprietary/manual steps for every actor;
-- head/body deformations create a puppet aesthetic inconsistent with the paintings.
-
-## 5. PixiJS adoption gate
-
-### Intended ownership
-
-- water displacement;
-- reeds/vegetation sway;
-- rope/rigging mesh;
-- hair/cloth local deformation;
-- smoke/fire/heat shimmer;
-- 2D material effects.
-
-### Required benchmark
-
-**Rigging + Water Material Proof**
-
-Must demonstrate:
-
-- frame-driven motion;
-- two independently timed material channels;
-- vessel-driven rigging causality;
-- bounded displacement;
-- no autonomous ticker dependency in production mode;
-- screenshot and short-motion regression coverage.
-
-### Reject or constrain if
-
-- renderer requires an uncontrolled real-time ticker;
-- WebGL/WebGPU output cannot be made stable enough for approved evidence;
-- integration duplicates work better owned by Three/R3F.
-
-## 6. Three/R3F adoption gate
-
-### Intended ownership
-
-- spatial camera;
-- painted depth cards;
-- architecture;
-- terrain;
-- world placement;
-- occlusion;
-- lighting/fog;
-- instancing;
-- spatial particles.
-
-### Required benchmark
-
-**Stag on Water Spatial Proof**
-
-Must demonstrate:
-
-- at least five depth planes;
-- controlled camera move with real perspective;
-- no invented hidden geometry exposed by camera;
-- stable composition at exact frames;
-- actor card remains source-faithful;
-- Remotion remains authoritative frame source.
-
-### Production policy
-
-2.5D cards first. Full 3D only where the scene genuinely benefits.
-
-## 7. @remotion/three policy
-
-All `@remotion/*` packages must use the exact same version as `remotion`.
-
-A dependency upgrade involving Remotion must update all Remotion packages as one atomic change and rerun:
-
-- animation unit suite;
-- bundle smoke test;
-- spatial benchmark render;
-- canonical Reel 1 smoke render.
-
-## 8. Rapier adoption gate
-
-### Intended ownership
-
-- vessel secondary response;
-- ropes/joints;
-- hanging ornaments;
-- hail/debris impacts;
-- falling/settling props.
-
-### Required benchmark
-
-**Kutu Hail Physics Proof**
-
-Must demonstrate:
-
-- fixed timestep;
-- repeatable initial conditions;
-- stable body construction order;
-- identical baked transform hash on repeated runs in the supported environment;
-- render consumes baked transforms, not an unverified live simulation.
-
-### Reject physics use when
-
-an authored keyframe/performance track is simpler, clearer or easier to art-direct.
-
-## 9. Spine evaluation gate
-
-Spine is optional and evaluated specifically for:
-
-- herd animals;
-- repeated workers;
-- guards;
-- procession participants.
-
-The first evaluation is **Marriage Herd Procession**.
-
-Spine is not adopted if Rive or a simpler instanced system handles these classes adequately.
-
-Licensing/editor requirements must be documented before any production asset depends on Spine.
-
-## 10. Theatre.js adoption gate
-
-Theatre Studio is permitted only as an authoring environment.
-
-Required proof:
-
-1. author a camera/light/object sequence;
-2. export state;
-3. compile to Scene V3 tracks;
-4. render without Theatre Studio present;
-5. compare authored vs compiled key states.
-
-No production render may depend on unsaved local Theatre editor state.
-
-## 11. Live2D policy
-
-Live2D remains a specialist evaluation only.
-
-Possible use:
-
-- dialogue-heavy portrait scenes;
-- close facial performance where Rive cannot meet quality.
-
-Do not add Live2D to the critical path until a benchmark demonstrates a clear advantage over Rive.
-
-## 12. Generative/I2V policy
-
-Generative motion is a baked adapter, not a runtime authority.
+ML facial animation may be used as a baked candidate adapter, not as live timeline authority.
 
 Required metadata:
 
-- source hashes;
-- model name/version;
-- workflow hash;
-- prompt hash;
-- seed;
-- output hash;
-- frame rate/duration;
-- human review status.
-
-A generative candidate must pass the same final rendered semantic and human gates as deterministic animation.
-
-## 13. Version pinning
-
-Animation runtime packages use exact versions once accepted into production.
-
-Avoid broad semver ranges for production-critical render packages.
-
-The evidence receipt records runtime versions so a later dependency update cannot silently reinterpret an approved shot.
-
-## 14. License registry
-
-Create a machine-readable license record before production adoption:
-
-```ts
-interface RuntimeLicenseRecord {
-  runtime: string;
-  version: string;
-  license: string;
-  editorLicense?: string;
-  commercialUseReviewed: boolean;
-  redistributionReviewed: boolean;
-  notes?: string;
-}
+```text
+source image hash
+backend + code revision
+model/weights identifiers
+all relevant license records
+motion-template/driving-input hash
+configuration/workflow hash
+seed where applicable
+output hash
+fps/frame mapping
+identity QA
+human review
 ```
 
-License uncertainty blocks production dependency, not exploratory spike work.
+Production consumes approved baked bytes. The renderer must not call an external model at every frame.
 
-## 15. Browser/runtime compatibility
+## 6. LivePortrait evaluation gate
 
-For every browser-executed runtime, record:
+Why evaluate:
 
-- Chromium support;
-- Firefox support;
-- WebKit/Safari support;
-- WebGL requirements;
-- WebGPU optionality;
-- WASM requirements;
-- headless render behavior;
-- Storybook behavior;
-- Remotion render behavior.
+- command-line/headless inference;
+- reusable driving-motion template support;
+- potentially high leverage for blink/gaze/head performance.
 
-Production render may use a narrower supported environment than Studio preview as long as the distinction is explicit.
+Current status: **NOT ADOPTED / LICENSE-BLOCKED FOR COMMERCIAL PRODUCTION UNTIL RESOLVED**.
 
-## 16. Dependency adoption order
+License note: upstream code is MIT, but upstream licensing notes that bundled InsightFace detection models are restricted to non-commercial research use. Commercial production therefore requires replacing those detection models with commercially compatible components or otherwise resolving the rights before adoption.
 
-Planned order:
+Benchmark requirements:
 
-1. historical-sources — already started;
-2. animation-contracts / animation-frame;
-3. React Animation Lab harness;
-4. PixiJS spike;
-5. Rive spike;
-6. Three/R3F + @remotion/three spike;
-7. Rapier spike;
-8. crowd/work runtime;
-9. Spine evaluation;
-10. Theatre authoring bridge;
-11. selective generative adapter.
+- same accepted Enki source hash;
+- pinned code/model versions;
+- no manual editor step;
+- source → reusable motion-template → baked output;
+- stable identity at OPEN/CLOSED/RETURNED_OPEN/gaze states;
+- no unintended body/camera/background motion;
+- proof receipt and human normal-speed approval.
 
-Pixi before Rive is acceptable for infrastructure work, but Reel 1 does not resume until both material and hero-performance benchmarks are proven.
+## 7. Rive policy
 
-## 17. Keep/reject decision record
+Rive is no longer the required/default hero runtime.
 
-Every spike ends with:
+Existing evidence retained:
 
-```md
-Decision: KEEP | CONSTRAIN | REJECT
-Runtime:
-Version:
-Benchmark:
-Determinism:
-Visual quality:
-Authoring cost:
-Testing cost:
-License status:
-Performance:
-Known risks:
-Fallback:
+- isolated `libs/animation-rive` neutral contract;
+- no-autoplay/no-autonomous-clock boundary;
+- byte-identical ENKI-RIG-0 source prep.
+
+Reason for deferment: the next step required manual Rive Editor `.riv` authoring, which conflicts with the many-reel automation objective.
+
+Reconsider Rive only if:
+
+- one-time rig authoring can be amortized across many scenes;
+- source identity clearly improves over automated alternatives;
+- runtime/export licensing is acceptable;
+- production rendering is fully headless after the one-time rig exists;
+- no per-shot editor intervention is required.
+
+Do not install the Rive runtime merely because the neutral scaffolding exists.
+
+## 8. PixiJS policy
+
+Pixi owns source-backed 2D rendering/material/local deformation only when the source supports a trustworthy region/material representation.
+
+Accepted capabilities include exact-frame renderer ownership and the current recovered Shot 3 baseline. Rejected Shot 3 water/rigging masks remain rejected evidence; they are not reasons to weaken QA or abandon Pixi generally.
+
+## 9. Three/R3F policy
+
+Intended for painted depth cards, camera, architecture, terrain, occlusion and world placement. Remotion remains frame authority. 2.5D cards first; full 3D only when a benchmark earns it.
+
+## 10. Rapier policy
+
+Physics is fixed-step/baked and limited to useful secondary response. If authored motion is simpler and easier to direct, do not simulate it.
+
+## 11. Spine / Live2D / Theatre policy
+
+These remain specialist/deferred tools. None enters the default production path until a manuscript-derived benchmark proves visible value, deterministic/baked integration, acceptable licensing and low recurring manual cost.
+
+## 12. Generative/I2V policy
+
+Generative motion is a baked candidate, never runtime semantic authority. Bind source/model/workflow/prompt/seed/output hashes and human review. Identity drift or unsupported source mutation is a hard rejection.
+
+## 13. Version and license policy
+
+Accepted production-critical packages/backends use pinned versions. Model weights and auxiliary models are part of the license/security surface, not merely implementation details.
+
+A machine-readable license record must include code license plus any model/weights/editor restrictions relevant to production.
+
+License uncertainty blocks production adoption.
+
+## 14. Adoption order from current branch
+
+```text
+1. existing Scene V3/frame/compiler/inspection foundations
+2. accepted Pixi/recovered Shot 3 baseline
+3. engine-neutral ActorPrepDefinition and automated Enki prep
+4. headless semantic region/landmark discovery
+5. reusable performance-template/bake contract
+6. bounded license-safe facial backend spike (LivePortrait candidate)
+7. Three/R3F spatial spike when actor path is sufficiently proven
+8. Rapier / crowds / herds / city systems as manuscript demand requires
+9. optional Rive/Spine/Live2D/Theatre only when benchmark value justifies manual/tooling cost
 ```
 
-A rejected package may remain in research notes but must not remain as a transitive production dependency.
+Reel production is gated by **capability evidence**, not by adopting a predetermined package list.
 
-## 18. Definition of Done
+## 15. Keep/reject record
 
-This adoption plan is satisfied when:
+Every spike records:
 
-- every production runtime has an explicit ownership boundary;
-- every runtime has an accepted benchmark;
-- exact versions are pinned;
-- license status is known;
-- Storybook and unit-test strategy exists;
-- render integration is proven;
-- evidence records runtime versions;
-- fallback strategy exists;
-- no package becomes a second hidden timeline authority.
+```text
+Decision: KEEP | KEEP_WITH_CONSTRAINTS | DEFER | REJECT
+Capability/backend/version
+Determinism or baked-output strategy
+Source fidelity
+Manual touch count
+Reuse potential
+Testing cost
+License/model-weight status
+Performance
+Known risks
+Fallback
+```
+
+## 16. Definition of Done
+
+The package strategy is healthy when no dependency becomes a second timeline authority, no model license is implicit, rejected experiments remain rejected, and producing another reel does not require repeating GUI rig-authoring work.
