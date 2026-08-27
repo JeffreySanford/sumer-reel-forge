@@ -38,7 +38,7 @@ function profile({
   };
 }
 
-test('workstation profile reserves resources and supports two parallel renders', () => {
+test('10GB workstation profile keeps automatic Ollama review concurrency at one', () => {
   const input = profile();
   const plan = deriveRuntimePlan(input, {});
 
@@ -48,12 +48,25 @@ test('workstation profile reserves resources and supports two parallel renders',
   assert.equal(plan.remotion.hardwareAcceleration, 'if-possible');
   assert.equal(plan.remotion.gl, 'angle');
   assert.equal(plan.ai.nvidiaCudaAvailable, true);
-  assert.equal(plan.ai.ollamaReviewConcurrency, 2);
+  assert.equal(plan.ai.ollamaReviewConcurrency, 1);
   assert.equal(plan.ai.comfyConcurrency, 1);
   assert.equal(plan.ai.comfyVramMode, 'normalvram');
   assert.equal(plan.ai.chatterboxDevice, 'cuda');
   assert.equal(plan.encoding.preferredH264Encoder, 'h264_nvenc');
   assert.equal(plan.reserves.logicalCpuReserved, 4);
+});
+
+test('larger VRAM tiers can increase automatic Ollama review concurrency', () => {
+  assert.equal(
+    deriveRuntimePlan(profile({ vramMb: 16 * 1024 }), {}).ai
+      .ollamaReviewConcurrency,
+    2,
+  );
+  assert.equal(
+    deriveRuntimePlan(profile({ vramMb: 24 * 1024 }), {}).ai
+      .ollamaReviewConcurrency,
+    3,
+  );
 });
 
 test('smaller profile scales down without assuming a GPU', () => {
@@ -86,7 +99,7 @@ test('explicit environment overrides win over autodetected recommendations', () 
     ANIMATION_PARALLEL_RENDERS: '1',
     ANIMATION_HARDWARE_ACCELERATION: 'disable',
     ANIMATION_REMOTION_GL: 'vulkan',
-    ANIMATION_OLLAMA_REVIEW_CONCURRENCY: '1',
+    ANIMATION_OLLAMA_REVIEW_CONCURRENCY: '2',
     COMFYUI_MAX_PARALLEL: '3',
   });
 
@@ -95,7 +108,7 @@ test('explicit environment overrides win over autodetected recommendations', () 
   assert.equal(plan.remotion.hardwareAcceleration, 'disable');
   assert.equal(plan.remotion.gl, 'vulkan');
   assert.equal(plan.remotion.source, 'environment-override');
-  assert.equal(plan.ai.ollamaReviewConcurrency, 1);
+  assert.equal(plan.ai.ollamaReviewConcurrency, 2);
   assert.equal(plan.ai.comfyConcurrency, 3);
 });
 
@@ -117,7 +130,7 @@ test('startup environment application never overwrites explicit settings', () =>
   assert.equal(env.ANIMATION_PARALLEL_RENDERS, '2');
   assert.equal(env.ANIMATION_HARDWARE_ACCELERATION, 'if-possible');
   assert.equal(env.ANIMATION_REMOTION_GL, 'angle');
-  assert.equal(env.ANIMATION_OLLAMA_REVIEW_CONCURRENCY, '2');
+  assert.equal(env.ANIMATION_OLLAMA_REVIEW_CONCURRENCY, '1');
   assert.equal(env.COMFYUI_MAX_PARALLEL, '1');
   assert.equal(env.SRF_COMFYUI_VRAM_MODE, 'normalvram');
   assert.equal(env.SRF_PREFERRED_H264_ENCODER, 'h264_nvenc');
