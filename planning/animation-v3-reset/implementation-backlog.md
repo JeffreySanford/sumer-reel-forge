@@ -9,8 +9,8 @@ This checklist reflects repository evidence, not aspiration. The production char
 Legend:
 
 ```text
-[x] implemented and verified at intended scope
-[~] partial / foundation exists
+[x] implemented and locally verified at intended scope
+[~] implemented on branch / awaiting local verification or broader completion
 [ ] not implemented
 [!] rejected/deferred by evidence
 ```
@@ -116,21 +116,21 @@ The Rive work remains evidence/optional adapter scaffolding; it is not deleted a
 
 ### 5.1 Actor-prep contracts
 
-- [ ] add engine-neutral `ActorPrepDefinition` and evidence types;
-- [ ] represent semantic regions, landmarks and contact anchors;
-- [ ] represent preparation/backend/license states;
-- [ ] ensure actor prep does not introduce a timeline authority;
-- [ ] add contract/unit validation.
+- [~] engine-neutral `ActorPrepDefinition` and validation added on branch;
+- [~] semantic regions, landmarks/anchors and backend evidence modeled;
+- [~] manual-editor/time-authority/license-blocked negative tests added;
+- [ ] local verification of `animation-contracts` after this change;
+- [ ] integrate actor-prep identity into resolved Scene V3 when the shape is proven.
 
 ### 5.2 Automated Enki prep
 
-- [ ] discover latest accepted recovered Enki source receipt;
-- [ ] SHA/dimension verification;
-- [ ] create candidate-only actor-prep workspace under `tmp/`;
-- [ ] record desired semantic regions/anchors;
-- [ ] record backend candidates and blockers;
-- [ ] zero per-shot/manual-editor dependency;
-- [ ] deterministic repeat/receipt proof.
+- [~] latest accepted recovered Enki source discovery implemented;
+- [~] SHA/dimension verification implemented;
+- [~] candidate-only packet under `tmp/animation-assets/actor-prep/enki/v1` implemented;
+- [~] desired semantic regions/anchors encoded as `pending-auto-discovery`;
+- [~] native/LivePortrait/Rive backend status encoded;
+- [~] zero manual-editor/model invocation receipt implemented;
+- [ ] local run/receipt verification.
 
 ### 5.3 Automated semantic discovery
 
