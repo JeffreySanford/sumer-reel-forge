@@ -2,7 +2,7 @@
 
 Status: **living implementation record / automation-first actor policy active**
 
-Updated: **2026-08-26**
+Updated: **2026-08-27**
 
 This is the current implementation authority for the Animation V3 reset. Read it together with [`automation-first-character-performance.md`](./automation-first-character-performance.md). Older documents may discuss Rive as an early candidate; Rive is no longer the required/default hero-character path.
 
@@ -14,7 +14,7 @@ Phase 1  Historical-source foundation                PARTIAL / FOUNDATION WORKIN
 Phase 2  Scene V3 contracts/compiler/runtime         CORE COMPLETE
 Phase 3  Animation Lab foundation                     CORE COMPLETE
 Phase 4  Pixi / Shot 3 source-backed proof            PARTIAL — ACCEPTED BASELINE EXISTS
-Phase 5  Automated actor-prep/performance pipeline    STARTED
+Phase 5  Automated actor-prep/performance pipeline    ACTIVE — SOURCE IDENTITY VERIFIED
 Phase 6  Three/R3F spatial runtime                    NOT STARTED
 Phase 7  Combined Reel 1 V3 proof                     NOT STARTED
 Phase 8+ Physics/crowds/herds/cities/etc.             NOT STARTED
@@ -98,7 +98,7 @@ Pixi remains a useful exact-frame/source-backed 2D adapter. Shot 3 does **not** 
 
 ## 5. Phase 5 — automated actor preparation/performance
 
-Status: **STARTED — THIS IS THE ACTIVE NEXT LANE**
+Status: **ACTIVE — SOURCE IDENTITY GATE VERIFIED; SEMANTIC DISCOVERY IMPLEMENTED PENDING LOCAL RUN**
 
 ### Rive boundary experiment evidence
 
@@ -118,6 +118,22 @@ manual .riv authoring handoff: CANCELLED AS CRITICAL PATH
 libs/animation-rive: retained as architectural evidence / optional future adapter
 ```
 
+A missing `rive` shell command is therefore not a production blocker.
+
+### Verified automated actor-prep evidence — 2026-08-27
+
+Local verification completed successfully:
+
+```text
+planning alignment tests          10/10 PASS
+animation-contracts tests         18/18 PASS
+animation-contracts build         PASS
+automated actor-prep packet       PASS
+manual editor invocations         0
+model invocations                 0
+canonical mutation                none
+```
+
 Accepted recovered Enki actor-prep source:
 
 ```text
@@ -125,34 +141,59 @@ Accepted recovered Enki actor-prep source:
 sha256:d19ff6b4810a6fad5b8ce41232e07d7fc0f72923799e195df1596f53f4239f07
 ```
 
-### Actor-prep implementation now on the branch
+Verified actor-prep definition:
 
-Implemented pending local verification:
+```text
+sha256:81b39d95d47ecbade72a7c1b861619d7271a465050a3a70d51d4789ff18fa606
+```
 
-- `libs/animation-contracts/src/lib/actor-prep.ts`;
-- `ActorPrepDefinition` source/region/anchor/backend contracts;
-- default `headlessDefault: true`;
-- recurring manual editor work forbidden;
-- failed automation policy `reject-or-fallback`;
-- backends forbidden from live story-time authority;
-- license-blocked backend validation;
-- focused contract tests;
-- `tools/scripts/shot03-enki-actor-prep-auto.mjs`;
-- candidate-only Enki actor-prep packet with zero manual-editor and zero model invocations;
-- backend evidence: native source regions preferred, LivePortrait license-blocked, Rive deferred.
+The source-identity stage is therefore complete for this proof packet.
+
+### Semantic discovery gate now implemented
+
+The next code lane is present on the branch pending local execution:
+
+- `tools/animation/src/actor-semantic-geometry.mjs`;
+- deterministic normalized region/anchor geometry checks;
+- two-pass spatial agreement before a locator result can be considered stable;
+- face-within-head and eye-within-face checks;
+- crown/head attachment check;
+- semantic anchors constrained to owning regions;
+- explicit facial/hand/torso localization readiness flags;
+- `tools/scripts/shot03-enki-semantic-discovery.mjs`;
+- two Qwen3-VL locator passes using different fixed seeds;
+- exact actor-prep source hash revalidation before inference;
+- no ComfyUI/SAM/generative pixel work in this stage;
+- standalone SVG review overlay;
+- structural QA + consensus + receipt artifacts;
+- human review required before any region extraction/segmentation;
+- no promotion, no canonical mutation and no actor-prep definition mutation.
+
+The semantic locator is allowed to propose geometry. It is **not** allowed to declare a production region accepted by itself.
+
+### Backend status
+
+```text
+native source-region path      PREFERRED
+Qwen3-VL semantic locator      ADVISORY / DISCOVERY ONLY
+LivePortrait                   EXPERIMENTAL + LICENSE-BLOCKED
+Rive                           DEFERRED / OPTIONAL
+```
+
+LivePortrait may be evaluated later because it supports headless inference and reusable motion templates. It is not adopted. Upstream licensing notes a commercial-use problem with bundled InsightFace models, so production use remains blocked until those models are replaced/resolved and license evidence is green.
 
 ### Next execution sequence
 
-1. local-verify planning alignment + `animation-contracts` + automated actor-prep packet;
-2. implement headless semantic region/landmark discovery;
-3. verify source fidelity and failure behavior;
-4. create reusable performance-template/bake contracts;
-5. run a bounded facial-performance backend spike only after license preflight;
-6. map an approved result into Scene V3 clips/Remotion.
+1. local-verify semantic geometry tests + semantic-discovery contract tests;
+2. run two-pass Qwen semantic discovery against the exact verified actor-prep packet;
+3. inspect the generated SVG at normal human review scale;
+4. if locations are visually correct, bind only useful accepted semantic regions into source-pixel extraction/segmentation candidates;
+5. prove source fidelity and reconstruction behavior before deformation/performance;
+6. create reusable performance-template/bake contracts;
+7. run a bounded facial-performance backend spike only after license preflight;
+8. map an approved result into Scene V3 clips/Remotion.
 
-### LivePortrait candidate
-
-LivePortrait may be evaluated because it supports headless inference and reusable motion templates. It is not adopted. Upstream licensing notes a commercial-use problem with bundled InsightFace models, so production use remains blocked until those models are replaced/resolved and license evidence is green.
+If semantic discovery disagrees or misidentifies anatomy, stop at the locator gate. Do not lower thresholds and do not hand-correct coordinates as the default workflow.
 
 ## 6. Phase 6 — spatial runtime
 
@@ -181,9 +222,9 @@ choose project/reel
 
 ## 9. Immediate next gate
 
-Run the new local gate. If green, the next code milestone is automated semantic region/landmark discovery against the generated `ActorPrepDefinition` and exact accepted source receipt.
+Run the semantic-discovery local gate. This step requires Ollama plus the configured Qwen vision model, but still does not require ComfyUI, Rive or LivePortrait.
 
-Do not install LivePortrait or another ML backend before the contract and license boundary are verified locally.
+Human review of the generated semantic overlay is the next visual decision. Region segmentation/deformation remains blocked until that review is explicit.
 
 ## 10. Universal stop conditions
 
@@ -195,6 +236,8 @@ manual GUI authoring becomes recurring production work
 model/license status is unresolved for intended use
 technical green output is human-rejected
 identity or painterly source fidelity drifts
+semantic locator passes disagree materially
+semantic boxes/anchors violate source anatomy
 thresholds must be weakened merely to obtain a survivor
 ```
 
