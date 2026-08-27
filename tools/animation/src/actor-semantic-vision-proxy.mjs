@@ -51,25 +51,38 @@ export function mapProxyPointToSource(point, metadata) {
 }
 
 export function mapDiscoveryFromProxyToSource(discovery, metadata) {
+  const provenance = metadata?.proxyKind === 'locator-crop'
+    ? 'localized on exact pre-padding Enki locator crop; coordinates remapped to registered source frame'
+    : 'localized on deterministic alpha-crop vision proxy; coordinates remapped to registered source frame';
   const regions = (discovery?.regions ?? []).map((region) => ({
     ...region,
     bbox: region?.status === 'not-visible'
       ? zeroBox()
       : mapProxyBoxToSource(region?.bbox, metadata),
-    notes: appendNote(region?.notes, 'localized on deterministic alpha-crop vision proxy; coordinates remapped to registered source frame'),
+    notes: appendNote(region?.notes, provenance),
   }));
   const anchors = (discovery?.anchors ?? []).map((anchor) => ({
     ...anchor,
     point: anchor?.status === 'not-visible'
       ? zeroPoint()
       : mapProxyPointToSource(anchor?.point, metadata),
-    notes: appendNote(anchor?.notes, 'localized on deterministic alpha-crop vision proxy; coordinates remapped to registered source frame'),
+    notes: appendNote(anchor?.notes, provenance),
   }));
   return { ...discovery, regions, anchors };
 }
 
 export function proxyInstruction(metadata) {
   const { source, crop } = validateMetadata(metadata);
+  if (metadata?.proxyKind === 'locator-crop') {
+    return [
+      'VISION-PROXY CONTRACT:',
+      'The attached image is an exact source-pixel crop using the previously recorded pre-padding Enki locator box. No SAM mask, alpha inference, repaint, resize, or manual correction was used.',
+      'Return all bbox/point coordinates normalized to THIS ATTACHED CROP, not the original source frame.',
+      'Do not compensate for the crop yourself; the host will map crop coordinates back to the original registered source frame.',
+      `Original source is ${source.width}x${source.height}; locator crop in source pixels is x=${crop.x}, y=${crop.y}, width=${crop.width}, height=${crop.height}.`,
+      'The crop may still contain boat/background context. Locate only the visible Enki anatomy requested by the schema.',
+    ].join(' ');
+  }
   return [
     'VISION-PROXY CONTRACT:',
     'The attached image is a deterministic crop of the accepted registered Enki RGBA source, composited onto a neutral matte only to make visible source pixels easier to inspect.',
