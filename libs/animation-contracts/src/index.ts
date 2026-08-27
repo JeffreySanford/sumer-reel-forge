@@ -5,6 +5,7 @@ export * from './lib/track';
 export * from './lib/asset-ref';
 export * from './lib/story-binding';
 export * from './lib/actor';
+export * from './lib/actor-prep';
 export * from './lib/performance';
 export * from './lib/material';
 export * from './lib/environment';
