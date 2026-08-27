@@ -56,8 +56,19 @@ export async function withGpuAiTask(options = {}, work) {
         taskError = error;
         throw error;
       } finally {
+        const after = telemetryEnabled
+          ? await safeCollectTelemetry(collectTelemetry, env)
+          : null;
+        const cleanup =
+          typeof options.cleanup === 'function'
+            ? await safeCleanup(options.cleanup, lease)
+            : null;
+        const afterCleanup =
+          telemetryEnabled && cleanup
+            ? await safeCollectTelemetry(collectTelemetry, env)
+            : null;
+
         if (telemetryEnabled) {
-          const after = await safeCollectTelemetry(collectTelemetry, env);
           const completedAt = new Date().toISOString();
           const receipt = {
             schemaVersion: 1,
@@ -69,6 +80,8 @@ export async function withGpuAiTask(options = {}, work) {
             error: taskError ? errorMessage(taskError) : null,
             before,
             after,
+            cleanup,
+            afterCleanup,
           };
           await safePersistTelemetry(persistTelemetry, receipt, {
             env,
@@ -89,6 +102,17 @@ async function safeCollectTelemetry(collectTelemetry, env) {
       capturedAt: new Date().toISOString(),
       captureError: errorMessage(error),
     };
+  }
+}
+
+async function safeCleanup(cleanup, lease) {
+  try {
+    await cleanup(lease);
+    return { status: 'completed', error: null };
+  } catch (error) {
+    const message = errorMessage(error);
+    console.warn(`[gpu] Post-task cleanup did not complete: ${message}`);
+    return { status: 'failed', error: message };
   }
 }
 
