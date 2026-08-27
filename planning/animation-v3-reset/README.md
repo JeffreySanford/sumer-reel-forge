@@ -46,7 +46,7 @@ resolved deterministic state
         ↓
 exact FrameContext
         ↓
-actor/material/spatial capability state
+ActorPrepDefinition + actor/material/spatial capability state
         ↓
 approved adapter or baked candidate
         ↓
@@ -71,6 +71,8 @@ Phase 7  combined Reel 1 V3                    NOT STARTED
 Shot 3 currently accepts camera + vessel heave/roll + Enki counter-sway. Blink overlays, whole-cutout breathing, water extraction and rigging extraction are rejected/disabled evidence.
 
 The Rive neutral-contract experiment is retained, but manual `.riv` creation and Rive runtime installation are no longer on the critical path.
+
+Phase 5 implementation has now begun with an engine-neutral `ActorPrepDefinition` contract and `tools/scripts/shot03-enki-actor-prep-auto.mjs`, which creates a source-bound Enki actor-prep packet with zero manual-editor/model invocations before semantic discovery begins.
 
 ## Primary planning contracts
 
