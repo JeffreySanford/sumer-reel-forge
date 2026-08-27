@@ -19,7 +19,7 @@ if (!metadataPath || !imagePath || !groupDefinitionPath) {
 
 const metadata = JSON.parse(readFileSync(metadataPath, 'utf8'));
 const proxyImageBase64 = readFileSync(imagePath).toString('base64');
-const { definition: groupDefinition } = await loadActorSemanticGroupDefinition(groupDefinitionPath);
+const { definition: groupDefinition } = await loadActorSemanticGroupDefinition(resolve(groupDefinitionPath));
 const GROUPS = Object.freeze(groupDefinition.groups.map((group) => Object.freeze({
   ...group,
   regions: Object.freeze([...group.regions]),
