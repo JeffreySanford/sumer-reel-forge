@@ -19,6 +19,10 @@ if (!metadataPath || !imagePath) {
 const metadata = JSON.parse(readFileSync(metadataPath, 'utf8'));
 const proxyImageBase64 = readFileSync(imagePath).toString('base64');
 const MAX_COORDINATE_REPAIR_ATTEMPTS = 1;
+const REPAIR_TIMEOUT_MS = positiveInteger(
+  process.env.SEMANTIC_COORDINATE_REPAIR_TIMEOUT_MS ?? process.env.PLANNING_TIMEOUT_MS,
+  300_000,
+);
 
 globalThis.fetch = async function enkiSemanticVisionProxyFetch(input, init = {}) {
   const requestUrl = typeof input === 'string' ? input : input?.url;
@@ -47,18 +51,20 @@ globalThis.fetch = async function enkiSemanticVisionProxyFetch(input, init = {})
   let parsed = await parseDiscoveryResponse(first);
   if (!parsed) return first;
 
+  const originalDiscovery = parsed.discovery;
   let evaluation = evaluateProxyDiscoveryGeometry(parsed.discovery);
   let response = first;
 
   if (!evaluation.ok) {
     console.warn(
-      `[vision-proxy] invalid crop-normalized semantic geometry: ${evaluation.issues.join(' | ')}. Running ${MAX_COORDINATE_REPAIR_ATTEMPTS} bounded coordinate correction attempt.`,
+      `[vision-proxy] invalid crop-normalized semantic geometry: ${evaluation.issues.join(' | ')}. Running ${MAX_COORDINATE_REPAIR_ATTEMPTS} bounded coordinate correction attempt with a fresh ${Math.round(REPAIR_TIMEOUT_MS / 1000)}s timeout.`,
     );
 
     const repairInstruction = [
       'Your previous semantic localization response violated the crop-normalized coordinate contract.',
       `Contract issues: ${evaluation.issues.join(' | ')}.`,
-      'Return the same semantic findings/statuses when still supported by the image; correct only invalid geometry.',
+      'This is a geometry-only correction. The prior response already contains the semantic findings; no image re-evaluation is required.',
+      'Preserve every region/anchor id and status exactly. Correct only invalid bbox/point numeric geometry. Do not change found/uncertain/not-visible decisions.',
       'For every found/uncertain region: x,y,width,height are decimal fractions in 0..1 relative to the attached crop; width>0; height>0; x+width<=1; y+height<=1.',
       'For every found/uncertain anchor: x and y are decimal fractions in 0..1 relative to the attached crop.',
       'For not-visible items, use all-zero bbox/point geometry.',
@@ -67,12 +73,13 @@ globalThis.fetch = async function enkiSemanticVisionProxyFetch(input, init = {})
     ].join(' ');
 
     const repairedMessages = [
-      ...messages,
+      ...stripImages(messages),
       { role: 'assistant', content: JSON.stringify(parsed.discovery) },
       { role: 'user', content: repairInstruction },
     ];
     response = await originalFetch(input, {
       ...init,
+      signal: AbortSignal.timeout(REPAIR_TIMEOUT_MS),
       body: JSON.stringify({
         ...body,
         messages: repairedMessages,
@@ -82,13 +89,21 @@ globalThis.fetch = async function enkiSemanticVisionProxyFetch(input, init = {})
     if (!response.ok) return response;
     parsed = await parseDiscoveryResponse(response);
     if (!parsed) return response;
+
+    const authorityIssues = compareSemanticAuthority(originalDiscovery, parsed.discovery);
+    if (authorityIssues.length) {
+      throw new Error(
+        `Proxy coordinate repair changed semantic authority: ${authorityIssues.join(' | ')}`,
+      );
+    }
+
     evaluation = evaluateProxyDiscoveryGeometry(parsed.discovery);
     if (!evaluation.ok) {
       throw new Error(
         `Proxy semantic locator coordinate repair still invalid after ${MAX_COORDINATE_REPAIR_ATTEMPTS} attempt: ${evaluation.issues.join(' | ')}`,
       );
     }
-    console.log('[vision-proxy] bounded coordinate correction accepted; semantic thresholds/status authority remain unchanged.');
+    console.log('[vision-proxy] bounded coordinate correction accepted; semantic statuses remain unchanged and thresholds were not relaxed.');
   }
 
   const mapped = mapDiscoveryFromProxyToSource(parsed.discovery, metadata);
@@ -122,6 +137,40 @@ function attachProxyImage(messages) {
   });
 }
 
+function stripImages(messages) {
+  return messages.map((message) => {
+    if (!message || typeof message !== 'object' || !('images' in message)) return message;
+    const { images: _images, ...withoutImages } = message;
+    return withoutImages;
+  });
+}
+
+function compareSemanticAuthority(before, after) {
+  const issues = [];
+  compareItems('region', before?.regions, after?.regions, issues);
+  compareItems('anchor', before?.anchors, after?.anchors, issues);
+  return issues;
+}
+
+function compareItems(label, beforeItems = [], afterItems = [], issues) {
+  const afterById = new Map((afterItems ?? []).map((item) => [item?.id, item]));
+  for (const beforeItem of beforeItems ?? []) {
+    const afterItem = afterById.get(beforeItem?.id);
+    if (!afterItem) {
+      issues.push(`${label} ${String(beforeItem?.id)} missing after coordinate repair`);
+      continue;
+    }
+    if (afterItem.status !== beforeItem.status) {
+      issues.push(
+        `${label} ${String(beforeItem?.id)} status changed ${String(beforeItem.status)} -> ${String(afterItem.status)}`,
+      );
+    }
+  }
+  if ((afterItems ?? []).length !== (beforeItems ?? []).length) {
+    issues.push(`${label} count changed during coordinate repair`);
+  }
+}
+
 async function parseDiscoveryResponse(response) {
   const text = await response.text();
   try {
@@ -139,4 +188,9 @@ function cloneResponse(response, bodyText) {
     statusText: response.statusText,
     headers: response.headers,
   });
+}
+
+function positiveInteger(value, fallback) {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
