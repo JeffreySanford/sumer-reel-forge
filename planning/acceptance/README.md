@@ -1,7 +1,14 @@
-# Acceptance Receipts
+# Acceptance evidence
 
-This folder contains durable human-review receipts that can turn active visual-quality gates green.
+Tracked acceptance documents record human review authority and promotion boundaries. They are not generated-success receipts and must not claim a new human decision that did not occur.
 
-Receipts are intentionally separate from generated proof artifacts under `tmp/`. A proof can show that deterministic rendered evidence passed, but only a receipt can record that a human reviewer watched the correct A/B artifact and accepted the result as a visual-quality milestone.
+Rules:
 
-Do not create an `accepted` receipt until the exact proof video has been reviewed at normal playback speed.
+- normal-speed human acceptance/rejection is authoritative for cinematic claims;
+- technical PASS and AI advisory review are supporting evidence only;
+- rejected references stay rejected until a later explicit human review supersedes them;
+- pending templates may describe the next review but cannot pre-authorize promotion;
+- canonical promotion remains a separate explicit action;
+- acceptance history should name the prior baseline when a new baseline supersedes it.
+
+Current Shot 3 motion authority is recorded in `shot03-recovered-motion-stack-acceptance.pending.md`: counter-sway/body-settle remains the accepted baseline; breathe-calm is a rejected reference.

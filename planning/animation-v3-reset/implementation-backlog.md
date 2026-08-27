@@ -80,7 +80,9 @@ Status: **PARTIAL — ACCEPTED BASELINE, SECONDARY LIMITS DISCOVERED**
 - [x] exact-frame cinematic camera;
 - [x] vessel heave/roll;
 - [x] nested Enki local counter-sway/body-settle;
-- [x] technical repeatability and human acceptance of current baseline.
+- [x] technical repeatability and human acceptance of current baseline;
+- [x] tracked review-set config freezes `counter-sway` as current baseline and `breath` as rejected reference;
+- [~] generic review packet/montage tooling implemented on branch; local verification pending.
 
 ### Rejected/disabled evidence
 
@@ -89,21 +91,33 @@ Status: **PARTIAL — ACCEPTED BASELINE, SECONDARY LIMITS DISCOVERED**
 - [!] legacy water extraction — sparse/non-basin;
 - [!] legacy rigging extraction — sparse fragments;
 - [!] bounded fresh rigging ROI — no source-safe survivor;
-- [!] whole-cutout breathe-calm — technically green, human preferred control.
+- [!] whole-cutout breathe-calm — technically green, human preferred counter-sway control.
 
 ### Remaining Phase 4
 
-- [~] recovered Shot 3 motion decision packet compares primary, counter-sway and breathe-calm stacks using technical receipts plus built-in AI advisory reviews;
-- [ ] human accept/reject one recovered Shot 3 motion stack from the decision packet;
+- [ ] local-verify generic review set/packet/montage tests;
+- [ ] generate current Shot 3 evidence packet from tracked receipts;
+- [ ] generate optional three-up montage as a review aid without reopening breathing;
 - [ ] reusable source-backed material/deformation primitive on a source that actually supports it;
 - [ ] fixed-frame visual regression for an accepted source-backed benchmark;
 - [ ] broader material proof only where source decomposition is trustworthy.
 
-Phase exit is **not** achieved merely by increasing motion-channel count.
+Phase exit is **not** achieved merely by increasing motion-channel count. Optional Shot 3 R&D must not block an already accepted lower-capability motion baseline.
+
+## Reel 1 production readiness
+
+Status: **GENERIC READINESS EVALUATOR IMPLEMENTED ON BRANCH**
+
+- [~] `tools/animation/src/reel-animation-readiness.mjs` computes required-layer readiness from manifest activation policy;
+- [~] `tools/scripts/animation-reel-readiness.mjs` emits JSON + Markdown readiness reports;
+- [~] accepted motion baselines can be attached independently from asset readiness;
+- [~] optional/planned layers remain visible but do not silently become blockers;
+- [ ] local-run readiness report against Reel 1 manifest;
+- [ ] use the report to select the next genuinely blocked Reel 1 shot.
 
 ## Phase 5 — Automated actor preparation/performance
 
-Status: **ACTIVE — SOURCE IDENTITY VERIFIED; SEMANTIC DISCOVERY GEOMETRY STOP**
+Status: **ACTIVE R&D — SOURCE IDENTITY VERIFIED; GROUPED SEMANTIC DISCOVERY NON-BLOCKING**
 
 ### 5.0 Rive boundary experiment
 
@@ -146,19 +160,25 @@ model invocations 0
 
 ### 5.3 Automated semantic discovery
 
-- [~] head/face/torso/arm/hand region discovery implemented with two Qwen3-VL locator passes;
+- [~] head/face/torso/arm/hand discovery implemented with deterministic validation;
 - [~] landmark/anchor proposal with confidence and two-pass spatial agreement;
+- [~] face/head, body/arms and hands/contact workloads split for smaller local-model tasks;
+- [~] actor semantic group definitions moved to tracked data (`tools/animation/actors/enki-semantic-groups-v1.json`);
+- [~] generic grouped hook implemented (`tools/scripts/actor-semantic-grouped-vision-hook.mjs`);
+- [~] Enki grouped hook reduced to compatibility adapter;
 - [~] deterministic normalized geometry validation: bounds, containment, crown/head attachment and anchor ownership;
 - [~] invalid proxy-geometry diagnostics preserved before/after the single bounded coordinate repair;
+- [~] exact pre-padding locator crop and lower-boundary-only extension evidence retained;
 - [~] standalone semantic review SVG + consensus/QA/receipt artifacts;
 - [~] reject/disqualify unstable or unsupported semantic locations instead of manual coordinate repair;
-- [~] local run reached real Enki anatomy detection, then stopped on invalid crop-normalized hand geometry;
+- [~] hands/contact modeled as capability-specific rather than mandatory for core face/torso structure;
+- [ ] local verification of config-driven grouped hook/tests;
 - [ ] successful local run/receipt verification of structurally contained semantic discovery;
 - [~] human review is the next gate after a structurally contained run, before any extraction/segmentation;
 - [ ] source-pixel fidelity checks for extracted semantic region assets;
 - [ ] region extraction/segmentation only after accepted semantic locations.
 
-Semantic discovery is localization only. It must not mutate source pixels, actor-prep identity or canonical assets, and it cannot promote itself. Missing or unsupported hands should disable hand/contact capability rather than block facial/torso capability; invalid geometry still blocks remap and must be diagnosed.
+Semantic discovery is localization-only R&D. It must not mutate source pixels, actor-prep identity or canonical assets, and it cannot promote itself. A semantic failure does not invalidate or block the accepted Shot 3 counter-sway baseline.
 
 ### 5.4 Performance template/bake contract
 
@@ -185,7 +205,7 @@ No production adoption while license or identity gate is unresolved.
 ### 5.6 Enki facial benchmark
 
 - [ ] neutral identity;
-- [ ] blink/gaze candidate;
+- [ ] blink/gaze candidate only after facial localization is source-safe and human-approved;
 - [ ] exact/baked frame mapping;
 - [ ] negative fixtures;
 - [ ] normal-speed human preference over accepted lower-capability baseline;
@@ -210,11 +230,11 @@ Required:
 - [ ] accepted actor-performance backend or accepted lower-capability actor state;
 - [ ] accepted environment/material/spatial behaviors justified by source;
 - [ ] shared Scene V3 exact-frame state;
-- [ ] multiple meaningful non-camera contributions;
+- [ ] multiple meaningful non-camera contributions where source supports them;
 - [ ] source/runtime receipts;
 - [ ] normal-speed human A/B improvement.
 
-Rive is not required. Failed Shot 3 water/rigging masks are not required to be resurrected.
+Rive is not required. Failed Shot 3 water/rigging/blink masks are not required to be resurrected.
 
 ## Phase 8+ — physics, crowds, herds, cities, montage
 
@@ -238,6 +258,7 @@ technical green output is human-rejected
 semantic locator passes disagree materially
 semantic geometry violates visible source anatomy
 thresholds are weakened merely to obtain a pass
+optional R&D starts blocking an accepted lower-capability production baseline
 ```
 
 A clean rejection is progress. The system should convert failures into evidence and fallback, not a manual repair queue.

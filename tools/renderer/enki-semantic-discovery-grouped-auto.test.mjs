@@ -2,17 +2,25 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { validateActorSemanticGroupDefinition } from '../animation/src/actor-semantic-group-definition.mjs';
 
 const wrapper = readFileSync(
   resolve('tools/scripts/shot03-enki-semantic-discovery-grouped-auto.mjs'),
   'utf8',
 );
-const hook = readFileSync(
+const compatibilityHook = readFileSync(
   resolve('tools/scripts/enki-semantic-grouped-vision-hook.mjs'),
   'utf8',
 );
+const genericHook = readFileSync(
+  resolve('tools/scripts/actor-semantic-grouped-vision-hook.mjs'),
+  'utf8',
+);
+const definition = validateActorSemanticGroupDefinition(JSON.parse(
+  readFileSync(resolve('tools/animation/actors/enki-semantic-groups-v1.json'), 'utf8'),
+));
 
-const regionIds = [
+const expectedRegions = [
   'region:enki:head',
   'region:enki:face',
   'region:enki:hair-beard',
@@ -27,7 +35,7 @@ const regionIds = [
   'region:enki:hand-left',
   'region:enki:hand-right',
 ];
-const anchorIds = [
+const expectedAnchors = [
   'anchor:enki:gaze-origin',
   'anchor:enki:head-center',
   'anchor:enki:torso-root',
@@ -51,32 +59,30 @@ test('grouped autopilot does not rerun locator, SAM, alpha inference, or mutate 
   assert.doesNotMatch(wrapper, /alphaextract|SAM3_Detect|JoinImageWithAlpha|\/api\/chat/);
 });
 
-test('grouped hook covers every semantic region and anchor exactly once', () => {
-  for (const id of [...regionIds, ...anchorIds]) {
-    const matches = hook.match(new RegExp(id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')) ?? [];
-    assert.equal(matches.length, 1, `${id} should occur exactly once in group definitions`);
-  }
+test('Enki semantic groups are data and cover every region/anchor exactly once', () => {
+  assert.equal(definition.actorId, 'enki');
+  assert.deepEqual(definition.groups.map((group) => group.id), ['face-head', 'body-arms', 'hands-contact']);
+  assert.deepEqual(definition.groups.flatMap((group) => group.regions).sort(), [...expectedRegions].sort());
+  assert.deepEqual(definition.groups.flatMap((group) => group.anchors).sort(), [...expectedAnchors].sort());
 });
 
-test('grouped hook uses face-head, body-arms, and hands-contact smaller tasks', () => {
-  assert.match(hook, /id: 'face-head'/);
-  assert.match(hook, /id: 'body-arms'/);
-  assert.match(hook, /id: 'hands-contact'/);
-  assert.match(hook, /smallerTaskForLocalVisionModel: true/);
-  assert.match(hook, /doNotInferOtherGroups: true/);
+test('hands-contact is capability-specific and optional for core structure', () => {
+  const hands = definition.groups.find((group) => group.id === 'hands-contact');
+  assert.equal(hands.capability, 'hand-contact');
+  assert.equal(hands.optionalForCoreStructure, true);
 });
 
-test('each semantic group gets a fresh bounded model timeout and at most one repair', () => {
-  assert.match(hook, /MAX_REPAIR_ATTEMPTS_PER_GROUP = 1/);
-  assert.match(hook, /AbortSignal\.timeout\(GROUP_TIMEOUT_MS\)/);
-  assert.match(hook, /ENKI_SEMANTIC_GROUP_TIMEOUT_MS/);
-  assert.match(hook, /text-only bounded repair/);
+test('generic grouped hook loads actor group definition and keeps one repair', () => {
+  assert.match(genericHook, /loadActorSemanticGroupDefinition/);
+  assert.match(genericHook, /ACTOR_SEMANTIC_GROUP_DEFINITION/);
+  assert.match(genericHook, /maxCoordinateRepairAttemptsPerGroup/);
+  assert.match(genericHook, /AbortSignal\.timeout\(GROUP_TIMEOUT_MS\)/);
+  assert.match(genericHook, /Coordinate repair only\. Do not re-evaluate the image and do not change any semantic status/);
+  assert.doesNotMatch(genericHook, /region:enki:head|region:enki:hand-left/);
 });
 
-test('group repair cannot change semantic statuses or clamp invalid geometry', () => {
-  assert.match(hook, /assertSameStatuses/);
-  assert.match(hook, /Coordinate repair only\. Do not re-evaluate the image and do not change any semantic status/);
-  assert.match(hook, /x\+width<=1/);
-  assert.match(hook, /y\+height<=1/);
-  assert.doesNotMatch(hook, /clamp.*discovery|repair.*clamp/i);
+test('legacy Enki hook is now only a compatibility adapter', () => {
+  assert.match(compatibilityHook, /enki-semantic-groups-v1\.json/);
+  assert.match(compatibilityHook, /actor-semantic-grouped-vision-hook\.mjs/);
+  assert.doesNotMatch(compatibilityHook, /const GROUPS/);
 });
