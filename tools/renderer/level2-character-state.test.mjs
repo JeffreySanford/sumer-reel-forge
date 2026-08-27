@@ -8,6 +8,7 @@ const workflowPath =
   'tools/renderer/workflows/shot03-character-state-inpaint-api.json';
 const entrypointPath = 'tools/scripts/shot03-level2-enki-blink.mjs';
 const implementationPath = 'tools/scripts/shot03-level2-enki-blink-v2.mjs';
+const enginePath = 'tools/scripts/shot03-level2-enki-blink-v2-engine.mjs';
 const localizationPath =
   'tools/animation/src/level2-character-state-localization.mjs';
 
@@ -49,10 +50,11 @@ test('Shot 3 blink workflow is localized conservative inpainting rather than who
 
 test('Shot 3 blink lane constrains SAM to approved upper-face geometry before inpaint', async () => {
   const entrypoint = await text(entrypointPath);
-  const source = await text(implementationPath);
+  const source = await text(enginePath);
   const localization = await text(localizationPath);
 
   assert.match(entrypoint, /shot03-level2-enki-blink-v2\.mjs/);
+  assert.match(await text(implementationPath), /shot03-level2-enki-blink-v2-engine\.mjs/);
   assert.match(source, /ENKI_BODY_ID = 'shot03-enki-body-v1'/);
   assert.match(source, /verifyStoredChecksum/);
   assert.match(source, /semantic-overlay-sam3-api\.json/);

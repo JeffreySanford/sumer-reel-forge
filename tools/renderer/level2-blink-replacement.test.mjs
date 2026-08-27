@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
-const path = 'tools/scripts/shot03-level2-enki-blink-replacement.mjs';
+const path = 'tools/scripts/shot03-level2-enki-blink-replacement-engine.mjs';
 
 async function source() {
   return readFile(path, 'utf8');
