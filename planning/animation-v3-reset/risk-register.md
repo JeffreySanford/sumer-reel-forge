@@ -4,6 +4,8 @@ Status: **planning contract / automation-first revision**
 
 Updated: **2026-08-26**
 
+Rive remains a **deferred/optional specialist** backed by historical neutral-contract evidence; it is not the required/default hero pipeline.
+
 Scale: Probability Low/Medium/High; Impact Low/Medium/High/Critical.
 
 ## R-001 — Actor performance changes source identity
