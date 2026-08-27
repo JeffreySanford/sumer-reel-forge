@@ -116,6 +116,53 @@ test('GPU AI task captures before and after telemetry without changing the task 
   assert.equal(await inspectGpuLease(leaseDirectory), null);
 });
 
+test('GPU AI task captures cleanup telemetry before releasing the lease', async (t) => {
+  const leaseDirectory = await withTempLease(t);
+  const captures = [];
+  const receipts = [];
+  let observedDuringCleanup;
+
+  const result = await withGpuAiTask(
+    {
+      leaseDirectory,
+      owner: 'cleanup-owner',
+      task: 'cleanup-task',
+      backend: 'ollama',
+      model: 'vision-model',
+      timeoutMs: 100,
+      leaseMs: 5_000,
+      pollMs: 5,
+      collectTelemetry: async () => {
+        const sample = {
+          schemaVersion: 1,
+          capturedAt: `capture-${captures.length + 1}`,
+          nvidia: { available: true, devices: [{ memoryUsedMb: captures.length + 1 }] },
+          ollama: { reachable: true, loadedModels: [] },
+          comfyui: { reachable: true, devices: [] },
+        };
+        captures.push(sample);
+        return sample;
+      },
+      persistTelemetry: async (receipt) => {
+        receipts.push(receipt);
+        return '/tmp/fake-gpu-task-cleanup-receipt.json';
+      },
+      cleanup: async () => {
+        observedDuringCleanup = await inspectGpuLease(leaseDirectory);
+      },
+    },
+    async () => 'cleanup-complete',
+  );
+
+  assert.equal(result, 'cleanup-complete');
+  assert.equal(captures.length, 3);
+  assert.equal(receipts.length, 1);
+  assert.equal(receipts[0].cleanup.status, 'completed');
+  assert.equal(receipts[0].afterCleanup.capturedAt, 'capture-3');
+  assert.equal(observedDuringCleanup.metadata.owner, 'cleanup-owner');
+  assert.equal(await inspectGpuLease(leaseDirectory), null);
+});
+
 test('telemetry capture failure stays advisory and cannot fail GPU work', async (t) => {
   const leaseDirectory = await withTempLease(t);
   let receipt;

@@ -75,7 +75,10 @@ const deterministicArgs = args.filter(
   (arg) => arg !== '--require-ai' && arg !== '--skip-ai',
 );
 if (canonicalPreviewStaged && effectivePreviewArg) {
-  deterministicArgs.push(effectivePreviewArg, '--skip-render');
+  deterministicArgs.push(effectivePreviewArg);
+}
+if (effectivePreviewArg && !deterministicArgs.includes('--skip-render')) {
+  deterministicArgs.push('--skip-render');
 }
 deterministicArgs.push('--skip-ai');
 const deterministicExit = await runNode(
@@ -134,6 +137,7 @@ if (deterministicExit === 1) {
             process.env.SRF_GPU_LEASE_TIMEOUT_MS,
             visionTimeoutMs,
           ),
+          cleanup: async () => unloadVisionModel(),
         },
         async (lease) => {
           console.log(
@@ -234,6 +238,30 @@ async function warmVisionModel() {
   console.log(
     `[review-runtime] ${model} loaded and kept alive for ${keepAlive} (${elapsedSeconds}s).`,
   );
+}
+
+async function unloadVisionModel() {
+  if (!model) return;
+
+  console.log(`[review-runtime] Releasing ${model} residency after delta vision review...`);
+  const response = await fetch(`${baseUrl}/api/generate`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      model,
+      prompt: '',
+      stream: false,
+      keep_alive: 0,
+    }),
+    signal: AbortSignal.timeout(loadTimeoutMs),
+  });
+
+  const text = await response.text();
+  if (!response.ok) {
+    throw new Error(`Ollama unload HTTP ${response.status}: ${text}`);
+  }
+
+  console.log(`[review-runtime] ${model} unload request completed.`);
 }
 
 async function runPnpmTsx(scriptPath, scriptArgs) {
