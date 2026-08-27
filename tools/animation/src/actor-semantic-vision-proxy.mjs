@@ -28,9 +28,26 @@ export function expandPixelBounds(bounds, source, paddingFraction = 0.18) {
   };
 }
 
+export function evaluateProxyDiscoveryGeometry(discovery) {
+  const issues = [];
+  for (const region of discovery?.regions ?? []) {
+    if (region?.status === 'not-visible') continue;
+    if (!validNormalizedBox(region?.bbox)) {
+      issues.push(`${String(region?.id ?? '<unknown-region>')} bbox is not fully contained in normalized crop space: ${JSON.stringify(region?.bbox ?? null)}`);
+    }
+  }
+  for (const anchor of discovery?.anchors ?? []) {
+    if (anchor?.status === 'not-visible') continue;
+    if (!validNormalizedPoint(anchor?.point)) {
+      issues.push(`${String(anchor?.id ?? '<unknown-anchor>')} point is not normalized to crop space: ${JSON.stringify(anchor?.point ?? null)}`);
+    }
+  }
+  return { ok: issues.length === 0, issues };
+}
+
 export function mapProxyBoxToSource(box, metadata) {
   if (isZeroBox(box)) return zeroBox();
-  if (!validNormalizedBox(box)) throw new Error('Proxy bbox must be normalized to 0..1.');
+  if (!validNormalizedBox(box)) throw new Error('Proxy bbox must be normalized to 0..1 and fully contained in the proxy crop.');
   const { source, crop } = validateMetadata(metadata);
   return clampNormalizedBox({
     x: (crop.x + box.x * crop.width) / source.width,
@@ -51,6 +68,10 @@ export function mapProxyPointToSource(point, metadata) {
 }
 
 export function mapDiscoveryFromProxyToSource(discovery, metadata) {
+  const evaluation = evaluateProxyDiscoveryGeometry(discovery);
+  if (!evaluation.ok) {
+    throw new Error(`Proxy semantic geometry is invalid: ${evaluation.issues.join(' | ')}`);
+  }
   const provenance = metadata?.proxyKind === 'locator-crop'
     ? 'localized on exact pre-padding Enki locator crop; coordinates remapped to registered source frame'
     : 'localized on deterministic alpha-crop vision proxy; coordinates remapped to registered source frame';
@@ -73,11 +94,19 @@ export function mapDiscoveryFromProxyToSource(discovery, metadata) {
 
 export function proxyInstruction(metadata) {
   const { source, crop } = validateMetadata(metadata);
+  const coordinateRules = [
+    'For every found/uncertain bbox, x/y/width/height are decimal fractions in 0..1 relative to the attached crop.',
+    'A bbox must be fully contained: x + width <= 1 and y + height <= 1.',
+    'For every found/uncertain anchor, x/y are decimal fractions in 0..1.',
+    'For not-visible items, use all-zero bbox/point geometry.',
+    'Never use pixels, percentages, or a 0..1000 coordinate system.',
+  ].join(' ');
   if (metadata?.proxyKind === 'locator-crop') {
     return [
       'VISION-PROXY CONTRACT:',
       'The attached image is an exact source-pixel crop using the previously recorded pre-padding Enki locator box. No SAM mask, alpha inference, repaint, resize, or manual correction was used.',
       'Return all bbox/point coordinates normalized to THIS ATTACHED CROP, not the original source frame.',
+      coordinateRules,
       'Do not compensate for the crop yourself; the host will map crop coordinates back to the original registered source frame.',
       `Original source is ${source.width}x${source.height}; locator crop in source pixels is x=${crop.x}, y=${crop.y}, width=${crop.width}, height=${crop.height}.`,
       'The crop may still contain boat/background context. Locate only the visible Enki anatomy requested by the schema.',
@@ -87,6 +116,7 @@ export function proxyInstruction(metadata) {
     'VISION-PROXY CONTRACT:',
     'The attached image is a deterministic crop of the accepted registered Enki RGBA source, composited onto a neutral matte only to make visible source pixels easier to inspect.',
     'Return all bbox/point coordinates normalized to THIS ATTACHED PROXY IMAGE, not the original source frame.',
+    coordinateRules,
     'Do not compensate for the crop yourself; the host will map proxy coordinates back to the original registered source frame.',
     `Original source is ${source.width}x${source.height}; proxy crop in source pixels is x=${crop.x}, y=${crop.y}, width=${crop.width}, height=${crop.height}.`,
     'The matte contains no semantic content. Locate only Enki pixels; do not include matte background.',
