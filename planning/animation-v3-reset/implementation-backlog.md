@@ -2,7 +2,7 @@
 
 Status: **active execution plan**
 
-Updated: **2026-08-26**
+Updated: **2026-08-27**
 
 This checklist reflects repository evidence, not aspiration. The production character path is governed by [`automation-first-character-performance.md`](./automation-first-character-performance.md).
 
@@ -101,7 +101,7 @@ Phase exit is **not** achieved merely by increasing motion-channel count.
 
 ## Phase 5 — Automated actor preparation/performance
 
-Status: **STARTED — ACTIVE NEXT PHASE**
+Status: **ACTIVE — SOURCE IDENTITY VERIFIED; SEMANTIC DISCOVERY NEXT**
 
 ### 5.0 Rive boundary experiment
 
@@ -112,33 +112,49 @@ Status: **STARTED — ACTIVE NEXT PHASE**
 - [!] Rive runtime install deferred;
 - [!] manual `.riv` authoring rejected as production critical path.
 
-The Rive work remains evidence/optional adapter scaffolding; it is not deleted and is not the default pipeline.
+The Rive work remains evidence/optional adapter scaffolding; it is not deleted and is not the default pipeline. A missing `rive` shell command is non-blocking under this policy.
 
 ### 5.1 Actor-prep contracts
 
-- [~] engine-neutral `ActorPrepDefinition` and validation added on branch;
-- [~] semantic regions, landmarks/anchors and backend evidence modeled;
-- [~] manual-editor/time-authority/license-blocked negative tests added;
-- [ ] local verification of `animation-contracts` after this change;
-- [ ] integrate actor-prep identity into resolved Scene V3 when the shape is proven.
+- [x] engine-neutral `ActorPrepDefinition` and validation;
+- [x] semantic regions, landmarks/anchors and backend evidence modeled;
+- [x] manual-editor/time-authority/license-blocked negative tests;
+- [x] local `animation-contracts` verification: 18/18 PASS + build PASS on 2026-08-27;
+- [ ] integrate actor-prep identity into resolved Scene V3 when the shape is proven beyond this proof lane.
 
 ### 5.2 Automated Enki prep
 
-- [~] latest accepted recovered Enki source discovery implemented;
-- [~] SHA/dimension verification implemented;
-- [~] candidate-only packet under `tmp/animation-assets/actor-prep/enki/v1` implemented;
-- [~] desired semantic regions/anchors encoded as `pending-auto-discovery`;
-- [~] native/LivePortrait/Rive backend status encoded;
-- [~] zero manual-editor/model invocation receipt implemented;
-- [ ] local run/receipt verification.
+- [x] latest accepted recovered Enki source discovery;
+- [x] SHA/dimension verification;
+- [x] candidate-only packet under `tmp/animation-assets/actor-prep/enki/v1`;
+- [x] desired semantic regions/anchors encoded as `pending-auto-discovery`;
+- [x] native/LivePortrait/Rive backend status encoded;
+- [x] zero manual-editor/model invocation receipt;
+- [x] local packet run verified on 2026-08-27.
+
+Verified evidence:
+
+```text
+source sha256:d19ff6b4810a6fad5b8ce41232e07d7fc0f72923799e195df1596f53f4239f07
+source 941x1672
+actor-prep definition sha256:81b39d95d47ecbade72a7c1b861619d7271a465050a3a70d51d4789ff18fa606
+manual editor invocations 0
+model invocations 0
+```
 
 ### 5.3 Automated semantic discovery
 
-- [ ] head/face/torso/arm/hand region discovery from source;
-- [ ] landmark/anchor proposal with confidence;
-- [ ] source-pixel fidelity checks;
-- [ ] reject unsupported/contaminated regions instead of manual cleanup;
-- [ ] human review only for candidate acceptance.
+- [~] head/face/torso/arm/hand region discovery implemented with two Qwen3-VL locator passes;
+- [~] landmark/anchor proposal with confidence and two-pass spatial agreement;
+- [~] deterministic normalized geometry validation: bounds, containment, crown/head attachment and anchor ownership;
+- [~] standalone semantic review SVG + consensus/QA/receipt artifacts;
+- [~] reject/disqualify unstable or unsupported semantic locations instead of manual coordinate repair;
+- [~] human review is the next gate before any extraction/segmentation;
+- [ ] local run/receipt verification of semantic discovery;
+- [ ] source-pixel fidelity checks for extracted semantic region assets;
+- [ ] region extraction/segmentation only after accepted semantic locations.
+
+Semantic discovery is localization only. It must not mutate source pixels, actor-prep identity or canonical assets, and it cannot promote itself.
 
 ### 5.4 Performance template/bake contract
 
@@ -215,6 +231,8 @@ license/model rights are unresolved
 manual GUI work becomes recurring production dependency
 identity/source fidelity repeatedly fails
 technical green output is human-rejected
+semantic locator passes disagree materially
+semantic geometry violates visible source anatomy
 thresholds are weakened merely to obtain a pass
 ```
 
