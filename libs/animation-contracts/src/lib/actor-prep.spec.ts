@@ -68,14 +68,15 @@ describe('ActorPrepDefinition', () => {
   });
 
   it('rejects recurring manual editor work as a default production dependency', () => {
-    const definition = validDefinition() as unknown as {
-      automation: { recurringManualEditorAllowed: boolean };
-    } & ActorPrepDefinition;
-    definition.automation = {
-      ...definition.automation,
-      recurringManualEditorAllowed: true,
-    } as never;
-    expect(() => validateActorPrepDefinition(definition)).toThrow(/manual editor/i);
+    const definition = validDefinition();
+    const invalid = {
+      ...definition,
+      automation: {
+        ...definition.automation,
+        recurringManualEditorAllowed: true,
+      },
+    } as unknown as ActorPrepDefinition;
+    expect(() => validateActorPrepDefinition(invalid)).toThrow(/manual editor/i);
   });
 
   it('rejects actor backends that can own live story time', () => {
