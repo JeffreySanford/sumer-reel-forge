@@ -45,8 +45,8 @@ export function mapProxyPointToSource(point, metadata) {
   if (!validNormalizedPoint(point)) throw new Error('Proxy point must be normalized to 0..1.');
   const { source, crop } = validateMetadata(metadata);
   return {
-    x: clamp01((crop.x + point.x * crop.width) / source.width),
-    y: clamp01((crop.y + point.y * crop.height) / source.height),
+    x: canonicalNormalized((crop.x + point.x * crop.width) / source.width),
+    y: canonicalNormalized((crop.y + point.y * crop.height) / source.height),
   };
 }
 
@@ -118,11 +118,25 @@ function validNormalizedPoint(point) {
 }
 
 function clampNormalizedBox(box) {
-  const x = clamp01(box.x);
-  const y = clamp01(box.y);
-  const right = clamp01(box.x + box.width);
-  const bottom = clamp01(box.y + box.height);
-  return { x, y, width: Math.max(0, right - x), height: Math.max(0, bottom - y) };
+  const x = canonicalNormalized(box.x);
+  const y = canonicalNormalized(box.y);
+  const right = canonicalNormalized(box.x + box.width);
+  const bottom = canonicalNormalized(box.y + box.height);
+  return {
+    x,
+    y,
+    width: canonicalNormalized(Math.max(0, right - x)),
+    height: canonicalNormalized(Math.max(0, bottom - y)),
+  };
+}
+
+function canonicalNormalized(value) {
+  const clamped = clamp01(value);
+  // Proxy/source remapping is evidence data, so collapse non-semantic IEEE-754
+  // noise at the boundary instead of letting equivalent coordinates serialize
+  // differently across otherwise identical runs.
+  const rounded = Number(clamped.toFixed(12));
+  return Object.is(rounded, -0) ? 0 : rounded;
 }
 
 function clamp01(value) {
