@@ -1,6 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
-import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { expandPixelBounds } from '../animation/src/actor-semantic-vision-proxy.mjs';
@@ -30,6 +29,7 @@ function main() {
     throw new Error('Actor prep does not contain valid source dimensions.');
   }
 
+  const archivedAttempt = archiveExistingDiscovery(workspace);
   const alphaBounds = detectAlphaBounds(sourcePath);
   const crop = expandPixelBounds(alphaBounds, source, PADDING_FRACTION);
   const discoveryDirectory = join(workspace, 'semantic-discovery');
@@ -49,6 +49,7 @@ function main() {
     matteColor: MATTE_COLOR,
     sourcePath,
     proxyPath,
+    priorAttemptArchive: archivedAttempt,
     sourcePixelsMutated: false,
     generatedSemanticPixels: false,
     coordinatePolicy: 'model returns proxy-normalized coordinates; hook remaps to original registered source frame',
@@ -58,6 +59,7 @@ function main() {
   console.log('Shot 3 Enki semantic discovery autopilot');
   console.log('Policy: accepted source bytes remain untouched; Qwen sees a deterministic alpha-cropped neutral-matte proxy.');
   console.log(`Workspace: ${workspace}`);
+  if (archivedAttempt) console.log(`Archived prior discovery evidence: ${archivedAttempt}`);
   console.log(`Alpha bounds: x=${alphaBounds.x}, y=${alphaBounds.y}, ${alphaBounds.width}x${alphaBounds.height}`);
   console.log(`Vision crop: x=${crop.x}, y=${crop.y}, ${crop.width}x${crop.height}`);
   console.log(`Vision proxy: ${proxyPath}`);
@@ -85,6 +87,20 @@ function main() {
   );
   if (result.error) throw result.error;
   process.exitCode = result.status ?? 1;
+}
+
+function archiveExistingDiscovery(workspace) {
+  const current = join(workspace, 'semantic-discovery');
+  if (!existsSync(current)) return null;
+  const entries = readdirSync(current);
+  if (!entries.length) return null;
+
+  const historyRoot = join(workspace, 'semantic-discovery-history');
+  mkdirSync(historyRoot, { recursive: true });
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const archive = join(historyRoot, `${stamp}-pre-proxy`);
+  renameSync(current, archive);
+  return archive;
 }
 
 function latestActorPrepWorkspace() {
