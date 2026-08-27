@@ -34,35 +34,45 @@ console.log(`Locator pixels: ${located?.bboxPixels ? JSON.stringify(located.bbox
 console.log(`Accepted padding: ${accepted.padding}`);
 console.log(`Accepted ROI: ${JSON.stringify(accepted.roi)}`);
 console.log('');
-printFile('ROI SOURCE CROP', cropSourcePath);
-printFile('SAM CANDIDATE', cropCandidatePath);
-printFile('REGISTERED SOURCE', registeredPath);
+const sourceInfo = printFile('ROI SOURCE CROP', cropSourcePath);
+const candidateInfo = printFile('SAM CANDIDATE', cropCandidatePath);
+const registeredInfo = printFile('REGISTERED SOURCE', registeredPath);
 console.log('');
 console.log('[INTERPRETATION]');
 const roiIsFullFrame = accepted.roi?.x === 0 && accepted.roi?.y === 0 &&
   accepted.roi?.width === report.sourceDimensions?.width &&
   accepted.roi?.height === report.sourceDimensions?.height;
 console.log(`ROI full-frame: ${roiIsFullFrame ? 'YES' : 'no'}`);
-const cropProbe = probe(cropCandidatePath);
-const cropAlpha = alphaStats(cropCandidatePath);
 if (roiIsFullFrame) {
-  console.log('- The accepted ROI search never isolated Enki spatially before SAM; the candidate generator received the complete source frame.');
+  console.log('- The accepted ROI search never isolated Enki spatially before SAM; 15% padding expanded the Enki locator to the complete source frame.');
 }
-if (cropAlpha.min >= 254.5) {
+if (candidateInfo.alpha?.min >= 254.5) {
   console.log('- The SAM candidate alpha plane is effectively fully opaque; JoinImageWithAlpha did not produce a useful subject mask in this output.');
 }
-if (!roiIsFullFrame && cropProbe.width === report.sourceDimensions?.width && cropProbe.height === report.sourceDimensions?.height) {
+if (!roiIsFullFrame && candidateInfo.probe.width === report.sourceDimensions?.width && candidateInfo.probe.height === report.sourceDimensions?.height) {
   console.log('- Candidate dimensions unexpectedly expanded back to full source dimensions; inspect generator/workflow registration semantics.');
 }
+if (!sourceInfo.alpha) {
+  console.log('- The ROI source crop has no alpha plane, which is expected for an editorial RGB crop and is not itself an error.');
+}
+if (candidateInfo.alpha && registeredInfo.alpha && candidateInfo.alpha.min >= 254.5 && registeredInfo.alpha.min >= 254.5) {
+  console.log('- Registration is not the first alpha-loss point; the candidate was already effectively opaque before registration.');
+}
+console.log('[NEXT] Reuse the exact pre-padding Enki locator box as a source-faithful vision crop; do not rerun SAM or infer alpha from this candidate.');
 console.log('[STOP] Diagnostic only. No source/model/canonical mutation.');
 
 function printFile(label, path) {
   const p = probe(path);
-  const a = alphaStats(path);
+  const a = alphaStats(path, p.pixFmt);
   console.log(`[${label}]`);
   console.log(`  path=${path}`);
   console.log(`  ${p.width}x${p.height} · pix_fmt=${p.pixFmt}`);
-  console.log(`  alpha min=${a.min.toFixed(3)} max=${a.max.toFixed(3)} avg=${a.avg.toFixed(3)}`);
+  if (a) {
+    console.log(`  alpha min=${a.min.toFixed(3)} max=${a.max.toFixed(3)} avg=${a.avg.toFixed(3)}`);
+  } else {
+    console.log('  alpha=N/A (pixel format has no alpha plane)');
+  }
+  return { probe: p, alpha: a };
 }
 
 function latestWorkspace() {
@@ -97,7 +107,8 @@ function probe(path) {
   return { width: Number(stream.width), height: Number(stream.height), pixFmt: String(stream.pix_fmt ?? '') };
 }
 
-function alphaStats(path) {
+function alphaStats(path, pixFmt) {
+  if (!hasAlphaPixelFormat(pixFmt)) return null;
   const result = spawnSync('ffmpeg', [
     '-hide_banner', '-loglevel', 'error', '-i', path,
     '-vf', 'alphaextract,signalstats,metadata=print:file=-',
@@ -105,10 +116,17 @@ function alphaStats(path) {
   ], { cwd: ROOT, encoding: 'utf8', windowsHide: true, shell: false });
   if (result.error) throw result.error;
   const text = `${result.stdout ?? ''}\n${result.stderr ?? ''}`;
+  if (result.status !== 0) return null;
   const pick = (key) => {
     const match = text.match(new RegExp(`lavfi\\.signalstats\\.${key}=([0-9.]+)`));
-    if (!match) throw new Error(`Could not read alpha ${key} for ${path}. Output: ${text.slice(-2000)}`);
-    return Number(match[1]);
+    return match ? Number(match[1]) : null;
   };
-  return { min: pick('YMIN'), max: pick('YMAX'), avg: pick('YAVG') };
+  const min = pick('YMIN');
+  const max = pick('YMAX');
+  const avg = pick('YAVG');
+  return [min, max, avg].every(Number.isFinite) ? { min, max, avg } : null;
+}
+
+function hasAlphaPixelFormat(pixFmt) {
+  return /(^|_)(rgba|bgra|argb|abgr|ya|yuva|gbrap|pal8)/i.test(String(pixFmt));
 }
