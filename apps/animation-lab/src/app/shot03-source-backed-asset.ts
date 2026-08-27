@@ -1,10 +1,28 @@
 import type { PixiSourceAsset } from '@sumer-reel-forge/animation-pixi';
-import shot03BackgroundUrl from '../../../../assets/blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-03/background.png?url';
-import shot03WaterUrl from '../../../../assets/blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-03/water.png?url';
-import shot03VesselUrl from '../../../../assets/blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-03/vessel.png?url';
-import shot03EnkiBodyUrl from '../../../../assets/blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-03/character/enki-body.png?url';
-import shot03EnkiEyesUrl from '../../../../assets/blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-03/character/enki-eyes-closed.png?url';
-import shot03RiggingUrl from '../../../../assets/blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-03/foreground/rigging.png?url';
+const shot03BackgroundUrl = new URL(
+  '../../../../assets/blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-03/background.png',
+  import.meta.url,
+).href;
+const shot03WaterUrl = new URL(
+  '../../../../assets/blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-03/water.png',
+  import.meta.url,
+).href;
+const shot03VesselUrl = new URL(
+  '../../../../assets/blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-03/vessel.png',
+  import.meta.url,
+).href;
+const shot03EnkiBodyUrl = new URL(
+  '../../../../assets/blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-03/character/enki-body.png',
+  import.meta.url,
+).href;
+const shot03EnkiEyesUrl = new URL(
+  '../../../../assets/blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-03/character/enki-eyes-closed.png',
+  import.meta.url,
+).href;
+const shot03RiggingUrl = new URL(
+  '../../../../assets/blessings-of-sumer/chapter-01/reel-01/animation-v1/shot-03/foreground/rigging.png',
+  import.meta.url,
+).href;
 
 export const SHOT03_BACKGROUND_SHA256 =
   'sha256:db4b1c33afc38bd93543bd9eba8cb5b992ddfa0d3a8ca989d992bd060ec3f2b1' as const;

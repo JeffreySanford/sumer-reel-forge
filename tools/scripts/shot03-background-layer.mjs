@@ -624,6 +624,7 @@ async function resolveLayerCandidate(layerId, configuredDirectory) {
         }
       }
     } catch {
+      // Ignore unreadable/stale candidate runs and continue searching older evidence.
     }
   }
   throw new Error(
