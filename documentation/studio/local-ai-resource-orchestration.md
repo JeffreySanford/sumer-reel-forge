@@ -41,6 +41,18 @@ node tools/scripts/setup-ollama.mjs --pull-missing --include-retrieval
 
 The setup command never auto-loads a model, never runs at normal startup, and never changes human promotion authority. It writes observed state to `tmp/runtime/ollama-managed-state.json`.
 
+## Managed startup residency
+
+Managed `pnpm start:all` still verifies that Ollama is reachable and that the configured planning/vision models are installed, but it no longer pins the text planner in GPU memory by default.
+
+When `start-local.mjs` has produced a hardware profile, the planning warm-up command detects managed workstation startup and skips the `qwen3:8b` warm request. The planner loads lazily on first real planning use instead.
+
+Explicit opt-in is available with:
+
+- `OLLAMA_WARM_ON_START=true`.
+
+This change is intentionally narrower than globally forcing `OLLAMA_KEEP_ALIVE=0`. After an actual planning request, the text model may still remain resident for the configured keep-alive interval. That runtime residency must be measured against ComfyUI contention before a broader unload policy is chosen.
+
 ## Shared GPU lease
 
 Cross-process primitive:
@@ -67,6 +79,8 @@ The lease uses atomic directory creation so separate Node/Nest/CLI processes can
 
 An active lease is never stolen. Expired/dead-owner evidence can be quarantined and recovered. Release verifies the token before deleting the lease so one process cannot release another process's GPU ownership.
 
+**Lease state represents active Reel Forge execution ownership, not total GPU residency.** A `FREE` lease can coexist with VRAM consumed by a loaded Ollama model, ComfyUI/PyTorch allocator state, the desktop compositor, or another process. Runtime diagnostics must therefore show lease ownership and observed VRAM/model residency separately.
+
 The AI-task wrapper standardizes lease behavior through:
 
 - `SRF_GPU_LEASE_TIMEOUT_MS`;
@@ -88,7 +102,14 @@ Current live diagnostic:
 node tools/scripts/gpu-resource-status.mjs
 ```
 
-It reports lease ownership, `nvidia-smi` memory totals/used/free values when available, and currently loaded Ollama models.
+It uses the same telemetry implementation as GPU task receipts. It reports:
+
+- execution lease ownership;
+- `nvidia-smi` memory total / used / free;
+- Ollama `/api/ps` loaded-model residency and reported model VRAM;
+- ComfyUI `/system_stats` reachability and device/allocator memory where available.
+
+Using the HTTP Ollama endpoint avoids a Windows/Git-Bash false-negative caused by relying on the separate `ollama ps` CLI command.
 
 ## Task telemetry receipts
 
@@ -125,7 +146,9 @@ The caller records:
 - backend: `ollama`;
 - configured vision model.
 
-Text planning remains outside this lease policy for now. The planner may remain warm when the GPU is otherwise free.
+For already-approved shots, the managed review runtime now stages the approved canonical animation-v1 assets before deterministic review. It does not require obsolete pre-promotion candidate runs from `tmp/animation-assets/candidates`. Candidate staging remains the path for unpromoted work.
+
+Text planning remains outside the execution lease policy for now. Managed startup no longer preloads it, but a real planning request may leave it resident for the configured keep-alive interval.
 
 ## Managed caller: generic ComfyUI layer candidates
 
@@ -160,12 +183,14 @@ Current state:
 1. **DONE:** managed GPU-heavy Ollama delta-vision phase uses the shared lease;
 2. **PARTIAL:** generic ComfyUI candidate generation is wrapped; specialized/direct generation lanes still need audit/migration;
 3. **DONE:** leased tasks persist best-effort before/after GPU/Ollama/ComfyUI telemetry receipts;
-4. **NEXT:** expose active lease and recent task receipts through runtime capabilities / Studio;
-5. add explicit task-aware model release behavior for one-shot vision workloads;
-6. benchmark planner warm retention against ComfyUI contention before changing the existing `OLLAMA_KEEP_ALIVE` default;
-7. only then add bounded AI retry/advisory orchestration and retrieval.
+4. **DONE:** managed workstation startup avoids preloading the text planner by default;
+5. **DONE:** approved shot review stages canonical approved assets instead of requiring ephemeral candidate evidence;
+6. **NEXT:** expose active lease and recent task receipts through runtime capabilities / Studio;
+7. add explicit task-aware model release behavior for one-shot vision workloads;
+8. benchmark planning-call keep-alive against ComfyUI contention before changing the existing `OLLAMA_KEEP_ALIVE` default;
+9. only then add bounded AI retry/advisory orchestration and retrieval.
 
-Text planning may remain warm when the GPU is otherwise free. Do not globally force `OLLAMA_KEEP_ALIVE=0`; GPU policy should be task-aware.
+Do not globally force `OLLAMA_KEEP_ALIVE=0` without measurement. GPU policy should be task-aware, and startup residency is now separated from post-request residency.
 
 ## Authority
 
