@@ -2,6 +2,7 @@ import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { createInterface } from 'node:readline';
+import { withGpuAiTask } from '../runtime/gpu-ai-task.mjs';
 
 loadLocalEnvFile();
 
@@ -22,6 +23,7 @@ const requireAi = args.includes('--require-ai');
 const shotArg = args.find((arg) => arg.startsWith('--shot='));
 const previewArg = args.find((arg) => arg.startsWith('--preview-dir='));
 if (!shotArg) throw new Error('--shot=<number> is required.');
+const shotNumber = shotArg.slice('--shot='.length);
 
 const model = process.env.OLLAMA_VISION_MODEL;
 const baseUrl = (process.env.OLLAMA_BASE_URL ?? 'http://localhost:11434').replace(
@@ -84,22 +86,42 @@ if (deterministicExit === 1) {
     } else {
       console.log('');
       console.log('[review-runtime] Phase 3/4 · evidence-aware source delta vision review');
-      if (model) {
-        await warmVisionModel().catch((error) => {
-          console.warn(
-            `[review-runtime] Vision warm-up did not complete: ${errorMessage(error)}`,
-          );
-        });
-      }
 
-      const deltaArgs = [shotArg];
-      if (previewArg) deltaArgs.push(previewArg);
-      if (requireAi) deltaArgs.push('--require-ai');
-      deltaExit = await runNode(
-        'tools/scripts/review-animation-shot-delta-vision-evidence.mjs',
-        deltaArgs,
-        { suppressTerminalState: true },
+      deltaExit = await withGpuAiTask(
+        {
+          owner: 'animation-shot-review',
+          task: `shot-${shotNumber}-delta-vision-review`,
+          backend: 'ollama',
+          model,
+          timeoutMs: positiveInteger(
+            process.env.SRF_GPU_LEASE_TIMEOUT_MS,
+            visionTimeoutMs,
+          ),
+        },
+        async (lease) => {
+          console.log(
+            `[review-runtime] GPU lease acquired for ${lease.metadata.task} · model ${model ?? 'default'} · expires ${lease.metadata.expiresAt}.`,
+          );
+
+          if (model) {
+            await warmVisionModel().catch((error) => {
+              console.warn(
+                `[review-runtime] Vision warm-up did not complete: ${errorMessage(error)}`,
+              );
+            });
+          }
+
+          const deltaArgs = [shotArg];
+          if (previewArg) deltaArgs.push(previewArg);
+          if (requireAi) deltaArgs.push('--require-ai');
+          return runNode(
+            'tools/scripts/review-animation-shot-delta-vision-evidence.mjs',
+            deltaArgs,
+            { suppressTerminalState: true },
+          );
+        },
       );
+
       if (deltaExit === 1) {
         console.log('');
         console.log('FINAL STATE: REVIEW ERROR');
