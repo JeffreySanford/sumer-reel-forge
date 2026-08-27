@@ -51,3 +51,16 @@ test('semantic proxy allows exactly one bounded coordinate correction without cl
   assert.match(hook, /Do not use pixel coordinates, percentages, or a 0\.\.1000 coordinate system/);
   assert.doesNotMatch(hook, /clamp.*discovery|repair.*clamp/i);
 });
+
+test('coordinate repair gets a fresh bounded timeout instead of reusing the first vision signal', () => {
+  assert.match(hook, /REPAIR_TIMEOUT_MS/);
+  assert.match(hook, /signal: AbortSignal\.timeout\(REPAIR_TIMEOUT_MS\)/);
+  assert.match(hook, /SEMANTIC_COORDINATE_REPAIR_TIMEOUT_MS/);
+});
+
+test('coordinate repair is text-only and cannot change semantic statuses', () => {
+  assert.match(hook, /stripImages\(messages\)/);
+  assert.match(hook, /geometry-only correction/i);
+  assert.match(hook, /compareSemanticAuthority/);
+  assert.match(hook, /status changed/);
+});
