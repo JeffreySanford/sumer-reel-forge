@@ -154,3 +154,19 @@ test('start-local acquires ownership before startup side effects and releases on
   assert.match(startLocalSource, /process\.on\('exit', \(\) => \{/);
   assert.match(startLocalSource, /releaseStartupInstanceLock\(startupLock\)/);
 });
+
+test('start:all owns the animation worker lifecycle beside the renderer worker', () => {
+  assert.match(
+    startLocalSource,
+    /const animationWorkerScript = join\(root, 'tools', 'scripts', 'animation-worker\.mjs'\);/,
+  );
+  assert.match(
+    startLocalSource,
+    /animationWorkerProcess = spawnNode\(animationWorkerScript, \{\s*ANIMATION_WORKER_ID: animationWorkerId,/s,
+  );
+  assert.match(startLocalSource, /stopChild\(animationWorkerProcess\);/);
+  assert.match(
+    startLocalSource,
+    /Managed animation worker started: \$\{animationWorkerId\}/,
+  );
+});
