@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process';
 import { join, resolve } from 'node:path';
 
+const root = resolve('.');
 const scene = resolve(
   'tools/animation/scenes/reel-01-shot-01-black-water-level2.scene-v2.json',
 );
@@ -25,7 +26,7 @@ console.log(`Output directory: ${outputDirectory}`);
 
 await new Promise((resolvePromise, rejectPromise) => {
   const child = spawn('pnpm', args, {
-    cwd: resolve('.'),
+    cwd: root,
     env: {
       ...process.env,
       SCENE_V2_BENCHMARK_OUTPUT_DIRECTORY: outputDirectory,
@@ -50,35 +51,81 @@ await new Promise((resolvePromise, rejectPromise) => {
 });
 
 console.log(`Opening candidate video: ${videoPath}`);
-openLocalFile(videoPath);
+await openLocalFile(videoPath);
 
-function openLocalFile(filePath) {
-  let child;
+async function openLocalFile(filePath) {
   if (process.platform === 'win32') {
     const escapedPath = filePath.replace(/"/g, '""');
-    child = spawn(
-      'cmd.exe',
-      ['/d', '/s', '/c', `start "" "${escapedPath}"`],
+    const attempts = [
       {
-        detached: true,
-        stdio: 'ignore',
-        windowsHide: true,
+        label: 'Windows Explorer shell association',
+        command: 'explorer.exe',
+        args: [filePath],
       },
-    );
-  } else if (process.platform === 'darwin') {
-    child = spawn('open', [filePath], {
-      detached: true,
-      stdio: 'ignore',
-    });
-  } else {
-    child = spawn('xdg-open', [filePath], {
-      detached: true,
-      stdio: 'ignore',
-    });
+      {
+        label: 'PowerShell Start-Process',
+        command: 'powershell.exe',
+        args: [
+          '-NoProfile',
+          '-NonInteractive',
+          '-Command',
+          'Start-Process -LiteralPath $args[0]',
+          filePath,
+        ],
+      },
+      {
+        label: 'cmd start',
+        command: 'cmd.exe',
+        args: ['/d', '/s', '/c', `start "" "${escapedPath}"`],
+      },
+    ];
+
+    const errors = [];
+    for (const attempt of attempts) {
+      try {
+        await launchOpener(attempt.command, attempt.args);
+        console.log(`[open] ${attempt.label}: ${filePath}`);
+        return;
+      } catch (error) {
+        errors.push(`${attempt.label}: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+
+    console.warn(`Could not auto-open ${filePath}.`);
+    for (const error of errors) console.warn(`  ${error}`);
+    console.warn(`Open manually with: explorer.exe "${filePath}"`);
+    return;
   }
 
-  child.once('error', (error) => {
-    console.warn(`Could not open ${filePath}: ${error.message}`);
+  const command = process.platform === 'darwin' ? 'open' : 'xdg-open';
+  try {
+    await launchOpener(command, [filePath]);
+    console.log(`[open] ${command}: ${filePath}`);
+  } catch (error) {
+    console.warn(
+      `Could not auto-open ${filePath}: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+}
+
+async function launchOpener(command, args) {
+  await new Promise((resolvePromise, rejectPromise) => {
+    const child = spawn(command, args, {
+      cwd: root,
+      stdio: 'ignore',
+      windowsHide: false,
+    });
+    child.once('error', rejectPromise);
+    child.once('exit', (code, signal) => {
+      if (code === 0) {
+        resolvePromise();
+        return;
+      }
+      rejectPromise(
+        new Error(
+          `${command} failed with ${signal ? `signal ${signal}` : `exit code ${code ?? 'unknown'}`}`,
+        ),
+      );
+    });
   });
-  child.unref();
 }
