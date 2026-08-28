@@ -4,6 +4,14 @@ import react from '@vitejs/plugin-react';
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
 
+const apiTarget = process.env.ANIMATION_LAB_API_TARGET ?? 'http://localhost:3000';
+const apiProxy = {
+  '/api': {
+    target: apiTarget,
+    changeOrigin: true,
+  },
+};
+
 export default defineConfig(() => ({
   root: import.meta.dirname,
   cacheDir: '../../node_modules/.vite/apps/animation-lab',
@@ -11,11 +19,13 @@ export default defineConfig(() => ({
     port: 4300,
     host: 'localhost',
     strictPort: true,
+    proxy: apiProxy,
   },
   preview: {
     port: 4300,
     host: 'localhost',
     strictPort: true,
+    proxy: apiProxy,
   },
   plugins: [react(), nxViteTsPaths(), nxCopyAssetsPlugin(['*.md'])],
   // Uncomment this if you are using workers.
