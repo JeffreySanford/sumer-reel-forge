@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import App from './app';
 import styles from './forge-lab.module.css';
+import Shot01WaterLab from './shot01-water-lab';
 
 interface ProductionDecision {
   id: string;
@@ -115,7 +116,7 @@ function initialShot(): number {
   if (typeof window === 'undefined') return 3;
   const pathMatch = window.location.pathname.match(/\/forge\/shot\/(\d+)/);
   const candidate = Number(pathMatch?.[1] ?? new URLSearchParams(window.location.search).get('shot') ?? 3);
-  return candidate === 4 ? 4 : 3;
+  return candidate === 1 || candidate === 3 || candidate === 4 ? candidate : 3;
 }
 
 async function readJson<T>(url: string): Promise<T> {
@@ -289,7 +290,7 @@ export function ForgeLab() {
           </p>
         </div>
         <div className={styles.shotPicker} role="group" aria-label="Forge shot selector">
-          {[3, 4].map((value) => (
+          {[1, 3, 4].map((value) => (
             <button
               key={value}
               type="button"
@@ -373,115 +374,119 @@ export function ForgeLab() {
         </article>
       </section>
 
-      <section className={styles.proposalPanel} aria-label={`Shot ${shotNumber} local AI motion proposal`}>
-        <div className={styles.panelHeading}>
-          <div>
-            <span className={styles.label}>Local AI motion advisor</span>
-            <h2>Bounded Shot {shotNumber} proposal</h2>
-          </div>
-          <span className={styles.badge}>{proposalProvider ? `${proposalProvider.id} ready` : 'no text provider'}</span>
-        </div>
-        <p className={styles.proposalIntro}>
-          The API supplies the canonical shot context and a server-side motion-channel allowlist. Returned values are clamped to 0–1. Proposal generation and working-state edits remain ephemeral until you explicitly accept the current working state for review; acceptance persists only non-canonical evidence under tmp/forge-proposals/ and never promotes it.
-        </p>
-        <label className={styles.directionField}>
-          <span>Optional human direction</span>
-          <textarea
-            value={direction}
-            maxLength={1200}
-            onChange={(event) => {
-              clearAcceptance();
-              setDirection(event.target.value);
-            }}
-            placeholder={shotNumber === 3
-              ? 'Example: Make the vessel feel heavier without increasing character motion.'
-              : 'Example: Keep Nammu nearly static; emphasize subtle water coherence.'}
-          />
-        </label>
-        <div className={styles.proposalActions}>
-          <button
-            type="button"
-            onClick={requestProposal}
-            disabled={!proposalProvider || proposing}
-          >
-            {proposing ? 'Proposing…' : `Propose with ${proposalProvider?.id ?? 'local AI'}`}
-          </button>
-          {proposal ? (
-            <button type="button" onClick={applyProposal}>Apply to working state</button>
-          ) : null}
-          {workingMotion ? (
-            <button type="button" onClick={resetWorkingState}>Reset working state</button>
-          ) : null}
-          {workingMotion && proposal ? (
-            <button type="button" onClick={acceptForReview} disabled={accepting}>
-              {accepting ? 'Saving for review…' : 'Accept for review'}
-            </button>
-          ) : null}
-        </div>
-        {proposalError ? <p className={styles.proposalError} role="alert">{proposalError}</p> : null}
-        {acceptanceError ? <p className={styles.proposalError} role="alert">{acceptanceError}</p> : null}
-
-        {proposal ? (
-          <div className={styles.proposalResult}>
-            <div className={styles.proposalSummary}>
-              <strong>{proposal.summary}</strong>
-              <span>{proposal.provider} · {proposal.model}</span>
-              <code>{proposal.id}</code>
-            </div>
-            <div className={styles.parameterGrid}>
-              {proposal.parameters.map((parameter) => (
-                <article key={parameter.id} className={styles.parameterCard}>
-                  <div>
-                    <strong>{parameter.label}</strong>
-                    <span>{parameter.value.toFixed(2)}</span>
-                  </div>
-                  <code>{parameter.id}</code>
-                  <p>{parameter.rationale}</p>
-                </article>
-              ))}
-            </div>
-            <ul className={styles.guardrails}>
-              {proposal.guardrails.map((guardrail) => <li key={guardrail}>{guardrail}</li>)}
-            </ul>
-          </div>
-        ) : null}
-
-        {workingMotion && proposal ? (
-          <div className={styles.workingState} aria-label="React working motion state">
+      {shotNumber === 1 ? (
+        <Shot01WaterLab />
+      ) : (
+        <section className={styles.proposalPanel} aria-label={`Shot ${shotNumber} local AI motion proposal`}>
+          <div className={styles.panelHeading}>
             <div>
-              <span className={styles.label}>Working preview envelope</span>
-              <h3>React state only</h3>
-              <p>These sliders do not alter the manifest, production assets, approvals, or canonical runtime. Accept for review writes only a non-canonical evidence record; deterministic QA and human review remain required.</p>
+              <span className={styles.label}>Local AI motion advisor</span>
+              <h2>Bounded Shot {shotNumber} proposal</h2>
             </div>
-            <div className={styles.workingParameters}>
-              {proposal.parameters.map((parameter) => (
-                <label key={parameter.id}>
-                  <span>{parameter.label}</span>
-                  <input
-                    type="range"
-                    min={parameter.minimum}
-                    max={parameter.maximum}
-                    step={0.01}
-                    value={workingMotion[parameter.id] ?? parameter.value}
-                    onChange={(event) => updateWorkingParameter(parameter.id, Number(event.target.value))}
-                  />
-                  <output>{(workingMotion[parameter.id] ?? parameter.value).toFixed(2)}</output>
-                </label>
-              ))}
-            </div>
+            <span className={styles.badge}>{proposalProvider ? `${proposalProvider.id} ready` : 'no text provider'}</span>
           </div>
-        ) : null}
+          <p className={styles.proposalIntro}>
+            The API supplies the canonical shot context and a server-side motion-channel allowlist. Returned values are clamped to 0–1. Proposal generation and working-state edits remain ephemeral until you explicitly accept the current working state for review; acceptance persists only non-canonical evidence under tmp/forge-proposals/ and never promotes it.
+          </p>
+          <label className={styles.directionField}>
+            <span>Optional human direction</span>
+            <textarea
+              value={direction}
+              maxLength={1200}
+              onChange={(event) => {
+                clearAcceptance();
+                setDirection(event.target.value);
+              }}
+              placeholder={shotNumber === 3
+                ? 'Example: Make the vessel feel heavier without increasing character motion.'
+                : 'Example: Keep Nammu nearly static; emphasize subtle water coherence.'}
+            />
+          </label>
+          <div className={styles.proposalActions}>
+            <button
+              type="button"
+              onClick={requestProposal}
+              disabled={!proposalProvider || proposing}
+            >
+              {proposing ? 'Proposing…' : `Propose with ${proposalProvider?.id ?? 'local AI'}`}
+            </button>
+            {proposal ? (
+              <button type="button" onClick={applyProposal}>Apply to working state</button>
+            ) : null}
+            {workingMotion ? (
+              <button type="button" onClick={resetWorkingState}>Reset working state</button>
+            ) : null}
+            {workingMotion && proposal ? (
+              <button type="button" onClick={acceptForReview} disabled={accepting}>
+                {accepting ? 'Saving for review…' : 'Accept for review'}
+              </button>
+            ) : null}
+          </div>
+          {proposalError ? <p className={styles.proposalError} role="alert">{proposalError}</p> : null}
+          {acceptanceError ? <p className={styles.proposalError} role="alert">{acceptanceError}</p> : null}
 
-        {acceptance ? (
-          <div className={styles.proposalResult} role="status">
-            <div className={styles.proposalSummary}>
-              <strong>Saved as non-canonical review evidence</strong>
-              <span>QA pending · human review required · promotion not requested</span>
-              <code>{acceptance.evidencePath}</code>
+          {proposal ? (
+            <div className={styles.proposalResult}>
+              <div className={styles.proposalSummary}>
+                <strong>{proposal.summary}</strong>
+                <span>{proposal.provider} · {proposal.model}</span>
+                <code>{proposal.id}</code>
+              </div>
+              <div className={styles.parameterGrid}>
+                {proposal.parameters.map((parameter) => (
+                  <article key={parameter.id} className={styles.parameterCard}>
+                    <div>
+                      <strong>{parameter.label}</strong>
+                      <span>{parameter.value.toFixed(2)}</span>
+                    </div>
+                    <code>{parameter.id}</code>
+                    <p>{parameter.rationale}</p>
+                  </article>
+                ))}
+              </div>
+              <ul className={styles.guardrails}>
+                {proposal.guardrails.map((guardrail) => <li key={guardrail}>{guardrail}</li>)}
+              </ul>
             </div>
-          </div>
-        ) : null}
-      </section>
+          ) : null}
+
+          {workingMotion && proposal ? (
+            <div className={styles.workingState} aria-label="React working motion state">
+              <div>
+                <span className={styles.label}>Working preview envelope</span>
+                <h3>React state only</h3>
+                <p>These sliders do not alter the manifest, production assets, approvals, or canonical runtime. Accept for review writes only a non-canonical evidence record; deterministic QA and human review remain required.</p>
+              </div>
+              <div className={styles.workingParameters}>
+                {proposal.parameters.map((parameter) => (
+                  <label key={parameter.id}>
+                    <span>{parameter.label}</span>
+                    <input
+                      type="range"
+                      min={parameter.minimum}
+                      max={parameter.maximum}
+                      step={0.01}
+                      value={workingMotion[parameter.id] ?? parameter.value}
+                      onChange={(event) => updateWorkingParameter(parameter.id, Number(event.target.value))}
+                    />
+                    <output>{(workingMotion[parameter.id] ?? parameter.value).toFixed(2)}</output>
+                  </label>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {acceptance ? (
+            <div className={styles.proposalResult} role="status">
+              <div className={styles.proposalSummary}>
+                <strong>Saved as non-canonical review evidence</strong>
+                <span>QA pending · human review required · promotion not requested</span>
+                <code>{acceptance.evidencePath}</code>
+              </div>
+            </div>
+          ) : null}
+        </section>
+      )}
 
       <section className={styles.evidencePanel} aria-label={`Shot ${shotNumber} canonical benchmark evidence`}>
         <div className={styles.panelHeading}>
@@ -512,12 +517,20 @@ export function ForgeLab() {
           </div>
           <App />
         </section>
-      ) : (
+      ) : shotNumber === 4 ? (
         <section className={styles.pendingInspector}>
           <span className={styles.label}>Deterministic live inspection</span>
           <h2>Shot 4 Scene V3 runtime is not fabricated</h2>
           <p>
             Shot 4 production readiness and benchmark evidence above are canonical. A Scene V3 inspection fixture/runtime will be mounted only when that resolved contract exists; this Forge will not synthesize one merely for UI parity.
+          </p>
+        </section>
+      ) : (
+        <section className={styles.pendingInspector}>
+          <span className={styles.label}>Deterministic live inspection</span>
+          <h2>Shot 1 water work remains an audition</h2>
+          <p>
+            The Water Lab renders through the real Scene V2/Remotion path, but its generated scene and video remain under tmp/forge-water-auditions/. Nothing is canonical until normal-speed human review says the water is clearly better and still preserves the primordial composition.
           </p>
         </section>
       )}
