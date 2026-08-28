@@ -83,9 +83,23 @@ interface ForgeMotionProposal {
   model: string;
   createdAt: string;
   canonicalObservedAt: string;
+  canonicalFingerprint: string;
   summary: string;
   parameters: ForgeMotionParameter[];
   guardrails: string[];
+}
+
+interface AcceptedForgeMotionProposal {
+  schemaVersion: 1;
+  id: string;
+  state: 'accepted-for-review';
+  acceptedAt: string;
+  evidencePath: string;
+  review: {
+    deterministicQa: 'pending';
+    humanReview: 'required';
+    promotion: 'not-requested';
+  };
 }
 
 type WorkingMotionState = Record<string, number>;
@@ -144,6 +158,9 @@ export function ForgeLab() {
   const [workingMotion, setWorkingMotion] = useState<WorkingMotionState | null>(null);
   const [proposing, setProposing] = useState(false);
   const [proposalError, setProposalError] = useState<string | null>(null);
+  const [accepting, setAccepting] = useState(false);
+  const [acceptance, setAcceptance] = useState<AcceptedForgeMotionProposal | null>(null);
+  const [acceptanceError, setAcceptanceError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -183,11 +200,17 @@ export function ForgeLab() {
     [state.providers],
   );
 
+  const clearAcceptance = () => {
+    setAcceptance(null);
+    setAcceptanceError(null);
+  };
+
   const chooseShot = (value: number) => {
     setShotNumber(value);
     setProposal(null);
     setWorkingMotion(null);
     setProposalError(null);
+    clearAcceptance();
     setDirection('');
     if (typeof window !== 'undefined') {
       window.history.replaceState(null, '', `/forge/shot/${value}`);
@@ -198,6 +221,7 @@ export function ForgeLab() {
     if (!proposalProvider || (shotNumber !== 3 && shotNumber !== 4)) return;
     setProposing(true);
     setProposalError(null);
+    clearAcceptance();
     try {
       const result = await postJson<ForgeMotionProposal>('/api/forge/motion-proposals', {
         shot: shotNumber,
@@ -216,13 +240,42 @@ export function ForgeLab() {
 
   const applyProposal = () => {
     if (!proposal) return;
+    clearAcceptance();
     setWorkingMotion(
       Object.fromEntries(proposal.parameters.map((parameter) => [parameter.id, parameter.value])),
     );
   };
 
   const updateWorkingParameter = (id: string, value: number) => {
+    clearAcceptance();
     setWorkingMotion((current) => ({ ...(current ?? {}), [id]: value }));
+  };
+
+  const resetWorkingState = () => {
+    clearAcceptance();
+    setWorkingMotion(null);
+  };
+
+  const acceptForReview = async () => {
+    if (!proposal || !workingMotion) return;
+    setAccepting(true);
+    setAcceptanceError(null);
+    try {
+      const result = await postJson<AcceptedForgeMotionProposal>(
+        '/api/forge/motion-proposals/accept-for-review',
+        {
+          proposal,
+          workingParameters: workingMotion,
+          ...(direction.trim() ? { direction: direction.trim() } : {}),
+        },
+      );
+      setAcceptance(result);
+    } catch (error) {
+      setAcceptance(null);
+      setAcceptanceError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setAccepting(false);
+    }
   };
 
   return (
@@ -329,14 +382,17 @@ export function ForgeLab() {
           <span className={styles.badge}>{proposalProvider ? `${proposalProvider.id} ready` : 'no text provider'}</span>
         </div>
         <p className={styles.proposalIntro}>
-          The API supplies the canonical shot context and a server-side motion-channel allowlist. Returned values are clamped to 0–1. Nothing is persisted or promoted.
+          The API supplies the canonical shot context and a server-side motion-channel allowlist. Returned values are clamped to 0–1. Proposal generation and working-state edits remain ephemeral until you explicitly accept the current working state for review; acceptance persists only non-canonical evidence under tmp/forge-proposals/ and never promotes it.
         </p>
         <label className={styles.directionField}>
           <span>Optional human direction</span>
           <textarea
             value={direction}
             maxLength={1200}
-            onChange={(event) => setDirection(event.target.value)}
+            onChange={(event) => {
+              clearAcceptance();
+              setDirection(event.target.value);
+            }}
             placeholder={shotNumber === 3
               ? 'Example: Make the vessel feel heavier without increasing character motion.'
               : 'Example: Keep Nammu nearly static; emphasize subtle water coherence.'}
@@ -354,10 +410,16 @@ export function ForgeLab() {
             <button type="button" onClick={applyProposal}>Apply to working state</button>
           ) : null}
           {workingMotion ? (
-            <button type="button" onClick={() => setWorkingMotion(null)}>Reset working state</button>
+            <button type="button" onClick={resetWorkingState}>Reset working state</button>
+          ) : null}
+          {workingMotion && proposal ? (
+            <button type="button" onClick={acceptForReview} disabled={accepting}>
+              {accepting ? 'Saving for review…' : 'Accept for review'}
+            </button>
           ) : null}
         </div>
         {proposalError ? <p className={styles.proposalError} role="alert">{proposalError}</p> : null}
+        {acceptanceError ? <p className={styles.proposalError} role="alert">{acceptanceError}</p> : null}
 
         {proposal ? (
           <div className={styles.proposalResult}>
@@ -389,7 +451,7 @@ export function ForgeLab() {
             <div>
               <span className={styles.label}>Working preview envelope</span>
               <h3>React state only</h3>
-              <p>These sliders do not alter the manifest, production assets, approvals, or persisted evidence. Runtime binding is a later Forge milestone.</p>
+              <p>These sliders do not alter the manifest, production assets, approvals, or canonical runtime. Accept for review writes only a non-canonical evidence record; deterministic QA and human review remain required.</p>
             </div>
             <div className={styles.workingParameters}>
               {proposal.parameters.map((parameter) => (
@@ -406,6 +468,16 @@ export function ForgeLab() {
                   <output>{(workingMotion[parameter.id] ?? parameter.value).toFixed(2)}</output>
                 </label>
               ))}
+            </div>
+          </div>
+        ) : null}
+
+        {acceptance ? (
+          <div className={styles.proposalResult} role="status">
+            <div className={styles.proposalSummary}>
+              <strong>Saved as non-canonical review evidence</strong>
+              <span>QA pending · human review required · promotion not requested</span>
+              <code>{acceptance.evidencePath}</code>
             </div>
           </div>
         ) : null}
