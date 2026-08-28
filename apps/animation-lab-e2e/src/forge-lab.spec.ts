@@ -152,7 +152,12 @@ test('auditions a bounded AI proposal without changing canonical Pixi state', as
 
   const heave = page.getByRole('slider', { name: 'Vessel heave' });
   await expect(heave).toHaveValue('0.72');
-  await heave.fill('0.55');
+  await heave.evaluate((element) => {
+    const input = element as HTMLInputElement;
+    input.value = '0.55';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  });
   await expect(heave).toHaveValue('0.55');
   await expect(pixiHost).toHaveAttribute('data-shot03-vessel', canonicalBefore ?? '');
 
