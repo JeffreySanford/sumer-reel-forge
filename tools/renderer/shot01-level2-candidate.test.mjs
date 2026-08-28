@@ -99,14 +99,18 @@ test('Shot 1 Level 2 candidate preserves the exact approved source while adding 
   assert.match(reviewScript, /animationV1Modified: false/);
 
   for (const script of [reviewScript, candidateScript]) {
-    assert.match(script, /openLocalFile\(/);
+    assert.match(script, /await openLocalFile\(/);
     assert.match(script, /process\.platform === 'win32'/);
+    assert.match(script, /explorer\.exe/);
+    assert.match(script, /powershell\.exe/);
+    assert.match(script, /Start-Process -LiteralPath/);
     assert.match(script, /cmd\.exe/);
+    assert.match(script, /launchOpener/);
     assert.match(script, /process\.platform === 'darwin'/);
     assert.match(script, /xdg-open/);
   }
-  assert.match(reviewScript, /openLocalFile\(abVideo\)/);
-  assert.match(candidateScript, /openLocalFile\(videoPath\)/);
+  assert.match(reviewScript, /await openLocalFile\(abVideo\)/);
+  assert.match(candidateScript, /await openLocalFile\(videoPath\)/);
   assert.match(candidateScript, /shot01-level2-candidate/);
   assert.match(candidateScript, /SCENE_V2_BENCHMARK_OUTPUT_DIRECTORY/);
 
