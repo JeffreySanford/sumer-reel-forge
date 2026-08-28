@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ForgeLab } from './forge-lab';
 
-type Scenario = 'ready' | 'shot4' | 'unavailable' | 'proposal-error';
+type Scenario = 'ready' | 'unavailable' | 'proposal-error';
 
 const production = {
   principle: 'AI proposes. Rules constrain. Human directs.',
@@ -134,11 +134,6 @@ function scenarioFetch(scenario: Scenario): typeof fetch {
 
 function ForgeScenario({ scenario }: { readonly scenario: Scenario }) {
   globalThis.fetch = scenarioFetch(scenario);
-  if (scenario === 'shot4' && typeof window !== 'undefined') {
-    window.history.replaceState(null, '', '/forge/shot/4');
-  } else if (typeof window !== 'undefined') {
-    window.history.replaceState(null, '', '/forge/shot/3');
-  }
   return <ForgeLab />;
 }
 
@@ -191,8 +186,14 @@ export const Shot3Ready: Story = {
 };
 
 export const Shot4Ready: Story = {
-  render: () => <ForgeScenario scenario="shot4" />,
-  play: async ({ canvasElement }) => {
+  render: () => <ForgeScenario scenario="ready" />,
+  play: async ({ canvasElement, userEvent }) => {
+    const shot4 = await waitForDocumentElement<HTMLButtonElement>(
+      canvasElement,
+      'Shot 4 selector',
+      (document) => elementWithExactText(document, 'button', 'Shot 4'),
+    );
+    await userEvent.click(shot4);
     await waitForDocumentElement(canvasElement, 'Shot 4 canonical heading', (document) =>
       elementWithExactText(document, 'h2', 'Shot 4 · nammu-under-water'),
     );
