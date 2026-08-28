@@ -1,5 +1,8 @@
 import { Injectable, ServiceUnavailableException } from '@nestjs/common';
 import axios from 'axios';
+import * as childProcess from 'node:child_process';
+import { existsSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 import type {
   PlanningProvider,
   PlanningProviderCapability,
@@ -17,6 +20,7 @@ interface OllamaChatResponse {
 }
 
 const MAX_DEFAULT_CAMERA_SCALE_DELTA = 0.05;
+const MANAGED_OLLAMA_BRIDGE = 'tools/scripts/managed-ollama-chat-bridge.mjs';
 
 const SHOT_PLAN_SCHEMA = {
   type: 'object',
@@ -149,22 +153,21 @@ export class OllamaPlanningProvider implements PlanningProvider {
     );
 
     try {
-      const response = await axios.post<OllamaChatResponse>(
-        `${this.baseUrl}/api/chat`,
-        {
-          model: this.textModel,
-          stream: false,
-          think: false,
-          keep_alive: this.keepAlive,
-          format: SHOT_PLAN_SCHEMA,
-          messages: [
-            { role: 'system', content: system },
-            { role: 'user', content: user },
-          ],
-          options: { temperature: 0.2 },
-        },
-        { timeout: this.timeoutMs },
-      );
+      const response = await runManagedOllamaBridge({
+        owner: 'api-ollama-planning',
+        task: `shot-plan-proposal-${input.shotId}`,
+        baseUrl: this.baseUrl,
+        model: this.textModel,
+        timeoutMs: this.timeoutMs,
+        keepAlive: this.keepAlive,
+        format: SHOT_PLAN_SCHEMA,
+        messages: [
+          { role: 'system', content: system },
+          { role: 'user', content: user },
+        ],
+        options: { temperature: 0.2 },
+        errorPrefix: 'Ollama shot planning',
+      });
 
       const content = response.data.message?.content;
       if (!content) {
@@ -192,6 +195,98 @@ export class OllamaPlanningProvider implements PlanningProvider {
       );
     }
   }
+}
+
+async function runManagedOllamaBridge(request: {
+  owner: string;
+  task: string;
+  baseUrl: string;
+  model: string;
+  timeoutMs: number;
+  keepAlive: string;
+  format: unknown;
+  messages: Array<{ role: string; content: string }>;
+  options: Record<string, unknown>;
+  errorPrefix: string;
+}): Promise<{ data: OllamaChatResponse }> {
+  return await new Promise((resolvePromise, rejectPromise) => {
+    const workspaceRoot = findWorkspaceRoot();
+    const child = childProcess.spawn(process.execPath, [resolve(workspaceRoot, MANAGED_OLLAMA_BRIDGE)], {
+      cwd: workspaceRoot,
+      env: process.env,
+      stdio: ['pipe', 'pipe', 'pipe'],
+      windowsHide: true,
+    });
+    const stdout: Buffer[] = [];
+    const stderr: Buffer[] = [];
+    let settled = false;
+    const timeout = setTimeout(() => {
+      if (settled) return;
+      child.kill();
+      settled = true;
+      rejectPromise(new Error(`Managed Ollama bridge timed out after ${request.timeoutMs}ms.`));
+    }, request.timeoutMs + 5_000);
+    timeout.unref?.();
+
+    child.stdout.on('data', (chunk: Buffer) => stdout.push(chunk));
+    child.stderr.on('data', (chunk: Buffer) => stderr.push(chunk));
+    child.once('error', (error) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      rejectPromise(error);
+    });
+    child.once('close', (code, signal) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      if (signal) {
+        rejectPromise(new Error(`Managed Ollama bridge exited with signal ${signal}.`));
+        return;
+      }
+      const stderrText = Buffer.concat(stderr).toString('utf8').trim();
+      if (code !== 0) {
+        rejectPromise(
+          new Error(
+            `Managed Ollama bridge exited with code ${code ?? 'unknown'}${
+              stderrText ? `: ${stderrText}` : ''
+            }`,
+          ),
+        );
+        return;
+      }
+      try {
+        resolvePromise({
+          data: JSON.parse(Buffer.concat(stdout).toString('utf8')),
+        });
+      } catch (error) {
+        rejectPromise(
+          new Error(
+            `Managed Ollama bridge returned invalid JSON${
+              stderrText ? `: ${stderrText}` : ''
+            }: ${errorMessage(error)}`,
+          ),
+        );
+      }
+    });
+    child.stdin.end(JSON.stringify(request));
+  });
+}
+
+function findWorkspaceRoot(): string {
+  const candidates = [process.cwd(), __dirname];
+  for (const start of candidates) {
+    let current = resolve(start);
+    for (let depth = 0; depth < 8; depth += 1) {
+      if (existsSync(resolve(current, MANAGED_OLLAMA_BRIDGE))) {
+        return current;
+      }
+      const parent = dirname(current);
+      if (parent === current) break;
+      current = parent;
+    }
+  }
+  return resolve('.');
 }
 
 function assertShotPlanShape(

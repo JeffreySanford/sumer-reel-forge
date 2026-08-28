@@ -5,7 +5,10 @@ import { join } from 'node:path';
 import test from 'node:test';
 import { withGpuAiTask } from '../runtime/gpu-ai-task.mjs';
 import { inspectGpuLease } from '../runtime/gpu-resource-lease.mjs';
-import { runManagedOllamaVisionChat } from '../runtime/ollama-vision-task.mjs';
+import {
+  runManagedOllamaChat,
+  runManagedOllamaVisionChat,
+} from '../runtime/ollama-vision-task.mjs';
 
 async function withTempLease(t) {
   const root = await mkdtemp(join(tmpdir(), 'srf-ollama-vision-task-'));
@@ -105,4 +108,58 @@ test('hybrid handoff releases Ollama before the ComfyUI child acquires the GPU l
     'free-after-ollama',
     'comfyui:generation',
   ]);
+});
+
+test('managed Ollama chat supports text models through the same lease and unload path', async (t) => {
+  const leaseDirectory = await withTempLease(t);
+  const events = [];
+  const fetch = async (url, init) => {
+    const active = await inspectGpuLease(leaseDirectory);
+    const request = JSON.parse(init.body);
+    events.push({
+      backend: active.metadata.backend,
+      owner: active.metadata.owner,
+      task: active.metadata.task,
+      model: request.model,
+      keepAlive: request.keep_alive,
+      endpoint: String(url).endsWith('/api/chat') ? 'chat' : 'generate',
+    });
+    return jsonResponse({
+      model: request.model,
+      message: { content: '{"eyeTarget":"enki-face"}' },
+    });
+  };
+
+  await runManagedOllamaChat({
+    leaseDirectory,
+    env: {
+      SRF_GPU_TASK_TELEMETRY: 'false',
+      OLLAMA_TEXT_MODEL: 'qwen3:8b',
+    },
+    fetch,
+    owner: 'api-ollama-planning',
+    task: 'shot-plan-proposal-shot-3',
+    messages: [{ role: 'user', content: 'plan' }],
+    timeoutMs: 1_000,
+  });
+
+  assert.deepEqual(events, [
+    {
+      backend: 'ollama',
+      owner: 'api-ollama-planning',
+      task: 'shot-plan-proposal-shot-3',
+      model: 'qwen3:8b',
+      keepAlive: '10m',
+      endpoint: 'chat',
+    },
+    {
+      backend: 'ollama',
+      owner: 'api-ollama-planning',
+      task: 'shot-plan-proposal-shot-3',
+      model: 'qwen3:8b',
+      keepAlive: 0,
+      endpoint: 'generate',
+    },
+  ]);
+  assert.equal(await inspectGpuLease(leaseDirectory), null);
 });

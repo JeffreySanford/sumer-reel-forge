@@ -6,14 +6,17 @@ const DEFAULT_KEEP_ALIVE = '10m';
 const DEFAULT_TIMEOUT_MS = 300_000;
 const DEFAULT_UNLOAD_TIMEOUT_MS = 120_000;
 
-export async function runManagedOllamaVisionChat(options = {}) {
+export async function runManagedOllamaChat(options = {}) {
   const env = options.env ?? process.env;
   const fetchImpl = options.fetch ?? globalThis.fetch;
+  const log = options.log ?? console.log;
   if (typeof fetchImpl !== 'function') {
-    throw new Error('runManagedOllamaVisionChat requires fetch support.');
+    throw new Error('runManagedOllamaChat requires fetch support.');
   }
 
   const model = optionalString(options.model) ??
+    optionalString(options.defaultModel) ??
+    optionalString(env.OLLAMA_TEXT_MODEL) ??
     optionalString(env.OLLAMA_VISION_MODEL) ??
     DEFAULT_MODEL;
   const baseUrl = normalizeBaseUrl(options.baseUrl ?? env.OLLAMA_BASE_URL);
@@ -41,10 +44,16 @@ export async function runManagedOllamaVisionChat(options = {}) {
         timeoutMs,
       ),
       cleanup: async () =>
-        unloadOllamaModel({ baseUrl, model, timeoutMs: unloadTimeoutMs, fetch: fetchImpl }),
+        unloadOllamaModel({
+          baseUrl,
+          model,
+          timeoutMs: unloadTimeoutMs,
+          fetch: fetchImpl,
+          log,
+        }),
     },
     async (lease) => {
-      console.log(
+      log(
         `[gpu] Lease acquired for ${lease.metadata.task} · backend ollama · model ${model} · expires ${lease.metadata.expiresAt}.`,
       );
       const response = await fetchImpl(`${baseUrl}/api/chat`, {
@@ -71,11 +80,19 @@ export async function runManagedOllamaVisionChat(options = {}) {
   );
 }
 
+export async function runManagedOllamaVisionChat(options = {}) {
+  return runManagedOllamaChat({
+    ...options,
+    defaultModel: options.defaultModel ?? options.env?.OLLAMA_VISION_MODEL ?? DEFAULT_MODEL,
+  });
+}
+
 export async function unloadOllamaModel({
   baseUrl,
   model,
   timeoutMs = DEFAULT_UNLOAD_TIMEOUT_MS,
   fetch: fetchImpl = globalThis.fetch,
+  log = console.log,
 } = {}) {
   if (!model) return;
   if (typeof fetchImpl !== 'function') {
@@ -96,7 +113,7 @@ export async function unloadOllamaModel({
   if (!response.ok) {
     throw new Error(`Ollama unload HTTP ${response.status}: ${text}`);
   }
-  console.log(`[gpu] Ollama model unload request completed for ${model}.`);
+  log(`[gpu] Ollama model unload request completed for ${model}.`);
 }
 
 function normalizeBaseUrl(value) {
@@ -110,7 +127,7 @@ function positiveInteger(value, fallback) {
 
 function requiredString(value, name) {
   const parsed = optionalString(value);
-  if (!parsed) throw new Error(`Managed Ollama vision ${name} is required.`);
+  if (!parsed) throw new Error(`Managed Ollama chat ${name} is required.`);
   return parsed;
 }
 

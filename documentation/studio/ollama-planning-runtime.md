@@ -16,18 +16,21 @@ POST /api/planning/shot-plan
 Planning providers:
 
 - `deterministic` - always available, creates a safe planning scaffold without inventing art direction;
-- `ollama` - calls the local Ollama HTTP API for a schema-constrained shot-plan proposal.
+- `ollama` - calls the managed local Ollama bridge for a schema-constrained shot-plan proposal.
 
 The Ollama provider uses:
 
 - `GET /api/tags` for local model discovery;
-- `POST /api/chat` for planning;
+- `tools/scripts/managed-ollama-chat-bridge.mjs` for planning inference;
+- `tools/runtime/ollama-vision-task.mjs` / `runManagedOllamaChat()` as the single shared GPU ownership implementation;
 - `stream: false` so structured responses arrive as one JSON response;
 - `think: false` for bounded shot-direction generation with Qwen3-class thinking models;
 - `keep_alive` so the configured planner remains warm between proposals;
 - a JSON Schema in the `format` field;
 - bounded request timeouts;
 - application-side validation before model output becomes a proposal.
+
+The bridge exists because the NestJS API is webpack-built TypeScript while the existing GPU lease implementation is ESM tooling used by local scripts. NestJS does not copy the lease algorithm. It spawns the bridge, the bridge imports the shared runtime module, and that module acquires the same cross-process GPU lease, captures telemetry, unloads the Ollama model, and releases the lease.
 
 Model output is never treated as human approval.
 
