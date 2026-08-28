@@ -6,6 +6,9 @@ import { AnimationProductionStatusService } from './animation-production-status.
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ComfyUiInventoryService } from './comfyui-inventory.service';
+import { LocalAiController } from './local-ai/local-ai.controller';
+import { LocalAiService } from './local-ai/local-ai.service';
+import { OllamaLocalAiProvider } from './local-ai/ollama-local-ai.provider';
 import { DeterministicPlanningProvider } from './planning/deterministic-planning.provider';
 import { OllamaPlanningProvider } from './planning/ollama-planning.provider';
 import { PlanningController } from './planning/planning.controller';
@@ -24,12 +27,15 @@ import { RuntimeGpuStatusService } from './runtime-gpu-status.service';
     PlanningController,
     RuntimeController,
     AnimationJobsController,
+    LocalAiController,
   ],
   providers: [
     AppService,
     PlanningService,
     DeterministicPlanningProvider,
+    OllamaLocalAiProvider,
     OllamaPlanningProvider,
+    LocalAiService,
     RuntimeCapabilitiesService,
     RuntimeGpuStatusService,
     ComfyUiInventoryService,
@@ -52,6 +58,7 @@ export class AppModule implements NestModule {
         PlanningController,
         RuntimeController,
         AnimationJobsController,
+        LocalAiController,
       );
   }
 }
