@@ -1,5 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsIn, IsInt, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsIn,
+  IsInt,
+  IsObject,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 import type { LocalAiProviderId } from '../local-ai/local-ai.provider';
 
 export const FORGE_MOTION_SHOTS = [3, 4] as const;
@@ -37,6 +44,40 @@ export class CreateForgeMotionProposalDto {
   @ApiPropertyOptional({
     example: 'Make the vessel feel heavier without increasing character motion.',
     description: 'Optional bounded human direction included in the proposal context.',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(1200)
+  direction?: string;
+}
+
+export class AcceptForgeMotionProposalDto {
+  @ApiProperty({
+    type: Object,
+    description:
+      'The server-issued Forge motion proposal being explicitly accepted for review.',
+  })
+  @IsObject()
+  proposal!: Record<string, unknown>;
+
+  @ApiProperty({
+    type: Object,
+    description:
+      'Human-adjusted normalized working values keyed only by the proposal motion-channel ids.',
+    example: {
+      vesselHeave: 0.72,
+      vesselRoll: 0.24,
+      enkiCounterSway: 0.44,
+      cameraPush: 0.22,
+    },
+  })
+  @IsObject()
+  workingParameters!: Record<string, unknown>;
+
+  @ApiPropertyOptional({
+    example: 'Make the vessel feel heavier without increasing character motion.',
+    description:
+      'Optional human direction retained as non-canonical review provenance.',
   })
   @IsOptional()
   @IsString()
