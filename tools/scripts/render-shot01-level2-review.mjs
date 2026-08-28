@@ -104,6 +104,8 @@ console.log('');
 console.log(`A/B video: ${abVideo}`);
 console.log(`Proof receipt: ${proofPath}`);
 console.log('Review at normal speed. Keep the Level 2 milestone pending unless the RIGHT side is clearly preferable and all three new improvements are readable.');
+console.log('Opening A/B video in the default media player...');
+openLocalFile(abVideo);
 
 async function renderScene(scenePath, outputDirectory, label) {
   console.log(`Rendering ${label}: ${scenePath}`);
@@ -120,6 +122,37 @@ async function renderScene(scenePath, outputDirectory, label) {
       SCENE_V2_BENCHMARK_OUTPUT_DIRECTORY: outputDirectory,
     },
   );
+}
+
+function openLocalFile(filePath) {
+  let child;
+  if (process.platform === 'win32') {
+    const escapedPath = filePath.replace(/"/g, '""');
+    child = spawn(
+      'cmd.exe',
+      ['/d', '/s', '/c', `start "" "${escapedPath}"`],
+      {
+        detached: true,
+        stdio: 'ignore',
+        windowsHide: true,
+      },
+    );
+  } else if (process.platform === 'darwin') {
+    child = spawn('open', [filePath], {
+      detached: true,
+      stdio: 'ignore',
+    });
+  } else {
+    child = spawn('xdg-open', [filePath], {
+      detached: true,
+      stdio: 'ignore',
+    });
+  }
+
+  child.once('error', (error) => {
+    console.warn(`Could not open ${filePath}: ${error.message}`);
+  });
+  child.unref();
 }
 
 async function run(command, args, cwd, extraEnv = {}) {
