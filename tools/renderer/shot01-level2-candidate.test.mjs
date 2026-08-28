@@ -13,17 +13,19 @@ const manifestPath = resolve(
   'assets/blessings-of-sumer/chapter-01/reel-01/animation-v1/manifest.json',
 );
 const rendererPath = resolve('tools/animation/src/SceneV2Benchmark.tsx');
+const reviewScriptPath = resolve('tools/scripts/render-shot01-level2-review.mjs');
 
 async function readJson(path) {
   return JSON.parse(await readFile(path, 'utf8'));
 }
 
 test('Shot 1 Level 2 candidate preserves the exact approved source while adding three runtime-backed environmental improvements', async () => {
-  const [baseline, candidate, manifest, rendererSource] = await Promise.all([
+  const [baseline, candidate, manifest, rendererSource, reviewScript] = await Promise.all([
     readJson(baselinePath),
     readJson(candidatePath),
     readJson(manifestPath),
     readFile(rendererPath, 'utf8'),
+    readFile(reviewScriptPath, 'utf8'),
   ]);
 
   const baselineShot = baseline.shots[0];
@@ -78,6 +80,14 @@ test('Shot 1 Level 2 candidate preserves the exact approved source while adding 
     'dawn-reflected-light-pulse',
     'dawn-mist-drift',
   ]);
+
+  assert.match(reviewScript, /black-water-benchmark\.scene-v2\.json/);
+  assert.match(reviewScript, /black-water-level2\.scene-v2\.json/);
+  assert.match(reviewScript, /SCENE_V2_BENCHMARK_OUTPUT_DIRECTORY/);
+  assert.match(reviewScript, /hstack=inputs=2/);
+  assert.match(reviewScript, /humanReviewRequired: true/);
+  assert.match(reviewScript, /decision: 'pending'/);
+  assert.match(reviewScript, /animationV1Modified: false/);
 
   assert.equal(candidate.reviewPolicy.humanApprovalRequired, true);
   assert.equal(candidate.reviewPolicy.hardFailsBlockApproval, true);
