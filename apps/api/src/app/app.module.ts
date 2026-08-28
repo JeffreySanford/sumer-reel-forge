@@ -6,6 +6,8 @@ import { AnimationProductionStatusService } from './animation-production-status.
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ComfyUiInventoryService } from './comfyui-inventory.service';
+import { ForgeMotionProposalController } from './forge/forge-motion-proposal.controller';
+import { ForgeMotionProposalService } from './forge/forge-motion-proposal.service';
 import { LocalAiController } from './local-ai/local-ai.controller';
 import { LocalAiService } from './local-ai/local-ai.service';
 import { OllamaLocalAiProvider } from './local-ai/ollama-local-ai.provider';
@@ -28,6 +30,7 @@ import { RuntimeGpuStatusService } from './runtime-gpu-status.service';
     RuntimeController,
     AnimationJobsController,
     LocalAiController,
+    ForgeMotionProposalController,
   ],
   providers: [
     AppService,
@@ -36,6 +39,7 @@ import { RuntimeGpuStatusService } from './runtime-gpu-status.service';
     OllamaLocalAiProvider,
     OllamaPlanningProvider,
     LocalAiService,
+    ForgeMotionProposalService,
     RuntimeCapabilitiesService,
     RuntimeGpuStatusService,
     ComfyUiInventoryService,
@@ -59,6 +63,7 @@ export class AppModule implements NestModule {
         RuntimeController,
         AnimationJobsController,
         LocalAiController,
+        ForgeMotionProposalController,
       );
   }
 }
