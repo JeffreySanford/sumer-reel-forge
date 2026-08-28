@@ -67,6 +67,14 @@ export interface SceneV2Lighting {
   intensityTo: number;
 }
 
+export interface SceneV2WaterSurface {
+  enabled: boolean;
+  horizontalCurrent: number;
+  verticalRipple: number;
+  flowSpeed: number;
+  rippleScale: number;
+}
+
 export interface SceneV2Performance {
   target: string;
   preset: SceneV2MotionPreset;
@@ -91,6 +99,7 @@ export interface SceneV2Shot {
   performance: SceneV2Performance[];
   atmosphere: SceneV2Atmosphere[];
   lighting: SceneV2Lighting[];
+  waterSurface?: SceneV2WaterSurface;
   captionPolicy: {
     safeZone: string;
     avoidTargets: string[];
@@ -221,6 +230,9 @@ export function validateSceneV2(scene: SceneV2): SceneV2ValidationResult {
     if (shot.sourceShotNumber === 4) {
       validateShotFourPolicy(shot, errors);
     }
+    if (shot.waterSurface) {
+      validateWaterSurface(shot, errors);
+    }
     if (!shot.layers.some((layer) => layer.required)) {
       errors.push(`Shot ${shot.id} has no required visual layer.`);
     }
@@ -257,6 +269,22 @@ export function validateSceneV2(scene: SceneV2): SceneV2ValidationResult {
   }
 
   return { valid: errors.length === 0, errors, warnings };
+}
+
+function validateWaterSurface(shot: SceneV2Shot, errors: string[]): void {
+  const waterSurface = shot.waterSurface;
+  if (!waterSurface) return;
+
+  for (const [key, value] of Object.entries({
+    horizontalCurrent: waterSurface.horizontalCurrent,
+    verticalRipple: waterSurface.verticalRipple,
+    flowSpeed: waterSurface.flowSpeed,
+    rippleScale: waterSurface.rippleScale,
+  })) {
+    if (!Number.isFinite(value) || value < 0 || value > 1) {
+      errors.push(`Shot ${shot.id} waterSurface.${key} must be from 0 through 1.`);
+    }
+  }
 }
 
 function validateShotFourPolicy(shot: SceneV2Shot, errors: string[]): void {
