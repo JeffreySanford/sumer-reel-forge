@@ -1,4 +1,6 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { AnimationJobsController } from './animation-jobs.controller';
+import { AnimationJobsService } from './animation-jobs.service';
 import { AnimationProductionEvidenceService } from './animation-production-evidence.service';
 import { AnimationProductionStatusService } from './animation-production-status.service';
 import { AppController } from './app.controller';
@@ -17,7 +19,12 @@ import { RuntimeGpuStatusService } from './runtime-gpu-status.service';
 
 @Module({
   imports: [],
-  controllers: [AppController, PlanningController, RuntimeController],
+  controllers: [
+    AppController,
+    PlanningController,
+    RuntimeController,
+    AnimationJobsController,
+  ],
   providers: [
     AppService,
     PlanningService,
@@ -28,6 +35,7 @@ import { RuntimeGpuStatusService } from './runtime-gpu-status.service';
     ComfyUiInventoryService,
     AnimationProductionStatusService,
     AnimationProductionEvidenceService,
+    AnimationJobsService,
     PrismaService,
     {
       provide: REEL_REPOSITORY,
@@ -39,6 +47,11 @@ export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {
     consumer
       .apply(RequestLoggingMiddleware)
-      .forRoutes(AppController, PlanningController, RuntimeController);
+      .forRoutes(
+        AppController,
+        PlanningController,
+        RuntimeController,
+        AnimationJobsController,
+      );
   }
 }
