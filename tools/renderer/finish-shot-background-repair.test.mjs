@@ -5,13 +5,16 @@ import { resolve } from 'node:path';
 import test from 'node:test';
 
 const repairPath = resolve('tools/scripts/repair-background-from-overlay.mjs');
+const repairEnginePath = resolve(
+  'tools/scripts/repair-background-from-overlay-engine.mjs',
+);
 const verifyPath = resolve('tools/scripts/verify-background-repair-candidate.mjs');
 const candidatePreviewPath = resolve(
   'tools/scripts/render-layered-candidate-scene-v2.ts',
 );
 
 test('finish-shot background repair scripts are syntactically valid', () => {
-  for (const path of [repairPath, verifyPath]) {
+  for (const path of [repairPath, repairEnginePath, verifyPath]) {
     const result = spawnSync(process.execPath, ['--check', path], {
       cwd: resolve('.'),
       encoding: 'utf8',
@@ -26,7 +29,7 @@ test('finish-shot background repair scripts are syntactically valid', () => {
 });
 
 test('finish-shot repair requires verified foreground alpha and preserves pixels outside its mask', async () => {
-  const source = await readFile(repairPath, 'utf8');
+  const source = await readFile(repairEnginePath, 'utf8');
   assert.match(source, /qa\.qaStatus !== 'PASS'/);
   assert.match(source, /alphaextract,format=gray/);
   assert.match(source, /resegmentForegroundForBackground: false/);
