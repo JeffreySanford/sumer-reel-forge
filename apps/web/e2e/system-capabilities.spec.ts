@@ -133,7 +133,8 @@ const HOST_CAPABILITIES = {
       id: 'nvidia-gpu-acceleration',
       title: 'NVIDIA GPU acceleration',
       status: 'ready',
-      summary: 'NVIDIA RTX Test is available for CUDA workloads with 10.0 GB VRAM.',
+      summary:
+        'NVIDIA RTX Test is available for CUDA workloads with 10.0 GB VRAM.',
       basis: ['nvidia-smi', 'GPU/VRAM', 'NVIDIA driver'],
     },
     {
@@ -167,7 +168,23 @@ test('shows host hardware, software, and projected capabilities', async ({
   await expect(
     page.getByRole('heading', { name: 'reel-forge-test-host' }),
   ).toBeVisible();
-  await expect(page.getByText('NVIDIA RTX Test', { exact: true })).toBeVisible();
+  const hostHardwareSummary = page.getByLabel('Host hardware summary');
+
+  await expect(
+    hostHardwareSummary.getByText('NVIDIA RTX Test', { exact: true }),
+  ).toBeVisible();
+
+  await expect(
+    hostHardwareSummary.getByText('64 GB', { exact: true }),
+  ).toBeVisible();
+
+  const liveGpuRuntime = page.getByLabel('Live GPU runtime status');
+
+  await expect(
+    liveGpuRuntime.getByText('NVIDIA RTX Test', { exact: true }),
+  ).toBeVisible();
+
+  await expect(liveGpuRuntime.getByText('FREE', { exact: true })).toBeVisible();
   await expect(page.getByText('64 GB', { exact: true })).toBeVisible();
   await expect(
     page.getByRole('heading', {
