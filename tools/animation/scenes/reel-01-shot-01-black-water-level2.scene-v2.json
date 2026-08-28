@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 2,
+  "sceneId": "chapter-01-reel-01-shot-01-level2-candidate-v1",
+  "projectSlug": "blessings-of-sumer",
+  "chapterNumber": 1,
+  "reelId": "resolve-from-studio",
+  "episodeNumber": 1,
+  "visualBible": "blessings-of-sumer-v1",
+  "styleBible": "reel-01-animation-style-v1",
+  "assetVersion": "editorial-v1-flat-level2-candidate",
+  "assetManifestPath": "blessings-of-sumer/chapter-01/reel-01/animation-v1/manifest.json",
+  "assetStrategy": "prefer-animation-manifest",
+  "width": 1080,
+  "height": 1920,
+  "fps": 30,
+  "durationFrames": 180,
+  "shots": [
+    {
+      "id": "black-water-before-dawn",
+      "sourceShotNumber": 1,
+      "sourceStartFrame": 0,
+      "startFrame": 0,
+      "durationFrames": 180,
+      "emotionalPurpose": "Open in primordial stillness and scale before the voyage begins. Preserve the approved painting while introducing restrained, independently readable black-water shimmer and dawn mist beneath a slow cinematic push.",
+      "eyeTarget": "dawn-horizon",
+      "stillnessAnchor": "black-water-horizon",
+      "camera": {
+        "preset": "slowPush",
+        "scaleFrom": 1,
+        "scaleTo": 1.014,
+        "xFrom": 0,
+        "xTo": 0,
+        "yFrom": 0,
+        "yTo": -3,
+        "rotationFrom": 0,
+        "rotationTo": 0,
+        "easing": "cinematicSlow",
+        "settleFromProgress": 0.88
+      },
+      "layers": [
+        {
+          "id": "shot01-editorial-base",
+          "assetId": "shot01-editorial-v1-flat",
+          "assetPath": "blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-01.png",
+          "role": "background",
+          "material": "flattened-editorial-art",
+          "depth": 0.5,
+          "anchor": "center",
+          "transform": {
+            "x": 0,
+            "y": 0,
+            "scale": 1
+          },
+          "motionPresets": [],
+          "required": true
+        }
+      ],
+      "performance": [],
+      "atmosphere": [
+        {
+          "id": "shot01-dawn-mist",
+          "preset": "mistDrift",
+          "intensity": 0.075,
+          "depthRange": [0.08, 0.42]
+        }
+      ],
+      "lighting": [
+        {
+          "id": "shot01-black-water-shimmer",
+          "preset": "waterPulse",
+          "intensityFrom": 0.032,
+          "intensityTo": 0.068
+        }
+      ],
+      "captionPolicy": {
+        "safeZone": "lower-middle",
+        "avoidTargets": ["dawn-horizon"],
+        "motion": "stable",
+        "maxLines": 2
+      },
+      "transitionOut": "shot-01-to-02-dawn-horizon"
+    }
+  ],
+  "transitions": [],
+  "reviewMarkers": [
+    { "id": "opening", "progress": 0 },
+    { "id": "water-established", "progress": 0.25 },
+    { "id": "dawn-breath", "progress": 0.5 },
+    { "id": "handoff-prep", "progress": 0.75 },
+    { "id": "end", "progress": 1 }
+  ],
+  "reviewPolicy": {
+    "scorecard": "reel-01-animation-review-v1",
+    "humanApprovalRequired": true,
+    "minimumCategory": 4,
+    "publishabilityMinimum": 5,
+    "hardFailsBlockApproval": true
+  },
+  "sourcePolicy": {
+    "storyMutationAllowed": false,
+    "narrationSource": "reel-production-record",
+    "captionSource": "reel-production-record",
+    "visualSource": "versioned-animation-asset-manifest"
+  }
+}
