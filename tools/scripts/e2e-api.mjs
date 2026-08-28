@@ -206,6 +206,9 @@ async function main() {
     NODE_ENV: 'test',
     PORT: String(port),
     WEB_ORIGIN: 'http://localhost:4200',
+    OLLAMA_BASE_URL: 'http://127.0.0.1:9',
+    OLLAMA_TEXT_MODEL: 'qwen3:8b',
+    OLLAMA_VISION_MODEL: 'qwen3-vl:8b',
   };
 
   run(pnpmCommand, ['db:deploy'], { env: testEnv });

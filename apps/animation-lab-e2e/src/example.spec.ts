@@ -89,15 +89,15 @@ test('renders the full Shot 3 motion review through Pixi at exact frames', async
   await expect(canvas).toHaveAttribute('data-viewport-height', '1920');
   await expect(canvas).toHaveAttribute(
     'data-pixi-source-layer-state',
-    /shot03-vessel-v1:x=-2\.973,y=-8\.258,scale=1\.014271,rot=-0\.001257,opacity=1\.000/,
+    /shot03-vessel-v1:x=-2\.973,y=-8\.258,scale=1\.014271,scaleX=1\.014271,scaleY=1\.014271,rot=-0\.001257,opacity=1\.000/,
   );
   await expect(canvas).toHaveAttribute(
     'data-pixi-source-layer-state',
-    /shot03-enki-body-v1:x=-2\.973,y=-8\.258,scale=1\.014271,rot=-0\.001257,opacity=1\.000/,
+    /shot03-enki-body-v1:x=-2\.973,y=-8\.258,scale=1\.014271,scaleX=1\.014271,scaleY=1\.014271,rot=-0\.001257,opacity=1\.000/,
   );
   await expect(canvas).toHaveAttribute(
     'data-pixi-source-layer-state',
-    /shot03-enki-eyes-v1:x=-2\.973,y=-8\.258,scale=1\.014271,rot=-0\.001257,opacity=1\.000/,
+    /shot03-enki-eyes-v1:x=-2\.973,y=-8\.258,scale=1\.014271,scaleX=1\.014271,scaleY=1\.014271,rot=-0\.001257,opacity=1\.000/,
   );
   await capturePixiFrameEvidence(canvas, 101, 'BLINK_CLOSED', testInfo);
 
