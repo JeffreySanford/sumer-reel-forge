@@ -142,6 +142,33 @@ function ForgeScenario({ scenario }: { readonly scenario: Scenario }) {
   return <ForgeLab />;
 }
 
+async function waitForDocumentElement<T extends HTMLElement>(
+  canvasElement: HTMLElement,
+  label: string,
+  find: (document: Document) => T | null,
+): Promise<T> {
+  const document = canvasElement.ownerDocument;
+  const deadline = Date.now() + 5_000;
+  while (Date.now() < deadline) {
+    const match = find(document);
+    if (match) return match;
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+  throw new Error(`Storybook did not render ${label}.`);
+}
+
+function elementWithExactText<T extends HTMLElement>(
+  document: Document,
+  selector: string,
+  text: string,
+): T | null {
+  return (
+    Array.from(document.querySelectorAll<T>(selector)).find(
+      (element) => element.textContent?.trim() === text,
+    ) ?? null
+  );
+}
+
 const meta: Meta<typeof ForgeLab> = {
   component: ForgeLab,
   title: 'Studio/Forge/ForgeLab',
@@ -153,25 +180,37 @@ type Story = StoryObj<typeof ForgeLab>;
 
 export const Shot3Ready: Story = {
   render: () => <ForgeScenario scenario="ready" />,
-  play: async ({ canvas }) => {
-    await canvas.findByRole('heading', { name: 'Shot 3 · enki-at-the-helm' });
-    await canvas.findByRole('button', { name: 'Propose with ollama' });
+  play: async ({ canvasElement }) => {
+    await waitForDocumentElement(canvasElement, 'Shot 3 canonical heading', (document) =>
+      elementWithExactText(document, 'h2', 'Shot 3 · enki-at-the-helm'),
+    );
+    await waitForDocumentElement(canvasElement, 'Ollama proposal action', (document) =>
+      elementWithExactText(document, 'button', 'Propose with ollama'),
+    );
   },
 };
 
 export const Shot4Ready: Story = {
   render: () => <ForgeScenario scenario="shot4" />,
-  play: async ({ canvas }) => {
-    await canvas.findByRole('heading', { name: 'Shot 4 · nammu-under-water' });
-    await canvas.findByText('Shot 4 Scene V3 runtime is not fabricated');
+  play: async ({ canvasElement }) => {
+    await waitForDocumentElement(canvasElement, 'Shot 4 canonical heading', (document) =>
+      elementWithExactText(document, 'h2', 'Shot 4 · nammu-under-water'),
+    );
+    await waitForDocumentElement(canvasElement, 'Shot 4 Scene V3 guardrail', (document) =>
+      elementWithExactText(document, 'h2', 'Shot 4 Scene V3 runtime is not fabricated'),
+    );
   },
 };
 
 export const OllamaUnavailable: Story = {
   render: () => <ForgeScenario scenario="unavailable" />,
-  play: async ({ canvas }) => {
-    const propose = await canvas.findByRole('button', { name: 'Propose with local AI' });
-    if (!propose.hasAttribute('disabled')) {
+  play: async ({ canvasElement }) => {
+    const propose = await waitForDocumentElement<HTMLButtonElement>(
+      canvasElement,
+      'disabled local AI proposal action',
+      (document) => elementWithExactText(document, 'button', 'Propose with local AI'),
+    );
+    if (!propose.disabled) {
       throw new Error('Proposal action must be disabled when no text provider is available.');
     }
   },
@@ -179,24 +218,58 @@ export const OllamaUnavailable: Story = {
 
 export const ProposalSuccess: Story = {
   render: () => <ForgeScenario scenario="ready" />,
-  play: async ({ canvas, userEvent }) => {
+  play: async ({ canvasElement, userEvent }) => {
+    const direction = await waitForDocumentElement<HTMLTextAreaElement>(
+      canvasElement,
+      'human direction field',
+      (document) => document.querySelector('textarea'),
+    );
     await userEvent.type(
-      await canvas.findByLabelText('Optional human direction'),
+      direction,
       'Make the vessel feel heavier without increasing character motion.',
     );
-    await userEvent.click(await canvas.findByRole('button', { name: 'Propose with ollama' }));
-    await canvas.findByText('Heavier vessel motion with restrained Enki compensation.');
-    await userEvent.click(await canvas.findByRole('button', { name: 'Apply to working state' }));
-    await canvas.findByText('React state only');
-    await userEvent.click(await canvas.findByRole('button', { name: 'Reset working state' }));
+    const propose = await waitForDocumentElement<HTMLButtonElement>(
+      canvasElement,
+      'Ollama proposal action',
+      (document) => elementWithExactText(document, 'button', 'Propose with ollama'),
+    );
+    await userEvent.click(propose);
+    await waitForDocumentElement(canvasElement, 'proposal summary', (document) =>
+      elementWithExactText(
+        document,
+        'strong',
+        'Heavier vessel motion with restrained Enki compensation.',
+      ),
+    );
+    const apply = await waitForDocumentElement<HTMLButtonElement>(
+      canvasElement,
+      'apply working state action',
+      (document) => elementWithExactText(document, 'button', 'Apply to working state'),
+    );
+    await userEvent.click(apply);
+    await waitForDocumentElement(canvasElement, 'React working state', (document) =>
+      elementWithExactText(document, 'h3', 'React state only'),
+    );
+    const reset = await waitForDocumentElement<HTMLButtonElement>(
+      canvasElement,
+      'reset working state action',
+      (document) => elementWithExactText(document, 'button', 'Reset working state'),
+    );
+    await userEvent.click(reset);
   },
 };
 
 export const ProposalFailure: Story = {
   render: () => <ForgeScenario scenario="proposal-error" />,
-  play: async ({ canvas, userEvent }) => {
-    await userEvent.click(await canvas.findByRole('button', { name: 'Propose with ollama' }));
-    await canvas.findByRole('alert');
-    await canvas.findByText('Synthetic Storybook proposal failure.');
+  play: async ({ canvasElement, userEvent }) => {
+    const propose = await waitForDocumentElement<HTMLButtonElement>(
+      canvasElement,
+      'Ollama proposal action',
+      (document) => elementWithExactText(document, 'button', 'Propose with ollama'),
+    );
+    await userEvent.click(propose);
+    await waitForDocumentElement(canvasElement, 'proposal error alert', (document) =>
+      elementWithExactText(document, '[role="alert"]', 'Synthetic Storybook proposal failure.'),
+    );
   },
 };
