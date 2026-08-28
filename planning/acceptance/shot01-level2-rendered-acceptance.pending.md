@@ -26,21 +26,32 @@ The restrained cinematic push and existing deterministic grade remain supporting
 
 The first pass does **not** add characters, particles, new geometry, generative pixels, new layer assets or autonomous AI timing.
 
-## Render
+## Primary A/B review
 
 From the repository root:
 
 ```sh
-node tools/scripts/render-shot01-level2-candidate.mjs
+node tools/scripts/render-shot01-level2-review.mjs
 ```
 
-Equivalent generic command:
+The script renders both scenes through the same Scene V2 benchmark path and writes a side-by-side normal-speed proof:
+
+```text
+LEFT  = current canonical camera-only benchmark
+RIGHT = Level 2 environmental motion candidate
+```
+
+It also writes a pending proof receipt under:
+
+`tmp/animation-previews/shot01-level2-proof/<timestamp>/shot01-level2-rendered-proof.json`
+
+The receipt does not approve or promote the candidate.
+
+To render only the candidate for full-frame inspection:
 
 ```sh
-pnpm exec tsx tools/scripts/render-scene-v2-benchmark.ts tools/animation/scenes/reel-01-shot-01-black-water-level2.scene-v2.json
+node tools/scripts/render-shot01-level2-candidate.mjs
 ```
-
-Review the generated MP4 and contact sheet at normal playback speed against the canonical Shot 1 benchmark.
 
 ## Human acceptance questions
 
@@ -50,7 +61,7 @@ Review the generated MP4 and contact sheet at normal playback speed against the 
 - Does the mist read as dawn atmosphere rather than a synthetic overlay?
 - Are all three new environmental improvements readable at normal speed?
 - Does the camera remain subordinate to the environment?
-- Is the Level 2 candidate clearly preferable to the current canonical benchmark at normal speed?
+- Is the RIGHT side clearly preferable to the LEFT side at normal speed?
 - Does any motion interfere with captions or the dawn-horizon eye target?
 
 ## Hard failures
@@ -64,7 +75,7 @@ Reject the candidate if any of the following occur:
 - motion is only noticeable when paused or scrubbed;
 - camera movement becomes the dominant contribution;
 - the approved source identity/composition appears changed;
-- the candidate is technically green but not preferred at normal speed.
+- the candidate is technically green but the RIGHT side is not preferred at normal speed.
 
 ## Promotion boundary
 
