@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ForgeLab } from './forge-lab';
 
@@ -107,16 +108,15 @@ const proposal = {
 };
 
 function response(value: unknown, status = 200): Promise<Response> {
-  return Promise.resolve({
-    ok: status >= 200 && status < 300,
+  return Promise.resolve(new Response(JSON.stringify(value), {
     status,
-    json: async () => value,
-  } as Response);
+    headers: { 'Content-Type': 'application/json' },
+  }));
 }
 
-function scenarioFetch(scenario: Scenario): typeof fetch {
+function scenarioFetch(scenario: Scenario, fallback: typeof fetch): typeof fetch {
   return (async (input: RequestInfo | URL, init?: RequestInit) => {
-    const url = String(input);
+    const url = input instanceof Request ? input.url : String(input);
     if (url.endsWith('/api/runtime/animation-production')) return response(production);
     if (url.endsWith('/api/runtime/animation-production-evidence')) return response(evidence);
     if (url.endsWith('/api/local-ai/providers')) {
@@ -128,13 +128,44 @@ function scenarioFetch(scenario: Scenario): typeof fetch {
       }
       return response(proposal);
     }
-    return response({ message: `Unhandled Storybook request ${url}` }, 404);
+    return fallback(input, init);
   }) as typeof fetch;
 }
 
 function ForgeScenario({ scenario }: { readonly scenario: Scenario }) {
-  globalThis.fetch = scenarioFetch(scenario);
-  return <ForgeLab />;
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const previousFetch = globalThis.fetch;
+    const mockFetch = scenarioFetch(scenario, previousFetch);
+    globalThis.fetch = mockFetch;
+
+    const history = typeof window !== 'undefined' ? window.history : null;
+    const previousReplaceState = history?.replaceState;
+    let scopedReplaceState: History['replaceState'] | null = null;
+
+    if (history && previousReplaceState) {
+      scopedReplaceState = function (data, unused, url) {
+        const target = url == null ? '' : String(url);
+        if (target.startsWith('/forge/shot/')) return;
+        return previousReplaceState.call(history, data, unused, url);
+      };
+      history.replaceState = scopedReplaceState;
+    }
+
+    setReady(true);
+
+    return () => {
+      if (globalThis.fetch === mockFetch) {
+        globalThis.fetch = previousFetch;
+      }
+      if (history && previousReplaceState && scopedReplaceState && history.replaceState === scopedReplaceState) {
+        history.replaceState = previousReplaceState;
+      }
+    };
+  }, [scenario]);
+
+  return ready ? <ForgeLab /> : null;
 }
 
 async function waitForDocumentElement<T extends HTMLElement>(
