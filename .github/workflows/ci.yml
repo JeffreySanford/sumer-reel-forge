@@ -18,7 +18,7 @@ jobs:
   quality:
     name: Quality / API / Browser
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     services:
       postgres:
         image: postgres:17-bookworm
@@ -90,17 +90,25 @@ jobs:
         timeout-minutes: 5
         run: pnpm e2e:api
 
-      - name: Build Storybook
+      - name: Build Angular Studio Storybook
         timeout-minutes: 5
         run: pnpm storybook:build
+
+      - name: Build React Forge Storybook
+        timeout-minutes: 5
+        run: pnpm exec nx build-storybook animation-lab
 
       - name: Install Playwright browsers and Linux dependencies
         timeout-minutes: 10
         run: pnpm exec playwright install --with-deps chromium firefox
 
-      - name: Browser end-to-end tests
+      - name: Angular Studio browser end-to-end tests
         timeout-minutes: 10
         run: pnpm e2e:ci
+
+      - name: React Forge browser end-to-end tests
+        timeout-minutes: 10
+        run: pnpm exec playwright test --config=apps/animation-lab-e2e/playwright.config.mts --project=chromium --project=firefox
 
       - name: Upload Playwright report on failure
         if: failure()
@@ -110,5 +118,7 @@ jobs:
           path: |
             dist/.playwright/apps/web/playwright-report
             dist/.playwright/apps/web/test-output
+            dist/.playwright/apps/animation-lab-e2e/playwright-report
+            dist/.playwright/apps/animation-lab-e2e/test-output
           if-no-files-found: ignore
           retention-days: 7
