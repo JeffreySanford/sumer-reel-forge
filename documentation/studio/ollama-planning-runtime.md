@@ -16,24 +16,29 @@ POST /api/planning/shot-plan
 Planning providers:
 
 - `deterministic` - always available, creates a safe planning scaffold without inventing art direction;
-- `ollama` - calls the local Ollama HTTP API for a schema-constrained shot-plan proposal.
+- `ollama` - calls the managed local Ollama bridge for a schema-constrained shot-plan proposal.
 
 The Ollama provider uses:
 
 - `GET /api/tags` for local model discovery;
-- `POST /api/chat` for planning;
+- `tools/scripts/managed-ollama-chat-bridge.mjs` for planning inference;
+- `tools/runtime/ollama-vision-task.mjs` / `runManagedOllamaChat()` as the single shared GPU ownership implementation;
 - `stream: false` so structured responses arrive as one JSON response;
 - `think: false` for bounded shot-direction generation with Qwen3-class thinking models;
-- `keep_alive` so the configured planner remains warm between proposals;
+- a scoped `keep_alive` request hint followed by explicit model unload before the GPU lease is released;
 - a JSON Schema in the `format` field;
-- bounded request timeouts;
+- bounded lease, inference, unload, and parent-watchdog timeouts;
 - application-side validation before model output becomes a proposal.
+
+The bridge exists because the NestJS API is webpack-built TypeScript while the existing GPU lease implementation is ESM tooling used by local scripts. NestJS does not copy the lease algorithm. It spawns the bridge, the bridge imports the shared runtime module, and that module acquires the same cross-process GPU lease, captures telemetry, unloads the Ollama model, and releases the lease.
+
+The bridge reserves stdout for one JSON response and routes operational logging to stderr so the parent API process has a stable machine-readable protocol.
 
 Model output is never treated as human approval.
 
 ## Recommended Local Configuration
 
-The normal local `pnpm start:all` entrypoint now applies these defaults before any managed service starts:
+The normal local `pnpm start:all` entrypoint applies these defaults before managed services start:
 
 ```text
 PLANNING_PROVIDER=ollama
@@ -70,6 +75,24 @@ export OLLAMA_KEEP_ALIVE=10m
 
 These shell variables do not modify the Windows PATH.
 
+## Managed Ollama Inventory
+
+Use:
+
+```bash
+pnpm ollama
+```
+
+for a read-only managed-model inventory check. The check uses the Ollama HTTP API as the authoritative runtime inventory. On Windows/Git Bash the Ollama desktop service can therefore be reachable even when the `ollama` executable is not on that shell's PATH.
+
+If the CLI is absent, inventory checking remains valid and reports the PATH condition as advisory. Explicit model pulling still requires the CLI:
+
+```bash
+pnpm ollama:pull
+```
+
+The setup command never starts models and never changes human approval authority.
+
 ## Normal Local Startup
 
 The normal command is:
@@ -78,16 +101,9 @@ The normal command is:
 pnpm start:all
 ```
 
-The outer managed startup applies the local Ollama defaults above, then the core startup automatically performs the equivalent of:
+Managed startup validates the configured local runtime but does not pin the text planner in shared GPU VRAM by default. Planning loads lazily when a real proposal is requested and unloads before releasing the shared GPU lease.
 
-```bash
-pnpm planning:ollama:check
-pnpm planning:ollama:warm
-```
-
-before starting the Docker infrastructure, Nest API, and Angular Studio. This provides fail-fast local runtime validation and preloads the configured text planner while also making the configured vision model available to shot review commands.
-
-To deliberately run without Ollama planning, set `PLANNING_PROVIDER=deterministic` in the shell or `.env`. The Ollama check and warm-up are then skipped so deterministic development and CI remain independent from the local model runtime.
+To deliberately run without Ollama planning, set `PLANNING_PROVIDER=deterministic` in the shell or `.env`. Deterministic development and CI remain independent from the local model runtime.
 
 The standalone commands remain useful for diagnostics:
 
@@ -210,7 +226,7 @@ exact required candidate set
 
 The review command never promotes candidates and never records human approval.
 
-The deterministic motion verifier now identifies its scope as **aggregate scene motion**. When the Scene V2 camera moves, it records that camera motion contributes to the measured frame difference and explicitly states that an aggregate PASS does not independently prove material-local motion. Material-local ROI/baseline differential QA remains a separate hardening step.
+The deterministic motion verifier identifies its scope as **aggregate scene motion**. When the Scene V2 camera moves, it records that camera motion contributes to the measured frame difference and explicitly states that an aggregate PASS does not independently prove material-local motion. Material-local ROI/baseline differential QA remains a separate hardening step.
 
 ### Vision evidence package
 
@@ -299,8 +315,8 @@ If a future Docker-hosted API cannot reach host Ollama, use the Docker host gate
 
 ## Next Implementation Slice
 
-1. add material-local ROI or baseline-differential render QA so camera motion cannot satisfy a material-motion gate;
-2. persist `PlanningRun` / review artifact records and model/input hashes;
-3. expose `shot-review.json` and Ollama critique in the Production Cockpit;
-4. benchmark Qwen3-VL 4B versus 8B on approved/rejected Reel 1 evidence;
-5. promote proven benchmark decisions into reusable lane-level quality contracts only after enough human-reviewed examples exist.
+1. turn the existing animation CLI operations into persisted Postgres-backed jobs using the render-job lifecycle as the model;
+2. expose job logs, attempts, retry, heartbeat, and stale-job recovery without adding Redis/BullMQ;
+3. place a thin Forge CLI over those API authorities;
+4. add advisory local agents only after the persisted job foundation is green;
+5. keep depth/shared-motion work as a later visual-capability proof rather than an automation prerequisite.

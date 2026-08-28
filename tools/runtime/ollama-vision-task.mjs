@@ -1,21 +1,25 @@
 import { withGpuAiTask } from './gpu-ai-task.mjs';
 
 const DEFAULT_BASE_URL = 'http://localhost:11434';
-const DEFAULT_MODEL = 'qwen3-vl:4b-instruct';
+const DEFAULT_TEXT_MODEL = 'qwen3:8b';
+const DEFAULT_VISION_MODEL = 'qwen3-vl:4b-instruct';
 const DEFAULT_KEEP_ALIVE = '10m';
 const DEFAULT_TIMEOUT_MS = 300_000;
 const DEFAULT_UNLOAD_TIMEOUT_MS = 120_000;
 
-export async function runManagedOllamaVisionChat(options = {}) {
+export async function runManagedOllamaChat(options = {}) {
   const env = options.env ?? process.env;
   const fetchImpl = options.fetch ?? globalThis.fetch;
+  const log = options.log ?? console.log;
   if (typeof fetchImpl !== 'function') {
-    throw new Error('runManagedOllamaVisionChat requires fetch support.');
+    throw new Error('runManagedOllamaChat requires fetch support.');
   }
 
-  const model = optionalString(options.model) ??
-    optionalString(env.OLLAMA_VISION_MODEL) ??
-    DEFAULT_MODEL;
+  const model =
+    optionalString(options.model) ??
+    optionalString(env.OLLAMA_TEXT_MODEL) ??
+    optionalString(options.defaultModel) ??
+    DEFAULT_TEXT_MODEL;
   const baseUrl = normalizeBaseUrl(options.baseUrl ?? env.OLLAMA_BASE_URL);
   const timeoutMs = positiveInteger(
     options.timeoutMs ?? env.PLANNING_TIMEOUT_MS,
@@ -41,10 +45,16 @@ export async function runManagedOllamaVisionChat(options = {}) {
         timeoutMs,
       ),
       cleanup: async () =>
-        unloadOllamaModel({ baseUrl, model, timeoutMs: unloadTimeoutMs, fetch: fetchImpl }),
+        unloadOllamaModel({
+          baseUrl,
+          model,
+          timeoutMs: unloadTimeoutMs,
+          fetch: fetchImpl,
+          log,
+        }),
     },
     async (lease) => {
-      console.log(
+      log(
         `[gpu] Lease acquired for ${lease.metadata.task} · backend ollama · model ${model} · expires ${lease.metadata.expiresAt}.`,
       );
       const response = await fetchImpl(`${baseUrl}/api/chat`, {
@@ -63,7 +73,7 @@ export async function runManagedOllamaVisionChat(options = {}) {
       });
       if (!response.ok) {
         throw new Error(
-          `${options.errorPrefix ?? 'Ollama vision chat'} returned HTTP ${response.status}: ${await response.text()}`,
+          `${options.errorPrefix ?? 'Ollama chat'} returned HTTP ${response.status}: ${await response.text()}`,
         );
       }
       return await response.json();
@@ -71,11 +81,27 @@ export async function runManagedOllamaVisionChat(options = {}) {
   );
 }
 
+export async function runManagedOllamaVisionChat(options = {}) {
+  const env = options.env ?? process.env;
+  const model =
+    optionalString(options.model) ??
+    optionalString(env.OLLAMA_VISION_MODEL) ??
+    optionalString(options.defaultModel) ??
+    DEFAULT_VISION_MODEL;
+  return runManagedOllamaChat({
+    ...options,
+    env,
+    model,
+    errorPrefix: options.errorPrefix ?? 'Ollama vision chat',
+  });
+}
+
 export async function unloadOllamaModel({
   baseUrl,
   model,
   timeoutMs = DEFAULT_UNLOAD_TIMEOUT_MS,
   fetch: fetchImpl = globalThis.fetch,
+  log = console.log,
 } = {}) {
   if (!model) return;
   if (typeof fetchImpl !== 'function') {
@@ -90,13 +116,15 @@ export async function unloadOllamaModel({
       stream: false,
       keep_alive: 0,
     }),
-    signal: AbortSignal.timeout(positiveInteger(timeoutMs, DEFAULT_UNLOAD_TIMEOUT_MS)),
+    signal: AbortSignal.timeout(
+      positiveInteger(timeoutMs, DEFAULT_UNLOAD_TIMEOUT_MS),
+    ),
   });
   const text = await response.text();
   if (!response.ok) {
     throw new Error(`Ollama unload HTTP ${response.status}: ${text}`);
   }
-  console.log(`[gpu] Ollama model unload request completed for ${model}.`);
+  log(`[gpu] Ollama model unload request completed for ${model}.`);
 }
 
 function normalizeBaseUrl(value) {
@@ -110,7 +138,7 @@ function positiveInteger(value, fallback) {
 
 function requiredString(value, name) {
   const parsed = optionalString(value);
-  if (!parsed) throw new Error(`Managed Ollama vision ${name} is required.`);
+  if (!parsed) throw new Error(`Managed Ollama chat ${name} is required.`);
   return parsed;
 }
 

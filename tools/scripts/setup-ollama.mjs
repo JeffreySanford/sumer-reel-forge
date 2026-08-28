@@ -25,20 +25,24 @@ async function main() {
   const selected = resolveManagedOllamaModels(manifest, process.env, {
     includeRetrieval: options.includeRetrieval,
   });
-  const cli = spawnSync('ollama', ['--version'], {
-    encoding: 'utf8',
-    windowsHide: true,
-  });
-  if (cli.error || cli.status !== 0) {
-    throw new Error('Ollama CLI is not available on PATH.');
-  }
-
+  const cli = inspectCli();
   let inventory = await fetchInventory(options.baseUrl);
   const initialMissing = selected.filter(
     (entry) => !inventory.names.has(entry.selectedModel),
   );
 
+  if (!cli.available) {
+    console.warn(
+      '[ollama] CLI is not available on PATH; HTTP inventory checks can continue, but pulling missing models requires the CLI.',
+    );
+  }
+
   if (options.pullMissing && initialMissing.length > 0) {
+    if (!cli.available) {
+      throw new Error(
+        `Ollama is reachable at ${options.baseUrl}, but the Ollama CLI is not available on PATH. Add ollama to PATH before pulling ${initialMissing.length} missing managed model(s).`,
+      );
+    }
     for (const entry of initialMissing) {
       console.log(`[ollama] pulling ${entry.selectedModel} for ${entry.role}`);
       const pull = spawnSync('ollama', ['pull', entry.selectedModel], {
@@ -58,7 +62,8 @@ async function main() {
   const state = {
     schemaVersion: 1,
     observedAt: new Date().toISOString(),
-    ollamaVersion: `${cli.stdout ?? cli.stderr ?? ''}`.trim(),
+    ollamaVersion: cli.version,
+    cliAvailable: cli.available,
     baseUrl: options.baseUrl,
     action: options.pullMissing ? 'pull-missing' : 'check',
     includeRetrieval: options.includeRetrieval,
@@ -79,6 +84,9 @@ async function main() {
   await writeJson(options.state, state);
 
   console.log('Managed Ollama model check');
+  console.log(
+    `CLI: ${cli.available ? cli.version ?? 'available' : 'not on PATH (HTTP inventory only)'}`,
+  );
   for (const entry of state.selected) {
     console.log(
       `${entry.installed ? 'READY' : 'MISSING'} · ${entry.role} · ${entry.model} · ${entry.source}`,
@@ -95,6 +103,18 @@ async function main() {
     }
     process.exitCode = 2;
   }
+}
+
+function inspectCli() {
+  const cli = spawnSync('ollama', ['--version'], {
+    encoding: 'utf8',
+    windowsHide: true,
+  });
+  const available = !cli.error && cli.status === 0;
+  return {
+    available,
+    version: available ? `${cli.stdout ?? cli.stderr ?? ''}`.trim() || null : null,
+  };
 }
 
 async function fetchInventory(baseUrl) {
@@ -131,9 +151,12 @@ function parseOptions(args) {
     if (arg === '--check') options.pullMissing = false;
     else if (arg === '--pull-missing') options.pullMissing = true;
     else if (arg === '--include-retrieval') options.includeRetrieval = true;
-    else if (arg.startsWith('--manifest=')) options.manifest = arg.slice('--manifest='.length);
-    else if (arg.startsWith('--base-url=')) options.baseUrl = arg.slice('--base-url='.length).replace(/\/$/, '');
-    else if (arg.startsWith('--state=')) options.state = arg.slice('--state='.length);
+    else if (arg.startsWith('--manifest='))
+      options.manifest = arg.slice('--manifest='.length);
+    else if (arg.startsWith('--base-url='))
+      options.baseUrl = arg.slice('--base-url='.length).replace(/\/$/, '');
+    else if (arg.startsWith('--state='))
+      options.state = arg.slice('--state='.length);
     else throw new Error(`Unknown option ${arg}`);
   }
   return options;

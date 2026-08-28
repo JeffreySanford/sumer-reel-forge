@@ -5,7 +5,10 @@ import { join } from 'node:path';
 import test from 'node:test';
 import { withGpuAiTask } from '../runtime/gpu-ai-task.mjs';
 import { inspectGpuLease } from '../runtime/gpu-resource-lease.mjs';
-import { runManagedOllamaVisionChat } from '../runtime/ollama-vision-task.mjs';
+import {
+  runManagedOllamaChat,
+  runManagedOllamaVisionChat,
+} from '../runtime/ollama-vision-task.mjs';
 
 async function withTempLease(t) {
   const root = await mkdtemp(join(tmpdir(), 'srf-ollama-vision-task-'));
@@ -31,7 +34,10 @@ test('managed Ollama vision chat unloads the model before releasing its lease', 
 
     if (String(url).endsWith('/api/chat')) {
       events.push(`${active.metadata.backend}:request:${request.keep_alive}`);
-      return jsonResponse({ model: 'qwen3-vl:4b-instruct', message: { content: '{"ok":true}' } });
+      return jsonResponse({
+        model: 'qwen3-vl:4b-instruct',
+        message: { content: '{"ok":true}' },
+      });
     }
 
     events.push(`${active.metadata.backend}:unload:${request.keep_alive}`);
@@ -63,10 +69,15 @@ test('hybrid handoff releases Ollama before the ComfyUI child acquires the GPU l
   const fetch = async (url, init) => {
     const active = await inspectGpuLease(leaseDirectory);
     const request = JSON.parse(init.body);
-    events.push(`${active.metadata.backend}:${String(url).endsWith('/api/chat') ? 'request' : 'unload'}`);
+    events.push(
+      `${active.metadata.backend}:${String(url).endsWith('/api/chat') ? 'request' : 'unload'}`,
+    );
     assert.equal(active.metadata.owner, 'shot03-roi-segmentation-locator');
     assert.equal(request.model, 'qwen3-vl:4b-instruct');
-    return jsonResponse({ model: request.model, message: { content: '{"targets":[]}' } });
+    return jsonResponse({
+      model: request.model,
+      message: { content: '{"targets":[]}' },
+    });
   };
 
   await runManagedOllamaVisionChat({
@@ -80,7 +91,11 @@ test('hybrid handoff releases Ollama before the ComfyUI child acquires the GPU l
     timeoutMs: 1_000,
   });
 
-  events.push((await inspectGpuLease(leaseDirectory)) === null ? 'free-after-ollama' : 'held-after-ollama');
+  events.push(
+    (await inspectGpuLease(leaseDirectory)) === null
+      ? 'free-after-ollama'
+      : 'held-after-ollama',
+  );
 
   await withGpuAiTask(
     {
@@ -105,4 +120,91 @@ test('hybrid handoff releases Ollama before the ComfyUI child acquires the GPU l
     'free-after-ollama',
     'comfyui:generation',
   ]);
+});
+
+test('managed Ollama chat supports text models through the same lease and unload path', async (t) => {
+  const leaseDirectory = await withTempLease(t);
+  const events = [];
+  const fetch = async (url, init) => {
+    const active = await inspectGpuLease(leaseDirectory);
+    const request = JSON.parse(init.body);
+    events.push({
+      backend: active.metadata.backend,
+      owner: active.metadata.owner,
+      task: active.metadata.task,
+      model: request.model,
+      keepAlive: request.keep_alive,
+      endpoint: String(url).endsWith('/api/chat') ? 'chat' : 'generate',
+    });
+    return jsonResponse({
+      model: request.model,
+      message: { content: '{"eyeTarget":"enki-face"}' },
+    });
+  };
+
+  await runManagedOllamaChat({
+    leaseDirectory,
+    env: {
+      SRF_GPU_TASK_TELEMETRY: 'false',
+      OLLAMA_TEXT_MODEL: 'qwen3:8b',
+    },
+    fetch,
+    owner: 'api-ollama-planning',
+    task: 'shot-plan-proposal-shot-3',
+    messages: [{ role: 'user', content: 'plan' }],
+    timeoutMs: 1_000,
+  });
+
+  assert.deepEqual(events, [
+    {
+      backend: 'ollama',
+      owner: 'api-ollama-planning',
+      task: 'shot-plan-proposal-shot-3',
+      model: 'qwen3:8b',
+      keepAlive: '10m',
+      endpoint: 'chat',
+    },
+    {
+      backend: 'ollama',
+      owner: 'api-ollama-planning',
+      task: 'shot-plan-proposal-shot-3',
+      model: 'qwen3:8b',
+      keepAlive: 0,
+      endpoint: 'generate',
+    },
+  ]);
+  assert.equal(await inspectGpuLease(leaseDirectory), null);
+});
+
+test('vision compatibility wrapper honors OLLAMA_VISION_MODEL ahead of the text model', async (t) => {
+  const leaseDirectory = await withTempLease(t);
+  const models = [];
+  const fetch = async (_url, init) => {
+    const request = JSON.parse(init.body);
+    models.push(request.model);
+    return jsonResponse({
+      model: request.model,
+      message: { content: '{"ok":true}' },
+    });
+  };
+
+  await runManagedOllamaVisionChat({
+    leaseDirectory,
+    env: {
+      SRF_GPU_TASK_TELEMETRY: 'false',
+      OLLAMA_TEXT_MODEL: 'wrong-text-model',
+      OLLAMA_VISION_MODEL: 'configured-vision-model',
+    },
+    fetch,
+    owner: 'vision-env-test',
+    task: 'vision-env-selection',
+    messages: [{ role: 'user', content: 'inspect' }],
+    timeoutMs: 1_000,
+  });
+
+  assert.deepEqual(models, [
+    'configured-vision-model',
+    'configured-vision-model',
+  ]);
+  assert.equal(await inspectGpuLease(leaseDirectory), null);
 });

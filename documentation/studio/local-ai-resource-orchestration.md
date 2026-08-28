@@ -24,13 +24,13 @@ Model names remain overridable through their existing environment variables. The
 Check only:
 
 ```sh
-node tools/scripts/setup-ollama.mjs --check
+pnpm ollama
 ```
 
 Explicitly pull missing core models:
 
 ```sh
-node tools/scripts/setup-ollama.mjs --pull-missing
+pnpm ollama:pull
 ```
 
 Include the retrieval model:
@@ -148,7 +148,31 @@ The caller records:
 
 For already-approved shots, the managed review runtime now stages the approved canonical animation-v1 assets before deterministic review. It does not require obsolete pre-promotion candidate runs from `tmp/animation-assets/candidates`. Candidate staging remains the path for unpromoted work.
 
-Text planning remains outside the execution lease policy for now. Managed startup no longer preloads it, but a real planning request may leave it resident for the configured keep-alive interval.
+## Managed caller: API Ollama shot planning
+
+The NestJS `OllamaPlanningProvider` uses `tools/scripts/managed-ollama-chat-bridge.mjs` for schema-constrained shot-plan proposals instead of posting directly to Ollama. The bridge imports the shared `runManagedOllamaChat()` runtime helper, so API planning and script-based vision review use one authoritative GPU lease implementation.
+
+The planning caller records:
+
+- owner: `api-ollama-planning`;
+- task: `shot-plan-proposal-<shot-id>`;
+- backend: `ollama`;
+- configured text model.
+
+Each planning inference now follows the same managed scope as vision work:
+
+```text
+acquire GPU lease
+  -> capture before telemetry
+  -> call Ollama /api/chat
+  -> capture after telemetry
+  -> request scoped model unload
+  -> capture after-cleanup telemetry
+  -> persist receipt
+  -> release GPU lease
+```
+
+Managed startup still avoids preloading the text planner by default. Planning loads lazily on first real proposal request and unloads before releasing the lease. This is deliberately task-scoped and does not globally force `OLLAMA_KEEP_ALIVE=0`.
 
 ## Managed caller: generic ComfyUI layer candidates
 
@@ -181,14 +205,15 @@ Caller integration is deliberately incremental.
 Current state:
 
 1. **DONE:** managed GPU-heavy Ollama delta-vision phase uses the shared lease;
-2. **PARTIAL:** generic ComfyUI candidate generation is wrapped; specialized/direct generation lanes still need audit/migration;
+2. **DONE:** managed API Ollama shot planning uses the shared lease through the bridge;
 3. **DONE:** leased tasks persist best-effort before/after GPU/Ollama/ComfyUI telemetry receipts;
 4. **DONE:** managed workstation startup avoids preloading the text planner by default;
 5. **DONE:** approved shot review stages canonical approved assets instead of requiring ephemeral candidate evidence;
-6. **NEXT:** expose active lease and recent task receipts through runtime capabilities / Studio;
-7. add explicit task-aware model release behavior for one-shot vision workloads;
-8. benchmark planning-call keep-alive against ComfyUI contention before changing the existing `OLLAMA_KEEP_ALIVE` default;
-9. only then add bounded AI retry/advisory orchestration and retrieval.
+6. **DONE:** generic ComfyUI candidate generation is wrapped;
+7. **DONE:** hybrid Shot 3 ROI locator-to-ComfyUI workflows release Ollama before delegated ComfyUI generation;
+8. **DONE:** `/api/runtime/gpu-status` exposes live lease, VRAM, Ollama residency, and ComfyUI allocator state;
+9. **NEXT:** turn animation CLI operations into persisted jobs;
+10. only then add bounded AI retry/advisory orchestration and retrieval.
 
 Do not globally force `OLLAMA_KEEP_ALIVE=0` without measurement. GPU policy should be task-aware, and startup residency is now separated from post-request residency.
 
