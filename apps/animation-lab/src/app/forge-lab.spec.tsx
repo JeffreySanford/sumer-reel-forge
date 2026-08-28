@@ -155,7 +155,7 @@ describe('ForgeLab', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Shot 4' }));
 
     expect(await screen.findByText('Shot 4 · nammu-under-water')).toBeTruthy();
-    expect(screen.getByRole('video', { name: 'Shot 4 benchmark video' })).toBeTruthy();
+    expect(screen.getByLabelText('Shot 4 benchmark video')).toBeTruthy();
     expect(screen.getByText('Shot 4 Scene V3 runtime is not fabricated')).toBeTruthy();
     await waitFor(() => expect(window.location.pathname).toBe('/forge/shot/4'));
   });
