@@ -8,6 +8,10 @@ import {
   collectAndPersistHardwareProfile,
   formatHardwareProfile,
 } from '../runtime/hardware-profile.mjs';
+import {
+  acquireStartupInstanceLock,
+  releaseStartupInstanceLock,
+} from '../runtime/startup-instance-lock.mjs';
 
 const scriptPath = fileURLToPath(import.meta.url);
 const root = dirname(dirname(dirname(scriptPath)));
@@ -45,6 +49,7 @@ const comfyPython =
   );
 
 let stopping = false;
+let startupLock;
 let coreProcess;
 let rendererProcess;
 let comfyProcess;
@@ -342,6 +347,12 @@ function stopAll(exitCode) {
 }
 
 async function main() {
+  startupLock = acquireStartupInstanceLock({
+    root,
+    lockDirectory: process.env.SRF_STARTUP_LOCK_PATH,
+  });
+  console.log(`Startup ownership acquired for pid ${startupLock.metadata.pid}.`);
+
   await prepareHardwareProfile();
   reconcileWorkspaceInstall();
   preparePrismaClient();
@@ -390,6 +401,14 @@ async function main() {
 
 process.on('SIGINT', () => stopAll(130));
 process.on('SIGTERM', () => stopAll(143));
+process.on('exit', () => {
+  if (!startupLock) return;
+  try {
+    releaseStartupInstanceLock(startupLock);
+  } catch {
+    // Exit cleanup must never remove a lock whose ownership changed.
+  }
+});
 
 main().catch((error) => {
   console.error(`Managed local startup failed: ${error.message}`);
