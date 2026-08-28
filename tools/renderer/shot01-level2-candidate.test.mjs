@@ -18,7 +18,7 @@ async function readJson(path) {
   return JSON.parse(await readFile(path, 'utf8'));
 }
 
-test('Shot 1 Level 2 candidate preserves the exact approved source while adding independent environmental motion', async () => {
+test('Shot 1 Level 2 candidate preserves the exact approved source while adding three runtime-backed environmental improvements', async () => {
   const [baseline, candidate, manifest, rendererSource] = await Promise.all([
     readJson(baselinePath),
     readJson(candidatePath),
@@ -52,27 +52,31 @@ test('Shot 1 Level 2 candidate preserves the exact approved source while adding 
   assert.equal(atmospherePresets.has('mistDrift'), true);
   assert.equal(lightingPresets.has('waterPulse'), true);
 
-  const cameraContributes =
-    candidateShot.camera.scaleTo !== candidateShot.camera.scaleFrom ||
-    candidateShot.camera.xTo !== candidateShot.camera.xFrom ||
-    candidateShot.camera.yTo !== candidateShot.camera.yFrom ||
-    candidateShot.camera.rotationTo !== candidateShot.camera.rotationFrom;
-  assert.equal(cameraContributes, true);
-  assert.match(rendererSource, /preset === 'waterPulse'/);
+  const waterPulseRuntimeUses = rendererSource.match(/preset === 'waterPulse'/g) ?? [];
+  assert.ok(
+    waterPulseRuntimeUses.length >= 2,
+    'waterPulse must drive both surface reflection and separate reflected-light runtime contributions',
+  );
+  assert.match(rendererSource, /function WaterReflection/);
+  assert.match(rendererSource, /function ReflectedLight/);
   assert.match(rendererSource, /preset === 'mistDrift'/);
-  assert.match(rendererSource, /<CinematicGrade shot=\{shot\} progress=\{progress\} \/>/);
+  assert.match(rendererSource, /function Atmosphere/);
 
-  const motionDomains = [
-    cameraContributes ? 'camera' : null,
-    lightingPresets.has('waterPulse') ? 'water-material' : null,
-    atmospherePresets.has('mistDrift') ? 'atmosphere' : null,
-    rendererSource.includes('function CinematicGrade') ? 'cinematic-grade' : null,
+  const newLevel2Improvements = [
+    lightingPresets.has('waterPulse') && rendererSource.includes('function WaterReflection')
+      ? 'black-water-surface-shimmer'
+      : null,
+    lightingPresets.has('waterPulse') && rendererSource.includes('function ReflectedLight')
+      ? 'dawn-reflected-light-pulse'
+      : null,
+    atmospherePresets.has('mistDrift') && rendererSource.includes('function Atmosphere')
+      ? 'dawn-mist-drift'
+      : null,
   ].filter(Boolean);
-  assert.deepEqual(motionDomains, [
-    'camera',
-    'water-material',
-    'atmosphere',
-    'cinematic-grade',
+  assert.deepEqual(newLevel2Improvements, [
+    'black-water-surface-shimmer',
+    'dawn-reflected-light-pulse',
+    'dawn-mist-drift',
   ]);
 
   assert.equal(candidate.reviewPolicy.humanApprovalRequired, true);
@@ -98,4 +102,5 @@ test('Shot 1 candidate stays restrained enough to preserve primordial stillness'
   assert.ok(water.intensityTo > water.intensityFrom && water.intensityTo <= 0.08);
   assert.ok(shot.camera.settleFromProgress >= 0.85);
   assert.match(shot.emotionalPurpose, /primordial stillness/i);
+  assert.match(shot.emotionalPurpose, /three independently reviewable environmental improvements/i);
 });
