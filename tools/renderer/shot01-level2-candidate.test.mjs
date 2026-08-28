@@ -12,16 +12,18 @@ const candidatePath = resolve(
 const manifestPath = resolve(
   'assets/blessings-of-sumer/chapter-01/reel-01/animation-v1/manifest.json',
 );
+const rendererPath = resolve('tools/animation/src/SceneV2Benchmark.tsx');
 
 async function readJson(path) {
   return JSON.parse(await readFile(path, 'utf8'));
 }
 
 test('Shot 1 Level 2 candidate preserves the exact approved source while adding independent environmental motion', async () => {
-  const [baseline, candidate, manifest] = await Promise.all([
+  const [baseline, candidate, manifest, rendererSource] = await Promise.all([
     readJson(baselinePath),
     readJson(candidatePath),
     readJson(manifestPath),
+    readFile(rendererPath, 'utf8'),
   ]);
 
   const baselineShot = baseline.shots[0];
@@ -50,8 +52,28 @@ test('Shot 1 Level 2 candidate preserves the exact approved source while adding 
   assert.equal(atmospherePresets.has('mistDrift'), true);
   assert.equal(lightingPresets.has('waterPulse'), true);
 
-  const motionDomains = new Set(['camera', 'water-material', 'atmosphere', 'cinematic-grade']);
-  assert.equal(motionDomains.size, 4);
+  const cameraContributes =
+    candidateShot.camera.scaleTo !== candidateShot.camera.scaleFrom ||
+    candidateShot.camera.xTo !== candidateShot.camera.xFrom ||
+    candidateShot.camera.yTo !== candidateShot.camera.yFrom ||
+    candidateShot.camera.rotationTo !== candidateShot.camera.rotationFrom;
+  assert.equal(cameraContributes, true);
+  assert.match(rendererSource, /preset === 'waterPulse'/);
+  assert.match(rendererSource, /preset === 'mistDrift'/);
+  assert.match(rendererSource, /<CinematicGrade shot=\{shot\} progress=\{progress\} \/>/);
+
+  const motionDomains = [
+    cameraContributes ? 'camera' : null,
+    lightingPresets.has('waterPulse') ? 'water-material' : null,
+    atmospherePresets.has('mistDrift') ? 'atmosphere' : null,
+    rendererSource.includes('function CinematicGrade') ? 'cinematic-grade' : null,
+  ].filter(Boolean);
+  assert.deepEqual(motionDomains, [
+    'camera',
+    'water-material',
+    'atmosphere',
+    'cinematic-grade',
+  ]);
 
   assert.equal(candidate.reviewPolicy.humanApprovalRequired, true);
   assert.equal(candidate.reviewPolicy.hardFailsBlockApproval, true);
