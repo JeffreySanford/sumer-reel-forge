@@ -153,23 +153,50 @@ type Story = StoryObj<typeof ForgeLab>;
 
 export const Shot3Ready: Story = {
   render: () => <ForgeScenario scenario="ready" />,
+  play: async ({ canvas }) => {
+    await canvas.findByRole('heading', { name: 'Shot 3 · enki-at-the-helm' });
+    await canvas.findByRole('button', { name: 'Propose with ollama' });
+  },
 };
 
 export const Shot4Ready: Story = {
   render: () => <ForgeScenario scenario="shot4" />,
+  play: async ({ canvas }) => {
+    await canvas.findByRole('heading', { name: 'Shot 4 · nammu-under-water' });
+    await canvas.findByText('Shot 4 Scene V3 runtime is not fabricated');
+  },
 };
 
 export const OllamaUnavailable: Story = {
   render: () => <ForgeScenario scenario="unavailable" />,
+  play: async ({ canvas }) => {
+    const propose = await canvas.findByRole('button', { name: 'Propose with local AI' });
+    if (!propose.hasAttribute('disabled')) {
+      throw new Error('Proposal action must be disabled when no text provider is available.');
+    }
+  },
 };
 
 export const ProposalSuccess: Story = {
   render: () => <ForgeScenario scenario="ready" />,
-  parameters: {
-    docs: { description: { story: 'Click Propose with ollama, then Apply to working state to exercise the bounded working envelope.' } },
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.type(
+      await canvas.findByLabelText('Optional human direction'),
+      'Make the vessel feel heavier without increasing character motion.',
+    );
+    await userEvent.click(await canvas.findByRole('button', { name: 'Propose with ollama' }));
+    await canvas.findByText('Heavier vessel motion with restrained Enki compensation.');
+    await userEvent.click(await canvas.findByRole('button', { name: 'Apply to working state' }));
+    await canvas.findByText('React state only');
+    await userEvent.click(await canvas.findByRole('button', { name: 'Reset working state' }));
   },
 };
 
 export const ProposalFailure: Story = {
   render: () => <ForgeScenario scenario="proposal-error" />,
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.click(await canvas.findByRole('button', { name: 'Propose with ollama' }));
+    await canvas.findByRole('alert');
+    await canvas.findByText('Synthetic Storybook proposal failure.');
+  },
 };
