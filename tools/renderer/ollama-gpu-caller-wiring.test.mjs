@@ -6,6 +6,14 @@ const runtimeSource = readFileSync(
   'tools/scripts/review-animation-shot-runtime.mjs',
   'utf8',
 );
+const riggingRoiSearchSource = readFileSync(
+  'tools/scripts/shot03-rigging-roi-search.mjs',
+  'utf8',
+);
+const roiSegmentationSearchSource = readFileSync(
+  'tools/scripts/shot03-roi-segmentation-search.mjs',
+  'utf8',
+);
 
 test('managed delta vision review owns one Ollama GPU lease across warm-up and critique', () => {
   assert.match(
@@ -35,4 +43,23 @@ test('managed delta vision review owns one Ollama GPU lease across warm-up and c
   assert.ok(cleanup > leaseStart, 'vision review must register scoped post-task cleanup');
   assert.ok(warmup > leaseStart, 'vision model warm-up must occur inside the lease');
   assert.ok(critique > warmup, 'delta vision critique must remain inside the same lease');
+});
+
+test('Shot 3 hybrid ROI searches lease only the Ollama locator before delegated ComfyUI generation', () => {
+  for (const [source, owner] of [
+    [riggingRoiSearchSource, 'shot03-rigging-roi-locator'],
+    [roiSegmentationSearchSource, 'shot03-roi-segmentation-locator'],
+  ]) {
+    assert.match(source, /runManagedOllamaVisionChat/);
+    assert.match(source, new RegExp(`owner:\\s*'${owner}'`));
+    assert.doesNotMatch(source, /withGpuAiTask/);
+
+    const locatorLease = source.indexOf('runManagedOllamaVisionChat({');
+    const candidateChild = source.indexOf('runCandidateGeneration({', locatorLease);
+    assert.ok(locatorLease >= 0, 'hybrid ROI script must acquire a scoped Ollama locator lease');
+    assert.ok(
+      candidateChild > locatorLease,
+      'ComfyUI child generation must happen after the scoped Ollama locator returns',
+    );
+  }
 });

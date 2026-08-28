@@ -62,9 +62,27 @@ Preflight, verification, and preview-only commands remain lease-free. A lease is
 
 ## Hybrid Ollama -> ComfyUI experiments
 
-The Shot 3 ROI/rigging research lanes use Ollama vision localization followed by the already-managed generic ComfyUI candidate CLI. Their ComfyUI generation is therefore serialized correctly, but Ollama residency before that child process remains a separate resource-policy concern.
+The Shot 3 ROI/rigging research lanes use Ollama vision localization followed by the already-managed generic ComfyUI candidate CLI. Their ComfyUI generation is therefore serialized correctly, and the locator now has a separate managed Ollama lease.
 
-Do not wrap the entire hybrid script in one outer lease: the generic ComfyUI child would then attempt to acquire its own lease and could deadlock. The correct future sequence is task-aware Ollama lease and unload, followed by the existing ComfyUI lease.
+Do not wrap the entire hybrid script in one outer lease: the generic ComfyUI child would then attempt to acquire its own lease and could deadlock. The correct sequence is:
+
+```text
+Shot 3 ROI search
+  -> acquire Ollama lease for locator
+  -> call qwen3-vl
+  -> request scoped qwen3-vl unload
+  -> release Ollama lease
+  -> crop / manifests / deterministic QA with no GPU lease
+  -> invoke animation-layer-candidates.mjs
+  -> child acquires existing ComfyUI lease
+  -> child releases ComfyUI lease
+  -> optional media review acquires a separate Ollama lease
+```
+
+The ordering must remain visible in runtime status as `ollama` held by a locator owner, then free with no loaded Ollama model, then `comfyui` held by candidate generation. The two hybrid scripts currently using this handoff are:
+
+- `tools/scripts/shot03-rigging-roi-search.mjs`
+- `tools/scripts/shot03-roi-segmentation-search.mjs`
 
 ## Validation
 
@@ -76,6 +94,7 @@ Regression coverage must prove:
 - generation sees the lease and releases it afterward;
 - generic thin wrappers do not double-acquire;
 - multi-workflow blink generation uses one outer lease;
+- hybrid ROI scripts release Ollama before delegated ComfyUI generation attempts to lease the GPU;
 - the legacy local renderer releases the ComfyUI lease before non-Comfy TTS/Whisper/FFmpeg stages.
 
 Physical workstation validation should capture idle, active-generation, immediate post-generation, and final idle telemetry using `node tools/scripts/gpu-resource-status.mjs` plus the task receipt under `tmp/runtime/gpu-tasks`.

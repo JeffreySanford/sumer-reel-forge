@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { extname, join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { runManagedOllamaVisionChat } from '../runtime/ollama-vision-task.mjs';
 
 const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.webp']);
 const VIDEO_EXTENSIONS = new Set(['.mp4', '.webm', '.mov']);
@@ -136,25 +137,21 @@ export async function reviewGeneratedMedia({
   console.log(`[ai] Local media critic: ${model} · ${imageRecords.length} image evidence item(s)`);
   const startedAt = Date.now();
   try {
-    const response = await fetch(`${baseUrl}/api/chat`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        model,
-        stream: false,
-        think: false,
-        keep_alive: keepAlive,
-        format: REVIEW_SCHEMA,
-        messages: [
-          { role: 'system', content: system },
-          { role: 'user', content: JSON.stringify(prompt, null, 2), images },
-        ],
-        options: { temperature: 0.1 },
-      }),
-      signal: AbortSignal.timeout(timeoutMs),
+    const payload = await runManagedOllamaVisionChat({
+      owner: 'generated-media-review',
+      task: 'generated-media-vision-review',
+      baseUrl,
+      model,
+      timeoutMs,
+      keepAlive,
+      format: REVIEW_SCHEMA,
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user', content: JSON.stringify(prompt, null, 2), images },
+      ],
+      options: { temperature: 0.1 },
+      errorPrefix: 'Ollama media review',
     });
-    if (!response.ok) throw new Error(`HTTP ${response.status}: ${await response.text()}`);
-    const payload = await response.json();
     const content = payload.message?.content;
     if (!content) throw new Error('Ollama returned no media-review content.');
     const review = JSON.parse(content);
