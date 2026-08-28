@@ -21,7 +21,7 @@
       "sourceStartFrame": 0,
       "startFrame": 0,
       "durationFrames": 180,
-      "emotionalPurpose": "Open in primordial stillness and scale before the voyage begins. Preserve the approved painting while introducing restrained, independently readable black-water shimmer and dawn mist beneath a slow cinematic push.",
+      "emotionalPurpose": "Open in primordial stillness and scale before the voyage begins. Preserve the approved painting while introducing three independently reviewable environmental improvements over the camera-only baseline: black-water surface shimmer, a separate soft dawn reflected-light pulse, and low-opacity dawn mist beneath a restrained cinematic push.",
       "eyeTarget": "dawn-horizon",
       "stillnessAnchor": "black-water-horizon",
       "camera": {
@@ -66,7 +66,7 @@
       ],
       "lighting": [
         {
-          "id": "shot01-black-water-shimmer",
+          "id": "shot01-black-water-shimmer-and-dawn-reflection",
           "preset": "waterPulse",
           "intensityFrom": 0.032,
           "intensityTo": 0.068
