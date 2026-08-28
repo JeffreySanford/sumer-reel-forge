@@ -102,10 +102,8 @@ jobs:
         timeout-minutes: 10
         run: pnpm exec playwright install --with-deps chromium firefox
 
-      - name: React Forge Storybook interaction tests
-        timeout-minutes: 10
-        run: pnpm exec nx test-storybook animation-lab --ci
-
+      # Storybook 10 stories are compile-validated above. Forge interaction behavior is
+      # exercised by the component suite and the dedicated browser E2E suite below.
       - name: Angular Studio browser end-to-end tests
         timeout-minutes: 10
         run: pnpm e2e:ci
