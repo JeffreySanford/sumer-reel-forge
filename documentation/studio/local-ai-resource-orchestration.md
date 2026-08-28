@@ -51,7 +51,7 @@ Explicit opt-in is available with:
 
 - `OLLAMA_WARM_ON_START=true`.
 
-This change is intentionally narrower than globally forcing `OLLAMA_KEEP_ALIVE=0`. After an actual planning request, the text model may still remain resident for the configured keep-alive interval. That runtime residency must be measured against ComfyUI contention before a broader unload policy is chosen.
+This change is intentionally narrower than globally forcing `OLLAMA_KEEP_ALIVE=0`. Runtime residency is task-scoped and measured rather than controlled through a global environment override.
 
 ## Shared GPU lease
 
@@ -79,7 +79,7 @@ The lease uses atomic directory creation so separate Node/Nest/CLI processes can
 
 An active lease is never stolen. Expired/dead-owner evidence can be quarantined and recovered. Release verifies the token before deleting the lease so one process cannot release another process's GPU ownership.
 
-**Lease state represents active Reel Forge execution ownership, not total GPU residency.** A `FREE` lease can coexist with VRAM consumed by a loaded Ollama model, ComfyUI/PyTorch allocator state, the desktop compositor, or another process. Runtime diagnostics must therefore show lease ownership and observed VRAM/model residency separately.
+**Lease state represents active Reel Forge execution ownership, not total GPU residency.** A `FREE` lease can coexist with VRAM consumed by a loaded local model server, ComfyUI/PyTorch allocator state, the desktop compositor, or another process. Runtime diagnostics must therefore show lease ownership and observed VRAM/model residency separately.
 
 The AI-task wrapper standardizes lease behavior through:
 
@@ -113,7 +113,7 @@ Using the HTTP Ollama endpoint avoids a Windows/Git-Bash false-negative caused b
 
 ## Task telemetry receipts
 
-Every managed GPU AI task now captures best-effort state before and after the leased work:
+Every managed GPU AI task captures best-effort state before and after leased work:
 
 - NVIDIA GPU memory total / used / free;
 - currently loaded Ollama models and reported VRAM allocation;
@@ -146,7 +146,7 @@ The caller records:
 - backend: `ollama`;
 - configured vision model.
 
-For already-approved shots, the managed review runtime now stages the approved canonical animation-v1 assets before deterministic review. It does not require obsolete pre-promotion candidate runs from `tmp/animation-assets/candidates`. Candidate staging remains the path for unpromoted work.
+For already-approved shots, the managed review runtime stages the approved canonical animation-v1 assets before deterministic review. It does not require obsolete pre-promotion candidate runs from `tmp/animation-assets/candidates`. Candidate staging remains the path for unpromoted work.
 
 ## Managed caller: API Ollama shot planning
 
@@ -159,7 +159,7 @@ The planning caller records:
 - backend: `ollama`;
 - configured text model.
 
-Each planning inference now follows the same managed scope as vision work:
+Each planning inference follows the managed scope:
 
 ```text
 acquire GPU lease
@@ -196,11 +196,41 @@ The caller records:
 - task: `shot-<n>-layer-candidate-generation` or `reel-layer-candidate-generation`;
 - backend: `comfyui`.
 
-Specialized legacy/direct ComfyUI generation scripts still require an audit before the ComfyUI integration phase can be called complete.
+## Persisted animation orchestration
+
+Animation CLI operations are now wrapped by persisted API jobs rather than requiring every production action to be run manually in a dedicated shell.
+
+Current behavior includes:
+
+- Postgres-backed animation jobs;
+- worker claim and heartbeat;
+- attempts and structured stdout/stderr logs;
+- retry/watchdog semantics consistent with the renderer-job architecture;
+- managed animation-worker startup under `pnpm start:all`;
+- Forge CLI queue/status/readiness access;
+- worker execution with `SRF_NO_OPEN=1`;
+- no promotion capability in the worker.
+
+This means the next local-AI phase can consume an actual production orchestration layer rather than invent another queue/runtime.
+
+## Proposed provider abstraction and React Forge Lab
+
+A separate design track is documented in:
+
+- `planning/react-forge-local-ai-roadmap.md`;
+- `documentation/studio/react-forge-local-ai.md`.
+
+That proposal keeps Ollama as the first fully managed backend while allowing future provider adapters for llama.cpp, LM Studio, and NVIDIA NIM.
+
+The important boundary is:
+
+**provider abstraction is not GPU ownership.**
+
+Every GPU-backed provider invoked by Reel Forge must continue to participate in the existing cross-process lease. Provider adapters may define invocation, capability discovery, model inventory, and cleanup semantics; they must not implement a second scheduler.
+
+The React/Remotion Forge Lab is likewise an interactive audition/directing surface, not a new canonical production authority. AI proposals remain bounded and non-canonical until deterministic QA and explicit human review.
 
 ## Integration boundary
-
-Caller integration is deliberately incremental.
 
 Current state:
 
@@ -209,25 +239,15 @@ Current state:
 3. **DONE:** leased tasks persist best-effort before/after GPU/Ollama/ComfyUI telemetry receipts;
 4. **DONE:** managed workstation startup avoids preloading the text planner by default;
 5. **DONE:** approved shot review stages canonical approved assets instead of requiring ephemeral candidate evidence;
-6. **DONE:** generic ComfyUI candidate generation is wrapped;
+6. **DONE:** generic and specialized ComfyUI generation callers participate in managed ownership;
 7. **DONE:** hybrid Shot 3 ROI locator-to-ComfyUI workflows release Ollama before delegated ComfyUI generation;
 8. **DONE:** `/api/runtime/gpu-status` exposes live lease, VRAM, Ollama residency, and ComfyUI allocator state;
-9. **NEXT:** turn animation CLI operations into persisted jobs;
-10. only then add bounded AI retry/advisory orchestration and retrieval.
+9. **DONE:** animation CLI operations have a persisted API job/worker lifecycle and Forge CLI surface;
+10. **NEXT AUTOMATION TRACK:** chapter-level batch orchestration and advisory agents over persisted jobs;
+11. **SEPARATE INTERACTIVE CAPABILITY TRACK:** provider-neutral local AI + React/Remotion Forge Lab, delivered through isolated PRs from the roadmap above.
 
-Do not globally force `OLLAMA_KEEP_ALIVE=0` without measurement. GPU policy should be task-aware, and startup residency is now separated from post-request residency.
+Do not globally force `OLLAMA_KEEP_ALIVE=0` without measurement. Do not introduce a second GPU scheduler. Do not conflate support for an OpenAI-compatible HTTP surface with proven provider lifecycle management.
 
 ## Authority
 
-The lease, telemetry, and managed model inventory are operational infrastructure only.
-
-They do not:
-
-- own story time;
-- generate canonical acceptance;
-- lower QA thresholds;
-- promote candidate assets;
-- retry until a model happens to pass;
-- override a prior human rejection.
-
-The standing rule remains: **AI proposes; deterministic rules constrain; human normal-speed review is authoritative for cinematic acceptance.**
+Local AI remains advisory. Deterministic QA and the existing human promotion gates remain authoritative. Generated material never becomes production art automatically.
