@@ -1,0 +1,201 @@
+.page {
+  min-height: 100vh;
+  background: #0a0d12;
+  color: #edf2f7;
+}
+
+.forgeHeader,
+.contextGrid,
+.evidencePanel,
+.pendingInspector,
+.sectionIntro {
+  width: min(1440px, calc(100% - 32px));
+  margin: 0 auto;
+}
+
+.forgeHeader {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 28px 0 20px;
+}
+
+.forgeHeader h1,
+.panel h2,
+.evidencePanel h2,
+.pendingInspector h2,
+.sectionIntro h2 {
+  margin: 4px 0 8px;
+}
+
+.eyebrow,
+.label {
+  margin: 0;
+  color: #9fb3c8;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.principle {
+  margin: 0;
+  color: #c8d4df;
+}
+
+.shotPicker {
+  display: flex;
+  gap: 8px;
+}
+
+.shotPicker button {
+  border: 1px solid #394959;
+  border-radius: 8px;
+  background: #111821;
+  color: #dce7f1;
+  padding: 9px 14px;
+  cursor: pointer;
+}
+
+.shotPicker button[aria-pressed='true'] {
+  border-color: #9fb3c8;
+  background: #253342;
+}
+
+.error {
+  width: min(1440px, calc(100% - 32px));
+  margin: 0 auto 16px;
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid #765353;
+  border-radius: 8px;
+  background: #2b1717;
+}
+
+.contextGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr);
+  gap: 16px;
+}
+
+.panel,
+.evidencePanel,
+.pendingInspector {
+  border: 1px solid #243342;
+  border-radius: 12px;
+  background: #10161e;
+  padding: 16px;
+}
+
+.panelHeading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.badge,
+.capabilities span,
+.layerMeta > span {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #35485a;
+  border-radius: 999px;
+  padding: 3px 8px;
+  color: #c9d8e6;
+  font-size: 0.74rem;
+}
+
+.layerList,
+.providerList {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.layerRow,
+.providerRow {
+  display: grid;
+  gap: 6px;
+  border-top: 1px solid #1f2d39;
+  padding-top: 10px;
+}
+
+.layerRow > div:first-child,
+.providerRow > div:first-child {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.layerRow span,
+.providerRow span,
+.providerRow small {
+  color: #aebdca;
+}
+
+.layerMeta,
+.capabilities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.layerMeta code {
+  color: #9fd3b2;
+}
+
+.readOnlyNote {
+  margin-bottom: 0;
+  color: #9fb3c8;
+  font-size: 0.84rem;
+}
+
+.evidencePanel {
+  margin-top: 16px;
+}
+
+.evidenceGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.evidenceGrid video,
+.evidenceGrid img {
+  width: 100%;
+  max-height: 620px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #05070a;
+}
+
+.inspectorSection {
+  margin-top: 20px;
+}
+
+.sectionIntro {
+  padding: 8px 0 12px;
+}
+
+.pendingInspector {
+  margin-top: 20px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 900px) {
+  .forgeHeader,
+  .panelHeading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .contextGrid,
+  .evidenceGrid {
+    grid-template-columns: 1fr;
+  }
+}
