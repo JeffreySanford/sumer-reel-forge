@@ -1,7 +1,8 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { basename, join, resolve } from 'node:path';
+import { join, resolve } from 'node:path';
+import { runManagedOllamaVisionChat } from '../runtime/ollama-vision-task.mjs';
 import { maybeOpenReviewArtifacts } from './open-review-artifacts.mjs';
 import { reviewGeneratedMedia } from './review-generated-media.mjs';
 
@@ -364,27 +365,20 @@ async function locateSubjects() {
   console.log('');
   console.log(`[ai] Localize vessel and Enki with ${VISION_MODEL}...`);
   const startedAt = Date.now();
-  const response = await fetch(`${OLLAMA_BASE_URL}/api/chat`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      model: VISION_MODEL,
-      stream: false,
-      think: false,
-      keep_alive: process.env.OLLAMA_KEEP_ALIVE ?? '10m',
-      format: LOCATOR_SCHEMA,
-      messages: [
-        { role: 'system', content: system },
-        { role: 'user', content: JSON.stringify(user, null, 2), images: [source] },
-      ],
-      options: { temperature: 0 },
-    }),
-    signal: AbortSignal.timeout(TIMEOUT_MS),
+  const payload = await runManagedOllamaVisionChat({
+    owner: 'shot03-roi-segmentation-locator',
+    task: 'shot-3-roi-segmentation-localization',
+    baseUrl: OLLAMA_BASE_URL,
+    model: VISION_MODEL,
+    timeoutMs: TIMEOUT_MS,
+    format: LOCATOR_SCHEMA,
+    messages: [
+      { role: 'system', content: system },
+      { role: 'user', content: JSON.stringify(user, null, 2), images: [source] },
+    ],
+    options: { temperature: 0 },
+    errorPrefix: 'Ollama ROI localization',
   });
-  if (!response.ok) {
-    throw new Error(`Ollama ROI localization returned HTTP ${response.status}: ${await response.text()}`);
-  }
-  const payload = await response.json();
   const content = payload.message?.content;
   if (!content) throw new Error('Ollama returned no ROI localization content.');
   const parsed = JSON.parse(content);

@@ -3,6 +3,7 @@ import { existsSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { evaluateRiggingRoiCandidate } from '../animation/src/rigging-roi-structure.mjs';
+import { runManagedOllamaVisionChat } from '../runtime/ollama-vision-task.mjs';
 import { maybeOpenReviewArtifacts } from './open-review-artifacts.mjs';
 import { reviewGeneratedMedia } from './review-generated-media.mjs';
 
@@ -398,33 +399,24 @@ async function locateRiggingCluster() {
   console.log('');
   console.log(`[ai] Localize one bounded rigging cluster with ${VISION_MODEL}...`);
   const startedAt = Date.now();
-  const response = await fetch(`${OLLAMA_BASE_URL}/api/chat`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      model: VISION_MODEL,
-      stream: false,
-      think: false,
-      keep_alive: process.env.OLLAMA_KEEP_ALIVE ?? '10m',
-      format: LOCATOR_SCHEMA,
-      messages: [
-        { role: 'system', content: system },
-        {
-          role: 'user',
-          content: JSON.stringify(user, null, 2),
-          images: [source],
-        },
-      ],
-      options: { temperature: 0 },
-    }),
-    signal: AbortSignal.timeout(TIMEOUT_MS),
+  const payload = await runManagedOllamaVisionChat({
+    owner: 'shot03-rigging-roi-locator',
+    task: 'shot-3-rigging-roi-localization',
+    baseUrl: OLLAMA_BASE_URL,
+    model: VISION_MODEL,
+    timeoutMs: TIMEOUT_MS,
+    format: LOCATOR_SCHEMA,
+    messages: [
+      { role: 'system', content: system },
+      {
+        role: 'user',
+        content: JSON.stringify(user, null, 2),
+        images: [source],
+      },
+    ],
+    options: { temperature: 0 },
+    errorPrefix: 'Ollama rigging localization',
   });
-  if (!response.ok) {
-    throw new Error(
-      `Ollama rigging localization returned HTTP ${response.status}: ${await response.text()}`,
-    );
-  }
-  const payload = await response.json();
   const content = payload.message?.content;
   if (!content) throw new Error('Ollama returned no rigging localization content.');
   const parsed = JSON.parse(content);

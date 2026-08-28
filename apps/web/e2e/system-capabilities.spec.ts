@@ -133,7 +133,8 @@ const HOST_CAPABILITIES = {
       id: 'nvidia-gpu-acceleration',
       title: 'NVIDIA GPU acceleration',
       status: 'ready',
-      summary: 'NVIDIA RTX Test is available for CUDA workloads with 10.0 GB VRAM.',
+      summary:
+        'NVIDIA RTX Test is available for CUDA workloads with 10.0 GB VRAM.',
       basis: ['nvidia-smi', 'GPU/VRAM', 'NVIDIA driver'],
     },
     {
@@ -167,7 +168,23 @@ test('shows host hardware, software, and projected capabilities', async ({
   await expect(
     page.getByRole('heading', { name: 'reel-forge-test-host' }),
   ).toBeVisible();
-  await expect(page.getByText('NVIDIA RTX Test', { exact: true })).toBeVisible();
+  const hostHardwareSummary = page.getByLabel('Host hardware summary');
+
+  await expect(
+    hostHardwareSummary.getByText('NVIDIA RTX Test', { exact: true }),
+  ).toBeVisible();
+
+  await expect(
+    hostHardwareSummary.getByText('64 GB', { exact: true }),
+  ).toBeVisible();
+
+  const liveGpuRuntime = page.getByLabel('Live GPU runtime status');
+
+  await expect(
+    liveGpuRuntime.getByText('NVIDIA RTX Test', { exact: true }),
+  ).toBeVisible();
+
+  await expect(liveGpuRuntime.getByText('FREE', { exact: true })).toBeVisible();
   await expect(page.getByText('64 GB', { exact: true })).toBeVisible();
   await expect(
     page.getByRole('heading', {
@@ -207,6 +224,57 @@ async function mockStudioStartup(
   await page.route('**/api/generated-assets**', async (route) =>
     route.fulfill({ json: [] }),
   );
+  await page.route('**/api/runtime/gpu-status', async (route) => {
+    await route.fulfill({
+      json: {
+        schemaVersion: 1,
+        observedAt: new Date(0).toISOString(),
+        lease: {
+          state: 'FREE',
+          reason: 'No active GPU lease.',
+          directory: 'tmp/runtime/gpu-ai.lock',
+          metadata: null,
+        },
+        nvidia: {
+          available: true,
+          devices: [
+            {
+              index: 0,
+              name: 'NVIDIA RTX Test',
+              memoryTotalMb: 10240,
+              memoryUsedMb: 2048,
+              memoryFreeMb: 8192,
+              utilizationGpuPercent: 5,
+              driverVersion: '999.1',
+            },
+          ],
+        },
+        ollama: {
+          baseUrl: 'http://localhost:11434',
+          reachable: true,
+          loadedModels: [],
+        },
+        comfyui: {
+          baseUrl: 'http://127.0.0.1:8188',
+          reachable: true,
+          devices: [
+            {
+              name: 'cuda:0 NVIDIA RTX Test',
+              type: 'cuda',
+              vramTotalBytes: 10737418240,
+              vramFreeBytes: 8589934592,
+              torchVramTotalBytes: 536870912,
+              torchVramFreeBytes: 503316480,
+            },
+          ],
+          system: {
+            comfyuiVersion: '0.test',
+            pytorchVersion: 'test',
+          },
+        },
+      },
+    });
+  });
   await page.route('**/api/planning/**', async (route) => {
     const url = new URL(route.request().url());
     if (url.pathname.endsWith('/capabilities')) {
