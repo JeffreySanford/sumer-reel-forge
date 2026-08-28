@@ -29,8 +29,10 @@ process.env.OLLAMA_KEEP_ALIVE ??= '10m';
 
 const coreScript = join(root, 'tools', 'scripts', 'start-all.mjs');
 const rendererScript = join(root, 'tools', 'scripts', 'renderer-worker.mjs');
+const animationWorkerScript = join(root, 'tools', 'scripts', 'animation-worker.mjs');
 const rendererAdapter = process.env.RENDER_ADAPTER ?? 'editorial';
 const rendererWorkerId = process.env.RENDER_WORKER_ID ?? 'local-renderer';
+const animationWorkerId = process.env.ANIMATION_WORKER_ID ?? 'local-animation-worker';
 const comfyBaseUrl = new URL(
   process.env.COMFYUI_BASE_URL ?? 'http://127.0.0.1:8188',
 );
@@ -52,6 +54,7 @@ let stopping = false;
 let startupLock;
 let coreProcess;
 let rendererProcess;
+let animationWorkerProcess;
 let comfyProcess;
 
 function loadLocalEnvFile() {
@@ -340,6 +343,7 @@ function stopAll(exitCode) {
   }
 
   stopping = true;
+  stopChild(animationWorkerProcess);
   stopChild(rendererProcess);
   stopChild(coreProcess);
   stopChild(comfyProcess);
@@ -397,6 +401,24 @@ async function main() {
   console.log(
     `Managed renderer worker started: ${rendererWorkerId} / ${rendererAdapter}.`,
   );
+
+  animationWorkerProcess = spawnNode(animationWorkerScript, {
+    ANIMATION_WORKER_ID: animationWorkerId,
+  });
+
+  animationWorkerProcess.once('exit', (code, signal) => {
+    if (stopping) {
+      return;
+    }
+    console.error(
+      signal
+        ? `Animation worker exited with signal ${signal}.`
+        : `Animation worker exited with code ${code ?? 0}.`,
+    );
+    stopAll(code ?? 1);
+  });
+
+  console.log(`Managed animation worker started: ${animationWorkerId}.`);
 }
 
 process.on('SIGINT', () => stopAll(130));
