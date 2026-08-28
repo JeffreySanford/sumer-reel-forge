@@ -15,6 +15,8 @@ import {
   releaseStartupInstanceLock,
 } from '../runtime/startup-instance-lock.mjs';
 
+const startLocalSource = readFileSync('tools/scripts/start-local.mjs', 'utf8');
+
 async function withTempLock(t) {
   const root = await mkdtemp(join(tmpdir(), 'srf-startup-lock-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
@@ -132,5 +134,23 @@ test('release refuses to delete a lock whose ownership token changed', async (t)
     () => releaseStartupInstanceLock(lock),
     /ownership changed/,
   );
-  assert.equal(inspectStartupInstanceLock(lockDirectory)?.metadata.token, 'replacement-owner');
+  assert.equal(
+    inspectStartupInstanceLock(lockDirectory)?.metadata.token,
+    'replacement-owner',
+  );
+});
+
+test('start-local acquires ownership before startup side effects and releases on process exit', () => {
+  const acquireIndex = startLocalSource.indexOf(
+    'startupLock = acquireStartupInstanceLock({',
+  );
+  const profileIndex = startLocalSource.indexOf('await prepareHardwareProfile();');
+
+  assert.ok(acquireIndex >= 0, 'start-local must acquire the startup lock');
+  assert.ok(
+    profileIndex > acquireIndex,
+    'startup ownership must be acquired before hardware profiling or child startup',
+  );
+  assert.match(startLocalSource, /process\.on\('exit', \(\) => \{/);
+  assert.match(startLocalSource, /releaseStartupInstanceLock\(startupLock\)/);
 });
