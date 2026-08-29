@@ -40,25 +40,25 @@ const CONTROLS: Array<{
     id: 'horizontalCurrent',
     label: 'Horizontal current',
     description:
-      'How far the water surface slides laterally. Keep this low enough that the horizon remains stable.',
+      'Controls lateral water travel. 0.00 is no sideways current; 1.00 is the strongest source-safe current audition.',
   },
   {
     id: 'verticalRipple',
     label: 'Vertical ripple',
     description:
-      'Small up/down displacement inside the lower water field. This is the easiest control to overdo.',
+      'Controls visible up/down water displacement. 0.00 is flat; 1.00 is the strongest vertical ripple audition.',
   },
   {
     id: 'flowSpeed',
     label: 'Flow speed',
     description:
-      'Temporal speed of the current. Low values feel heavy; high values quickly become synthetic.',
+      'Controls temporal rate. 0.00 is very slow heavy water; 1.00 is a clearly faster motion cycle.',
   },
   {
     id: 'rippleScale',
     label: 'Ripple scale',
     description:
-      'Controls the number and phase spacing of clipped water bands. Higher values create tighter surface detail.',
+      'Controls spatial frequency. 0.00 uses a few broad bands; 1.00 uses many narrower bands with tighter phase spacing.',
   },
 ];
 
@@ -121,10 +121,12 @@ function LiveWaterPreview({ parameters }: { parameters: WaterParameters }) {
   const progress = (seconds % PREVIEW_LOOP_SECONDS) / PREVIEW_LOOP_SECONDS;
   const easedProgress = progress * progress * (3 - 2 * progress);
 
-  const horizontalAmplitude = parameters.horizontalCurrent * 18;
-  const verticalAmplitude = parameters.verticalRipple * 6;
-  const cyclesPerSecond = 0.1 + parameters.flowSpeed * 0.3;
-  const bandCount = Math.round(5 + parameters.rippleScale * 8);
+  // Keep this transfer function in lock-step with scene-v2-water-surface.tsx.
+  const horizontalAmplitude = parameters.horizontalCurrent * 24;
+  const verticalAmplitude = parameters.verticalRipple * 12;
+  const cyclesPerSecond = 0.04 + parameters.flowSpeed * 0.56;
+  const bandCount = Math.round(3 + parameters.rippleScale * 15);
+  const phaseSpacing = 0.35 + parameters.rippleScale * 1.35;
   const waterTop = 55;
   const waterHeight = 45;
   const bandHeight = waterHeight / bandCount;
@@ -157,16 +159,15 @@ function LiveWaterPreview({ parameters }: { parameters: WaterParameters }) {
           <div className={styles.previewWaterField} aria-hidden="true">
             {Array.from({ length: bandCount }, (_unused, index) => {
               const top = waterTop + index * bandHeight;
-              const bottom = Math.min(100, top + bandHeight + 1.1);
-              const feather = Math.min(
-                3.4,
-                Math.max(1.2, bandHeight * 0.46),
+              const bottom = Math.min(100, top + bandHeight);
+              const overlap = Math.min(
+                1.2,
+                Math.max(0.35, bandHeight * 0.16),
               );
               const normalizedDepth =
                 bandCount <= 1 ? 1 : index / (bandCount - 1);
-              const depthResponse = 0.48 + normalizedDepth * 0.72;
-              const phase =
-                index * (0.52 + parameters.rippleScale * 0.5);
+              const depthResponse = 0.42 + normalizedDepth * 0.82;
+              const phase = index * phaseSpacing;
               const primary =
                 (seconds * cyclesPerSecond + phase) * Math.PI * 2;
               const secondary =
@@ -179,16 +180,19 @@ function LiveWaterPreview({ parameters }: { parameters: WaterParameters }) {
                 2;
               const x =
                 (Math.sin(primary) * horizontalAmplitude +
-                  Math.sin(secondary) * horizontalAmplitude * 0.34 +
-                  Math.sin(tertiary) * horizontalAmplitude * 0.12) *
+                  Math.sin(secondary) * horizontalAmplitude * 0.32 +
+                  Math.sin(tertiary) * horizontalAmplitude * 0.1) *
                 depthResponse;
               const y =
                 (Math.cos(primary * 0.71) * verticalAmplitude +
-                  Math.sin(secondary * 0.83) * verticalAmplitude * 0.22) *
-                (0.42 + normalizedDepth * 0.58);
-              const scale = 1.012 + parameters.horizontalCurrent * 0.008;
-              const clipTop = Math.max(0, top - feather);
-              const clipBottom = Math.min(100, bottom + feather);
+                  Math.sin(secondary * 0.83) * verticalAmplitude * 0.28) *
+                (0.34 + normalizedDepth * 0.72);
+              const scale =
+                1.018 +
+                parameters.horizontalCurrent * 0.012 +
+                parameters.verticalRipple * 0.004;
+              const clipTop = Math.max(0, top - overlap);
+              const clipBottom = Math.min(100, bottom + overlap);
               const clip = `inset(${clipTop}% 0 ${Math.max(
                 0,
                 100 - clipBottom,
@@ -202,7 +206,7 @@ function LiveWaterPreview({ parameters }: { parameters: WaterParameters }) {
                   alt=""
                   aria-hidden="true"
                   style={{
-                    opacity: 0.99,
+                    opacity: 1,
                     transform: `translate3d(${x}px, ${y}px, 0) scale(${scale})`,
                     clipPath: clip,
                     WebkitClipPath: clip,
@@ -247,9 +251,8 @@ function LiveWaterPreview({ parameters }: { parameters: WaterParameters }) {
         {cyclesPerSecond.toFixed(2)} cycles/sec · {bandCount} water bands.
       </p>
       <p className={styles.previewDisclaimer}>
-        Instant browser feedback uses the same water-band envelope as the Remotion
-        runtime. It is for tuning only; the rendered MP4 below remains the review
-        evidence.
+        The viewport responds immediately for tuning. Press Render water audition
+        to bake the current four slider values into a fresh Remotion MP4.
       </p>
     </div>
   );
@@ -263,7 +266,6 @@ export function Shot01WaterLab() {
 
   const update = (id: keyof WaterParameters, value: number) => {
     setParameters((current) => ({ ...current, [id]: value }));
-    setAudition(null);
     setError(null);
   };
 
@@ -344,9 +346,9 @@ export function Shot01WaterLab() {
           </div>
 
           <p className={styles.note}>
-            For a sanity check, drag Horizontal current all the way from 0.00 to
-            1.00. The telemetry and foreground water should both change
-            immediately. Then tune back toward a restrained cinematic value.
+            Test one control at a time from 0.00 to 1.00, then press Render water
+            audition. Each completed MP4 should now show a clearly different
+            response for that control while the other three remain unchanged.
           </p>
           {error ? (
             <p className={styles.error} role="alert">
@@ -363,6 +365,17 @@ export function Shot01WaterLab() {
               <div className={styles.proofHeading}>
                 <span className={styles.eyebrow}>Remotion proof</span>
                 <strong>Rendered non-canonical audition</strong>
+              </div>
+              <div
+                className={styles.renderedParameters}
+                aria-label="Rendered water parameters"
+              >
+                {CONTROLS.map((control) => (
+                  <span key={control.id}>
+                    <strong>{control.label}</strong>{' '}
+                    {audition.parameters[control.id].toFixed(2)}
+                  </span>
+                ))}
               </div>
               <video
                 key={audition.id}
