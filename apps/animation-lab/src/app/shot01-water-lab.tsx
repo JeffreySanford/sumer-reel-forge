@@ -483,9 +483,19 @@ export function Shot01WaterLab() {
             </div>
           ) : (
             <div className={styles.renderHint}>
-              The viewport above is live. When the motion feels right, choose
-              <strong> Render water audition </strong>
-              to produce the deterministic Scene V2/Remotion MP4 for review.
+              <strong>Share / export MP4</strong>
+              <p>Render an audition first. The finished MP4 can then be downloaded directly for sharing.</p>
+              <div className={styles.shareActions} aria-label="MP4 sharing actions">
+                <button className={styles.shareAction} type="button" disabled>
+                  Download MP4
+                </button>
+                <button className={styles.shareAction} type="button" disabled>
+                  Copy MP4 path
+                </button>
+                <button className={styles.shareAction} type="button" disabled>
+                  Open MP4 in new tab
+                </button>
+              </div>
             </div>
           )}
         </div>
