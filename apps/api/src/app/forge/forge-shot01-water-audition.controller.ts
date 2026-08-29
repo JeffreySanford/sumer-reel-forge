@@ -25,6 +25,19 @@ export class ForgeShot01WaterAuditionController {
     return await this.auditions.render(dto);
   }
 
+  @Get('source')
+  @ApiOperation({
+    summary:
+      'Stream the exact approved Shot 1 editorial source used by the live Forge tuning preview.',
+  })
+  async source(): Promise<StreamableFile> {
+    const content = await this.auditions.getSource();
+    return new StreamableFile(createReadStream(content.filePath), {
+      type: 'image/png',
+      disposition: `inline; filename="${content.filename.replace(/"/g, '')}"`,
+    });
+  }
+
   @Get(':id/video')
   @ApiOperation({
     summary: 'Stream one locally rendered non-canonical Shot 1 water audition.',
