@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import styles from './shot01-water-lab.module.css';
 
 type WaterParameters = {
@@ -21,6 +21,9 @@ interface WaterAudition {
   guardrails: string[];
 }
 
+const SOURCE_URL = '/api/forge/shot-1-water-auditions/source';
+const PREVIEW_LOOP_SECONDS = 6;
+
 const DEFAULTS: WaterParameters = {
   horizontalCurrent: 0.58,
   verticalRipple: 0.38,
@@ -36,22 +39,26 @@ const CONTROLS: Array<{
   {
     id: 'horizontalCurrent',
     label: 'Horizontal current',
-    description: 'How far the water surface slides laterally. Keep this low enough that the horizon remains stable.',
+    description:
+      'How far the water surface slides laterally. Keep this low enough that the horizon remains stable.',
   },
   {
     id: 'verticalRipple',
     label: 'Vertical ripple',
-    description: 'Small up/down displacement inside the lower water field. This is the easiest control to overdo.',
+    description:
+      'Small up/down displacement inside the lower water field. This is the easiest control to overdo.',
   },
   {
     id: 'flowSpeed',
     label: 'Flow speed',
-    description: 'Temporal speed of the current. Low values feel heavy; high values quickly become synthetic.',
+    description:
+      'Temporal speed of the current. Low values feel heavy; high values quickly become synthetic.',
   },
   {
     id: 'rippleScale',
     label: 'Ripple scale',
-    description: 'Controls the number and phase spacing of feathered water bands. Higher values create tighter surface detail.',
+    description:
+      'Controls the number and phase spacing of feathered water bands. Higher values create tighter surface detail.',
   },
 ];
 
@@ -66,7 +73,9 @@ async function postJson<T>(url: string, body: unknown): Promise<T> {
     try {
       const payload = (await response.json()) as { message?: string | string[] };
       if (payload.message) {
-        detail = Array.isArray(payload.message) ? payload.message.join('; ') : payload.message;
+        detail = Array.isArray(payload.message)
+          ? payload.message.join('; ')
+          : payload.message;
       }
     } catch {
       // Preserve HTTP fallback when the error body is not JSON.
@@ -74,6 +83,172 @@ async function postJson<T>(url: string, body: unknown): Promise<T> {
     throw new Error(detail);
   }
   return (await response.json()) as T;
+}
+
+function usePreviewSeconds(): number {
+  const [seconds, setSeconds] = useState(0);
+
+  useEffect(() => {
+    if (
+      typeof window === 'undefined' ||
+      typeof window.requestAnimationFrame !== 'function'
+    ) {
+      return;
+    }
+
+    const startedAt = window.performance?.now?.() ?? Date.now();
+    let lastPaint = startedAt;
+    let frameId = 0;
+
+    const tick = (now: number) => {
+      if (now - lastPaint >= 1000 / 30) {
+        setSeconds((now - startedAt) / 1000);
+        lastPaint = now;
+      }
+      frameId = window.requestAnimationFrame(tick);
+    };
+
+    frameId = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(frameId);
+  }, []);
+
+  return seconds;
+}
+
+function LiveWaterPreview({ parameters }: { parameters: WaterParameters }) {
+  const seconds = usePreviewSeconds();
+  const [sourceError, setSourceError] = useState(false);
+  const progress = (seconds % PREVIEW_LOOP_SECONDS) / PREVIEW_LOOP_SECONDS;
+  const easedProgress = progress * progress * (3 - 2 * progress);
+
+  const horizontalAmplitude = parameters.horizontalCurrent * 18;
+  const verticalAmplitude = parameters.verticalRipple * 6;
+  const cyclesPerSecond = 0.1 + parameters.flowSpeed * 0.3;
+  const bandCount = Math.round(5 + parameters.rippleScale * 8);
+  const waterTop = 55;
+  const waterHeight = 45;
+  const bandHeight = waterHeight / bandCount;
+  const cameraScale = 1 + easedProgress * 0.014;
+  const cameraY = easedProgress * -3;
+  const mistDrift = -28 + easedProgress * 62;
+  const mistBreathe = Math.sin(seconds / 2.7) * 8;
+  const dawnPulse = 0.72 + Math.sin(seconds / 0.72) * 0.16;
+
+  return (
+    <div
+      className={styles.livePreview}
+      aria-label="Live Shot 1 water tuning preview"
+    >
+      <div className={styles.livePreviewStage}>
+        <div
+          className={styles.livePreviewCamera}
+          style={{
+            transform: `translate3d(0, ${cameraY}px, 0) scale(${cameraScale})`,
+          }}
+        >
+          <img
+            className={styles.previewArtwork}
+            src={SOURCE_URL}
+            alt="Approved Shot 1 editorial source"
+            onError={() => setSourceError(true)}
+            onLoad={() => setSourceError(false)}
+          />
+
+          <div className={styles.previewWaterField} aria-hidden="true">
+            {Array.from({ length: bandCount }, (_unused, index) => {
+              const top = waterTop + index * bandHeight;
+              const bottom = Math.min(100, top + bandHeight + 1.1);
+              const feather = Math.min(
+                3.4,
+                Math.max(1.2, bandHeight * 0.46),
+              );
+              const normalizedDepth =
+                bandCount <= 1 ? 1 : index / (bandCount - 1);
+              const depthResponse = 0.48 + normalizedDepth * 0.72;
+              const phase =
+                index * (0.52 + parameters.rippleScale * 0.5);
+              const primary =
+                (seconds * cyclesPerSecond + phase) * Math.PI * 2;
+              const secondary =
+                (seconds * cyclesPerSecond * 0.47 + phase * 1.61) *
+                Math.PI *
+                2;
+              const tertiary =
+                (seconds * cyclesPerSecond * 0.23 + phase * 2.17) *
+                Math.PI *
+                2;
+              const x =
+                (Math.sin(primary) * horizontalAmplitude +
+                  Math.sin(secondary) * horizontalAmplitude * 0.34 +
+                  Math.sin(tertiary) * horizontalAmplitude * 0.12) *
+                depthResponse;
+              const y =
+                (Math.cos(primary * 0.71) * verticalAmplitude +
+                  Math.sin(secondary * 0.83) * verticalAmplitude * 0.22) *
+                (0.42 + normalizedDepth * 0.58);
+              const scale = 1.012 + parameters.horizontalCurrent * 0.008;
+              const mask = `linear-gradient(to bottom, transparent 0%, transparent ${Math.max(
+                0,
+                top - feather,
+              )}%, black ${top}%, black ${bottom}%, transparent ${Math.min(
+                100,
+                bottom + feather,
+              )}%, transparent 100%)`;
+
+              return (
+                <img
+                  key={index}
+                  className={styles.previewSlice}
+                  src={SOURCE_URL}
+                  alt=""
+                  aria-hidden="true"
+                  style={{
+                    opacity: 0.98 + parameters.horizontalCurrent * 0.02,
+                    transform: `translate3d(${x}px, ${y}px, 0) scale(${scale})`,
+                    maskImage: mask,
+                    WebkitMaskImage: mask,
+                  }}
+                />
+              );
+            })}
+          </div>
+
+          <div
+            className={styles.previewMistA}
+            aria-hidden="true"
+            style={{
+              transform: `translate3d(${mistDrift}px, ${mistBreathe}px, 0)`,
+            }}
+          />
+          <div
+            className={styles.previewMistB}
+            aria-hidden="true"
+            style={{
+              transform: `translate3d(${-mistDrift * 0.72}px, ${-mistBreathe * 0.5}px, 0)`,
+            }}
+          />
+          <div
+            className={styles.previewDawn}
+            aria-hidden="true"
+            style={{ opacity: dawnPulse }}
+          />
+        </div>
+        <div className={styles.previewVignette} aria-hidden="true" />
+        <span className={styles.liveChip}>LIVE TUNING PREVIEW</span>
+      </div>
+
+      {sourceError ? (
+        <p className={styles.error} role="alert">
+          The approved Shot 1 source could not be loaded from the Forge API.
+        </p>
+      ) : null}
+      <p className={styles.previewDisclaimer}>
+        Instant browser feedback uses the same water-band envelope as the Remotion
+        runtime. It is for tuning only; the rendered MP4 below remains the review
+        evidence.
+      </p>
+    </div>
+  );
 }
 
 export function Shot01WaterLab() {
@@ -165,9 +340,9 @@ export function Shot01WaterLab() {
           </div>
 
           <p className={styles.note}>
-            The default envelope is intentionally readable at normal speed. The
-            horizon stays restrained while deeper water carries more displacement;
-            pull the controls back if the surface starts to feel synthetic.
+            Move the sliders while watching the live viewport. Render only when
+            the foreground water clearly moves at normal speed without making the
+            horizon or source composition swim.
           </p>
           {error ? (
             <p className={styles.error} role="alert">
@@ -177,8 +352,14 @@ export function Shot01WaterLab() {
         </div>
 
         <div className={styles.preview}>
+          <LiveWaterPreview parameters={parameters} />
+
           {audition ? (
-            <>
+            <div className={styles.renderedProof}>
+              <div className={styles.proofHeading}>
+                <span className={styles.eyebrow}>Remotion proof</span>
+                <strong>Rendered non-canonical audition</strong>
+              </div>
               <video
                 key={audition.id}
                 controls
@@ -190,16 +371,15 @@ export function Shot01WaterLab() {
                 aria-label="Shot 1 water audition video"
               />
               <div className={styles.receipt}>
-                <strong>Rendered non-canonical audition</strong>
                 <code>{audition.videoPath}</code>
                 <span>{new Date(audition.createdAt).toLocaleString()}</span>
               </div>
-            </>
+            </div>
           ) : (
-            <div className={styles.placeholder}>
-              Render an audition to see the source-preserving water displacement
-              here. Each render uses the same Scene V2/Remotion pipeline as the
-              benchmark, not a browser-only approximation.
+            <div className={styles.renderHint}>
+              The viewport above is live. When the motion feels right, choose
+              <strong> Render water audition </strong>
+              to produce the deterministic Scene V2/Remotion MP4 for review.
             </div>
           )}
         </div>
