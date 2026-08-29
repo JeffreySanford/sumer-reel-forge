@@ -103,6 +103,23 @@ function openAuditionReviewWindow(): Window | null {
   }
 }
 
+async function copyText(value: string): Promise<boolean> {
+  if (
+    typeof navigator === 'undefined' ||
+    !navigator.clipboard ||
+    typeof navigator.clipboard.writeText !== 'function'
+  ) {
+    return false;
+  }
+
+  try {
+    await navigator.clipboard.writeText(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function usePreviewSeconds(): number {
   const [seconds, setSeconds] = useState(0);
 
@@ -282,22 +299,26 @@ export function Shot01WaterLab() {
   const [rendering, setRendering] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [audition, setAudition] = useState<WaterAudition | null>(null);
+  const [copyStatus, setCopyStatus] = useState<string | null>(null);
 
   const update = (id: keyof WaterParameters, value: number) => {
     setParameters((current) => ({ ...current, [id]: value }));
     setError(null);
+    setCopyStatus(null);
   };
 
   const reset = () => {
     setParameters(DEFAULTS);
     setAudition(null);
     setError(null);
+    setCopyStatus(null);
   };
 
   const renderAudition = async () => {
     const reviewWindow = openAuditionReviewWindow();
     setRendering(true);
     setError(null);
+    setCopyStatus(null);
     try {
       const result = await postJson<WaterAudition>(
         '/api/forge/shot-1-water-auditions',
@@ -318,6 +339,16 @@ export function Shot01WaterLab() {
     } finally {
       setRendering(false);
     }
+  };
+
+  const copyVideoPath = async () => {
+    if (!audition) return;
+    const copied = await copyText(audition.videoPath);
+    setCopyStatus(
+      copied
+        ? 'MP4 path copied.'
+        : 'Clipboard access is unavailable. Select the path shown above instead.',
+    );
   };
 
   return (
@@ -419,13 +450,35 @@ export function Shot01WaterLab() {
                 </span>
                 <code>{audition.videoPath}</code>
                 <span>{new Date(audition.createdAt).toLocaleString()}</span>
-                <a
-                  href={audition.videoUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Open MP4 in new tab
-                </a>
+                <div className={styles.shareActions} aria-label="MP4 sharing actions">
+                  <a
+                    className={styles.shareAction}
+                    href={audition.videoUrl}
+                    download={`shot01-water-audition-${audition.id}.mp4`}
+                  >
+                    Download MP4
+                  </a>
+                  <button
+                    className={styles.shareAction}
+                    type="button"
+                    onClick={() => void copyVideoPath()}
+                  >
+                    Copy MP4 path
+                  </button>
+                  <a
+                    className={styles.shareAction}
+                    href={audition.videoUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Open MP4 in new tab
+                  </a>
+                </div>
+                {copyStatus ? (
+                  <span className={styles.copyStatus} role="status">
+                    {copyStatus}
+                  </span>
+                ) : null}
               </div>
             </div>
           ) : (
