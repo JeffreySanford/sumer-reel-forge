@@ -14,6 +14,7 @@ import {
   type SceneV2,
   type SceneV2Shot,
 } from './scene-v2';
+import { SceneV2WaterSurfaceMotion } from './scene-v2-water-surface';
 
 export interface SceneV2BenchmarkProps {
   scene?: SceneV2;
@@ -69,6 +70,12 @@ export function SceneV2Benchmark({
         }}
       >
         <Img src={baseAsset} style={styles.artwork} />
+        <SceneV2WaterSurfaceMotion
+          shot={shot}
+          frame={frame}
+          fps={fps}
+          baseAsset={baseAsset}
+        />
         <WaterReflection shot={shot} frame={frame} progress={progress} fps={fps} />
         <Atmosphere shot={shot} frame={frame} progress={progress} fps={fps} />
         <SuspendedDepth shot={shot} frame={frame} progress={progress} fps={fps} />
