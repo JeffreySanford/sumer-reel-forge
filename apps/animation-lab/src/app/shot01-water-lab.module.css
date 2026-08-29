@@ -40,7 +40,8 @@
 
 .intro,
 .note,
-.error {
+.error,
+.previewDisclaimer {
   margin: 0;
   line-height: 1.55;
 }
@@ -117,26 +118,179 @@
 
 .preview {
   display: grid;
-  gap: 0.75rem;
+  gap: 1rem;
   align-content: start;
 }
 
-.preview video {
+.livePreview {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.livePreviewStage {
+  position: relative;
+  width: min(100%, 31rem);
+  aspect-ratio: 9 / 16;
+  justify-self: center;
+  overflow: hidden;
+  border: 1px solid rgba(190, 210, 209, 0.26);
+  border-radius: 0.9rem;
+  background: #050a0b;
+  box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.28);
+}
+
+.livePreviewCamera {
+  position: absolute;
+  inset: -3%;
+  overflow: hidden;
+  transform-origin: 50% 48%;
+  will-change: transform;
+}
+
+.previewArtwork,
+.previewSlice {
+  position: absolute;
+  inset: 0;
   width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.previewArtwork {
+  z-index: 0;
+}
+
+.previewWaterField {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.previewSlice {
+  transform-origin: 50% 70%;
+  will-change: transform;
+}
+
+.previewMistA,
+.previewMistB {
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
+  border-radius: 50%;
+  filter: blur(24px);
+  mix-blend-mode: screen;
+}
+
+.previewMistA {
+  left: 4%;
+  right: 4%;
+  top: 49%;
+  height: 18%;
+  opacity: 0.075;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(191, 213, 207, 0.68) 24%,
+    rgba(223, 217, 194, 0.74) 54%,
+    rgba(177, 203, 199, 0.58) 78%,
+    transparent 100%
+  );
+}
+
+.previewMistB {
+  left: 10%;
+  right: 10%;
+  top: 56%;
+  height: 12%;
+  opacity: 0.044;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(157, 190, 190, 0.58) 32%,
+    rgba(219, 205, 178, 0.62) 62%,
+    transparent 100%
+  );
+}
+
+.previewDawn {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at 50% 55%,
+    rgba(224, 176, 104, 0.11) 0%,
+    rgba(190, 129, 66, 0.055) 18%,
+    transparent 42%
+  );
+  mix-blend-mode: screen;
+}
+
+.previewVignette {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 48%,
+    rgba(2, 9, 11, 0.22) 78%,
+    rgba(1, 5, 7, 0.48) 100%
+  );
+}
+
+.liveChip {
+  position: absolute;
+  z-index: 6;
+  top: 0.7rem;
+  left: 0.7rem;
+  padding: 0.34rem 0.55rem;
+  border: 1px solid rgba(188, 221, 216, 0.25);
+  border-radius: 999px;
+  background: rgba(4, 18, 21, 0.7);
+  color: #d3e9e4;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.previewDisclaimer {
+  color: rgba(226, 231, 223, 0.66);
+  font-size: 0.82rem;
+}
+
+.renderedProof {
+  display: grid;
+  gap: 0.7rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(190, 210, 209, 0.16);
+}
+
+.proofHeading {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.proofHeading .eyebrow {
+  margin: 0;
+}
+
+.preview video {
+  width: min(100%, 31rem);
   max-height: 72vh;
+  justify-self: center;
   border-radius: 0.9rem;
   background: #050a0b;
 }
 
-.placeholder {
-  display: grid;
-  place-items: center;
-  min-height: 26rem;
-  padding: 2rem;
-  border: 1px dashed rgba(190, 210, 209, 0.24);
-  border-radius: 0.9rem;
-  color: rgba(226, 231, 223, 0.65);
-  text-align: center;
+.renderHint {
+  padding: 0.9rem 1rem;
+  border: 1px dashed rgba(190, 210, 209, 0.2);
+  border-radius: 0.8rem;
+  color: rgba(226, 231, 223, 0.68);
+  line-height: 1.45;
 }
 
 .receipt {
@@ -157,5 +311,10 @@
 @media (max-width: 900px) {
   .workspace {
     grid-template-columns: 1fr;
+  }
+
+  .livePreviewStage,
+  .preview video {
+    width: min(100%, 27rem);
   }
 }
