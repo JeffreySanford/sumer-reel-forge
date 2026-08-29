@@ -166,7 +166,8 @@ function LiveWaterPreview({ parameters }: { parameters: WaterParameters }) {
               );
               const normalizedDepth =
                 bandCount <= 1 ? 1 : index / (bandCount - 1);
-              const depthResponse = 0.42 + normalizedDepth * 0.82;
+              const depthResponse = 0.65 + normalizedDepth * 0.35;
+              const verticalDepthResponse = 0.55 + normalizedDepth * 0.45;
               const phase = index * phaseSpacing;
               const primary =
                 (seconds * cyclesPerSecond + phase) * Math.PI * 2;
@@ -186,7 +187,7 @@ function LiveWaterPreview({ parameters }: { parameters: WaterParameters }) {
               const y =
                 (Math.cos(primary * 0.71) * verticalAmplitude +
                   Math.sin(secondary * 0.83) * verticalAmplitude * 0.28) *
-                (0.34 + normalizedDepth * 0.72);
+                verticalDepthResponse;
               const scale =
                 1.018 +
                 parameters.horizontalCurrent * 0.012 +
@@ -306,10 +307,9 @@ export function Shot01WaterLab() {
 
       <p className={styles.intro}>
         This experiment reuses the exact approved Shot 1 painting and moves only
-        clipped horizontal bands in the lower water field. It does not generate
-        replacement pixels or alter animation-v1. The existing mist and dawn-light
-        treatment remain in the candidate so we can judge whether real surface
-        movement improves the shot.
+        clipped horizontal bands in the visible water field. It does not generate
+        replacement pixels or alter animation-v1. The horizon stays protected,
+        while far, middle, and foreground water now all receive readable motion.
       </p>
 
       <div className={styles.workspace}>
@@ -346,9 +346,9 @@ export function Shot01WaterLab() {
           </div>
 
           <p className={styles.note}>
-            Test one control at a time from 0.00 to 1.00, then press Render water
-            audition. Each completed MP4 should now show a clearly different
-            response for that control while the other three remain unchanged.
+            The upper water should now be visibly alive without moving the true
+            horizon. The foreground remains strongest, but it should no longer be
+            the only part of the shot where motion is obvious.
           </p>
           {error ? (
             <p className={styles.error} role="alert">
