@@ -22,10 +22,10 @@ interface WaterAudition {
 }
 
 const DEFAULTS: WaterParameters = {
-  horizontalCurrent: 0.34,
-  verticalRipple: 0.22,
-  flowSpeed: 0.38,
-  rippleScale: 0.46,
+  horizontalCurrent: 0.58,
+  verticalRipple: 0.38,
+  flowSpeed: 0.5,
+  rippleScale: 0.52,
 };
 
 const CONTROLS: Array<{
@@ -165,9 +165,9 @@ export function Shot01WaterLab() {
           </div>
 
           <p className={styles.note}>
-            Start restrained. The acceptance requirement is now readable water
-            movement at normal speed without losing the primordial stillness of
-            the source painting.
+            The default envelope is intentionally readable at normal speed. The
+            horizon stays restrained while deeper water carries more displacement;
+            pull the controls back if the surface starts to feel synthetic.
           </p>
           {error ? (
             <p className={styles.error} role="alert">
