@@ -85,6 +85,24 @@ async function postJson<T>(url: string, body: unknown): Promise<T> {
   return (await response.json()) as T;
 }
 
+function openAuditionReviewWindow(): Window | null {
+  if (typeof window === 'undefined' || typeof window.open !== 'function') {
+    return null;
+  }
+
+  try {
+    const reviewWindow = window.open('about:blank', 'shot01-water-audition');
+    if (reviewWindow) {
+      reviewWindow.document.title = 'Rendering Shot 1 water audition…';
+      reviewWindow.document.body.textContent =
+        'Rendering Shot 1 water audition. This tab will open the MP4 automatically when the render completes.';
+    }
+    return reviewWindow;
+  } catch {
+    return null;
+  }
+}
+
 function usePreviewSeconds(): number {
   const [seconds, setSeconds] = useState(0);
 
@@ -277,6 +295,7 @@ export function Shot01WaterLab() {
   };
 
   const renderAudition = async () => {
+    const reviewWindow = openAuditionReviewWindow();
     setRendering(true);
     setError(null);
     try {
@@ -285,7 +304,13 @@ export function Shot01WaterLab() {
         { parameters },
       );
       setAudition(result);
+      if (reviewWindow && !reviewWindow.closed) {
+        reviewWindow.location.replace(result.videoUrl);
+      }
     } catch (renderError) {
+      if (reviewWindow && !reviewWindow.closed) {
+        reviewWindow.close();
+      }
       setAudition(null);
       setError(
         renderError instanceof Error ? renderError.message : String(renderError),
@@ -348,7 +373,8 @@ export function Shot01WaterLab() {
           <p className={styles.note}>
             The upper water should now be visibly alive without moving the true
             horizon. The foreground remains strongest, but it should no longer be
-            the only part of the shot where motion is obvious.
+            the only part of the shot where motion is obvious. A review tab opens
+            when rendering starts and switches to the finished MP4 automatically.
           </p>
           {error ? (
             <p className={styles.error} role="alert">
@@ -388,8 +414,18 @@ export function Shot01WaterLab() {
                 aria-label="Shot 1 water audition video"
               />
               <div className={styles.receipt}>
+                <span>
+                  Audition ID: <code>{audition.id}</code>
+                </span>
                 <code>{audition.videoPath}</code>
                 <span>{new Date(audition.createdAt).toLocaleString()}</span>
+                <a
+                  href={audition.videoUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Open MP4 in new tab
+                </a>
               </div>
             </div>
           ) : (
