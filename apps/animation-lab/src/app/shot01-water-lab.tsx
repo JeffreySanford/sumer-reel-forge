@@ -24,6 +24,7 @@ interface WaterAudition {
 }
 
 const SOURCE_URL = '/api/forge/shot-1-water-auditions/source';
+const SOURCE_RETRY_MS = 750;
 const PREVIEW_LOOP_SECONDS = 6;
 
 const DEFAULTS: WaterParameters = {
@@ -107,18 +108,38 @@ function openAuditionReviewWindow(): Window | null {
 
 async function copyText(value: string): Promise<boolean> {
   if (
-    typeof navigator === 'undefined' ||
-    !navigator.clipboard ||
-    typeof navigator.clipboard.writeText !== 'function'
+    typeof navigator !== 'undefined' &&
+    navigator.clipboard &&
+    typeof navigator.clipboard.writeText === 'function'
   ) {
+    try {
+      await navigator.clipboard.writeText(value);
+      return true;
+    } catch {
+      // Fall through to the browser selection fallback below.
+    }
+  }
+
+  if (typeof document === 'undefined') {
     return false;
   }
 
+  const textArea = document.createElement('textarea');
+  textArea.value = value;
+  textArea.setAttribute('readonly', '');
+  textArea.style.position = 'fixed';
+  textArea.style.opacity = '0';
+  document.body.appendChild(textArea);
+  textArea.select();
+
   try {
-    await navigator.clipboard.writeText(value);
-    return true;
+    return typeof document.execCommand === 'function'
+      ? document.execCommand('copy')
+      : false;
   } catch {
     return false;
+  } finally {
+    textArea.remove();
   }
 }
 
@@ -152,11 +173,32 @@ function usePreviewSeconds(): number {
   return seconds;
 }
 
-function LiveWaterPreview({ parameters }: { parameters: WaterParameters }) {
+function LiveWaterPreview({
+  parameters,
+  onSourceStatusChange,
+}: {
+  parameters: WaterParameters;
+  onSourceStatusChange: (ready: boolean) => void;
+}) {
   const seconds = usePreviewSeconds();
   const [sourceError, setSourceError] = useState(false);
+  const [sourceAttempt, setSourceAttempt] = useState(0);
+  const sourceUrl =
+    sourceAttempt === 0 ? SOURCE_URL : `${SOURCE_URL}?retry=${sourceAttempt}`;
   const progress = (seconds % PREVIEW_LOOP_SECONDS) / PREVIEW_LOOP_SECONDS;
   const easedProgress = progress * progress * (3 - 2 * progress);
+
+  useEffect(() => {
+    if (!sourceError || typeof window === 'undefined') {
+      return;
+    }
+
+    const retryTimer = window.setTimeout(() => {
+      setSourceAttempt((current) => current + 1);
+    }, SOURCE_RETRY_MS);
+
+    return () => window.clearTimeout(retryTimer);
+  }, [sourceError, sourceAttempt]);
 
   // Keep this transfer function in lock-step with scene-v2-water-surface.tsx.
   const horizontalAmplitude = parameters.horizontalCurrent * 24;
@@ -173,6 +215,16 @@ function LiveWaterPreview({ parameters }: { parameters: WaterParameters }) {
   const mistBreathe = Math.sin(seconds / 2.7) * 8;
   const dawnPulse = 0.72 + Math.sin(seconds / 0.72) * 0.16;
 
+  const sourceFailed = () => {
+    setSourceError(true);
+    onSourceStatusChange(false);
+  };
+
+  const sourceLoaded = () => {
+    setSourceError(false);
+    onSourceStatusChange(true);
+  };
+
   return (
     <div
       className={styles.livePreview}
@@ -187,10 +239,10 @@ function LiveWaterPreview({ parameters }: { parameters: WaterParameters }) {
         >
           <img
             className={styles.previewArtwork}
-            src={SOURCE_URL}
+            src={sourceUrl}
             alt="Approved Shot 1 editorial source"
-            onError={() => setSourceError(true)}
-            onLoad={() => setSourceError(false)}
+            onError={sourceFailed}
+            onLoad={sourceLoaded}
           />
 
           <div className={styles.previewWaterField} aria-hidden="true">
@@ -240,7 +292,7 @@ function LiveWaterPreview({ parameters }: { parameters: WaterParameters }) {
                 <img
                   key={index}
                   className={styles.previewSlice}
-                  src={SOURCE_URL}
+                  src={sourceUrl}
                   alt=""
                   aria-hidden="true"
                   style={{
@@ -279,8 +331,8 @@ function LiveWaterPreview({ parameters }: { parameters: WaterParameters }) {
       </div>
 
       {sourceError ? (
-        <p className={styles.error} role="alert">
-          The approved Shot 1 source could not be loaded from the Forge API.
+        <p className={styles.error} role="status">
+          Forge API source is still starting. Retrying automatically…
         </p>
       ) : null}
       <p className={styles.previewDisclaimer}>
@@ -299,6 +351,7 @@ function LiveWaterPreview({ parameters }: { parameters: WaterParameters }) {
 export function Shot01WaterLab() {
   const [parameters, setParameters] = useState<WaterParameters>(DEFAULTS);
   const [rendering, setRendering] = useState(false);
+  const [sourceReady, setSourceReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [audition, setAudition] = useState<WaterAudition | null>(null);
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
@@ -317,6 +370,11 @@ export function Shot01WaterLab() {
   };
 
   const renderAudition = async () => {
+    if (!sourceReady) {
+      setError('Forge API is not ready yet. The source preview will retry automatically.');
+      return;
+    }
+
     const reviewWindow = openAuditionReviewWindow();
     setRendering(true);
     setError(null);
@@ -395,13 +453,27 @@ export function Shot01WaterLab() {
           </div>
 
           <div className={styles.actions}>
-            <button type="button" onClick={renderAudition} disabled={rendering}>
-              {rendering ? 'Rendering water audition…' : 'Render water audition'}
+            <button
+              type="button"
+              onClick={renderAudition}
+              disabled={rendering || !sourceReady}
+            >
+              {rendering
+                ? 'Rendering water audition…'
+                : sourceReady
+                  ? 'Render water audition'
+                  : 'Waiting for Forge API…'}
             </button>
             <button type="button" onClick={reset} disabled={rendering}>
               Reset
             </button>
           </div>
+
+          <p className={styles.copyStatus} role="status">
+            {sourceReady
+              ? 'Forge API ready · render and export controls are available.'
+              : 'Connecting to Forge API · source preview retries automatically.'}
+          </p>
 
           <p className={styles.note}>
             The upper water should now be visibly alive without moving the true
@@ -417,7 +489,10 @@ export function Shot01WaterLab() {
         </div>
 
         <div className={styles.preview}>
-          <LiveWaterPreview parameters={parameters} />
+          <LiveWaterPreview
+            parameters={parameters}
+            onSourceStatusChange={setSourceReady}
+          />
 
           {audition ? (
             <div className={styles.renderedProof}>
@@ -484,18 +559,10 @@ export function Shot01WaterLab() {
           ) : (
             <div className={styles.renderHint}>
               <strong>Share / export MP4</strong>
-              <p>Render an audition first. The finished MP4 can then be downloaded directly for sharing.</p>
-              <div className={styles.shareActions} aria-label="MP4 sharing actions">
-                <button className={styles.shareAction} type="button" disabled>
-                  Download MP4
-                </button>
-                <button className={styles.shareAction} type="button" disabled>
-                  Copy local MP4 path
-                </button>
-                <button className={styles.shareAction} type="button" disabled>
-                  Open MP4 in new tab
-                </button>
-              </div>
+              <p>
+                Render an audition first. Download, copy-path, and open-in-new-tab
+                controls will appear here after the MP4 finishes.
+              </p>
             </div>
           )}
         </div>
