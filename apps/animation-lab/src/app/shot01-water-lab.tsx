@@ -58,7 +58,7 @@ const CONTROLS: Array<{
     id: 'rippleScale',
     label: 'Ripple scale',
     description:
-      'Controls the number and phase spacing of feathered water bands. Higher values create tighter surface detail.',
+      'Controls the number and phase spacing of clipped water bands. Higher values create tighter surface detail.',
   },
 ];
 
@@ -187,13 +187,12 @@ function LiveWaterPreview({ parameters }: { parameters: WaterParameters }) {
                   Math.sin(secondary * 0.83) * verticalAmplitude * 0.22) *
                 (0.42 + normalizedDepth * 0.58);
               const scale = 1.012 + parameters.horizontalCurrent * 0.008;
-              const mask = `linear-gradient(to bottom, transparent 0%, transparent ${Math.max(
+              const clipTop = Math.max(0, top - feather);
+              const clipBottom = Math.min(100, bottom + feather);
+              const clip = `inset(${clipTop}% 0 ${Math.max(
                 0,
-                top - feather,
-              )}%, black ${top}%, black ${bottom}%, transparent ${Math.min(
-                100,
-                bottom + feather,
-              )}%, transparent 100%)`;
+                100 - clipBottom,
+              )}% 0)`;
 
               return (
                 <img
@@ -203,10 +202,10 @@ function LiveWaterPreview({ parameters }: { parameters: WaterParameters }) {
                   alt=""
                   aria-hidden="true"
                   style={{
-                    opacity: 0.98 + parameters.horizontalCurrent * 0.02,
+                    opacity: 0.99,
                     transform: `translate3d(${x}px, ${y}px, 0) scale(${scale})`,
-                    maskImage: mask,
-                    WebkitMaskImage: mask,
+                    clipPath: clip,
+                    WebkitClipPath: clip,
                   }}
                 />
               );
@@ -242,6 +241,11 @@ function LiveWaterPreview({ parameters }: { parameters: WaterParameters }) {
           The approved Shot 1 source could not be loaded from the Forge API.
         </p>
       ) : null}
+      <p className={styles.previewDisclaimer}>
+        Live response: {horizontalAmplitude.toFixed(1)} px lateral ·{' '}
+        {verticalAmplitude.toFixed(1)} px vertical ·{' '}
+        {cyclesPerSecond.toFixed(2)} cycles/sec · {bandCount} water bands.
+      </p>
       <p className={styles.previewDisclaimer}>
         Instant browser feedback uses the same water-band envelope as the Remotion
         runtime. It is for tuning only; the rendered MP4 below remains the review
@@ -300,7 +304,7 @@ export function Shot01WaterLab() {
 
       <p className={styles.intro}>
         This experiment reuses the exact approved Shot 1 painting and moves only
-        feathered horizontal bands in the lower water field. It does not generate
+        clipped horizontal bands in the lower water field. It does not generate
         replacement pixels or alter animation-v1. The existing mist and dawn-light
         treatment remain in the candidate so we can judge whether real surface
         movement improves the shot.
@@ -340,9 +344,9 @@ export function Shot01WaterLab() {
           </div>
 
           <p className={styles.note}>
-            Move the sliders while watching the live viewport. Render only when
-            the foreground water clearly moves at normal speed without making the
-            horizon or source composition swim.
+            For a sanity check, drag Horizontal current all the way from 0.00 to
+            1.00. The telemetry and foreground water should both change
+            immediately. Then tune back toward a restrained cinematic value.
           </p>
           {error ? (
             <p className={styles.error} role="alert">
