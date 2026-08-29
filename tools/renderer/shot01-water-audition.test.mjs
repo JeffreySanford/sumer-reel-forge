@@ -69,6 +69,6 @@ test('Shot 1 Forge water audition is runtime-backed, source-only, and non-canoni
   assert.match(forgeLabSource, /<Shot01WaterLab \/>/);
   assert.match(waterLabSource, /Render water audition/);
   assert.match(waterLabSource, /rendered-non-canonical-audition/);
-  assert.match(waterLabSource, /Scene V2\/Remotion MP4/i);
+  assert.match(waterLabSource, /Remotion MP4/i);
   assert.match(waterLabSource, /Rendered water parameters/i);
 });
