@@ -49,4 +49,17 @@ export class ForgeShot01WaterAuditionController {
       disposition: `inline; filename="${content.filename.replace(/"/g, '')}"`,
     });
   }
+
+  @Get(':id/download')
+  @ApiOperation({
+    summary:
+      'Download one locally rendered non-canonical Shot 1 water audition as an MP4 attachment.',
+  })
+  async download(@Param('id') id: string): Promise<StreamableFile> {
+    const content = await this.auditions.getVideo(id);
+    return new StreamableFile(createReadStream(content.filePath), {
+      type: 'video/mp4',
+      disposition: `attachment; filename="${content.filename.replace(/"/g, '')}"`,
+    });
+  }
 }
