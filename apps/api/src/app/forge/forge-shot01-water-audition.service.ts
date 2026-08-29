@@ -39,6 +39,8 @@ export interface ForgeShot01WaterAudition {
 
 const SOURCE_SCENE =
   'tools/animation/scenes/reel-01-shot-01-black-water-level2.scene-v2.json';
+const SOURCE_ASSET =
+  'blessings-of-sumer/chapter-01/reel-01/editorial-v1/shot-01.png';
 const OUTPUT_VIDEO = 'shot1-scene-v2-benchmark.mp4';
 
 @Injectable()
@@ -114,6 +116,19 @@ export class ForgeShot01WaterAuditionService {
         'Human normal-speed review remains required before any promotion decision.',
       ],
     };
+  }
+
+  async getSource(): Promise<{ filePath: string; filename: string }> {
+    const root = await findWorkspaceRoot(process.cwd());
+    const assetRoot = resolve(root, 'assets');
+    const filePath = resolve(assetRoot, SOURCE_ASSET);
+    assertInside(assetRoot, filePath, 'Forge Shot 1 approved source');
+    try {
+      await access(filePath);
+    } catch {
+      throw new NotFoundException('The approved Shot 1 editorial source was not found.');
+    }
+    return { filePath, filename: 'shot01-editorial-source.png' };
   }
 
   async getVideo(id: string): Promise<{ filePath: string; filename: string }> {
