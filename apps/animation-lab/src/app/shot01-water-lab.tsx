@@ -17,7 +17,9 @@ interface WaterAudition {
   parameters: WaterParameters;
   scenePath: string;
   videoPath: string;
+  localVideoPath: string;
   videoUrl: string;
+  downloadUrl: string;
   guardrails: string[];
 }
 
@@ -343,11 +345,11 @@ export function Shot01WaterLab() {
 
   const copyVideoPath = async () => {
     if (!audition) return;
-    const copied = await copyText(audition.videoPath);
+    const copied = await copyText(audition.localVideoPath);
     setCopyStatus(
       copied
-        ? 'MP4 path copied.'
-        : 'Clipboard access is unavailable. Select the path shown above instead.',
+        ? 'Local MP4 path copied.'
+        : 'Clipboard access is unavailable. Select the local path shown above instead.',
     );
   };
 
@@ -448,14 +450,12 @@ export function Shot01WaterLab() {
                 <span>
                   Audition ID: <code>{audition.id}</code>
                 </span>
-                <code>{audition.videoPath}</code>
+                <span>
+                  Local MP4: <code>{audition.localVideoPath}</code>
+                </span>
                 <span>{new Date(audition.createdAt).toLocaleString()}</span>
                 <div className={styles.shareActions} aria-label="MP4 sharing actions">
-                  <a
-                    className={styles.shareAction}
-                    href={audition.videoUrl}
-                    download={`shot01-water-audition-${audition.id}.mp4`}
-                  >
+                  <a className={styles.shareAction} href={audition.downloadUrl}>
                     Download MP4
                   </a>
                   <button
@@ -463,7 +463,7 @@ export function Shot01WaterLab() {
                     type="button"
                     onClick={() => void copyVideoPath()}
                   >
-                    Copy MP4 path
+                    Copy local MP4 path
                   </button>
                   <a
                     className={styles.shareAction}
@@ -490,7 +490,7 @@ export function Shot01WaterLab() {
                   Download MP4
                 </button>
                 <button className={styles.shareAction} type="button" disabled>
-                  Copy MP4 path
+                  Copy local MP4 path
                 </button>
                 <button className={styles.shareAction} type="button" disabled>
                   Open MP4 in new tab
