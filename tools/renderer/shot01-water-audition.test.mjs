@@ -49,7 +49,12 @@ test('Shot 1 Forge water audition is runtime-backed, source-only, and non-canoni
 
   assert.match(benchmarkSource, /SceneV2WaterSurfaceMotion/);
   assert.match(waterRuntimeSource, /src=\{baseAsset\}/);
-  assert.match(waterRuntimeSource, /feathered horizontal bands/i);
+  assert.match(waterRuntimeSource, /clipped horizontal bands/i);
+  assert.match(waterRuntimeSource, /horizontalCurrent \* 24/);
+  assert.match(waterRuntimeSource, /verticalRipple \* 12/);
+  assert.match(waterRuntimeSource, /flowSpeed \* 0\.56/);
+  assert.match(waterRuntimeSource, /rippleScale \* 15/);
+  assert.match(waterRuntimeSource, /clipPath: clip/);
   assert.doesNotMatch(waterRuntimeSource, /fetch\(/);
   assert.doesNotMatch(waterRuntimeSource, /https?:\/\//);
 
@@ -64,5 +69,6 @@ test('Shot 1 Forge water audition is runtime-backed, source-only, and non-canoni
   assert.match(forgeLabSource, /<Shot01WaterLab \/>/);
   assert.match(waterLabSource, /Render water audition/);
   assert.match(waterLabSource, /rendered-non-canonical-audition/);
-  assert.match(waterLabSource, /same Scene V2\/Remotion pipeline/i);
+  assert.match(waterLabSource, /Scene V2\/Remotion MP4/i);
+  assert.match(waterLabSource, /Rendered water parameters/i);
 });
