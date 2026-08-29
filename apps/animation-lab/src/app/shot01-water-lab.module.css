@@ -320,20 +320,34 @@
   overflow-wrap: anywhere;
 }
 
-.receipt a {
+.shareActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 0.35rem;
+}
+
+.shareAction {
   width: fit-content;
-  margin-top: 0.25rem;
-  padding: 0.48rem 0.7rem;
+  padding: 0.52rem 0.72rem;
   border: 1px solid rgba(211, 190, 139, 0.34);
   border-radius: 0.6rem;
   background: rgba(201, 177, 120, 0.1);
   color: #e9d7ad;
+  font: inherit;
   font-weight: 700;
+  line-height: 1.2;
   text-decoration: none;
+  cursor: pointer;
 }
 
-.receipt a:hover {
+.shareAction:hover {
   background: rgba(201, 177, 120, 0.16);
+}
+
+.copyStatus {
+  color: rgba(190, 220, 213, 0.82);
+  font-size: 0.78rem;
 }
 
 .error {
