@@ -88,9 +88,17 @@ describe('Shot01WaterLab', () => {
     expect(screen.getByText(/Audition ID:/).textContent).toContain(
       '11111111-1111-4111-8111-111111111111',
     );
-    expect(screen.getByRole('link', { name: 'Open MP4 in new tab' }).getAttribute('href')).toContain(
+    const download = screen.getByRole('link', { name: 'Download MP4' });
+    expect(download.getAttribute('href')).toContain(
       '/api/forge/shot-1-water-auditions/',
     );
+    expect(download.getAttribute('download')).toBe(
+      'shot01-water-audition-11111111-1111-4111-8111-111111111111.mp4',
+    );
+    expect(screen.getByRole('button', { name: 'Copy MP4 path' })).toBeTruthy();
+    expect(
+      screen.getByRole('link', { name: 'Open MP4 in new tab' }).getAttribute('href'),
+    ).toContain('/api/forge/shot-1-water-auditions/');
     expect(review.open).toHaveBeenCalledWith('about:blank', 'shot01-water-audition');
     expect(review.replace).toHaveBeenCalledWith(
       '/api/forge/shot-1-water-auditions/11111111-1111-4111-8111-111111111111/video',
