@@ -13,10 +13,10 @@ export interface SceneV2WaterSurfaceMotionProps {
  * Source-preserving water motion for flattened editorial art.
  *
  * The approved source remains the only image. The effect duplicates that source
- * into clipped horizontal bands over the water field and moves those bands with
- * four independently visible controls. Motion is deliberately calmer near the
- * horizon and progressively stronger toward the foreground. It never generates
- * pixels, replaces assets, or mutates the canonical animation manifest.
+ * into clipped horizontal bands over the visible water field and moves those
+ * bands with four independently visible controls. The horizon remains protected,
+ * while far, middle, and foreground water all receive readable motion. It never
+ * generates pixels, replaces assets, or mutates the canonical animation manifest.
  */
 export function SceneV2WaterSurfaceMotion({
   shot,
@@ -38,11 +38,11 @@ export function SceneV2WaterSurfaceMotion({
   const bandCount = Math.round(3 + surface.rippleScale * 15);
   const phaseSpacing = 0.35 + surface.rippleScale * 1.35;
 
-  // Shot 1's visible water occupies substantially more than the extreme bottom
-  // of the painting. Start the source-preserving band field above mid-frame while
-  // keeping the first bands calm enough that the horizon itself does not swim.
-  const waterTop = 47;
-  const waterHeight = 53;
+  // Shot 1's approved painting places the readable water below roughly the
+  // mid-lower horizon. Keep the clip below that boundary and spread the motion
+  // more evenly through the water instead of concentrating it at the bottom.
+  const waterTop = 55;
+  const waterHeight = 45;
   const bandHeight = waterHeight / bandCount;
 
   return (
@@ -53,9 +53,10 @@ export function SceneV2WaterSurfaceMotion({
         const overlap = Math.min(1.2, Math.max(0.35, bandHeight * 0.16));
         const normalizedDepth = bandCount <= 1 ? 1 : index / (bandCount - 1);
 
-        // ~40% response at the far water, ~70% mid-water, 100% foreground.
-        const depthResponse = 0.4 + normalizedDepth * 0.6;
-        const verticalDepthResponse = 0.35 + normalizedDepth * 0.65;
+        // Keep the horizon water calmer, but not nearly static. Far water now
+        // receives 65% of the envelope, rising smoothly to 100% foreground.
+        const depthResponse = 0.65 + normalizedDepth * 0.35;
+        const verticalDepthResponse = 0.55 + normalizedDepth * 0.45;
         const phase = index * phaseSpacing;
         const primary = (seconds * cyclesPerSecond + phase) * Math.PI * 2;
         const secondary =
