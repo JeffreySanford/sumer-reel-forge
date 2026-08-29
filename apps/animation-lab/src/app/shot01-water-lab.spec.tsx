@@ -62,8 +62,12 @@ describe('Shot01WaterLab', () => {
             'tmp/forge-water-auditions/11111111-1111-4111-8111-111111111111/shot01-water-audition.scene-v2.json',
           videoPath:
             'tmp/forge-water-auditions/11111111-1111-4111-8111-111111111111/shot1-scene-v2-benchmark.mp4',
+          localVideoPath:
+            'D:\\repos\\sumer-reel-forge\\tmp\\forge-water-auditions\\11111111-1111-4111-8111-111111111111\\shot1-scene-v2-benchmark.mp4',
           videoUrl:
             '/api/forge/shot-1-water-auditions/11111111-1111-4111-8111-111111111111/video',
+          downloadUrl:
+            '/api/forge/shot-1-water-auditions/11111111-1111-4111-8111-111111111111/download',
           guardrails: [],
         }),
       );
@@ -88,14 +92,14 @@ describe('Shot01WaterLab', () => {
     expect(screen.getByText(/Audition ID:/).textContent).toContain(
       '11111111-1111-4111-8111-111111111111',
     );
+    expect(screen.getByText(/Local MP4:/).textContent).toContain(
+      'D:\\repos\\sumer-reel-forge\\tmp\\forge-water-auditions',
+    );
     const download = screen.getByRole('link', { name: 'Download MP4' });
     expect(download.getAttribute('href')).toContain(
-      '/api/forge/shot-1-water-auditions/',
+      '/api/forge/shot-1-water-auditions/11111111-1111-4111-8111-111111111111/download',
     );
-    expect(download.getAttribute('download')).toBe(
-      'shot01-water-audition-11111111-1111-4111-8111-111111111111.mp4',
-    );
-    expect(screen.getByRole('button', { name: 'Copy MP4 path' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Copy local MP4 path' })).toBeTruthy();
     expect(
       screen.getByRole('link', { name: 'Open MP4 in new tab' }).getAttribute('href'),
     ).toContain('/api/forge/shot-1-water-auditions/');
@@ -119,7 +123,9 @@ describe('Shot01WaterLab', () => {
           parameters: JSON.parse(String(init?.body)).parameters,
           scenePath: 'tmp/forge-water-auditions/test/scene.json',
           videoPath: 'tmp/forge-water-auditions/test/video.mp4',
+          localVideoPath: 'D:\\repos\\sumer-reel-forge\\tmp\\forge-water-auditions\\test\\video.mp4',
           videoUrl: '/api/forge/shot-1-water-auditions/test/video',
+          downloadUrl: '/api/forge/shot-1-water-auditions/test/download',
           guardrails: [],
         }),
       ),
