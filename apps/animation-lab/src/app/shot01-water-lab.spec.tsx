@@ -32,6 +32,27 @@ describe('Shot01WaterLab', () => {
     vi.restoreAllMocks();
   });
 
+  it('waits for the Forge source and does not show dead export controls before a render', () => {
+    render(<Shot01WaterLab />);
+
+    const waitingButton = screen.getByRole('button', {
+      name: 'Waiting for Forge API…',
+    }) as HTMLButtonElement;
+    expect(waitingButton.disabled).toBe(true);
+    expect(screen.getByText(/Connecting to Forge API/i)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Download MP4' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Copy local MP4 path' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Open MP4 in new tab' })).toBeNull();
+
+    fireEvent.load(screen.getByAltText('Approved Shot 1 editorial source'));
+
+    const renderButton = screen.getByRole('button', {
+      name: 'Render water audition',
+    }) as HTMLButtonElement;
+    expect(renderButton.disabled).toBe(false);
+    expect(screen.getByText(/Forge API ready/i)).toBeTruthy();
+  });
+
   it('renders only a non-canonical source-preserving water audition', async () => {
     const review = stubReviewWindow();
     const fetchMock = vi.fn((url: string, init?: RequestInit) => {
@@ -81,6 +102,7 @@ describe('Shot01WaterLab', () => {
     expect(screen.queryByRole('button', { name: /promote/i })).toBeNull();
     expect(screen.queryByRole('button', { name: /approve/i })).toBeNull();
 
+    fireEvent.load(screen.getByAltText('Approved Shot 1 editorial source'));
     fireEvent.click(screen.getByRole('button', { name: 'Render water audition' }));
 
     const video = await screen.findByLabelText('Shot 1 water audition video');
@@ -123,7 +145,8 @@ describe('Shot01WaterLab', () => {
           parameters: JSON.parse(String(init?.body)).parameters,
           scenePath: 'tmp/forge-water-auditions/test/scene.json',
           videoPath: 'tmp/forge-water-auditions/test/video.mp4',
-          localVideoPath: 'D:\\repos\\sumer-reel-forge\\tmp\\forge-water-auditions\\test\\video.mp4',
+          localVideoPath:
+            'D:\\repos\\sumer-reel-forge\\tmp\\forge-water-auditions\\test\\video.mp4',
           videoUrl: '/api/forge/shot-1-water-auditions/test/video',
           downloadUrl: '/api/forge/shot-1-water-auditions/test/download',
           guardrails: [],
@@ -133,6 +156,7 @@ describe('Shot01WaterLab', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     render(<Shot01WaterLab />);
+    fireEvent.load(screen.getByAltText('Approved Shot 1 editorial source'));
 
     fireEvent.change(screen.getByRole('slider', { name: 'Horizontal current' }), {
       target: { value: '1' },
