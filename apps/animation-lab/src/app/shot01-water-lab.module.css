@@ -277,6 +277,22 @@
   margin: 0;
 }
 
+.renderedParameters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.85rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid rgba(190, 210, 209, 0.16);
+  border-radius: 0.7rem;
+  color: rgba(226, 231, 223, 0.76);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.renderedParameters strong {
+  color: #e9d7ad;
+}
+
 .preview video {
   width: min(100%, 31rem);
   max-height: 72vh;
