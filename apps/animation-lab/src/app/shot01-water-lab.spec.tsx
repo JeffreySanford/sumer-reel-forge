@@ -21,10 +21,10 @@ describe('Shot01WaterLab', () => {
       expect(init?.method).toBe('POST');
       expect(JSON.parse(String(init?.body))).toEqual({
         parameters: {
-          horizontalCurrent: 0.34,
-          verticalRipple: 0.22,
-          flowSpeed: 0.38,
-          rippleScale: 0.46,
+          horizontalCurrent: 0.58,
+          verticalRipple: 0.38,
+          flowSpeed: 0.5,
+          rippleScale: 0.52,
         },
       });
       return Promise.resolve(
@@ -35,10 +35,10 @@ describe('Shot01WaterLab', () => {
           sourceShotNumber: 1,
           createdAt: '2026-08-28T23:00:00.000Z',
           parameters: {
-            horizontalCurrent: 0.34,
-            verticalRipple: 0.22,
-            flowSpeed: 0.38,
-            rippleScale: 0.46,
+            horizontalCurrent: 0.58,
+            verticalRipple: 0.38,
+            flowSpeed: 0.5,
+            rippleScale: 0.52,
           },
           scenePath:
             'tmp/forge-water-auditions/11111111-1111-4111-8111-111111111111/shot01-water-audition.scene-v2.json',
