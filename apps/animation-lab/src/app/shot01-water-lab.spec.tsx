@@ -10,12 +10,30 @@ function jsonResponse(value: unknown): Response {
   } as Response;
 }
 
+function stubReviewWindow() {
+  const replace = vi.fn();
+  const close = vi.fn();
+  const reviewWindow = {
+    closed: false,
+    close,
+    location: { replace },
+    document: {
+      title: '',
+      body: { textContent: '' },
+    },
+  } as unknown as Window;
+  const open = vi.spyOn(window, 'open').mockReturnValue(reviewWindow);
+  return { open, replace, close };
+}
+
 describe('Shot01WaterLab', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   it('renders only a non-canonical source-preserving water audition', async () => {
+    const review = stubReviewWindow();
     const fetchMock = vi.fn((url: string, init?: RequestInit) => {
       expect(url).toBe('/api/forge/shot-1-water-auditions');
       expect(init?.method).toBe('POST');
@@ -67,10 +85,21 @@ describe('Shot01WaterLab', () => {
     expect(screen.getByLabelText('Rendered water parameters').textContent).toContain(
       'Horizontal current 0.58',
     );
+    expect(screen.getByText(/Audition ID:/).textContent).toContain(
+      '11111111-1111-4111-8111-111111111111',
+    );
+    expect(screen.getByRole('link', { name: 'Open MP4 in new tab' }).getAttribute('href')).toContain(
+      '/api/forge/shot-1-water-auditions/',
+    );
+    expect(review.open).toHaveBeenCalledWith('about:blank', 'shot01-water-audition');
+    expect(review.replace).toHaveBeenCalledWith(
+      '/api/forge/shot-1-water-auditions/11111111-1111-4111-8111-111111111111/video',
+    );
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it('posts all four current slider values when Render water audition is pressed', async () => {
+    const review = stubReviewWindow();
     const fetchMock = vi.fn((_url: string, init?: RequestInit) =>
       Promise.resolve(
         jsonResponse({
@@ -117,6 +146,9 @@ describe('Shot01WaterLab', () => {
     });
     expect(screen.getByLabelText('Rendered water parameters').textContent).toContain(
       'Ripple scale 0.91',
+    );
+    expect(review.replace).toHaveBeenCalledWith(
+      '/api/forge/shot-1-water-auditions/test/video',
     );
   });
 });
