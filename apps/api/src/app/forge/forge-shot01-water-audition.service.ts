@@ -33,7 +33,9 @@ export interface ForgeShot01WaterAudition {
   parameters: ForgeShot01WaterParameters;
   scenePath: string;
   videoPath: string;
+  localVideoPath: string;
   videoUrl: string;
+  downloadUrl: string;
   guardrails: string[];
 }
 
@@ -99,6 +101,8 @@ export class ForgeShot01WaterAuditionService {
     );
     await access(videoPath);
 
+    const cacheKey = encodeURIComponent(createdAt);
+
     return {
       schemaVersion: 1,
       id,
@@ -108,7 +112,9 @@ export class ForgeShot01WaterAuditionService {
       parameters,
       scenePath: relative(root, scenePath).replace(/\\/g, '/'),
       videoPath: relative(root, videoPath).replace(/\\/g, '/'),
-      videoUrl: `/api/forge/shot-1-water-auditions/${id}/video?rendered=${encodeURIComponent(createdAt)}`,
+      localVideoPath: videoPath,
+      videoUrl: `/api/forge/shot-1-water-auditions/${id}/video?rendered=${cacheKey}`,
+      downloadUrl: `/api/forge/shot-1-water-auditions/${id}/download?rendered=${cacheKey}`,
       guardrails: [
         'The approved editorial source remains the only image asset used by this audition.',
         'The generated Scene V2 file and rendered media live only under tmp/forge-water-auditions/.',
