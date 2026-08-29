@@ -13,9 +13,10 @@ export interface SceneV2WaterSurfaceMotionProps {
  * Source-preserving water motion for flattened editorial art.
  *
  * The approved source remains the only image. The effect duplicates that source
- * into clipped horizontal bands over the lower water field and moves those
- * bands with four independently visible controls. It never generates pixels,
- * replaces assets, or mutates the canonical animation manifest.
+ * into clipped horizontal bands over the water field and moves those bands with
+ * four independently visible controls. Motion is deliberately calmer near the
+ * horizon and progressively stronger toward the foreground. It never generates
+ * pixels, replaces assets, or mutates the canonical animation manifest.
  */
 export function SceneV2WaterSurfaceMotion({
   shot,
@@ -36,8 +37,12 @@ export function SceneV2WaterSurfaceMotion({
   const cyclesPerSecond = 0.04 + surface.flowSpeed * 0.56;
   const bandCount = Math.round(3 + surface.rippleScale * 15);
   const phaseSpacing = 0.35 + surface.rippleScale * 1.35;
-  const waterTop = 55;
-  const waterHeight = 45;
+
+  // Shot 1's visible water occupies substantially more than the extreme bottom
+  // of the painting. Start the source-preserving band field above mid-frame while
+  // keeping the first bands calm enough that the horizon itself does not swim.
+  const waterTop = 47;
+  const waterHeight = 53;
   const bandHeight = waterHeight / bandCount;
 
   return (
@@ -47,7 +52,10 @@ export function SceneV2WaterSurfaceMotion({
         const bottom = Math.min(100, top + bandHeight);
         const overlap = Math.min(1.2, Math.max(0.35, bandHeight * 0.16));
         const normalizedDepth = bandCount <= 1 ? 1 : index / (bandCount - 1);
-        const depthResponse = 0.42 + normalizedDepth * 0.82;
+
+        // ~40% response at the far water, ~70% mid-water, 100% foreground.
+        const depthResponse = 0.4 + normalizedDepth * 0.6;
+        const verticalDepthResponse = 0.35 + normalizedDepth * 0.65;
         const phase = index * phaseSpacing;
         const primary = (seconds * cyclesPerSecond + phase) * Math.PI * 2;
         const secondary =
@@ -62,7 +70,7 @@ export function SceneV2WaterSurfaceMotion({
         const y =
           (Math.cos(primary * 0.71) * verticalAmplitude +
             Math.sin(secondary * 0.83) * verticalAmplitude * 0.28) *
-          (0.34 + normalizedDepth * 0.72);
+          verticalDepthResponse;
         const scale =
           1.018 + surface.horizontalCurrent * 0.012 + surface.verticalRipple * 0.004;
         const clipTop = Math.max(0, top - overlap);
