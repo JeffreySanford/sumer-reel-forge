@@ -13,8 +13,8 @@ export interface SceneV2WaterSurfaceMotionProps {
  * Source-preserving water motion for flattened editorial art.
  *
  * The approved source remains the only image. The effect duplicates that source
- * into feathered horizontal bands over the lower water field and moves those
- * bands by a restrained, depth-weighted envelope. It never generates pixels,
+ * into clipped horizontal bands over the lower water field and moves those
+ * bands with four independently visible controls. It never generates pixels,
  * replaces assets, or mutates the canonical animation manifest.
  */
 export function SceneV2WaterSurfaceMotion({
@@ -27,10 +27,15 @@ export function SceneV2WaterSurfaceMotion({
   if (!surface?.enabled) return null;
 
   const seconds = frame / Math.max(1, fps);
-  const horizontalAmplitude = surface.horizontalCurrent * 18;
-  const verticalAmplitude = surface.verticalRipple * 6;
-  const cyclesPerSecond = 0.1 + surface.flowSpeed * 0.3;
-  const bandCount = Math.round(5 + surface.rippleScale * 8);
+
+  // Keep each normalized control visually independent across its full 0..1 range:
+  // horizontalCurrent = lateral travel, verticalRipple = vertical displacement,
+  // flowSpeed = temporal rate, rippleScale = spatial frequency / band density.
+  const horizontalAmplitude = surface.horizontalCurrent * 24;
+  const verticalAmplitude = surface.verticalRipple * 12;
+  const cyclesPerSecond = 0.04 + surface.flowSpeed * 0.56;
+  const bandCount = Math.round(3 + surface.rippleScale * 15);
+  const phaseSpacing = 0.35 + surface.rippleScale * 1.35;
   const waterTop = 55;
   const waterHeight = 45;
   const bandHeight = waterHeight / bandCount;
@@ -39,11 +44,11 @@ export function SceneV2WaterSurfaceMotion({
     <div style={styles.field} aria-hidden="true">
       {Array.from({ length: bandCount }, (_unused, index) => {
         const top = waterTop + index * bandHeight;
-        const bottom = Math.min(100, top + bandHeight + 1.1);
-        const feather = Math.min(3.4, Math.max(1.2, bandHeight * 0.46));
+        const bottom = Math.min(100, top + bandHeight);
+        const overlap = Math.min(1.2, Math.max(0.35, bandHeight * 0.16));
         const normalizedDepth = bandCount <= 1 ? 1 : index / (bandCount - 1);
-        const depthResponse = 0.48 + normalizedDepth * 0.72;
-        const phase = index * (0.52 + surface.rippleScale * 0.5);
+        const depthResponse = 0.42 + normalizedDepth * 0.82;
+        const phase = index * phaseSpacing;
         const primary = (seconds * cyclesPerSecond + phase) * Math.PI * 2;
         const secondary =
           (seconds * cyclesPerSecond * 0.47 + phase * 1.61) * Math.PI * 2;
@@ -51,21 +56,21 @@ export function SceneV2WaterSurfaceMotion({
           (seconds * cyclesPerSecond * 0.23 + phase * 2.17) * Math.PI * 2;
         const x =
           (Math.sin(primary) * horizontalAmplitude +
-            Math.sin(secondary) * horizontalAmplitude * 0.34 +
-            Math.sin(tertiary) * horizontalAmplitude * 0.12) *
+            Math.sin(secondary) * horizontalAmplitude * 0.32 +
+            Math.sin(tertiary) * horizontalAmplitude * 0.1) *
           depthResponse;
         const y =
           (Math.cos(primary * 0.71) * verticalAmplitude +
-            Math.sin(secondary * 0.83) * verticalAmplitude * 0.22) *
-          (0.42 + normalizedDepth * 0.58);
-        const scale = 1.012 + surface.horizontalCurrent * 0.008;
-        const mask = `linear-gradient(to bottom, transparent 0%, transparent ${Math.max(
+            Math.sin(secondary * 0.83) * verticalAmplitude * 0.28) *
+          (0.34 + normalizedDepth * 0.72);
+        const scale =
+          1.018 + surface.horizontalCurrent * 0.012 + surface.verticalRipple * 0.004;
+        const clipTop = Math.max(0, top - overlap);
+        const clipBottom = Math.min(100, bottom + overlap);
+        const clip = `inset(${clipTop}% 0 ${Math.max(
           0,
-          top - feather,
-        )}%, black ${top}%, black ${bottom}%, transparent ${Math.min(
-          100,
-          bottom + feather,
-        )}%, transparent 100%)`;
+          100 - clipBottom,
+        )}% 0)`;
 
         return (
           <Img
@@ -73,10 +78,10 @@ export function SceneV2WaterSurfaceMotion({
             src={baseAsset}
             style={{
               ...styles.slice,
-              opacity: 0.98 + surface.horizontalCurrent * 0.02,
+              opacity: 1,
               transform: `translate3d(${x}px, ${y}px, 0) scale(${scale})`,
-              maskImage: mask,
-              WebkitMaskImage: mask,
+              clipPath: clip,
+              WebkitClipPath: clip,
             }}
           />
         );
